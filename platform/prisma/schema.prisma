@@ -1,0 +1,151 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// Multi-tenant salon (pilot: Farzana Hair Salon; scalable to many salons)
+model Salon {
+  id           String   @id @default(cuid())
+  name         String
+  slug         String   @unique
+  phone        String?
+  email        String?
+  address      String?
+  timezone     String   @default("America/Toronto")
+  openHour     Int      @default(9)
+  closeHour    Int      @default(18)
+  slotMinutes  Int      @default(30)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  users        User[]
+  stylists     Stylist[]
+  services     Service[]
+  products     Product[]
+  clients      Client[]
+  appointments Appointment[]
+}
+
+model User {
+  id           String   @id @default(cuid())
+  salonId      String
+  email        String
+  passwordHash String
+  name         String
+  role         String   @default("ADMIN") // ADMIN | FRONT_DESK
+  createdAt    DateTime @default(now())
+
+  salon Salon @relation(fields: [salonId], references: [id], onDelete: Cascade)
+
+  @@unique([salonId, email])
+}
+
+model Stylist {
+  id                   String    @id @default(cuid())
+  salonId              String
+  name                 String
+  bio                  String?
+  color                String    @default("#6e4a38")
+  active               Boolean   @default(true)
+  /// Google Calendar OAuth tokens (JSON). When set, bookings sync to phone calendar.
+  googleRefreshToken   String?
+  googleCalendarId     String?   @default("primary")
+  googleConnectedAt    DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  salon        Salon         @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  services     StylistService[]
+  appointments Appointment[]
+}
+
+model Service {
+  id          String   @id @default(cuid())
+  salonId     String
+  name        String
+  description String?
+  category    String   @default("HAIRCUT") // WOMEN | MEN | HAIRCUT | OTHER
+  durationMin Int      @default(45)
+  priceCents  Int
+  active      Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  salon    Salon            @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  stylists StylistService[]
+  appointments Appointment[]
+}
+
+model StylistService {
+  stylistId String
+  serviceId String
+
+  stylist Stylist @relation(fields: [stylistId], references: [id], onDelete: Cascade)
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@id([stylistId, serviceId])
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  salonId     String
+  name        String
+  description String?
+  sku         String?
+  priceCents  Int
+  stockQty    Int      @default(0)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  salon Salon @relation(fields: [salonId], references: [id], onDelete: Cascade)
+
+  @@index([salonId])
+}
+
+model Client {
+  id        String   @id @default(cuid())
+  salonId   String
+  name      String
+  phone     String?
+  email     String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  salon        Salon         @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+
+  @@index([salonId, phone])
+}
+
+model Appointment {
+  id               String   @id @default(cuid())
+  salonId          String
+  stylistId        String
+  serviceId        String
+  clientId         String
+  startsAt         DateTime
+  endsAt           DateTime
+  status           String   @default("BOOKED") // BOOKED | CHECKED_IN | COMPLETED | CANCELLED | NO_SHOW
+  source           String   @default("ONLINE") // ONLINE | WALK_IN | PHONE | ADMIN
+  notes            String?
+  /// Google Calendar event id for sync
+  googleEventId    String?
+  calendarSyncedAt DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  salon   Salon   @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  stylist Stylist @relation(fields: [stylistId], references: [id], onDelete: Cascade)
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  client  Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([salonId, startsAt])
+  @@index([stylistId, startsAt])
+}

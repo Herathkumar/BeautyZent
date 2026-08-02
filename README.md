@@ -35,11 +35,15 @@ Upload these files to your host (Netlify, Cloudflare Pages, or your domain host)
 
 Point DNS for `fhsalon.ca` / `www.fhsalon.ca` at the host.
 
-## Push this branch
+## Push marketing site (`main` / live Netlify)
 
 ```powershell
-git push -u origin fhsalon-website
+git push -u fhsalon HEAD:main
 ```
+
+## Online booking platform (does not affect live Netlify)
+
+See [DEPLOY-BOOKING.md](./DEPLOY-BOOKING.md). Code lives in `platform/` on branch `feature/online-booking`.
 
 ## Pages
 
