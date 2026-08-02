@@ -1,4 +1,10 @@
-import { addMinutes, isBefore, setHours, setMinutes, startOfDay } from "date-fns";
+import {
+  addMinutes,
+  isBefore,
+  setHours,
+  setMinutes,
+  startOfDay,
+} from "date-fns";
 import { prisma } from "./prisma";
 
 export async function getAvailableSlots(opts: {
@@ -13,26 +19,59 @@ export async function getAvailableSlots(opts: {
   });
 
   const dayStart = startOfDay(opts.day);
-  const open = setMinutes(setHours(dayStart, salon.openHour), 0);
-  const close = setMinutes(setHours(dayStart, salon.closeHour), 0);
-  const now = new Date();
+  const dayOfWeek = dayStart.getDay(); // 0 Sun … 6 Sat
 
-  const appointments = await prisma.appointment.findMany({
+  const weekHour = await prisma.stylistWeekHour.findUnique({
     where: {
-      stylistId: opts.stylistId,
-      status: { notIn: ["CANCELLED", "NO_SHOW"] },
-      startsAt: { gte: open, lt: close },
+      stylistId_dayOfWeek: {
+        stylistId: opts.stylistId,
+        dayOfWeek,
+      },
     },
-    select: { startsAt: true, endsAt: true },
   });
+
+  // Explicit day off, or no custom hours → use salon hours (unless day off)
+  if (weekHour?.isOff) return [];
+
+  const openHour = weekHour?.startHour ?? salon.openHour;
+  const openMinute = weekHour?.startMinute ?? 0;
+  const closeHour = weekHour?.endHour ?? salon.closeHour;
+  const closeMinute = weekHour?.endMinute ?? 0;
+
+  const open = setMinutes(setHours(dayStart, openHour), openMinute);
+  const close = setMinutes(setHours(dayStart, closeHour), closeMinute);
+  if (!isBefore(open, close)) return [];
+
+  const now = new Date();
+  const dayEnd = addMinutes(close, 0);
+
+  const [appointments, blocks] = await Promise.all([
+    prisma.appointment.findMany({
+      where: {
+        stylistId: opts.stylistId,
+        status: { notIn: ["CANCELLED", "NO_SHOW"] },
+        startsAt: { lt: dayEnd },
+        endsAt: { gt: open },
+      },
+      select: { startsAt: true, endsAt: true },
+    }),
+    prisma.stylistBlock.findMany({
+      where: {
+        stylistId: opts.stylistId,
+        startsAt: { lt: dayEnd },
+        endsAt: { gt: open },
+      },
+      select: { startsAt: true, endsAt: true },
+    }),
+  ]);
+
+  const busy = [...appointments, ...blocks];
 
   const slots: string[] = [];
   let cursor = open;
   while (isBefore(addMinutes(cursor, service.durationMin), addMinutes(close, 1))) {
     const end = addMinutes(cursor, service.durationMin);
-    const overlaps = appointments.some(
-      (a) => cursor < a.endsAt && end > a.startsAt
-    );
+    const overlaps = busy.some((b) => cursor < b.endsAt && end > b.startsAt);
     if (!overlaps && isBefore(now, cursor)) {
       slots.push(cursor.toISOString());
     }

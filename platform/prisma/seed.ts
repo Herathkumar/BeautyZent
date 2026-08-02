@@ -53,6 +53,43 @@ async function main() {
       ? await prisma.stylist.update({ where: { id: existing.id }, data: s })
       : await prisma.stylist.create({ data: { salonId: salon.id, ...s } });
     stylistRows.push(row);
+
+    // Default: Mon–Sat salon hours, Sunday off
+    for (let dayOfWeek = 0; dayOfWeek <= 6; dayOfWeek++) {
+      await prisma.stylistWeekHour.upsert({
+        where: {
+          stylistId_dayOfWeek: { stylistId: row.id, dayOfWeek },
+        },
+        update: {},
+        create: {
+          stylistId: row.id,
+          dayOfWeek,
+          startHour: salon.openHour,
+          endHour: salon.closeHour,
+          isOff: dayOfWeek === 0,
+        },
+      });
+    }
+
+    // Stylist portal login (name@fhsalon.ca)
+    const stylistEmail = `${s.name.toLowerCase()}@fhsalon.ca`;
+    await prisma.user.upsert({
+      where: { salonId_email: { salonId: salon.id, email: stylistEmail } },
+      update: {
+        passwordHash,
+        name: s.name,
+        role: "STYLIST",
+        stylistId: row.id,
+      },
+      create: {
+        salonId: salon.id,
+        email: stylistEmail,
+        passwordHash,
+        name: s.name,
+        role: "STYLIST",
+        stylistId: row.id,
+      },
+    });
   }
 
   const services = [
@@ -108,10 +145,9 @@ async function main() {
   }
 
   console.log("Seeded Farzana Hair Salon (slug: fhsalon)");
-  console.log("Admin login: admin@fhsalon.ca / demo1234");
-  console.log("Book: /book/fhsalon");
-  console.log("Display: /display/fhsalon");
-  console.log("Admin: /admin");
+  console.log("Admin: admin@fhsalon.ca / demo1234");
+  console.log("Stylist portal: farzana@fhsalon.ca / demo1234 (also aisha@, omar@)");
+  console.log("Book: /book/fhsalon | Display: /display/fhsalon | Stylist: /stylist");
 }
 
 main()

@@ -25,7 +25,12 @@ export default async function AdminHome() {
 
   return (
     <main>
-      <h1 className="font-[family-name:var(--font-display)] text-4xl">{salon.name}</h1>
+      <p className="text-xs font-semibold tracking-[0.2em] text-[#c9a87c] uppercase">
+        Dashboard
+      </p>
+      <h1 className="mt-2 font-[family-name:var(--font-display)] text-4xl text-[#fffaf6]">
+        {salon.name}
+      </h1>
       <p className="mt-2 text-muted">Welcome, {session.name}</p>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -35,29 +40,30 @@ export default async function AdminHome() {
           { label: "Products", value: products, href: "/admin/products" },
           { label: "Stylists", value: stylists, href: "/admin/stylists" },
         ].map((card) => (
-          <Link
-            key={card.label}
-            href={card.href}
-            className="rounded-2xl border border-ink/10 bg-cream p-5 hover:border-ink/30"
-          >
-            <p className="text-sm text-muted">{card.label}</p>
-            <p className="mt-2 font-[family-name:var(--font-display)] text-3xl">{card.value}</p>
+          <Link key={card.label} href={card.href} className="admin-stat-card rounded-2xl p-5">
+            <p className="text-sm text-[#c9a87c]">{card.label}</p>
+            <p className="mt-2 font-[family-name:var(--font-display)] text-3xl text-[#fffaf6]">
+              {card.value}
+            </p>
           </Link>
         ))}
       </div>
 
       <div className="mt-8 flex flex-wrap gap-3">
-        <Link
-          href={`/book/${salon.slug}`}
-          className="rounded-full bg-ink px-4 py-2 text-sm text-cream"
-        >
+        <Link href={`/book/${salon.slug}`} className="btn-solid rounded-full px-4 py-2 text-sm">
           Open client booking
         </Link>
         <Link
           href={`/display/${salon.slug}`}
-          className="rounded-full border border-ink px-4 py-2 text-sm"
+          className="rounded-full border border-[#c9a87c]/50 px-4 py-2 text-sm text-[#f0c987] hover:bg-[#c9a87c]/10"
         >
           Open tablet display
+        </Link>
+        <Link
+          href="/admin/book"
+          className="rounded-full border border-[#c9a87c]/50 px-4 py-2 text-sm text-[#f0c987] hover:bg-[#c9a87c]/10"
+        >
+          Book for a client
         </Link>
       </div>
     </main>

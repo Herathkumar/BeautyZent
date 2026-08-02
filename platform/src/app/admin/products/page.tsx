@@ -88,7 +88,7 @@ export default function ProductsAdminPage() {
             onChange={(e) => setStockQty(Number(e.target.value))}
             className="w-full rounded-xl border border-ink/15 px-3 py-2"
           />
-          <button type="submit" className="rounded-full bg-ink px-4 text-cream">
+          <button type="submit" className="btn-solid rounded-full px-4">
             Add
           </button>
         </div>

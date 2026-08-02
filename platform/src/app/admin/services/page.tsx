@@ -100,7 +100,7 @@ export default function ServicesAdminPage() {
             className="w-full rounded-xl border border-ink/15 px-3 py-2"
             placeholder="Price"
           />
-          <button type="submit" className="rounded-full bg-ink px-4 text-cream">
+          <button type="submit" className="btn-solid rounded-full px-4">
             Add
           </button>
         </div>

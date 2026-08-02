@@ -11,6 +11,9 @@ Online booking lives on branch **`feature/online-booking`** under `/platform`.
 | Tablet display | `/display/fhsalon` | Salon floor board + check-in |
 | Admin | `/admin` | Services, prices, products, stylists, bookings |
 | Calendar sync | Google OAuth + ICS feed | Bookings on stylists’ phone calendars |
+| Stylist portal | `/stylist` | Stylists manage own bookings, hours, leave |
+| Admin schedule | Admin → Stylists → Manage schedule | Admin can set hours/leave for any stylist |
+| Admin book | Admin → Book for client | Front desk books a client onto a stylist |
 
 Multi-tenant: each salon is a `Salon` row with a unique `slug` (pilot: `fhsalon`).
 

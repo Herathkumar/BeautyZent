@@ -12,30 +12,53 @@ export default async function BookPage({
 
   if (!salon) {
     return (
-      <main className="mx-auto max-w-lg px-6 py-20">
-        <h1 className="font-[family-name:var(--font-display)] text-3xl">Salon not found</h1>
-        <Link href="/" className="mt-4 inline-block text-cocoa">
-          Back home
-        </Link>
+      <main className="book-theme mx-auto px-6 py-20">
+        <div className="mx-auto max-w-lg">
+          <h1 className="font-[family-name:var(--font-display)] text-3xl">Salon not found</h1>
+          <Link href="/" className="mt-4 inline-block text-champagne">
+            Back home
+          </Link>
+        </div>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-2xl px-6 py-10">
-      <div className="mb-8">
-        <Link href="/" className="text-sm text-muted hover:text-ink">
-          ← SalonBook
-        </Link>
-        <h1 className="mt-3 font-[family-name:var(--font-display)] text-4xl tracking-tight">
-          {salon.name}
-        </h1>
-        <p className="mt-2 text-muted">
-          Book online — pick your stylist and time. No app download needed.
-        </p>
-        {salon.address && <p className="mt-1 text-sm text-muted">{salon.address}</p>}
+    <main className="book-theme min-h-screen">
+      <div className="mx-auto max-w-2xl px-4 pb-16 pt-6 sm:px-6">
+        <section className="relative mb-8 overflow-hidden rounded-3xl border border-[rgba(232,180,162,0.35)] shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+          <div className="absolute inset-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/display-promo.jpg"
+              alt=""
+              className="h-full w-full object-cover opacity-70"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#1a1418]/96 via-[#1a1418]/82 to-[#6e4a52]/40" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(232,180,162,0.35),transparent_45%)]" />
+          </div>
+          <div className="relative space-y-3 p-6 sm:p-8">
+            <p className="text-xs font-semibold tracking-[0.22em] text-[#f2c4b0] uppercase">
+              Book your visit
+            </p>
+            <h1 className="font-[family-name:var(--font-display)] text-4xl leading-none sm:text-5xl">
+              {salon.name}
+            </h1>
+            <p className="max-w-xl text-base text-white/80">
+              Pick a service, your stylist, and a time — no app download needed.
+            </p>
+            {(salon.phone || salon.address) && (
+              <p className="text-sm text-[#f2c4b0]/90">
+                {salon.phone}
+                {salon.phone && salon.address ? " · " : ""}
+                {salon.address}
+              </p>
+            )}
+          </div>
+        </section>
+
+        <BookingWizard slug={slug} />
       </div>
-      <BookingWizard slug={slug} />
     </main>
   );
 }

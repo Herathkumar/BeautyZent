@@ -7,6 +7,7 @@ type Appt = {
   startsAt: string;
   status: string;
   source: string;
+  notes: string | null;
   calendarSyncedAt: string | null;
   client: { name: string; phone: string | null };
   service: { name: string };
@@ -60,6 +61,11 @@ export default function AppointmentsAdminPage() {
                 {a.service.name} with {a.stylist.name}
                 {a.client.phone ? ` · ${a.client.phone}` : ""}
               </p>
+              {a.notes ? (
+                <p className="mt-1 text-sm text-cocoa">
+                  <span className="font-semibold">Note:</span> {a.notes}
+                </p>
+              ) : null}
             </div>
             <p className="text-xs text-muted">
               {a.calendarSyncedAt ? "Calendar synced" : "Calendar pending"}

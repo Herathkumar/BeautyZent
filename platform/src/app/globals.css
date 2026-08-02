@@ -20,7 +20,8 @@
   --color-paper: var(--paper);
   --color-champagne: var(--champagne);
   --color-cocoa: var(--cocoa);
-  --color-cream: var(--white);
+  --color-cream: #fffaf6;
+  --color-white: #fffaf6;
   --font-sans: var(--font-body);
   --font-display: var(--font-display);
 }
@@ -35,6 +36,384 @@ body {
 }
 
 a {
-  color: inherit;
   text-decoration: none;
+}
+
+/* Solid CTAs — ensure light label on dark fill (link color must not inherit ink) */
+.btn-solid {
+  background: var(--ink);
+  color: #fffaf6 !important;
+}
+
+.btn-solid:hover {
+  background: var(--cocoa);
+  color: #fffaf6 !important;
+}
+
+/* Admin + stylist phone app — aligned with salon floor display theme */
+.admin-theme,
+.stylist-theme {
+  --ink: #fffaf6;
+  --ink-soft: #e8ddd0;
+  --muted: #a89a8c;
+  --paper: #1c1714;
+  --champagne: #c9a87c;
+  --cocoa: #f0c987;
+  --white: #fffaf6;
+  --line: rgba(201, 168, 124, 0.22);
+  --color-ink: #fffaf6;
+  --color-ink-soft: #e8ddd0;
+  --color-muted: #a89a8c;
+  --color-paper: #1c1714;
+  --color-cream: #2a211c;
+  --color-champagne: #c9a87c;
+  --color-cocoa: #f0c987;
+  --color-white: #fffaf6;
+  min-height: 100vh;
+  background:
+    radial-gradient(900px 420px at 90% -10%, rgba(240, 201, 135, 0.18), transparent 55%),
+    radial-gradient(700px 360px at 0% 100%, rgba(110, 74, 56, 0.35), transparent 50%),
+    linear-gradient(180deg, #241c18 0%, #1c1714 45%, #15110f 100%);
+  color: #fffaf6;
+}
+
+.admin-theme .btn-solid,
+.stylist-theme .btn-solid {
+  background: #c9a87c;
+  color: #1c1714 !important;
+}
+
+.admin-theme .btn-solid:hover,
+.stylist-theme .btn-solid:hover {
+  background: #f0c987;
+  color: #1c1714 !important;
+}
+
+.admin-theme header.admin-header,
+.stylist-theme header.admin-header {
+  background: rgba(28, 23, 20, 0.88);
+  border-bottom: 1px solid rgba(201, 168, 124, 0.28);
+  backdrop-filter: blur(14px);
+}
+
+.admin-theme .admin-nav a,
+.stylist-theme .admin-nav a {
+  color: rgba(255, 250, 246, 0.72);
+  transition: color 0.15s ease;
+}
+
+.admin-theme .admin-nav a:hover,
+.stylist-theme .admin-nav a:hover {
+  color: #f0c987;
+}
+
+.admin-theme input,
+.admin-theme select,
+.admin-theme textarea,
+.stylist-theme input,
+.stylist-theme select,
+.stylist-theme textarea {
+  background: #1c1714 !important;
+  color: #fffaf6 !important;
+  border-color: rgba(201, 168, 124, 0.35) !important;
+}
+
+.admin-theme input::placeholder,
+.admin-theme textarea::placeholder,
+.stylist-theme input::placeholder,
+.stylist-theme textarea::placeholder {
+  color: rgba(255, 250, 246, 0.35);
+}
+
+.admin-theme input:focus,
+.admin-theme select:focus,
+.admin-theme textarea:focus,
+.stylist-theme input:focus,
+.stylist-theme select:focus,
+.stylist-theme textarea:focus {
+  outline: 2px solid rgba(240, 201, 135, 0.45);
+  outline-offset: 1px;
+}
+
+.admin-theme option,
+.stylist-theme option {
+  background: #1c1714;
+  color: #fffaf6;
+}
+
+.admin-theme .border-ink,
+.admin-theme .border-ink\/10,
+.admin-theme .border-ink\/15,
+.admin-theme .border-ink\/20,
+.admin-theme .border-ink\/30,
+.stylist-theme .border-ink,
+.stylist-theme .border-ink\/10,
+.stylist-theme .border-ink\/15,
+.stylist-theme .border-ink\/20,
+.stylist-theme .border-ink\/30 {
+  border-color: rgba(201, 168, 124, 0.28) !important;
+}
+
+.admin-theme .divide-ink\/10 > :not([hidden]) ~ :not([hidden]),
+.stylist-theme .divide-ink\/10 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgba(201, 168, 124, 0.18);
+}
+
+.admin-theme .text-red-700,
+.admin-theme .text-red-800,
+.stylist-theme .text-red-700,
+.stylist-theme .text-red-800 {
+  color: #f5a8a8 !important;
+}
+
+.admin-theme .text-green-800,
+.stylist-theme .text-green-800 {
+  color: #9fe3b8 !important;
+}
+
+.admin-theme .bg-white,
+.stylist-theme .bg-white {
+  background-color: #1c1714 !important;
+}
+
+.admin-theme .admin-stat-card,
+.stylist-theme .admin-stat-card {
+  border: 1px solid rgba(201, 168, 124, 0.3);
+  background: linear-gradient(135deg, #3d2b22 0%, #2a211c 100%);
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.admin-theme .admin-stat-card:hover,
+.stylist-theme .admin-stat-card:hover {
+  border-color: rgba(240, 201, 135, 0.55);
+  transform: translateY(-1px);
+}
+
+.admin-theme .admin-stat-card:nth-child(2),
+.stylist-theme .admin-stat-card:nth-child(2) {
+  background: linear-gradient(135deg, #3a2f4a 0%, #2a211c 100%);
+}
+
+.admin-theme .admin-stat-card:nth-child(3),
+.stylist-theme .admin-stat-card:nth-child(3) {
+  background: linear-gradient(135deg, #2a3f3a 0%, #2a211c 100%);
+}
+
+.admin-theme .admin-stat-card:nth-child(4),
+.stylist-theme .admin-stat-card:nth-child(4) {
+  background: linear-gradient(135deg, #4a3520 0%, #2a211c 100%);
+}
+
+.admin-theme .bg-cream,
+.stylist-theme .bg-cream {
+  background-color: #2a211c !important;
+  color: #fffaf6;
+}
+
+.admin-theme h1,
+.admin-theme h2,
+.admin-theme h3,
+.stylist-theme h1,
+.stylist-theme h2,
+.stylist-theme h3 {
+  color: #fffaf6 !important;
+}
+
+.admin-theme .text-muted,
+.stylist-theme .text-muted {
+  color: #d4c4b0 !important;
+}
+
+.admin-theme .text-cocoa,
+.admin-theme .text-champagne,
+.stylist-theme .text-cocoa,
+.stylist-theme .text-champagne {
+  color: #f0c987 !important;
+}
+
+.admin-theme .font-medium,
+.admin-theme .font-semibold,
+.stylist-theme .font-medium,
+.stylist-theme .font-semibold {
+  color: #fffaf6;
+}
+
+.admin-theme a.rounded-full.border,
+.stylist-theme a.rounded-full.border {
+  color: #f0c987 !important;
+  border-color: rgba(201, 168, 124, 0.45) !important;
+}
+
+.admin-theme a.rounded-full.border:hover,
+.stylist-theme a.rounded-full.border:hover {
+  background: rgba(201, 168, 124, 0.12);
+}
+
+.stylist-theme .stylist-bottom-nav {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 30;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.25rem;
+  padding: 0.55rem 0.75rem calc(0.55rem + env(safe-area-inset-bottom));
+  background: rgba(28, 23, 20, 0.94);
+  border-top: 1px solid rgba(201, 168, 124, 0.3);
+  backdrop-filter: blur(12px);
+}
+
+.stylist-theme .stylist-bottom-nav a,
+.stylist-theme .stylist-bottom-nav button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.55rem 0.35rem;
+  border-radius: 0.9rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: rgba(255, 250, 246, 0.55);
+  background: transparent;
+  border: 0;
+}
+
+.stylist-theme .stylist-bottom-nav a.active {
+  background: rgba(201, 168, 124, 0.18);
+  color: #f0c987;
+}
+
+.stylist-theme .stylist-tap {
+  min-height: 52px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+/* Client booking — same salon family as floor, warmer rose accents (not staff ops) */
+.book-theme {
+  --ink: #fffaf6;
+  --ink-soft: #f0e4d8;
+  --muted: #c4b0a2;
+  --paper: #1a1418;
+  --champagne: #e8b4a2;
+  --cocoa: #f2c4b0;
+  --white: #fffaf6;
+  --line: rgba(232, 180, 162, 0.28);
+  --color-ink: #fffaf6;
+  --color-ink-soft: #f0e4d8;
+  --color-muted: #c4b0a2;
+  --color-paper: #1a1418;
+  --color-cream: #2a2126;
+  --color-champagne: #e8b4a2;
+  --color-cocoa: #f2c4b0;
+  --color-white: #fffaf6;
+  min-height: 100vh;
+  background:
+    radial-gradient(900px 480px at 85% -5%, rgba(232, 180, 162, 0.22), transparent 55%),
+    radial-gradient(700px 400px at 0% 90%, rgba(110, 74, 90, 0.28), transparent 50%),
+    linear-gradient(180deg, #241820 0%, #1a1418 50%, #120e12 100%);
+  color: #fffaf6;
+}
+
+.book-theme .btn-solid {
+  background: linear-gradient(135deg, #e8b4a2 0%, #c9a87c 100%);
+  color: #1c1714 !important;
+}
+
+.book-theme .btn-solid:hover {
+  background: linear-gradient(135deg, #f2c4b0 0%, #e8b4a2 100%);
+  color: #1c1714 !important;
+}
+
+.book-theme input,
+.book-theme select,
+.book-theme textarea {
+  background: #241820 !important;
+  color: #fffaf6 !important;
+  border-color: rgba(232, 180, 162, 0.35) !important;
+}
+
+.book-theme input::placeholder,
+.book-theme textarea::placeholder {
+  color: rgba(255, 250, 246, 0.35);
+}
+
+.book-theme input:focus,
+.book-theme select:focus,
+.book-theme textarea:focus {
+  outline: 2px solid rgba(232, 180, 162, 0.5);
+  outline-offset: 1px;
+}
+
+.book-theme .bg-cream {
+  background-color: #2a2126 !important;
+  color: #fffaf6;
+}
+
+.book-theme .text-muted {
+  color: #c4b0a2 !important;
+}
+
+.book-theme .text-cocoa,
+.book-theme .text-champagne {
+  color: #f2c4b0 !important;
+}
+
+.book-theme h1,
+.book-theme h2,
+.book-theme h3 {
+  color: #fffaf6 !important;
+}
+
+.book-theme .book-card {
+  border: 1px solid rgba(232, 180, 162, 0.28);
+  background: linear-gradient(160deg, rgba(58, 40, 48, 0.95) 0%, rgba(36, 24, 32, 0.98) 100%);
+  transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.book-theme .book-card:hover {
+  border-color: rgba(242, 196, 176, 0.5);
+}
+
+.book-theme .book-card.is-selected {
+  border-color: rgba(242, 196, 176, 0.75);
+  background: linear-gradient(135deg, #6e4a52 0%, #3d2b30 55%, #2a2126 100%);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+.book-theme .book-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 999px;
+  border: 1px solid rgba(232, 180, 162, 0.25);
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 250, 246, 0.45);
+}
+
+.book-theme .book-step.is-active {
+  border-color: rgba(242, 196, 176, 0.55);
+  background: rgba(232, 180, 162, 0.16);
+  color: #f2c4b0;
+}
+
+.book-theme .book-step.is-done {
+  border-color: rgba(201, 168, 124, 0.35);
+  color: #c9a87c;
+}
+
+.book-theme .book-slot {
+  border: 1px solid rgba(232, 180, 162, 0.3);
+  background: rgba(36, 24, 32, 0.9);
+  color: #fffaf6;
+}
+
+.book-theme .book-slot.is-selected {
+  background: linear-gradient(135deg, #e8b4a2 0%, #c9a87c 100%);
+  border-color: transparent;
+  color: #1c1714;
+  font-weight: 700;
 }

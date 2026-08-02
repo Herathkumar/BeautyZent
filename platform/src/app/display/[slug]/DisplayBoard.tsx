@@ -1,31 +1,141 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 type Appt = {
   id: string;
   startsAt: string;
   endsAt: string;
   status: string;
+  notes: string | null;
   client: { name: string; phone: string | null };
   service: { name: string };
   stylist: { name: string; color: string };
 };
 
+type SalonInfo = {
+  name: string;
+  slug: string;
+  phone?: string | null;
+  address?: string | null;
+};
+
+type Tab = "today" | "future";
+
+function dayKey(iso: string) {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function todayKey() {
+  return dayKey(new Date().toISOString());
+}
+
+function dayLabel(key: string) {
+  const [y, m, d] = key.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  const tKey = todayKey();
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowKey = dayKey(tomorrow.toISOString());
+
+  const formatted = date.toLocaleDateString("en-CA", {
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+  });
+
+  if (key === tKey) return `Today · ${formatted}`;
+  if (key === tomorrowKey) return `Tomorrow · ${formatted}`;
+  return formatted;
+}
+
+const STATUS_STYLES: Record<string, string> = {
+  BOOKED: "bg-[#3d2b22] text-[#f0c987]",
+  CHECKED_IN: "bg-[#2a4a3a] text-[#9fe3b8]",
+  COMPLETED: "bg-white/10 text-white/60",
+};
+
+function AppointmentActions({
+  a,
+  onStatus,
+}: {
+  a: Appt;
+  onStatus: (id: string, status: string) => void;
+}) {
+  if (a.status === "COMPLETED" || a.status === "CANCELLED") return null;
+  return (
+    <div className="flex flex-wrap gap-2">
+      {a.status === "BOOKED" && (
+        <button
+          type="button"
+          onClick={() => onStatus(a.id, "CHECKED_IN")}
+          className="rounded-full bg-[#c9a87c] px-3 py-2 text-sm font-medium text-[#1c1714]"
+        >
+          Check in
+        </button>
+      )}
+      {["BOOKED", "CHECKED_IN"].includes(a.status) && (
+        <button
+          type="button"
+          onClick={() => onStatus(a.id, "COMPLETED")}
+          className="rounded-full border border-white/30 px-3 py-2 text-sm"
+        >
+          Done
+        </button>
+      )}
+      <button
+        type="button"
+        onClick={() => onStatus(a.id, "CANCELLED")}
+        className="rounded-full border border-red-300/40 px-3 py-2 text-sm text-red-200"
+      >
+        Cancel
+      </button>
+    </div>
+  );
+}
+
+function StylistLine({ a }: { a: Appt }) {
+  return (
+    <div className="space-y-1">
+      <p className="flex flex-wrap items-center gap-x-2 text-white/80">
+        <span>{a.service.name}</span>
+        <span className="text-white/40">·</span>
+        <span className="inline-flex items-center gap-1.5 font-bold text-[#f0c987]">
+          <span
+            className="inline-block h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-[#f0c987]/50"
+            style={{ background: a.stylist.color }}
+            aria-hidden
+          />
+          {a.stylist.name}
+        </span>
+      </p>
+      {a.notes ? (
+        <p className="rounded-lg bg-black/25 px-2.5 py-1.5 text-sm text-[#f0c987]/95">
+          <span className="font-semibold text-white/70">Note: </span>
+          {a.notes}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 export function DisplayBoard({ slug }: { slug: string }) {
   const [appointments, setAppointments] = useState<Appt[]>([]);
-  const [salonName, setSalonName] = useState("");
+  const [salon, setSalon] = useState<SalonInfo | null>(null);
+  const [days, setDays] = useState(14);
+  const [tab, setTab] = useState<Tab>("today");
   const [now, setNow] = useState(() => new Date());
 
   const load = useCallback(() => {
-    fetch(`/api/display/${slug}/today`)
+    fetch(`/api/display/${slug}/today?days=${days}`)
       .then((r) => r.json())
       .then((data) => {
         setAppointments(data.appointments || []);
-        setSalonName(data.salon?.name || "");
+        setSalon(data.salon || null);
       })
       .catch(() => undefined);
-  }, [slug]);
+  }, [slug, days]);
 
   useEffect(() => {
     load();
@@ -37,6 +147,23 @@ export function DisplayBoard({ slug }: { slug: string }) {
     };
   }, [load]);
 
+  const tKey = todayKey();
+  const todayAppts = useMemo(
+    () => appointments.filter((a) => dayKey(a.startsAt) === tKey),
+    [appointments, tKey]
+  );
+  const futureGrouped = useMemo(() => {
+    const map = new Map<string, Appt[]>();
+    for (const a of appointments) {
+      const key = dayKey(a.startsAt);
+      if (key === tKey) continue;
+      const list = map.get(key) || [];
+      list.push(a);
+      map.set(key, list);
+    }
+    return Array.from(map.entries());
+  }, [appointments, tKey]);
+
   async function setStatus(id: string, status: string) {
     await fetch(`/api/display/${slug}/appointments/${id}`, {
       method: "PATCH",
@@ -46,89 +173,231 @@ export function DisplayBoard({ slug }: { slug: string }) {
     load();
   }
 
+  const waiting = todayAppts.filter((a) => a.status === "BOOKED").length;
+  const inChair = todayAppts.filter((a) => a.status === "CHECKED_IN").length;
+
   return (
-    <div className="min-h-screen bg-[#1c1714] px-6 py-6 text-[#fffaf6]">
-      <header className="mb-6 flex flex-wrap items-end justify-between gap-4 border-b border-white/10 pb-4">
-        <div>
-          <p className="text-xs tracking-[0.2em] text-[#c9a87c] uppercase">Salon floor</p>
-          <h1 className="font-[family-name:var(--font-display)] text-4xl">{salonName || "Today"}</h1>
+    <div className="min-h-screen bg-[#1c1714] text-[#fffaf6]">
+      <header className="border-b border-white/10 px-6 py-5">
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-xs tracking-[0.2em] text-[#c9a87c] uppercase">Salon floor</p>
+            <h1 className="font-[family-name:var(--font-display)] text-4xl">
+              {salon?.name || "Bookings"}
+            </h1>
+          </div>
+          <p className="text-xl text-white/70">
+            {now.toLocaleString("en-CA", {
+              weekday: "short",
+              month: "short",
+              day: "numeric",
+              hour: "numeric",
+              minute: "2-digit",
+            })}
+          </p>
         </div>
-        <p className="text-xl text-white/70">
-          {now.toLocaleString("en-CA", {
-            weekday: "short",
-            month: "short",
-            day: "numeric",
-            hour: "numeric",
-            minute: "2-digit",
-          })}
-        </p>
+
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex rounded-full border border-white/15 bg-white/5 p-1">
+            <button
+              type="button"
+              onClick={() => setTab("today")}
+              className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
+                tab === "today"
+                  ? "bg-[#c9a87c] text-[#1c1714]"
+                  : "text-white/70 hover:text-white"
+              }`}
+            >
+              Today
+              <span className="ml-2 opacity-80">({todayAppts.length})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab("future")}
+              className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
+                tab === "future"
+                  ? "bg-[#c9a87c] text-[#1c1714]"
+                  : "text-white/70 hover:text-white"
+              }`}
+            >
+              Future
+              <span className="ml-2 opacity-80">
+                ({appointments.length - todayAppts.length})
+              </span>
+            </button>
+          </div>
+
+          {tab === "future" && (
+            <div className="flex items-center gap-2 text-sm text-white/60">
+              <span>Range</span>
+              <div className="flex rounded-full border border-white/20 p-0.5">
+                {[7, 14, 30].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setDays(n)}
+                    className={`rounded-full px-3 py-1 ${
+                      days === n
+                        ? "bg-[#c9a87c] font-medium text-[#1c1714]"
+                        : "text-[#fffaf6]/80 hover:bg-white/10"
+                    }`}
+                  >
+                    {n}d
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </header>
 
-      <div className="grid gap-3">
-        {appointments.length === 0 && (
-          <p className="rounded-2xl border border-white/10 p-8 text-white/60">
-            No bookings for today yet.
-          </p>
-        )}
-        {appointments.map((a) => (
-          <article
-            key={a.id}
-            className="grid gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 md:grid-cols-[140px_1fr_auto] md:items-center"
-          >
-            <div>
-              <p className="text-2xl font-medium">
-                {new Date(a.startsAt).toLocaleTimeString("en-CA", {
-                  hour: "numeric",
-                  minute: "2-digit",
-                })}
-              </p>
-              <p className="text-sm text-white/50">
-                {new Date(a.endsAt).toLocaleTimeString("en-CA", {
-                  hour: "numeric",
-                  minute: "2-digit",
-                })}
-              </p>
+      {tab === "today" && (
+        <div className="px-6 py-6">
+          {/* Promo band */}
+          <section className="relative mb-6 overflow-hidden rounded-3xl border border-[#c9a87c]/35 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+            <div className="absolute inset-0">
+              <img
+                src="/display-promo.jpg"
+                alt=""
+                className="h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#1c1714]/95 via-[#1c1714]/75 to-[#6e4a38]/45" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(240,201,135,0.35),transparent_45%)]" />
             </div>
-            <div>
-              <p className="text-xl font-medium">{a.client.name}</p>
-              <p className="text-white/70">
-                {a.service.name} ·{" "}
-                <span style={{ color: a.stylist.color }}>{a.stylist.name}</span>
+            <div className="relative grid gap-6 p-6 md:grid-cols-[1.2fr_auto] md:items-end md:p-8">
+              <div>
+                <p className="text-xs font-semibold tracking-[0.22em] text-[#f0c987] uppercase">
+                  Welcome to the floor
+                </p>
+                <h2 className="mt-2 font-[family-name:var(--font-display)] text-4xl leading-none md:text-5xl">
+                  {salon?.name || "Farzana Hair Salon"}
+                </h2>
+                <p className="mt-3 max-w-xl text-base text-white/80 md:text-lg">
+                  Men&apos;s &amp; women&apos;s cuts · Walk-ins welcome when slots are open · Book
+                  ahead online for your favourite stylist
+                </p>
+                {(salon?.phone || salon?.address) && (
+                  <p className="mt-3 text-sm text-[#f0c987]/90">
+                    {salon.phone}
+                    {salon.phone && salon.address ? " · " : ""}
+                    {salon.address}
+                  </p>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-3 md:min-w-[220px]">
+                <div className="rounded-2xl bg-[#f0c987] px-4 py-3 text-[#1c1714]">
+                  <p className="text-xs font-semibold uppercase tracking-wide opacity-70">Waiting</p>
+                  <p className="font-[family-name:var(--font-display)] text-3xl">{waiting}</p>
+                </div>
+                <div className="rounded-2xl bg-[#9fe3b8] px-4 py-3 text-[#123022]">
+                  <p className="text-xs font-semibold uppercase tracking-wide opacity-70">In chair</p>
+                  <p className="font-[family-name:var(--font-display)] text-3xl">{inChair}</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Today bookings — colourful cards */}
+          <div className="grid gap-4">
+            {todayAppts.length === 0 && (
+              <p className="rounded-2xl border border-dashed border-[#c9a87c]/40 bg-gradient-to-br from-[#3d2b22]/80 to-[#1c1714] p-10 text-center text-white/70">
+                No bookings yet today — enjoy a quiet moment, or take a walk-in.
               </p>
-              <p className="mt-1 text-xs tracking-wide text-[#c9a87c] uppercase">{a.status}</p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {a.status === "BOOKED" && (
-                <button
-                  type="button"
-                  onClick={() => setStatus(a.id, "CHECKED_IN")}
-                  className="rounded-full bg-[#c9a87c] px-3 py-2 text-sm font-medium text-[#1c1714]"
+            )}
+            {todayAppts.map((a, index) => {
+              const accents = [
+                "from-[#5a3a2a] to-[#2a1c16] border-[#c9a87c]/40",
+                "from-[#3a2f4a] to-[#1c1714] border-[#b8a0d8]/35",
+                "from-[#2a3f3a] to-[#1c1714] border-[#9fe3b8]/35",
+                "from-[#4a3520] to-[#1c1714] border-[#f0c987]/40",
+              ];
+              const accent = accents[index % accents.length];
+              return (
+                <article
+                  key={a.id}
+                  className={`grid gap-3 rounded-2xl border bg-gradient-to-r p-4 shadow-lg md:grid-cols-[160px_1fr_auto] md:items-center ${accent}`}
                 >
-                  Check in
-                </button>
-              )}
-              {["BOOKED", "CHECKED_IN"].includes(a.status) && (
-                <button
-                  type="button"
-                  onClick={() => setStatus(a.id, "COMPLETED")}
-                  className="rounded-full border border-white/30 px-3 py-2 text-sm"
-                >
-                  Done
-                </button>
-              )}
-              {a.status !== "CANCELLED" && a.status !== "COMPLETED" && (
-                <button
-                  type="button"
-                  onClick={() => setStatus(a.id, "CANCELLED")}
-                  className="rounded-full border border-red-300/40 px-3 py-2 text-sm text-red-200"
-                >
-                  Cancel
-                </button>
-              )}
-            </div>
-          </article>
-        ))}
-      </div>
+                  <div>
+                    <p className="text-3xl font-semibold tracking-tight">
+                      {new Date(a.startsAt).toLocaleTimeString("en-CA", {
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                    <p className="text-sm text-white/55">
+                      {new Date(a.endsAt).toLocaleTimeString("en-CA", {
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-semibold">{a.client.name}</p>
+                    <StylistLine a={a} />
+                    <span
+                      className={`mt-2 inline-block rounded-full px-2.5 py-0.5 text-[11px] font-semibold tracking-wide uppercase ${
+                        STATUS_STYLES[a.status] || STATUS_STYLES.BOOKED
+                      }`}
+                    >
+                      {a.status.replace("_", " ")}
+                    </span>
+                  </div>
+                  <AppointmentActions a={a} onStatus={setStatus} />
+                </article>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {tab === "future" && (
+        <div className="grid gap-8 px-6 py-6">
+          {futureGrouped.length === 0 && (
+            <p className="rounded-2xl border border-white/10 p-8 text-white/60">
+              No upcoming bookings in this range.
+            </p>
+          )}
+
+          {futureGrouped.map(([key, list]) => (
+            <section key={key} className="space-y-3">
+              <h2 className="text-sm tracking-[0.16em] text-[#c9a87c] uppercase">
+                {dayLabel(key)}
+              </h2>
+              <div className="grid gap-3">
+                {list.map((a) => (
+                  <article
+                    key={a.id}
+                    className="grid gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 md:grid-cols-[160px_1fr_auto] md:items-center"
+                  >
+                    <div>
+                      <p className="text-2xl font-medium">
+                        {new Date(a.startsAt).toLocaleTimeString("en-CA", {
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                      <p className="text-sm text-white/50">
+                        {new Date(a.endsAt).toLocaleTimeString("en-CA", {
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xl font-medium">{a.client.name}</p>
+                      <StylistLine a={a} />
+                      <p className="mt-1 text-xs tracking-wide text-[#c9a87c] uppercase">
+                        {a.status}
+                      </p>
+                    </div>
+                    <AppointmentActions a={a} onStatus={setStatus} />
+                  </article>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

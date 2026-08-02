@@ -21,13 +21,13 @@ export default function HomePage() {
       <div className="flex flex-wrap gap-3">
         <Link
           href={`/book/${slug}`}
-          className="rounded-full bg-ink px-5 py-3 font-medium text-cream hover:bg-cocoa"
+          className="btn-solid rounded-full px-5 py-3 font-medium"
         >
           Book appointment
         </Link>
         <Link
           href={`/display/${slug}`}
-          className="rounded-full border border-ink px-5 py-3 font-medium hover:bg-ink hover:text-cream"
+          className="rounded-full border border-ink px-5 py-3 font-medium text-ink hover:bg-ink hover:text-[#fffaf6]"
         >
           Salon tablet display
         </Link>
@@ -36,6 +36,12 @@ export default function HomePage() {
           className="rounded-full border border-ink/20 px-5 py-3 font-medium text-ink-soft hover:border-ink"
         >
           Admin portal
+        </Link>
+        <Link
+          href="/stylist/login"
+          className="rounded-full border border-ink/20 px-5 py-3 font-medium text-ink-soft hover:border-ink"
+        >
+          Stylist portal
         </Link>
       </div>
 

@@ -17,6 +17,7 @@ export type SessionUser = {
   email: string;
   name: string;
   role: string;
+  stylistId?: string | null;
 };
 
 export async function login(email: string, password: string) {
@@ -33,6 +34,7 @@ export async function login(email: string, password: string) {
     email: user.email,
     name: user.name,
     role: user.role,
+    stylistId: user.stylistId,
   } satisfies SessionUser)
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime("14d")
@@ -71,4 +73,36 @@ export async function requireSession() {
   const session = await getSession();
   if (!session) throw new Error("UNAUTHORIZED");
   return session;
+}
+
+export async function requireAdmin() {
+  const session = await requireSession();
+  if (session.role !== "ADMIN" && session.role !== "FRONT_DESK") {
+    throw new Error("FORBIDDEN");
+  }
+  return session;
+}
+
+export async function requireStylist() {
+  const session = await requireSession();
+  if (session.role !== "STYLIST" || !session.stylistId) {
+    throw new Error("FORBIDDEN");
+  }
+  return session as SessionUser & { stylistId: string };
+}
+
+/** Admin managing any stylist in salon, or stylist managing self */
+export async function canManageStylist(stylistId: string) {
+  const session = await getSession();
+  if (!session) return null;
+  if ((session.role === "ADMIN" || session.role === "FRONT_DESK") && session.salonId) {
+    const stylist = await prisma.stylist.findFirst({
+      where: { id: stylistId, salonId: session.salonId },
+    });
+    if (stylist) return session;
+  }
+  if (session.role === "STYLIST" && session.stylistId === stylistId) {
+    return session;
+  }
+  return null;
 }

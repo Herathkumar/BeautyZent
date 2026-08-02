@@ -25,6 +25,8 @@ type Salon = {
   address: string | null;
 };
 
+const STEPS = ["Service", "Stylist", "Time", "Details"] as const;
+
 export function BookingWizard({ slug }: { slug: string }) {
   const [salon, setSalon] = useState<Salon | null>(null);
   const [services, setServices] = useState<Service[]>([]);
@@ -77,6 +79,14 @@ export function BookingWizard({ slug }: { slug: string }) {
       .catch(() => setSlots([]));
   }, [slug, serviceId, stylistId, date]);
 
+  const activeStep = !serviceId
+    ? 0
+    : !stylistId
+      ? 1
+      : !startsAt
+        ? 2
+        : 3;
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
@@ -109,36 +119,88 @@ export function BookingWizard({ slug }: { slug: string }) {
     }
   }
 
-  if (loading) return <p className="text-muted">Loading booking…</p>;
+  if (loading) {
+    return <p className="py-12 text-center text-muted">Loading booking…</p>;
+  }
+
   if (done) {
     return (
-      <div className="rounded-3xl border border-ink/10 bg-cream p-8 shadow-lg">
-        <p className="text-xs font-semibold tracking-[0.18em] text-cocoa uppercase">Confirmed</p>
-        <h2 className="mt-2 font-[family-name:var(--font-display)] text-3xl">You&apos;re booked</h2>
-        <p className="mt-4 text-muted">
+      <div className="book-card rounded-3xl p-8 text-center shadow-[0_20px_60px_rgba(0,0,0,0.3)]">
+        <p className="text-xs font-semibold tracking-[0.22em] text-champagne uppercase">
+          Confirmed
+        </p>
+        <h2 className="mt-3 font-[family-name:var(--font-display)] text-4xl">
+          You&apos;re booked
+        </h2>
+        <p className="mx-auto mt-4 max-w-md text-lg text-muted">
           {done.service} with {done.stylist}
           <br />
-          {new Date(done.startsAt).toLocaleString("en-CA", {
-            weekday: "long",
-            month: "long",
-            day: "numeric",
-            hour: "numeric",
-            minute: "2-digit",
-          })}
+          <span className="mt-2 inline-block text-[#f2c4b0]">
+            {new Date(done.startsAt).toLocaleString("en-CA", {
+              weekday: "long",
+              month: "long",
+              day: "numeric",
+              hour: "numeric",
+              minute: "2-digit",
+            })}
+          </span>
         </p>
-        {salon?.phone && (
-          <p className="mt-4 text-sm text-muted">
-            Questions? Call <a className="font-medium text-cocoa" href={`tel:${salon.phone}`}>{salon.phone}</a>
+        {salon?.phone ? (
+          <p className="mt-6 text-sm text-muted">
+            Questions?{" "}
+            <a className="font-semibold text-champagne" href={`tel:${salon.phone}`}>
+              Call {salon.phone}
+            </a>
           </p>
-        )}
+        ) : null}
+        <p className="mt-4 text-xs text-muted">
+          See you at the salon — we&apos;ll have your chair ready.
+        </p>
+
+        <div className="mt-8 grid gap-3 sm:grid-cols-2">
+          <button
+            type="button"
+            className="btn-solid rounded-2xl px-5 py-3.5 text-sm font-semibold"
+            onClick={() => {
+              setDone(null);
+              setServiceId("");
+              setStylistId("");
+              setStartsAt("");
+              setNotes("");
+              setError("");
+            }}
+          >
+            Book another
+          </button>
+          <a
+            href="https://www.fhsalon.ca"
+            className="rounded-2xl border border-[rgba(232,180,162,0.4)] px-5 py-3.5 text-sm font-semibold text-[#f2c4b0] transition hover:bg-[rgba(232,180,162,0.12)]"
+          >
+            Visit our website
+          </a>
+        </div>
       </div>
     );
   }
 
   return (
     <form onSubmit={submit} className="space-y-8">
+      <div className="flex flex-wrap gap-2">
+        {STEPS.map((label, i) => (
+          <span
+            key={label}
+            className={`book-step ${
+              i === activeStep ? "is-active" : i < activeStep ? "is-done" : ""
+            }`}
+          >
+            <span aria-hidden>{i < activeStep ? "✓" : i + 1}</span>
+            {label}
+          </span>
+        ))}
+      </div>
+
       <section className="space-y-3">
-        <h2 className="font-[family-name:var(--font-display)] text-2xl">1. Choose a service</h2>
+        <h2 className="font-[family-name:var(--font-display)] text-2xl">Choose a service</h2>
         <div className="grid gap-3">
           {services.map((s) => (
             <button
@@ -149,27 +211,29 @@ export function BookingWizard({ slug }: { slug: string }) {
                 setStylistId("");
                 setStartsAt("");
               }}
-              className={`rounded-2xl border px-4 py-3 text-left transition ${
-                serviceId === s.id
-                  ? "border-ink bg-ink text-cream"
-                  : "border-ink/15 bg-cream hover:border-ink/40"
+              className={`book-card rounded-2xl px-4 py-4 text-left ${
+                serviceId === s.id ? "is-selected" : ""
               }`}
             >
               <div className="flex items-baseline justify-between gap-3">
-                <span className="font-medium">{s.name}</span>
-                <span className="text-sm opacity-80">{formatCad(s.priceCents)}</span>
+                <span className="text-lg font-semibold">{s.name}</span>
+                <span className="text-sm text-champagne">{formatCad(s.priceCents)}</span>
               </div>
-              <p className={`mt-1 text-sm ${serviceId === s.id ? "text-cream/75" : "text-muted"}`}>
-                {s.durationMin} min · {s.category === "WOMEN" ? "Women" : s.category === "MEN" ? "Men" : "Service"}
+              <p className="mt-1 text-sm text-muted">
+                {s.durationMin} min ·{" "}
+                {s.category === "WOMEN" ? "Women" : s.category === "MEN" ? "Men" : "Service"}
               </p>
+              {s.description ? (
+                <p className="mt-2 text-sm text-white/65">{s.description}</p>
+              ) : null}
             </button>
           ))}
         </div>
       </section>
 
-      {serviceId && (
+      {serviceId ? (
         <section className="space-y-3">
-          <h2 className="font-[family-name:var(--font-display)] text-2xl">2. Choose your stylist</h2>
+          <h2 className="font-[family-name:var(--font-display)] text-2xl">Choose your stylist</h2>
           <div className="grid gap-3 sm:grid-cols-2">
             {filteredStylists.map((s) => (
               <button
@@ -179,33 +243,27 @@ export function BookingWizard({ slug }: { slug: string }) {
                   setStylistId(s.id);
                   setStartsAt("");
                 }}
-                className={`rounded-2xl border px-4 py-3 text-left ${
-                  stylistId === s.id
-                    ? "border-ink bg-ink text-cream"
-                    : "border-ink/15 bg-cream hover:border-ink/40"
+                className={`book-card rounded-2xl px-4 py-4 text-left ${
+                  stylistId === s.id ? "is-selected" : ""
                 }`}
               >
                 <div className="flex items-center gap-2">
                   <span
-                    className="inline-block h-3 w-3 rounded-full"
+                    className="inline-block h-3 w-3 rounded-full ring-1 ring-[#f2c4b0]/50"
                     style={{ background: s.color }}
                   />
-                  <span className="font-medium">{s.name}</span>
+                  <span className="font-semibold">{s.name}</span>
                 </div>
-                {s.bio && (
-                  <p className={`mt-1 text-sm ${stylistId === s.id ? "text-cream/75" : "text-muted"}`}>
-                    {s.bio}
-                  </p>
-                )}
+                {s.bio ? <p className="mt-2 text-sm text-muted">{s.bio}</p> : null}
               </button>
             ))}
           </div>
         </section>
-      )}
+      ) : null}
 
-      {stylistId && (
+      {stylistId ? (
         <section className="space-y-3">
-          <h2 className="font-[family-name:var(--font-display)] text-2xl">3. Pick a time</h2>
+          <h2 className="font-[family-name:var(--font-display)] text-2xl">Pick a time</h2>
           <input
             type="date"
             value={date}
@@ -214,19 +272,19 @@ export function BookingWizard({ slug }: { slug: string }) {
               setDate(e.target.value);
               setStartsAt("");
             }}
-            className="w-full rounded-xl border border-ink/15 bg-cream px-3 py-2"
+            className="w-full rounded-2xl border border-ink/15 px-4 py-3"
           />
           <div className="flex flex-wrap gap-2">
-            {slots.length === 0 && (
+            {slots.length === 0 ? (
               <p className="text-sm text-muted">No open slots this day. Try another date.</p>
-            )}
+            ) : null}
             {slots.map((slot) => (
               <button
                 key={slot}
                 type="button"
                 onClick={() => setStartsAt(slot)}
-                className={`rounded-full px-3 py-1.5 text-sm ${
-                  startsAt === slot ? "bg-ink text-cream" : "border border-ink/20 bg-cream"
+                className={`book-slot rounded-full px-4 py-2.5 text-sm ${
+                  startsAt === slot ? "is-selected" : ""
                 }`}
               >
                 {new Date(slot).toLocaleTimeString("en-CA", {
@@ -237,40 +295,65 @@ export function BookingWizard({ slug }: { slug: string }) {
             ))}
           </div>
         </section>
-      )}
+      ) : null}
 
-      {startsAt && (
+      {startsAt ? (
         <section className="space-y-3">
-          <h2 className="font-[family-name:var(--font-display)] text-2xl">4. Your details</h2>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="grid gap-1 text-sm">
+          <h2 className="font-[family-name:var(--font-display)] text-2xl">Your details</h2>
+          <div className="book-card grid gap-3 rounded-2xl p-4 sm:grid-cols-2">
+            <label className="grid gap-1.5 text-sm">
               Name
-              <input required value={name} onChange={(e) => setName(e.target.value)} className="rounded-xl border border-ink/15 bg-cream px-3 py-2" />
+              <input
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="rounded-xl border px-3 py-2.5"
+                autoComplete="name"
+              />
             </label>
-            <label className="grid gap-1 text-sm">
+            <label className="grid gap-1.5 text-sm">
               Phone
-              <input required value={phone} onChange={(e) => setPhone(e.target.value)} className="rounded-xl border border-ink/15 bg-cream px-3 py-2" />
+              <input
+                required
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="rounded-xl border px-3 py-2.5"
+                autoComplete="tel"
+                inputMode="tel"
+              />
             </label>
-            <label className="grid gap-1 text-sm sm:col-span-2">
+            <label className="grid gap-1.5 text-sm sm:col-span-2">
               Email (optional)
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="rounded-xl border border-ink/15 bg-cream px-3 py-2" />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="rounded-xl border px-3 py-2.5"
+                autoComplete="email"
+              />
             </label>
-            <label className="grid gap-1 text-sm sm:col-span-2">
-              Notes (optional)
-              <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className="rounded-xl border border-ink/15 bg-cream px-3 py-2" />
+            <label className="grid gap-1.5 text-sm sm:col-span-2">
+              Notes for your stylist (optional)
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={3}
+                placeholder="e.g. haircut with head massage"
+                className="rounded-xl border px-3 py-2.5"
+              />
             </label>
           </div>
           <button
             type="submit"
             disabled={submitting}
-            className="rounded-full bg-ink px-5 py-3 font-medium text-cream hover:bg-cocoa disabled:opacity-60"
+            className="btn-solid w-full rounded-2xl px-5 py-4 text-base font-semibold disabled:opacity-60 sm:w-auto"
           >
             {submitting ? "Booking…" : "Confirm reservation"}
           </button>
         </section>
-      )}
+      ) : null}
 
-      {error && <p className="text-sm text-red-700">{error}</p>}
+      {error ? <p className="text-sm text-[#f5a8a8]">{error}</p> : null}
     </form>
   );
 }

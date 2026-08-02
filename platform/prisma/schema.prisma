@@ -36,10 +36,13 @@ model User {
   email        String
   passwordHash String
   name         String
-  role         String   @default("ADMIN") // ADMIN | FRONT_DESK
+  role         String   @default("ADMIN") // ADMIN | FRONT_DESK | STYLIST
+  /// When role is STYLIST, links this login to a stylist profile
+  stylistId    String?  @unique
   createdAt    DateTime @default(now())
 
-  salon Salon @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  salon   Salon    @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  stylist Stylist? @relation(fields: [stylistId], references: [id], onDelete: SetNull)
 
   @@unique([salonId, email])
 }
@@ -59,8 +62,42 @@ model Stylist {
   updatedAt            DateTime  @updatedAt
 
   salon        Salon         @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  user         User?
   services     StylistService[]
   appointments Appointment[]
+  weekHours    StylistWeekHour[]
+  blocks       StylistBlock[]
+}
+
+/// Weekly working hours per stylist (0 = Sunday … 6 = Saturday)
+model StylistWeekHour {
+  id         String  @id @default(cuid())
+  stylistId  String
+  dayOfWeek  Int
+  startHour  Int     @default(9)
+  startMinute Int    @default(0)
+  endHour    Int     @default(18)
+  endMinute  Int     @default(0)
+  isOff      Boolean @default(false)
+
+  stylist Stylist @relation(fields: [stylistId], references: [id], onDelete: Cascade)
+
+  @@unique([stylistId, dayOfWeek])
+}
+
+/// Leave, vacation, lunch, or blocked time — hidden from client booking
+model StylistBlock {
+  id        String   @id @default(cuid())
+  stylistId String
+  startsAt  DateTime
+  endsAt    DateTime
+  reason    String   @default("LEAVE") // LEAVE | BREAK | BLOCKED | OTHER
+  note      String?
+  createdAt DateTime @default(now())
+
+  stylist Stylist @relation(fields: [stylistId], references: [id], onDelete: Cascade)
+
+  @@index([stylistId, startsAt])
 }
 
 model Service {

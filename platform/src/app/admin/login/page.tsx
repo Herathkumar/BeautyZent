@@ -20,24 +20,36 @@ export default function AdminLoginPage() {
       body: JSON.stringify({ email, password }),
     });
     setLoading(false);
+    const data = await res.json();
     if (!res.ok) {
-      const data = await res.json();
       setError(data.error || "Login failed");
       return;
     }
-    router.push("/admin");
+    if (data.user?.role === "STYLIST") {
+      router.push("/stylist");
+    } else {
+      router.push("/admin");
+    }
     router.refresh();
   }
 
   return (
     <main className="mx-auto max-w-md">
-      <h1 className="font-[family-name:var(--font-display)] text-3xl">Admin login</h1>
+      <p className="text-xs font-semibold tracking-[0.2em] text-[#c9a87c] uppercase">
+        Salon control
+      </p>
+      <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl text-[#fffaf6]">
+        Admin login
+      </h1>
       <p className="mt-2 text-sm text-muted">Pilot: admin@fhsalon.ca / demo1234</p>
-      <form onSubmit={onSubmit} className="mt-6 grid gap-3">
+      <form
+        onSubmit={onSubmit}
+        className="mt-6 grid gap-3 rounded-2xl border border-[#c9a87c]/30 bg-[#2a211c] p-5"
+      >
         <label className="grid gap-1 text-sm">
           Email
           <input
-            className="rounded-xl border border-ink/15 bg-cream px-3 py-2"
+            className="rounded-xl border border-ink/15 px-3 py-2"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
@@ -46,7 +58,7 @@ export default function AdminLoginPage() {
           Password
           <input
             type="password"
-            className="rounded-xl border border-ink/15 bg-cream px-3 py-2"
+            className="rounded-xl border border-ink/15 px-3 py-2"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
@@ -55,7 +67,7 @@ export default function AdminLoginPage() {
         <button
           type="submit"
           disabled={loading}
-          className="rounded-full bg-ink px-5 py-3 font-medium text-cream hover:bg-cocoa"
+          className="btn-solid rounded-full px-5 py-3 font-medium"
         >
           {loading ? "Signing in…" : "Sign in"}
         </button>
