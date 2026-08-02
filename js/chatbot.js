@@ -1,73 +1,49 @@
 (function () {
-  const ADMIN_WHATSAPP = "19059292625";
-  const ADMIN_PHONE_DISPLAY = "+1 905 929 2625";
+  const SALON_PHONE = "19059202277";
+  const SALON_PHONE_DISPLAY = "905-920-2277";
+  const SALON_WHATSAPP = "19059202277";
 
   const copy = {
-    en: {
-      launcher: "Chat with us",
-      title: "ZentraLab Assistant",
-      subtitle: "Usually replies instantly",
-      placeholder: "Type your message...",
-      send: "Send",
-      greeting:
-        "Hi! 👋 I'm the ZentraLab assistant. We offer modern AI-powered IT services — faster and more cost-effective for small businesses.\n\nWhat would you like help with?",
-      askName: "Great. What's your name?",
-      askBusiness: "Thanks, {name}! What's your business name?",
-      askPhone: "Got it. What's the best phone number to reach you? (or type skip)",
-      askDetails: "Tell me a bit more about what you need — for example POS issues, Wi-Fi, email setup, or a new location.",
-      summary:
-        "Perfect. Here's what I have:\n\n• Name: {name}\n• Business: {business}\n• Need: {need}\n• Topic: {topic}\n• Phone: {phone}\n\nI can send this to our team on WhatsApp so they can reply to you directly.",
-      sendWhatsApp: "Send to WhatsApp",
-      startOver: "Start over",
-      directWhatsApp: "Chat on WhatsApp now",
-      callUs: "Call us",
-      thanks:
-        "Opening WhatsApp with your message… If it doesn't open, message us at " +
-        ADMIN_PHONE_DISPLAY +
-        ".",
-      skipped: "Not provided",
-      topics: {
-        managed: "Managed IT support",
-        network: "Network / Wi-Fi",
-        pos: "POS / Restaurant tech",
-        cloud: "Cloud & Email",
-        security: "Cybersecurity",
-        quote: "Get a quote",
-        other: "Something else"
-      }
+    launcher: "Chat with us",
+    title: "Farzana Hair Salon",
+    subtitle: "We usually reply instantly",
+    placeholder: "Type your message...",
+    send: "Send",
+    greeting:
+      "Hi! I'm the Farzana Hair Salon assistant.\n\nI can help with services, location, hours, and booking. Online reservations are coming soon — for now I can connect you by phone or WhatsApp.\n\nWhat would you like?",
+    askName: "Great. What's your name?",
+    askService: "Thanks, {name}! Which service — women's cut, men's cut, or something else?",
+    askWhen: "When would you like to come in? (day and time, or say flexible)",
+    askPhone: "Best phone number to reach you? (or type skip)",
+    summary:
+      "Perfect. Here's what I have:\n\n• Name: {name}\n• Service: {service}\n• When: {when}\n• Phone: {phone}\n\nI can open WhatsApp so the salon can confirm your appointment.",
+    sendWhatsApp: "Send on WhatsApp",
+    startOver: "Start over",
+    callUs: "Call salon",
+    thanks:
+      "Opening WhatsApp with your request… If it doesn't open, call us at " +
+      SALON_PHONE_DISPLAY +
+      ".",
+    skipped: "Not provided",
+    topics: {
+      book: "Book a haircut",
+      women: "Women's cuts",
+      men: "Men's cuts",
+      location: "Location & parking",
+      hours: "Hours",
+      other: "Something else"
     },
-    ta: {
-      launcher: "எங்களுடன் அரட்டை",
-      title: "ZentraLab Assistant",
-      subtitle: "பொதுவாக உடனே பதில்",
-      placeholder: "உங்கள் செய்தியை எழுதுங்கள்...",
-      send: "அனுப்பு",
-      greeting:
-        "வணக்கம்! 👋 நான் ZentraLab assistant. நவீன AI-powered IT சேவைகள் — வேகமானது, cost-effective.\n\nஎதில் உதவி வேண்டும்?",
-      askName: "சரி. உங்கள் பெயர் என்ன?",
-      askBusiness: "நன்றி, {name}! உங்கள் business பெயர் என்ன?",
-      askPhone: "சரி. உங்களை அடைய சிறந்த phone number? (அல்லது skip என எழுதுங்கள்)",
-      askDetails: "உங்களுக்கு என்ன தேவை என்பதை இன்னும் சொல்லுங்கள் — எ.கா. POS, Wi-Fi, email setup, அல்லது புதிய location.",
-      summary:
-        "சரி. இதோ details:\n\n• பெயர்: {name}\n• Business: {business}\n• தேவை: {need}\n• Topic: {topic}\n• Phone: {phone}\n\nஇதை எங்கள் team-க்கு WhatsApp-ல் அனுப்பலாம் — அவர்கள் நேரடியாக பதிலளிப்பார்கள்.",
-      sendWhatsApp: "WhatsApp-க்கு அனுப்பு",
-      startOver: "மீண்டும் தொடங்கு",
-      directWhatsApp: "இப்போதே WhatsApp-ல் அரட்டை",
-      callUs: "எங்களை அழைக்கவும்",
-      thanks:
-        "WhatsApp உங்கள் message-உடன் திறக்கிறது… திறக்கவில்லை என்றால் " +
-        ADMIN_PHONE_DISPLAY +
-        " என்ற எண்ணுக்கு message அனுப்புங்கள்.",
-      skipped: "கொடுக்கப்படவில்லை",
-      topics: {
-        managed: "Managed IT support",
-        network: "Network / Wi-Fi",
-        pos: "POS / Restaurant tech",
-        cloud: "Cloud & Email",
-        security: "Cybersecurity",
-        quote: "மதிப்பீடு பெறுங்கள்",
-        other: "வேறு ஏதாவது"
-      }
+    answers: {
+      women:
+        "We offer women's haircuts, trims, and restyles shaped for your face and lifestyle.\n\nPricing is confirmed when you book. Want me to help you request an appointment?",
+      men:
+        "We offer men's haircuts, fades/tapers, and tidy finishes — clean and easy to maintain.\n\nWant me to help you request an appointment?",
+      location:
+        "We're at 8 Taywood Crt, Dundas, ON L9H 7A2.\n\nEasy to find on Taywood Court. Open in Maps from our Visit page, or I can help you book a visit.",
+      hours:
+        "Please call " +
+        SALON_PHONE_DISPLAY +
+        " for today's hours and openings — they can confirm the best time for you.\n\nWould you like to request a booking?"
     }
   };
 
@@ -76,19 +52,10 @@
     topic: "",
     topicLabel: "",
     name: "",
-    business: "",
-    phone: "",
-    need: ""
+    service: "",
+    when: "",
+    phone: ""
   };
-
-  function lang() {
-    const saved = localStorage.getItem("zentralab-lang");
-    return saved === "ta" ? "ta" : "en";
-  }
-
-  function t() {
-    return copy[lang()];
-  }
 
   function el(html) {
     const template = document.createElement("template");
@@ -98,27 +65,27 @@
 
   function createWidget() {
     const root = el(`
-      <div class="zl-chat-root" id="zl-chat-root">
-        <button type="button" class="zl-chat-launcher" id="zl-chat-launcher" aria-label="Open chat">
-          <span class="zl-chat-launcher-icon">💬</span>
-          <span class="zl-chat-launcher-text" id="zl-chat-launcher-text">Chat with us</span>
+      <div class="fh-chat-root" id="fh-chat-root">
+        <button type="button" class="fh-chat-launcher" id="fh-chat-launcher" aria-label="Open chat">
+          <span class="fh-chat-launcher-icon" aria-hidden="true">💬</span>
+          <span class="fh-chat-launcher-text" id="fh-chat-launcher-text">Chat with us</span>
         </button>
-        <div class="zl-chat-panel" id="zl-chat-panel" role="dialog" aria-label="Chat">
-          <div class="zl-chat-header">
-            <div class="zl-chat-header-info">
-              <div class="zl-chat-avatar">ZL</div>
+        <div class="fh-chat-panel" id="fh-chat-panel" role="dialog" aria-label="Salon chat">
+          <div class="fh-chat-header">
+            <div class="fh-chat-header-info">
+              <div class="fh-chat-avatar">FH</div>
               <div>
-                <h3 id="zl-chat-title">ZentraLab Assistant</h3>
-                <p id="zl-chat-subtitle">Usually replies instantly</p>
+                <h3 id="fh-chat-title">Farzana Hair Salon</h3>
+                <p id="fh-chat-subtitle">We usually reply instantly</p>
               </div>
             </div>
-            <button type="button" class="zl-chat-close" id="zl-chat-close" aria-label="Close">×</button>
+            <button type="button" class="fh-chat-close" id="fh-chat-close" aria-label="Close">×</button>
           </div>
-          <div class="zl-chat-messages" id="zl-chat-messages"></div>
-          <div class="zl-quick-replies" id="zl-quick-replies"></div>
-          <form class="zl-chat-input-row" id="zl-chat-form">
-            <input type="text" class="zl-chat-input" id="zl-chat-input" autocomplete="off" />
-            <button type="submit" class="zl-chat-send" id="zl-chat-send">Send</button>
+          <div class="fh-chat-messages" id="fh-chat-messages"></div>
+          <div class="fh-quick-replies" id="fh-quick-replies"></div>
+          <form class="fh-chat-input-row" id="fh-chat-form">
+            <input type="text" class="fh-chat-input" id="fh-chat-input" autocomplete="off" />
+            <button type="submit" class="fh-chat-send" id="fh-chat-send">Send</button>
           </form>
         </div>
       </div>
@@ -128,26 +95,28 @@
   }
 
   function messagesEl() {
-    return document.getElementById("zl-chat-messages");
+    return document.getElementById("fh-chat-messages");
   }
 
   function quickEl() {
-    return document.getElementById("zl-quick-replies");
+    return document.getElementById("fh-quick-replies");
   }
 
   function addMessage(text, type) {
     const msg = document.createElement("div");
-    msg.className = "zl-msg zl-msg-" + type;
+    msg.className = "fh-msg fh-msg-" + type;
     msg.textContent = text;
     messagesEl().appendChild(msg);
     messagesEl().scrollTop = messagesEl().scrollHeight;
   }
 
   function showTyping(show) {
-    const existing = messagesEl().querySelector(".zl-typing");
+    const existing = messagesEl().querySelector(".fh-typing");
     if (existing) existing.remove();
     if (!show) return;
-    const typing = el('<div class="zl-typing" aria-hidden="true"><span></span><span></span><span></span></div>');
+    const typing = el(
+      '<div class="fh-typing" aria-hidden="true"><span></span><span></span><span></span></div>'
+    );
     messagesEl().appendChild(typing);
     messagesEl().scrollTop = messagesEl().scrollHeight;
   }
@@ -158,7 +127,7 @@
       showTyping(false);
       addMessage(text, "bot");
       if (after) after();
-    }, 450);
+    }, 420);
   }
 
   function clearQuick() {
@@ -170,7 +139,7 @@
     items.forEach((item) => {
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "zl-chip" + (item.whatsapp ? " zl-chip-whatsapp" : "");
+      btn.className = "fh-chip" + (item.primary ? " fh-chip-primary" : "");
       btn.textContent = item.label;
       btn.addEventListener("click", item.onClick);
       quickEl().appendChild(btn);
@@ -182,64 +151,99 @@
     state.topic = "";
     state.topicLabel = "";
     state.name = "";
-    state.business = "";
+    state.service = "";
+    state.when = "";
     state.phone = "";
-    state.need = "";
   }
 
   function buildWhatsAppText() {
-    const c = t();
     return [
-      "New website chat lead — ZentraLab",
+      "New booking request — Farzana Hair Salon",
       "",
       "Name: " + state.name,
-      "Business: " + state.business,
-      "Phone: " + (state.phone || c.skipped),
-      "Topic: " + state.topicLabel,
-      "Need: " + state.need,
+      "Service: " + state.service,
+      "When: " + state.when,
+      "Phone: " + (state.phone || copy.skipped),
       "",
-      "Source: zentralab.ca website chatbot"
+      "Source: fhsalon.ca website chatbot"
     ].join("\n");
   }
 
   function openWhatsApp(text) {
-    const url = "https://wa.me/" + ADMIN_WHATSAPP + "?text=" + encodeURIComponent(text);
+    const url =
+      "https://wa.me/" + SALON_WHATSAPP + "?text=" + encodeURIComponent(text);
     window.open(url, "_blank", "noopener,noreferrer");
   }
 
+  function offerBookingFollowUp() {
+    addChips([
+      {
+        label: copy.topics.book,
+        primary: true,
+        onClick: () => startBooking()
+      },
+      {
+        label: copy.callUs,
+        onClick: () => {
+          window.location.href = "tel:+" + SALON_PHONE;
+        }
+      },
+      {
+        label: copy.startOver,
+        onClick: () => startConversation(true)
+      }
+    ]);
+  }
+
+  function startBooking() {
+    state.topic = "book";
+    state.topicLabel = copy.topics.book;
+    addMessage(copy.topics.book, "user");
+    clearQuick();
+    state.step = "name";
+    botSay(copy.askName);
+  }
+
   function showTopicChips() {
-    const c = t();
     const topics = [
-      ["managed", c.topics.managed],
-      ["network", c.topics.network],
-      ["pos", c.topics.pos],
-      ["cloud", c.topics.cloud],
-      ["security", c.topics.security],
-      ["quote", c.topics.quote],
-      ["other", c.topics.other]
+      ["book", copy.topics.book],
+      ["women", copy.topics.women],
+      ["men", copy.topics.men],
+      ["location", copy.topics.location],
+      ["hours", copy.topics.hours],
+      ["other", copy.topics.other]
     ];
 
     addChips(
       topics.map(([key, label]) => ({
         label,
+        primary: key === "book",
         onClick: () => {
           state.topic = key;
           state.topicLabel = label;
           addMessage(label, "user");
           clearQuick();
-          state.step = "name";
-          botSay(c.askName);
+
+          if (key === "book") {
+            state.step = "name";
+            botSay(copy.askName);
+            return;
+          }
+
+          if (key === "women" || key === "men" || key === "location" || key === "hours") {
+            state.step = "topic";
+            botSay(copy.answers[key], offerBookingFollowUp);
+            return;
+          }
+
+          state.step = "other";
+          botSay("Tell me what you need — I'll do my best to help, or connect you with the salon.");
         }
       })).concat([
         {
-          label: c.directWhatsApp,
-          whatsapp: true,
+          label: copy.callUs,
           onClick: () => {
-            openWhatsApp(
-              lang() === "ta"
-                ? "வணக்கம் ZentraLab, எனக்கு IT help தேவை."
-                : "Hi ZentraLab, I need help with IT for my small business."
-            );
+            window.location.href = "tel:+" + SALON_PHONE;
           }
         }
       ])
@@ -247,37 +251,36 @@
   }
 
   function showFinalActions() {
-    const c = t();
     addChips([
       {
-        label: c.sendWhatsApp,
-        whatsapp: true,
+        label: copy.sendWhatsApp,
+        primary: true,
         onClick: () => {
           openWhatsApp(buildWhatsAppText());
-          addMessage(c.thanks, "system");
+          addMessage(copy.thanks, "system");
           clearQuick();
           addChips([
             {
-              label: c.startOver,
+              label: copy.startOver,
               onClick: () => startConversation(true)
             },
             {
-              label: c.callUs,
+              label: copy.callUs,
               onClick: () => {
-                window.location.href = "tel:+19059292625";
+                window.location.href = "tel:+" + SALON_PHONE;
               }
             }
           ]);
         }
       },
       {
-        label: c.startOver,
+        label: copy.startOver,
         onClick: () => startConversation(true)
       },
       {
-        label: c.callUs,
+        label: copy.callUs,
         onClick: () => {
-          window.location.href = "tel:+19059292625";
+          window.location.href = "tel:+" + SALON_PHONE;
         }
       }
     ]);
@@ -286,67 +289,86 @@
   function handleUserText(text) {
     const value = text.trim();
     if (!value) return;
-    const c = t();
     addMessage(value, "user");
-    document.getElementById("zl-chat-input").value = "";
+    document.getElementById("fh-chat-input").value = "";
 
-    if (state.step === "topic") {
-      state.topic = "other";
-      state.topicLabel = c.topics.other;
-      state.need = value;
-      state.step = "name";
-      clearQuick();
-      botSay(c.askName);
+    if (state.step === "topic" || state.step === "other") {
+      const lower = value.toLowerCase();
+      if (/book|appoint|reserv|schedule/.test(lower)) {
+        state.step = "name";
+        botSay(copy.askName);
+        return;
+      }
+      if (/women|lady|ladies|female/.test(lower)) {
+        botSay(copy.answers.women, offerBookingFollowUp);
+        return;
+      }
+      if (/men|male|fade|beard/.test(lower)) {
+        botSay(copy.answers.men, offerBookingFollowUp);
+        return;
+      }
+      if (/where|address|location|map|park/.test(lower)) {
+        botSay(copy.answers.location, offerBookingFollowUp);
+        return;
+      }
+      if (/hour|open|close|time/.test(lower)) {
+        botSay(copy.answers.hours, offerBookingFollowUp);
+        return;
+      }
+      botSay(
+        "Thanks! For that, the quickest answer is to call " +
+          SALON_PHONE_DISPLAY +
+          ", or I can help you request a booking.",
+        offerBookingFollowUp
+      );
       return;
     }
 
     if (state.step === "name") {
       state.name = value;
-      state.step = "business";
-      botSay(c.askBusiness.replace("{name}", state.name));
+      state.step = "service";
+      botSay(copy.askService.replace("{name}", state.name));
       return;
     }
 
-    if (state.step === "business") {
-      state.business = value;
-      state.step = "details";
-      botSay(c.askDetails);
+    if (state.step === "service") {
+      state.service = value;
+      state.step = "when";
+      botSay(copy.askWhen);
       return;
     }
 
-    if (state.step === "details") {
-      state.need = state.need ? state.need + " | " + value : value;
+    if (state.step === "when") {
+      state.when = value;
       state.step = "phone";
-      botSay(c.askPhone);
+      botSay(copy.askPhone);
       return;
     }
 
     if (state.step === "phone") {
-      const skip = /^(skip|n\/a|na|no|none|-)$/i.test(value) || value === "தவிர்" || value === "skip";
+      const skip = /^(skip|n\/a|na|no|none|-)$/i.test(value);
       state.phone = skip ? "" : value;
       state.step = "done";
-      const summary = c.summary
+      const summary = copy.summary
         .replace("{name}", state.name)
-        .replace("{business}", state.business)
-        .replace("{need}", state.need)
-        .replace("{topic}", state.topicLabel)
-        .replace("{phone}", state.phone || c.skipped);
+        .replace("{service}", state.service)
+        .replace("{when}", state.when)
+        .replace("{phone}", state.phone || copy.skipped);
       botSay(summary, showFinalActions);
     }
   }
 
   function refreshLabels() {
-    const c = t();
-    const launcherText = document.getElementById("zl-chat-launcher-text");
-    const title = document.getElementById("zl-chat-title");
-    const subtitle = document.getElementById("zl-chat-subtitle");
-    const input = document.getElementById("zl-chat-input");
-    const send = document.getElementById("zl-chat-send");
-    if (launcherText) launcherText.textContent = c.launcher;
-    if (title) title.textContent = c.title;
-    if (subtitle) subtitle.textContent = c.subtitle;
-    if (input) input.placeholder = c.placeholder;
-    if (send) send.textContent = c.send;
+    const launcherText = document.getElementById("fh-chat-launcher-text");
+    const title = document.getElementById("fh-chat-title");
+    const subtitle = document.getElementById("fh-chat-subtitle");
+    const input = document.getElementById("fh-chat-input");
+    const send = document.getElementById("fh-chat-send");
+    if (launcherText) launcherText.textContent = copy.launcher;
+    if (title) title.textContent = copy.title;
+    if (subtitle) subtitle.textContent = copy.subtitle;
+    if (input) input.placeholder = copy.placeholder;
+    if (send) send.textContent = copy.send;
   }
 
   function startConversation(clear) {
@@ -354,47 +376,33 @@
     refreshLabels();
     if (clear) messagesEl().innerHTML = "";
     clearQuick();
-    botSay(t().greeting, showTopicChips);
+    botSay(copy.greeting, showTopicChips);
   }
 
   function openPanel() {
-    document.getElementById("zl-chat-panel").classList.add("open");
-    document.getElementById("zl-chat-launcher").classList.add("hidden");
+    document.getElementById("fh-chat-panel").classList.add("open");
+    document.getElementById("fh-chat-launcher").classList.add("hidden");
     if (!messagesEl().children.length) {
       startConversation(false);
     } else {
       refreshLabels();
     }
-    setTimeout(() => document.getElementById("zl-chat-input").focus(), 100);
+    setTimeout(() => document.getElementById("fh-chat-input").focus(), 100);
   }
 
   function closePanel() {
-    document.getElementById("zl-chat-panel").classList.remove("open");
-    document.getElementById("zl-chat-launcher").classList.remove("hidden");
+    document.getElementById("fh-chat-panel").classList.remove("open");
+    document.getElementById("fh-chat-launcher").classList.remove("hidden");
   }
 
   document.addEventListener("DOMContentLoaded", () => {
     createWidget();
     refreshLabels();
-
-    document.getElementById("zl-chat-launcher").addEventListener("click", openPanel);
-    document.getElementById("zl-chat-close").addEventListener("click", closePanel);
-    document.getElementById("zl-chat-form").addEventListener("submit", (e) => {
+    document.getElementById("fh-chat-launcher").addEventListener("click", openPanel);
+    document.getElementById("fh-chat-close").addEventListener("click", closePanel);
+    document.getElementById("fh-chat-form").addEventListener("submit", (e) => {
       e.preventDefault();
-      handleUserText(document.getElementById("zl-chat-input").value);
-    });
-
-    // Keep chatbot labels in sync when language changes
-    document.querySelectorAll(".lang-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        setTimeout(() => {
-          refreshLabels();
-          // If chat is at the topic step with no answers yet, restart in new language
-          if (state.step === "topic" && !state.name) {
-            startConversation(true);
-          }
-        }, 50);
-      });
+      handleUserText(document.getElementById("fh-chat-input").value);
     });
   });
 })();
