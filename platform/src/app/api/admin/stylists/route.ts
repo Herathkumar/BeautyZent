@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getGoogleAuthUrl, isGoogleConfigured } from "@/lib/calendar";
+import { linkStylistToAllServices } from "@/lib/service-links";
 
 export async function GET() {
   const session = await getSession();
@@ -38,5 +39,6 @@ export async function POST(req: Request) {
       active: true,
     },
   });
+  await linkStylistToAllServices(session.salonId, stylist.id);
   return NextResponse.json({ stylist });
 }

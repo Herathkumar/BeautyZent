@@ -234,30 +234,44 @@ export function BookingWizard({ slug }: { slug: string }) {
       {serviceId ? (
         <section className="space-y-3">
           <h2 className="font-[family-name:var(--font-display)] text-2xl">Choose your stylist</h2>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {filteredStylists.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => {
-                  setStylistId(s.id);
-                  setStartsAt("");
-                }}
-                className={`book-card rounded-2xl px-4 py-4 text-left ${
-                  stylistId === s.id ? "is-selected" : ""
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <span
-                    className="inline-block h-3 w-3 rounded-full ring-1 ring-[#f2c4b0]/50"
-                    style={{ background: s.color }}
-                  />
-                  <span className="font-semibold">{s.name}</span>
-                </div>
-                {s.bio ? <p className="mt-2 text-sm text-muted">{s.bio}</p> : null}
-              </button>
-            ))}
-          </div>
+          {filteredStylists.length === 0 ? (
+            <div className="book-card rounded-2xl px-4 py-5 text-sm text-muted">
+              No stylist is set up for this service yet. Please call{" "}
+              {salon?.phone ? (
+                <a className="font-semibold text-champagne" href={`tel:${salon.phone}`}>
+                  {salon.phone}
+                </a>
+              ) : (
+                "the salon"
+              )}{" "}
+              or pick another service.
+            </div>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {filteredStylists.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => {
+                    setStylistId(s.id);
+                    setStartsAt("");
+                  }}
+                  className={`book-card rounded-2xl px-4 py-4 text-left ${
+                    stylistId === s.id ? "is-selected" : ""
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="inline-block h-3 w-3 rounded-full ring-1 ring-[#f2c4b0]/50"
+                      style={{ background: s.color }}
+                    />
+                    <span className="font-semibold">{s.name}</span>
+                  </div>
+                  {s.bio ? <p className="mt-2 text-sm text-muted">{s.bio}</p> : null}
+                </button>
+              ))}
+            </div>
+          )}
         </section>
       ) : null}
 

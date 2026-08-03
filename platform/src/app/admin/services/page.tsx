@@ -10,6 +10,7 @@ type Service = {
   durationMin: number;
   priceCents: number;
   active: boolean;
+  stylistCount?: number;
 };
 
 export default function ServicesAdminPage() {
@@ -18,6 +19,7 @@ export default function ServicesAdminPage() {
   const [category, setCategory] = useState("WOMEN");
   const [durationMin, setDurationMin] = useState(45);
   const [price, setPrice] = useState("40");
+  const [message, setMessage] = useState("");
 
   async function load() {
     const res = await fetch("/api/admin/services");
@@ -27,6 +29,21 @@ export default function ServicesAdminPage() {
     }
     const data = await res.json();
     setServices(data.services || []);
+  }
+
+  async function syncStylists() {
+    const res = await fetch("/api/admin/services", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "syncStylists" }),
+    });
+    const data = await res.json();
+    setMessage(
+      res.ok
+        ? `Linked services to stylists (${data.linked ?? 0} new links). Online booking can continue.`
+        : "Could not sync stylists"
+    );
+    await load();
   }
 
   useEffect(() => {
@@ -64,10 +81,23 @@ export default function ServicesAdminPage() {
 
   return (
     <main className="space-y-8">
-      <div>
-        <h1 className="font-[family-name:var(--font-display)] text-3xl">Services & prices</h1>
-        <p className="text-muted">Update what clients can book online.</p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="font-[family-name:var(--font-display)] text-3xl">Services & prices</h1>
+          <p className="text-muted">
+            New services are offered by all stylists automatically so online booking can continue.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={syncStylists}
+          className="rounded-full border border-ink/20 px-4 py-2 text-sm"
+        >
+          Fix: link all services → stylists
+        </button>
       </div>
+
+      {message ? <p className="text-sm text-champagne">{message}</p> : null}
 
       <form onSubmit={addService} className="grid gap-3 rounded-2xl border border-ink/10 bg-cream p-4 sm:grid-cols-5">
         <input
@@ -113,6 +143,10 @@ export default function ServicesAdminPage() {
               <p className="font-medium">{s.name}</p>
               <p className="text-sm text-muted">
                 {s.category} · {s.durationMin} min · {formatCad(s.priceCents)}
+                {typeof s.stylistCount === "number"
+                  ? ` · ${s.stylistCount} stylist${s.stylistCount === 1 ? "" : "s"}`
+                  : ""}
+                {s.stylistCount === 0 ? " · not bookable online yet" : ""}
                 {!s.active && " · inactive"}
               </p>
             </div>

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { linkServiceToAllStylists, syncAllServiceStylistLinks } from "@/lib/service-links";
 
 export async function GET() {
   const session = await getSession();
@@ -8,14 +9,27 @@ export async function GET() {
   const services = await prisma.service.findMany({
     where: { salonId: session.salonId },
     orderBy: { sortOrder: "asc" },
+    include: { _count: { select: { stylists: true } } },
   });
-  return NextResponse.json({ services });
+  return NextResponse.json({
+    services: services.map((s) => ({
+      ...s,
+      stylistCount: s._count.stylists,
+    })),
+  });
 }
 
 export async function POST(req: Request) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const body = await req.json();
+
+  // Repair: link any orphan services (e.g. created before auto-assign) to all stylists
+  if (body.action === "syncStylists") {
+    const linked = await syncAllServiceStylistLinks(session.salonId);
+    return NextResponse.json({ ok: true, linked });
+  }
+
   const service = await prisma.service.create({
     data: {
       salonId: session.salonId,
@@ -28,6 +42,8 @@ export async function POST(req: Request) {
       sortOrder: Number(body.sortOrder) || 0,
     },
   });
+  // New services must be assigned to stylists or online booking stops after step 1
+  await linkServiceToAllStylists(session.salonId, service.id);
   return NextResponse.json({ service });
 }
 
