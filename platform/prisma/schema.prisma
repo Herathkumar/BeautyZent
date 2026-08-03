@@ -47,19 +47,31 @@ model User {
   @@unique([salonId, email])
 }
 
+/// Used for default avatar when the stylist has not uploaded a selfie yet.
+enum StylistGender {
+  FEMALE
+  MALE
+  UNSPECIFIED
+}
+
 model Stylist {
-  id                   String    @id @default(cuid())
+  id                   String        @id @default(cuid())
   salonId              String
   name                 String
   bio                  String?
-  color                String    @default("#6e4a38")
-  active               Boolean   @default(true)
+  color                String        @default("#6e4a38")
+  gender               StylistGender @default(UNSPECIFIED)
+  /// JPEG/PNG bytes for booking + portal selfie (kept small via client resize).
+  photoData            Bytes?
+  photoMime            String?
+  photoUpdatedAt       DateTime?
+  active               Boolean       @default(true)
   /// Google Calendar OAuth tokens (JSON). When set, bookings sync to phone calendar.
   googleRefreshToken   String?
-  googleCalendarId     String?   @default("primary")
+  googleCalendarId     String?       @default("primary")
   googleConnectedAt    DateTime?
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
 
   salon        Salon         @relation(fields: [salonId], references: [id], onDelete: Cascade)
   user         User?

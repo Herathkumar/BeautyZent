@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { stylistPhotoUrl } from "@/lib/stylist-photo";
 
 export async function GET() {
   const session = await getSession();
@@ -14,6 +15,7 @@ export async function GET() {
   });
   if (!stylist) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+  const hasPhoto = Boolean(stylist.photoUpdatedAt && stylist.photoMime);
   return NextResponse.json({
     user: {
       name: session.name,
@@ -25,6 +27,14 @@ export async function GET() {
       name: stylist.name,
       bio: stylist.bio,
       color: stylist.color,
+      gender: stylist.gender,
+      hasPhoto,
+      photoUrl: stylistPhotoUrl({
+        id: stylist.id,
+        gender: stylist.gender,
+        hasPhoto,
+        photoUpdatedAt: stylist.photoUpdatedAt,
+      }),
       salon: stylist.salon,
     },
   });

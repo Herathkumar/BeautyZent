@@ -8,6 +8,9 @@ type Stylist = {
   name: string;
   bio: string | null;
   color: string;
+  gender: string;
+  photoUrl: string;
+  hasPhoto: boolean;
   active: boolean;
   loginEmail: string | null;
   userId: string | null;
@@ -27,6 +30,7 @@ export default function StylistsAdminPage() {
   const [emailDomain, setEmailDomain] = useState("fhsalon.ca");
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
+  const [gender, setGender] = useState("FEMALE");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [issued, setIssued] = useState<IssuedCredentials | null>(null);
@@ -55,7 +59,7 @@ export default function StylistsAdminPage() {
     const res = await fetch("/api/admin/stylists", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, bio }),
+      body: JSON.stringify({ name, bio, gender }),
     });
     const data = await res.json();
     setSaving(false);
@@ -65,6 +69,7 @@ export default function StylistsAdminPage() {
     }
     setName("");
     setBio("");
+    setGender("FEMALE");
     if (data.credentials) {
       setIssued({
         email: data.credentials.email,
@@ -161,7 +166,7 @@ export default function StylistsAdminPage() {
 
       <form
         onSubmit={addStylist}
-        className="grid gap-3 rounded-2xl border border-[#c9a87c]/30 bg-[#2a211c] p-4 sm:grid-cols-3"
+        className="grid gap-3 rounded-2xl border border-[#c9a87c]/30 bg-[#2a211c] p-4 sm:grid-cols-4"
       >
         <input
           required
@@ -176,6 +181,16 @@ export default function StylistsAdminPage() {
           onChange={(e) => setBio(e.target.value)}
           className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
         />
+        <select
+          value={gender}
+          onChange={(e) => setGender(e.target.value)}
+          aria-label="Gender for avatar"
+          className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+        >
+          <option value="FEMALE">Female (avatar)</option>
+          <option value="MALE">Male (avatar)</option>
+          <option value="UNSPECIFIED">Neutral avatar</option>
+        </select>
         <button type="submit" disabled={saving} className="btn-solid rounded-full px-4 py-2">
           {saving ? "Creating…" : "Add stylist + login"}
         </button>
@@ -189,12 +204,22 @@ export default function StylistsAdminPage() {
           >
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
-                <p className="flex items-center gap-2.5 text-xl font-bold text-[#fffaf6]">
-                  <span
-                    className="h-3.5 w-3.5 shrink-0 rounded-full ring-2 ring-[#f0c987]/40"
-                    style={{ background: s.color }}
+                <p className="flex items-center gap-3 text-xl font-bold text-[#fffaf6]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={s.photoUrl}
+                    alt=""
+                    width={44}
+                    height={44}
+                    className="h-11 w-11 rounded-full object-cover ring-2 ring-[#f0c987]/35"
                   />
-                  {s.name}
+                  <span className="flex items-center gap-2">
+                    <span
+                      className="h-3.5 w-3.5 shrink-0 rounded-full ring-2 ring-[#f0c987]/40"
+                      style={{ background: s.color }}
+                    />
+                    {s.name}
+                  </span>
                 </p>
                 {s.bio && <p className="mt-2 text-base text-[#d4c4b0]">{s.bio}</p>}
                 <p className="mt-3 text-sm text-[#d4c4b0]">

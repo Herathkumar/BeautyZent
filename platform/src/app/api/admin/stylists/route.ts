@@ -8,6 +8,7 @@ import {
   resetStylistPassword,
   stylistEmailDomain,
 } from "@/lib/stylist-accounts";
+import { normalizeGender, stylistPhotoUrl } from "@/lib/stylist-photo";
 
 export async function GET() {
   const session = await getSession();
@@ -23,18 +24,29 @@ export async function GET() {
   return NextResponse.json({
     googleConfigured: isGoogleConfigured(),
     emailDomain: salon ? stylistEmailDomain(salon) : "fhsalon.ca",
-    stylists: stylists.map((s) => ({
-      id: s.id,
-      name: s.name,
-      bio: s.bio,
-      color: s.color,
-      active: s.active,
-      loginEmail: s.user?.email || null,
-      userId: s.user?.id || null,
-      calendarConnected: Boolean(s.googleRefreshToken),
-      googleConnectedAt: s.googleConnectedAt,
-      connectUrl: getGoogleAuthUrl(s.id),
-    })),
+    stylists: stylists.map((s) => {
+      const hasPhoto = Boolean(s.photoUpdatedAt && s.photoMime);
+      return {
+        id: s.id,
+        name: s.name,
+        bio: s.bio,
+        color: s.color,
+        gender: s.gender,
+        hasPhoto,
+        photoUrl: stylistPhotoUrl({
+          id: s.id,
+          gender: s.gender,
+          hasPhoto,
+          photoUpdatedAt: s.photoUpdatedAt,
+        }),
+        active: s.active,
+        loginEmail: s.user?.email || null,
+        userId: s.user?.id || null,
+        calendarConnected: Boolean(s.googleRefreshToken),
+        googleConnectedAt: s.googleConnectedAt,
+        connectUrl: getGoogleAuthUrl(s.id),
+      };
+    }),
   });
 }
 
@@ -69,12 +81,14 @@ export async function POST(req: Request) {
   const salon = await prisma.salon.findUnique({ where: { id: session.salonId } });
   if (!salon) return NextResponse.json({ error: "Salon not found" }, { status: 404 });
 
+  const gender = normalizeGender(body.gender);
   const stylist = await prisma.stylist.create({
     data: {
       salonId: session.salonId,
       name,
       bio: body.bio || null,
       color: body.color || "#6e4a38",
+      gender,
       active: true,
     },
   });

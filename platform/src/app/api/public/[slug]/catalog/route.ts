@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { stylistPhotoUrl } from "@/lib/stylist-photo";
 
 export async function GET(
   _req: Request,
@@ -15,7 +16,17 @@ export async function GET(
       },
       stylists: {
         where: { active: true },
-        include: { services: { select: { serviceId: true } } },
+        select: {
+          id: true,
+          name: true,
+          bio: true,
+          color: true,
+          gender: true,
+          photoUpdatedAt: true,
+          photoMime: true,
+          googleRefreshToken: true,
+          services: { select: { serviceId: true } },
+        },
         orderBy: { name: "asc" },
       },
     },
@@ -33,13 +44,24 @@ export async function GET(
       closeHour: salon.closeHour,
     },
     services: salon.services,
-    stylists: salon.stylists.map((s) => ({
-      id: s.id,
-      name: s.name,
-      bio: s.bio,
-      color: s.color,
-      serviceIds: s.services.map((x) => x.serviceId),
-      calendarConnected: Boolean(s.googleRefreshToken),
-    })),
+    stylists: salon.stylists.map((s) => {
+      const hasPhoto = Boolean(s.photoUpdatedAt && s.photoMime);
+      return {
+        id: s.id,
+        name: s.name,
+        bio: s.bio,
+        color: s.color,
+        gender: s.gender,
+        hasPhoto,
+        photoUrl: stylistPhotoUrl({
+          id: s.id,
+          gender: s.gender,
+          hasPhoto,
+          photoUpdatedAt: s.photoUpdatedAt,
+        }),
+        serviceIds: s.services.map((x) => x.serviceId),
+        calendarConnected: Boolean(s.googleRefreshToken),
+      };
+    }),
   });
 }

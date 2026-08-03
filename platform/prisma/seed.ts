@@ -39,9 +39,24 @@ async function main() {
   });
 
   const stylists = [
-    { name: "Farzana", bio: "Owner stylist — women's & men's cuts", color: "#6e4a38" },
-    { name: "Aisha", bio: "Women's cuts and restyles", color: "#8b5e4b" },
-    { name: "Omar", bio: "Men's fades and classic cuts", color: "#3d342e" },
+    {
+      name: "Farzana",
+      bio: "Owner stylist — women's & men's cuts",
+      color: "#6e4a38",
+      gender: "FEMALE" as const,
+    },
+    {
+      name: "Aisha",
+      bio: "Women's cuts and restyles",
+      color: "#8b5e4b",
+      gender: "FEMALE" as const,
+    },
+    {
+      name: "Omar",
+      bio: "Men's fades and classic cuts",
+      color: "#3d342e",
+      gender: "MALE" as const,
+    },
   ];
 
   const stylistRows = [];

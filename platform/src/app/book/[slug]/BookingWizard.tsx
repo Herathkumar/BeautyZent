@@ -16,6 +16,9 @@ type Stylist = {
   name: string;
   bio: string | null;
   color: string;
+  gender?: string;
+  photoUrl?: string;
+  hasPhoto?: boolean;
   serviceIds: string[];
 };
 type Salon = {
@@ -260,14 +263,27 @@ export function BookingWizard({ slug }: { slug: string }) {
                     stylistId === s.id ? "is-selected" : ""
                   }`}
                 >
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="inline-block h-3 w-3 rounded-full ring-1 ring-[#f2c4b0]/50"
-                      style={{ background: s.color }}
+                  <div className="flex items-center gap-3">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={s.photoUrl || "/avatars/stylist-neutral.svg"}
+                      alt={`${s.name} photo`}
+                      width={56}
+                      height={56}
+                      className="h-14 w-14 shrink-0 rounded-full object-cover ring-2 ring-[#f2c4b0]/35"
                     />
-                    <span className="font-semibold">{s.name}</span>
+                    <div className="min-w-0">
+                      <p className="flex items-center gap-2 font-semibold">
+                        <span
+                          className="inline-block h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-[#f2c4b0]/50"
+                          style={{ background: s.color }}
+                          aria-hidden
+                        />
+                        {s.name}
+                      </p>
+                      {s.bio ? <p className="mt-1 text-sm text-muted">{s.bio}</p> : null}
+                    </div>
                   </div>
-                  {s.bio ? <p className="mt-2 text-sm text-muted">{s.bio}</p> : null}
                 </button>
               ))}
             </div>

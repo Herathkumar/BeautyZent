@@ -1,6 +1,61 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
+type Gender = "FEMALE" | "MALE" | "UNSPECIFIED";
+
+async function loadImageElement(file: File): Promise<HTMLImageElement> {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = () => reject(new Error("Could not read that photo. Try another selfie."));
+      el.src = url;
+    });
+    return img;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+async function fileToJpegDataUrl(file: File, maxSize = 480): Promise<string> {
+  let width = 0;
+  let height = 0;
+  let source: CanvasImageSource;
+
+  if (typeof createImageBitmap === "function") {
+    try {
+      const bitmap = await createImageBitmap(file);
+      width = bitmap.width;
+      height = bitmap.height;
+      source = bitmap;
+    } catch {
+      const img = await loadImageElement(file);
+      width = img.naturalWidth;
+      height = img.naturalHeight;
+      source = img;
+    }
+  } else {
+    const img = await loadImageElement(file);
+    width = img.naturalWidth;
+    height = img.naturalHeight;
+    source = img;
+  }
+
+  if (!width || !height) throw new Error("Could not process photo");
+  const scale = Math.min(1, maxSize / Math.max(width, height));
+  const w = Math.max(1, Math.round(width * scale));
+  const h = Math.max(1, Math.round(height * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Could not process photo");
+  ctx.drawImage(source, 0, 0, w, h);
+  if ("close" in source && typeof source.close === "function") source.close();
+  return canvas.toDataURL("image/jpeg", 0.85);
+}
 
 export default function StylistAccountPage() {
   const [email, setEmail] = useState("");
@@ -11,6 +66,14 @@ export default function StylistAccountPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const [gender, setGender] = useState<Gender>("UNSPECIFIED");
+  const [photoUrl, setPhotoUrl] = useState("/avatars/stylist-neutral.svg");
+  const [hasPhoto, setHasPhoto] = useState(false);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoMessage, setPhotoMessage] = useState("");
+  const [photoError, setPhotoError] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetch("/api/stylist/account")
@@ -26,7 +89,77 @@ export default function StylistAccountPage() {
         setEmail(data.user.email || "");
         setName(data.user.name || "");
       });
+
+    fetch("/api/stylist/photo")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data?.stylist) return;
+        setGender((data.stylist.gender as Gender) || "UNSPECIFIED");
+        setPhotoUrl(data.stylist.photoUrl);
+        setHasPhoto(Boolean(data.stylist.hasPhoto));
+      });
   }, []);
+
+  async function saveGender(next: Gender) {
+    setGender(next);
+    setPhotoError("");
+    setPhotoMessage("");
+    setPhotoBusy(true);
+    const res = await fetch("/api/stylist/photo", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ gender: next }),
+    });
+    const data = await res.json();
+    setPhotoBusy(false);
+    if (!res.ok) {
+      setPhotoError(data.error || "Could not update gender");
+      return;
+    }
+    setPhotoUrl(data.stylist.photoUrl);
+    setHasPhoto(Boolean(data.stylist.hasPhoto));
+    setPhotoMessage(hasPhoto ? "Gender saved." : "Avatar updated for your gender.");
+  }
+
+  async function onPickPhoto(file: File | null) {
+    if (!file) return;
+    setPhotoError("");
+    setPhotoMessage("");
+    setPhotoBusy(true);
+    try {
+      const dataUrl = await fileToJpegDataUrl(file);
+      const res = await fetch("/api/stylist/photo", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageBase64: dataUrl, mimeType: "image/jpeg" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Upload failed");
+      setPhotoUrl(data.stylist.photoUrl);
+      setHasPhoto(true);
+      setPhotoMessage("Selfie saved. Clients will see this when they book.");
+    } catch (e) {
+      setPhotoError(e instanceof Error ? e.message : "Could not save photo");
+    } finally {
+      setPhotoBusy(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
+
+  async function removePhoto() {
+    setPhotoBusy(true);
+    setPhotoError("");
+    const res = await fetch("/api/stylist/photo", { method: "DELETE" });
+    const data = await res.json();
+    setPhotoBusy(false);
+    if (!res.ok) {
+      setPhotoError(data.error || "Could not remove photo");
+      return;
+    }
+    setPhotoUrl(data.stylist.photoUrl);
+    setHasPhoto(false);
+    setPhotoMessage(data.message || "Photo removed.");
+  }
 
   async function onSave(e: React.FormEvent) {
     e.preventDefault();
@@ -66,11 +199,83 @@ export default function StylistAccountPage() {
       <div>
         <h1 className="font-[family-name:var(--font-display)] text-3xl">Account</h1>
         <p className="mt-2 text-muted">
-          Change your login email and password. Use these on your phone next time you open My Day.
+          Update your photo for online booking, and manage login credentials.
         </p>
       </div>
 
+      <section className="grid gap-4 rounded-2xl border border-ink/15 bg-cream p-4">
+        <div>
+          <h2 className="font-[family-name:var(--font-display)] text-xl">Profile photo</h2>
+          <p className="mt-1 text-sm text-muted">
+            Clients see this when they choose a stylist. Before a selfie, we show a gender avatar.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-4">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={photoUrl}
+            alt="Your profile photo"
+            width={96}
+            height={96}
+            data-testid="stylist-photo-preview"
+            className="h-24 w-24 rounded-full object-cover ring-2 ring-champagne/40"
+          />
+          <div className="grid gap-2 text-sm">
+            <p className="text-muted">{hasPhoto ? "Your selfie" : "Default avatar"}</p>
+            <label className="grid gap-1">
+              Gender (for avatar)
+              <select
+                value={gender}
+                disabled={photoBusy}
+                onChange={(e) => saveGender(e.target.value as Gender)}
+                className="stylist-tap rounded-2xl border border-ink/15 bg-white px-3 text-ink"
+                aria-label="Gender for avatar"
+              >
+                <option value="FEMALE">Female</option>
+                <option value="MALE">Male</option>
+                <option value="UNSPECIFIED">Prefer not to say</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          capture="user"
+          className="sr-only"
+          data-testid="stylist-selfie-input"
+          onChange={(e) => onPickPhoto(e.target.files?.[0] || null)}
+        />
+
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            disabled={photoBusy}
+            className="stylist-tap btn-solid rounded-2xl px-4"
+            onClick={() => fileRef.current?.click()}
+          >
+            {photoBusy ? "Saving…" : hasPhoto ? "Retake selfie" : "Take selfie"}
+          </button>
+          {hasPhoto ? (
+            <button
+              type="button"
+              disabled={photoBusy}
+              className="stylist-tap rounded-2xl border border-ink/20 px-4"
+              onClick={removePhoto}
+            >
+              Use avatar instead
+            </button>
+          ) : null}
+        </div>
+        {photoError ? <p className="text-sm text-[#f5a8a8]">{photoError}</p> : null}
+        {photoMessage ? <p className="text-sm text-champagne">{photoMessage}</p> : null}
+      </section>
+
       <form onSubmit={onSave} className="grid gap-4 rounded-2xl border border-ink/15 bg-cream p-4">
+        <h2 className="font-[family-name:var(--font-display)] text-xl">Login</h2>
         <label className="grid gap-1.5 text-sm">
           Display name
           <input
