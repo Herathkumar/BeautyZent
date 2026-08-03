@@ -23,7 +23,7 @@ test.describe("Stylist account provisioning", () => {
     await page.getByPlaceholder(/bio/i).fill("E2E provisioned stylist");
     await page.getByRole("button", { name: /add stylist \+ login/i }).click();
 
-    const issued = page.getByRole("dialog");
+    const issued = page.getByTestId("issued-credentials");
     await expect(issued).toBeVisible({ timeout: 20_000 });
     await expect(issued.getByText(/share with|new password/i)).toBeVisible();
 

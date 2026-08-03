@@ -22,8 +22,82 @@ type IssuedCredentials = {
   email: string;
   temporaryPassword: string;
   stylistName: string;
+  stylistId: string | null;
   reason: "created" | "reset";
 };
+
+function CredentialsPanel({
+  issued,
+  copied,
+  appUrl,
+  onCopy,
+  onDone,
+  panelRef,
+}: {
+  issued: IssuedCredentials;
+  copied: boolean;
+  appUrl: string;
+  onCopy: (text: string) => void;
+  onDone: () => void;
+  panelRef?: React.RefObject<HTMLDivElement | null>;
+}) {
+  return (
+    <div
+      ref={panelRef}
+      className="mt-4 rounded-xl border border-[#9fe3b8]/45 bg-[#1a2a22] p-4 text-[#fffaf6]"
+      role="status"
+      aria-live="polite"
+      data-testid="issued-credentials"
+    >
+      <p className="text-xs font-semibold uppercase tracking-wide text-[#9fe3b8]">
+        {issued.reason === "reset"
+          ? `New password for ${issued.stylistName}`
+          : `Share with ${issued.stylistName} — shown once`}
+      </p>
+      <p className="mt-2 text-sm text-[#d4c4b0]">
+        Copy these now. They disappear when you press Done.
+      </p>
+      <p className="mt-3 text-sm text-[#d4c4b0]">Login (username)</p>
+      <p className="break-all font-mono text-lg text-[#f0c987]" data-testid="issued-email">
+        {issued.email}
+      </p>
+      <p className="mt-3 text-sm text-[#d4c4b0]">Temporary password</p>
+      <p
+        className="select-all break-all font-mono text-2xl font-semibold tracking-wide text-[#f0c987]"
+        data-testid="issued-password"
+      >
+        {issued.temporaryPassword}
+      </p>
+      {copied ? <p className="mt-2 text-sm text-[#9fe3b8]">Copied to clipboard</p> : null}
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button
+          type="button"
+          className="btn-solid rounded-full px-4 py-2 text-sm"
+          onClick={() => onCopy(`${issued.email}\n${issued.temporaryPassword}`)}
+        >
+          Copy login + password
+        </button>
+        <button
+          type="button"
+          className="rounded-full border border-[#c9a87c]/50 px-4 py-2 text-sm text-[#f0c987]"
+          onClick={() => onCopy(issued.temporaryPassword)}
+        >
+          Copy password only
+        </button>
+        <button
+          type="button"
+          className="rounded-full border border-[#c9a87c]/50 px-4 py-2 text-sm text-[#f0c987]"
+          onClick={onDone}
+        >
+          Done
+        </button>
+      </div>
+      <p className="mt-3 text-xs text-[#a89a8c]">
+        Portal: {appUrl}/stylist/login — ask them to change the password under Account after login.
+      </p>
+    </div>
+  );
+}
 
 export default function StylistsAdminPage() {
   const [stylists, setStylists] = useState<Stylist[]>([]);
@@ -58,7 +132,7 @@ export default function StylistsAdminPage() {
 
   useEffect(() => {
     if (!issued) return;
-    issuedRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    issuedRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     void copyText(`${issued.email}\n${issued.temporaryPassword}`);
   }, [issued]);
 
@@ -78,6 +152,7 @@ export default function StylistsAdminPage() {
       setError(data.error || "Could not create stylist");
       return;
     }
+    const createdName = name;
     setName("");
     setBio("");
     setGender("FEMALE");
@@ -85,7 +160,8 @@ export default function StylistsAdminPage() {
       setIssued({
         email: data.credentials.email,
         temporaryPassword: data.credentials.temporaryPassword,
-        stylistName: data.stylist?.name || name,
+        stylistName: data.stylist?.name || createdName,
+        stylistId: data.stylist?.id || null,
         reason: "created",
       });
     }
@@ -116,6 +192,7 @@ export default function StylistsAdminPage() {
       email: data.loginEmail,
       temporaryPassword: data.temporaryPassword,
       stylistName,
+      stylistId,
       reason: "reset",
     });
   }
@@ -130,6 +207,14 @@ export default function StylistsAdminPage() {
       return false;
     }
   }
+
+  function clearIssued() {
+    setIssued(null);
+    setCopied(false);
+  }
+
+  const createPanel =
+    issued && (issued.reason === "created" || !issued.stylistId) ? issued : null;
 
   return (
     <main className="space-y-8">
@@ -152,186 +237,137 @@ export default function StylistsAdminPage() {
         </div>
       )}
 
-      <form
-        onSubmit={addStylist}
-        className="grid gap-3 rounded-2xl border border-[#c9a87c]/30 bg-[#2a211c] p-4 sm:grid-cols-4"
-      >
-        <input
-          required
-          placeholder="Stylist name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
-        />
-        <input
-          placeholder="Bio (optional)"
-          value={bio}
-          onChange={(e) => setBio(e.target.value)}
-          className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
-        />
-        <select
-          value={gender}
-          onChange={(e) => setGender(e.target.value)}
-          aria-label="Gender for avatar"
-          className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
-        >
-          <option value="FEMALE">Female (avatar)</option>
-          <option value="MALE">Male (avatar)</option>
-          <option value="UNSPECIFIED">Neutral avatar</option>
-        </select>
-        <button type="submit" disabled={saving} className="btn-solid rounded-full px-4 py-2">
-          {saving ? "Creating…" : "Add stylist + login"}
-        </button>
-      </form>
-
-      <div className="grid gap-4">
-        {stylists.map((s) => (
-          <article
-            key={s.id}
-            className="rounded-2xl border border-[#c9a87c]/30 bg-[#2a211c] p-5 shadow-[0_12px_40px_rgba(0,0,0,0.25)]"
+      <div className="rounded-2xl border border-[#c9a87c]/30 bg-[#2a211c] p-4">
+        <form onSubmit={addStylist} className="grid gap-3 sm:grid-cols-4">
+          <input
+            required
+            placeholder="Stylist name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+          />
+          <input
+            placeholder="Bio (optional)"
+            value={bio}
+            onChange={(e) => setBio(e.target.value)}
+            className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+          />
+          <select
+            value={gender}
+            onChange={(e) => setGender(e.target.value)}
+            aria-label="Gender for avatar"
+            className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
           >
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="min-w-0 flex-1">
-                <p className="flex items-center gap-3 text-xl font-bold text-[#fffaf6]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={s.photoUrl || "/avatars/stylist-neutral.svg"}
-                    alt=""
-                    width={44}
-                    height={44}
-                    className="h-11 w-11 rounded-full object-cover ring-2 ring-[#f0c987]/35"
-                  />
-                  <span className="flex items-center gap-2">
-                    <span
-                      className="h-3.5 w-3.5 shrink-0 rounded-full ring-2 ring-[#f0c987]/40"
-                      style={{ background: s.color }}
-                    />
-                    {s.name}
-                  </span>
-                </p>
-                {s.bio && <p className="mt-2 text-base text-[#d4c4b0]">{s.bio}</p>}
-                <p className="mt-3 text-sm text-[#d4c4b0]">
-                  Login:{" "}
-                  {s.loginEmail ? (
-                    <span className="font-semibold text-[#f0c987]">{s.loginEmail}</span>
-                  ) : (
-                    <span className="text-[#f5a8a8]">No login yet</span>
-                  )}
-                </p>
-                <p className="mt-2 text-sm text-[#d4c4b0]">
-                  Calendar:{" "}
-                  {s.calendarConnected ? (
-                    <span className="font-semibold text-[#9fe3b8]">Google connected</span>
-                  ) : (
-                    <span className="text-[#f0c987]">Not connected via Google</span>
-                  )}
-                </p>
-                <p className="mt-3 break-all text-xs text-[#a89a8c]">
-                  Subscribe URL: {appUrl}/api/calendar/stylist/{s.id}/ics
-                </p>
-              </div>
-              <div className="flex flex-col gap-2">
-                <Link
-                  href={`/admin/stylists/${s.id}/schedule`}
-                  className="btn-solid rounded-full px-4 py-2 text-center text-sm"
-                >
-                  Manage schedule
-                </Link>
-                {s.loginEmail ? (
-                  <button
-                    type="button"
-                    disabled={resettingId === s.id}
-                    onClick={() => resetPassword(s.id, s.name)}
-                    className="rounded-full border border-[#c9a87c]/50 px-4 py-2 text-sm text-[#f0c987]"
-                  >
-                    {resettingId === s.id ? "Resetting…" : "Reset password"}
-                  </button>
-                ) : null}
-                {s.connectUrl && (
-                  <a
-                    href={s.connectUrl}
-                    className="rounded-full border border-[#c9a87c]/50 px-4 py-2 text-center text-sm text-[#f0c987]"
-                  >
-                    Connect Google Calendar
-                  </a>
-                )}
-              </div>
-            </div>
-          </article>
-        ))}
+            <option value="FEMALE">Female (avatar)</option>
+            <option value="MALE">Male (avatar)</option>
+            <option value="UNSPECIFIED">Neutral avatar</option>
+          </select>
+          <button type="submit" disabled={saving} className="btn-solid rounded-full px-4 py-2">
+            {saving ? "Creating…" : "Add stylist + login"}
+          </button>
+        </form>
+        {createPanel ? (
+          <CredentialsPanel
+            issued={createPanel}
+            copied={copied}
+            appUrl={appUrl}
+            onCopy={copyText}
+            onDone={clearIssued}
+            panelRef={issuedRef}
+          />
+        ) : null}
       </div>
 
-      {issued ? (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-4 sm:items-center"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="issued-creds-title"
-        >
-          <div
-            ref={issuedRef}
-            className="w-full max-w-md rounded-2xl border border-[#9fe3b8]/50 bg-[#1a2a22] p-5 text-[#fffaf6] shadow-2xl"
-          >
-            <p
-              id="issued-creds-title"
-              className="text-xs font-semibold uppercase tracking-wide text-[#9fe3b8]"
+      <div className="grid gap-4">
+        {stylists.map((s) => {
+          const panelHere =
+            issued && issued.reason === "reset" && issued.stylistId === s.id ? issued : null;
+          return (
+            <article
+              key={s.id}
+              className="rounded-2xl border border-[#c9a87c]/30 bg-[#2a211c] p-5 shadow-[0_12px_40px_rgba(0,0,0,0.25)]"
             >
-              {issued.reason === "reset"
-                ? `New password for ${issued.stylistName}`
-                : `Share with ${issued.stylistName} — shown once`}
-            </p>
-            <p className="mt-2 text-sm text-[#d4c4b0]">
-              Copy these now. The temporary password is not shown again after you close this.
-            </p>
-            <p className="mt-4 text-sm text-[#d4c4b0]">Login (username)</p>
-            <p className="break-all font-mono text-lg text-[#f0c987]" data-testid="issued-email">
-              {issued.email}
-            </p>
-            <p className="mt-3 text-sm text-[#d4c4b0]">Temporary password</p>
-            <p
-              className="select-all break-all font-mono text-2xl font-semibold tracking-wide text-[#f0c987]"
-              data-testid="issued-password"
-            >
-              {issued.temporaryPassword}
-            </p>
-            {copied ? (
-              <p className="mt-2 text-sm text-[#9fe3b8]">Copied to clipboard</p>
-            ) : null}
-            <div className="mt-5 flex flex-wrap gap-2">
-              <button
-                type="button"
-                className="btn-solid rounded-full px-4 py-2 text-sm"
-                onClick={() =>
-                  copyText(`${issued.email}\n${issued.temporaryPassword}`)
-                }
-              >
-                Copy login + password
-              </button>
-              <button
-                type="button"
-                className="rounded-full border border-[#c9a87c]/50 px-4 py-2 text-sm text-[#f0c987]"
-                onClick={() => copyText(issued.temporaryPassword)}
-              >
-                Copy password only
-              </button>
-              <button
-                type="button"
-                className="rounded-full border border-[#c9a87c]/50 px-4 py-2 text-sm text-[#f0c987]"
-                onClick={() => {
-                  setIssued(null);
-                  setCopied(false);
-                }}
-              >
-                Done
-              </button>
-            </div>
-            <p className="mt-3 text-xs text-[#a89a8c]">
-              Portal: {appUrl}/stylist/login — ask them to change the password under Account after
-              login.
-            </p>
-          </div>
-        </div>
-      ) : null}
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <p className="flex items-center gap-3 text-xl font-bold text-[#fffaf6]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={s.photoUrl || "/avatars/stylist-neutral.svg"}
+                      alt=""
+                      width={44}
+                      height={44}
+                      className="h-11 w-11 rounded-full object-cover ring-2 ring-[#f0c987]/35"
+                    />
+                    <span className="flex items-center gap-2">
+                      <span
+                        className="h-3.5 w-3.5 shrink-0 rounded-full ring-2 ring-[#f0c987]/40"
+                        style={{ background: s.color }}
+                      />
+                      {s.name}
+                    </span>
+                  </p>
+                  {s.bio && <p className="mt-2 text-base text-[#d4c4b0]">{s.bio}</p>}
+                  <p className="mt-3 text-sm text-[#d4c4b0]">
+                    Login:{" "}
+                    {s.loginEmail ? (
+                      <span className="font-semibold text-[#f0c987]">{s.loginEmail}</span>
+                    ) : (
+                      <span className="text-[#f5a8a8]">No login yet</span>
+                    )}
+                  </p>
+                  <p className="mt-2 text-sm text-[#d4c4b0]">
+                    Calendar:{" "}
+                    {s.calendarConnected ? (
+                      <span className="font-semibold text-[#9fe3b8]">Google connected</span>
+                    ) : (
+                      <span className="text-[#f0c987]">Not connected via Google</span>
+                    )}
+                  </p>
+                  <p className="mt-3 break-all text-xs text-[#a89a8c]">
+                    Subscribe URL: {appUrl}/api/calendar/stylist/{s.id}/ics
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Link
+                    href={`/admin/stylists/${s.id}/schedule`}
+                    className="btn-solid rounded-full px-4 py-2 text-center text-sm"
+                  >
+                    Manage schedule
+                  </Link>
+                  {s.loginEmail ? (
+                    <button
+                      type="button"
+                      disabled={resettingId === s.id}
+                      onClick={() => resetPassword(s.id, s.name)}
+                      className="rounded-full border border-[#c9a87c]/50 px-4 py-2 text-sm text-[#f0c987]"
+                    >
+                      {resettingId === s.id ? "Resetting…" : "Reset password"}
+                    </button>
+                  ) : null}
+                  {s.connectUrl && (
+                    <a
+                      href={s.connectUrl}
+                      className="rounded-full border border-[#c9a87c]/50 px-4 py-2 text-center text-sm text-[#f0c987]"
+                    >
+                      Connect Google Calendar
+                    </a>
+                  )}
+                </div>
+              </div>
+              {panelHere ? (
+                <CredentialsPanel
+                  issued={panelHere}
+                  copied={copied}
+                  appUrl={appUrl}
+                  onCopy={copyText}
+                  onDone={clearIssued}
+                  panelRef={issuedRef}
+                />
+              ) : null}
+            </article>
+          );
+        })}
+      </div>
     </main>
   );
 }
