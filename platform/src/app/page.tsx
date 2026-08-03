@@ -20,14 +20,20 @@ export default function HomePage() {
 
       <div className="flex flex-wrap gap-3">
         <Link
-          href={`/book/${slug}`}
+          href="/demo"
           className="btn-solid rounded-full px-5 py-3 font-medium"
+        >
+          Open demo hub
+        </Link>
+        <Link
+          href={`/book/${slug}`}
+          className="rounded-full border border-ink px-5 py-3 font-medium text-ink hover:bg-ink hover:text-[#fffaf6]"
         >
           Book appointment
         </Link>
         <Link
           href={`/display/${slug}`}
-          className="rounded-full border border-ink px-5 py-3 font-medium text-ink hover:bg-ink hover:text-[#fffaf6]"
+          className="rounded-full border border-ink/20 px-5 py-3 font-medium text-ink-soft hover:border-ink"
         >
           Salon tablet display
         </Link>

@@ -1,71 +1,139 @@
-# SalonBook platform — deploy without touching live fhsalon.ca
+# Go live — www.fhsalon.ca + online booking
 
-Live marketing site stays on Netlify **`main`** (static HTML).  
-Online booking lives on branch **`feature/online-booking`** under `/platform`.
+**Target architecture (keeps Netlify free for marketing):**
 
-## What you get
+| Piece | Host | URL |
+|--------|------|-----|
+| Marketing site | Netlify (free) | https://www.fhsalon.ca |
+| Booking app | Vercel (Hobby free) | https://book.fhsalon.ca |
+| Database | Neon Postgres (free) | connection string only |
 
-| Surface | URL (local) | Purpose |
-|---------|-------------|---------|
-| Client booking | `/book/fhsalon` | Mobile-friendly online reservation (no app) |
-| Tablet display | `/display/fhsalon` | Salon floor board + check-in |
-| Admin | `/admin` | Services, prices, products, stylists, bookings |
-| Calendar sync | Google OAuth + ICS feed | Bookings on stylists’ phone calendars |
-| Stylist portal | `/stylist` | Stylists manage own bookings, hours, leave |
-| Admin schedule | Admin → Stylists → Manage schedule | Admin can set hours/leave for any stylist |
-| Admin book | Admin → Book for client | Front desk books a client onto a stylist |
+Live clients use: **Website → Book online → book.fhsalon.ca**  
+Salon staff use: `/display/fhsalon`, `/stylist`, `/admin` on the same booking host.
 
-Multi-tenant: each salon is a `Salon` row with a unique `slug` (pilot: `fhsalon`).
+---
 
-## Local run
+## Step 1 — Neon free database
+
+1. Sign up at [neon.tech](https://neon.tech) (GitHub login is fine).
+2. Create project: name `salonbook`, region close to you (e.g. US East).
+3. Copy the **connection string** (pooled is fine), looks like:  
+   `postgresql://…@….neon.tech/neondb?sslmode=require`
+4. Save it — you’ll paste into Vercel and optionally local `.env`.
+
+---
+
+## Step 2 — Deploy booking app on Vercel
+
+1. Go to [vercel.com](https://vercel.com) → **Add New Project** → import **Herathkumar/fhsalon**.
+2. Configure:
+   - **Root Directory:** `platform` (Important)
+   - **Framework:** Next.js (auto)
+   - **Production Branch:** `feature/online-booking` (until you merge later)
+3. **Environment variables** (Production):
+
+   | Name | Value |
+   |------|--------|
+   | `DATABASE_URL` | Neon connection string |
+   | `AUTH_SECRET` | Long random string (32+ chars) |
+   | `NEXT_PUBLIC_APP_URL` | `https://book.fhsalon.ca` |
+   | `NEXT_PUBLIC_DEFAULT_SALON_SLUG` | `fhsalon` |
+   | `NEXT_PUBLIC_MARKETING_URL` | `https://www.fhsalon.ca` |
+
+4. Deploy. Note the temporary URL: `https://something.vercel.app`.
+
+---
+
+## Step 3 — Create tables + seed data
+
+On your PC (with Neon URL in `platform/.env` as `DATABASE_URL`):
 
 ```powershell
-cd C:\Users\hkathira\a3-it-solutions
-git switch feature/online-booking
-cd platform
+cd C:\Users\hkathira\a3-it-solutions\platform
+# Put Neon DATABASE_URL + AUTH_SECRET into .env
 pnpm install
-pnpm db:setup
+pnpm db:push
+pnpm db:seed
+```
+
+That creates schema + Farzana salon + demo logins on the **cloud** DB.
+
+**Then change passwords in Admin** (do not leave `demo1234` in production).
+
+---
+
+## Step 4 — Custom domain book.fhsalon.ca
+
+1. In Vercel → Project → **Settings → Domains** → add `book.fhsalon.ca`.
+2. At your DNS host (wherever fhsalon.ca is managed), add the CNAME Vercel shows, e.g.:
+   - **Name:** `book`
+   - **Value:** `cname.vercel-dns.com` (or what Vercel displays)
+3. Wait for SSL (usually a few minutes).
+4. Confirm:
+   - https://book.fhsalon.ca/book/fhsalon
+   - https://book.fhsalon.ca/demo
+   - https://book.fhsalon.ca/admin/login
+
+Until DNS is ready, you can temporarily set marketing “Book online” to the `*.vercel.app` URL.
+
+---
+
+## Step 5 — Point www.fhsalon.ca “Book online” (Netlify)
+
+Marketing stays on Netlify **`main`**. Booking stays on Vercel.
+
+1. On branch `main` (or via Netlify UI), set the Book online button to:  
+   `https://book.fhsalon.ca/book/fhsalon`  
+   (already prepared on `feature/online-booking` in `index.html` — merge/copy that change to `main`).
+2. Deploy Netlify production as usual.
+3. Open https://www.fhsalon.ca → **Book online** → complete a test booking.
+
+Do **not** set Netlify root to `platform` — leave it publishing the static HTML site.
+
+---
+
+## Step 6 — Salon smoke test (before telling clients)
+
+1. Website → Book online → confirm reservation  
+2. Tablet: https://book.fhsalon.ca/display/fhsalon  
+3. Stylist phone: https://book.fhsalon.ca/stylist (Add to Home Screen)  
+4. Admin: https://book.fhsalon.ca/admin  
+5. Change all demo passwords  
+6. Optional: bookmark / pin floor display on the salon tablet  
+
+---
+
+## Local development after Postgres switch
+
+`platform` now expects **PostgreSQL** (not SQLite).
+
+```powershell
+cd platform
+# DATABASE_URL = your Neon string (same DB or a separate “dev” branch in Neon)
+pnpm db:push
 pnpm dev
 ```
 
-- Open http://localhost:3000  
-- Admin: `admin@fhsalon.ca` / `demo1234`
+Marketing site locally:
 
-## Google Calendar (phone sync)
+```powershell
+cd C:\Users\hkathira\a3-it-solutions
+npx --yes serve -l 5500
+```
 
-1. Create a Google Cloud OAuth client (Web application).
-2. Add redirect URI: `https://YOUR-APP/api/calendar/google/callback`
-3. Set env vars: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`
-4. In Admin → Stylists → **Connect Google Calendar** for each stylist.
+---
 
-Until Google is configured, each stylist has an **ICS subscribe URL** that Apple Calendar / Google Calendar can add on their phone.
+## Logins (change after go-live)
 
-## Staging deploy (recommended: Vercel) — does not change Netlify live site
+| Role | Email | Default password |
+|------|--------|------------------|
+| Admin | admin@fhsalon.ca | demo1234 |
+| Stylist | farzana@fhsalon.ca | demo1234 |
 
-1. Import **Herathkumar/fhsalon** into [Vercel](https://vercel.com).
-2. Set **Root Directory** to `platform`.
-3. Set **Production Branch** to `feature/online-booking` (or a `staging` branch).
-4. Add env vars:
-   - `DATABASE_URL` — use Vercel Postgres / Neon / Supabase Postgres for staging
-   - `AUTH_SECRET` — long random string
-   - `NEXT_PUBLIC_APP_URL` — your Vercel URL
-   - `NEXT_PUBLIC_DEFAULT_SALON_SLUG=fhsalon`
-   - Google vars when ready
-5. Deploy. Run seed once (`pnpm db:seed` against the staging DB, or a one-off script).
-6. Point a staging domain if you want, e.g. `book-staging.fhsalon.ca`.
+---
 
-Keep Netlify site on `main` publishing the static marketing pages only.
+## Optional later
 
-## Go-live later (when tested)
-
-1. Add “Book online” on the marketing site linking to the booking app URL (or reverse-proxy `/book`).
-2. Promote `feature/online-booking` after QA — either:
-   - Merge into `main` and switch hosting to Vercel for the whole site, **or**
-   - Keep marketing on Netlify `main` and booking on Vercel permanently (simplest split).
-3. Switch `DATABASE_URL` to production Postgres and rotate secrets.
-
-## Selling to other salons
-
-1. Create a new `Salon` (+ admin user, stylists, services) with a new `slug`.
-2. Give them `/book/{slug}`, `/display/{slug}`, and admin login.
-3. Same codebase — no per-salon fork required.
+- Google Calendar OAuth for stylists  
+- Stronger passwords / invite-only stylist accounts  
+- Merge `feature/online-booking` into `main` once stable (keep Netlify publish settings on static files only)
