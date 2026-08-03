@@ -45,20 +45,21 @@ export async function PUT(req: Request) {
   const gender =
     body.gender != null ? normalizeGender(body.gender) : undefined;
 
-  let photoData: Buffer | undefined;
+  let photoBytes: Uint8Array<ArrayBuffer> | undefined;
   let photoMime: string | undefined;
 
   if (body.imageBase64 != null && String(body.imageBase64).length > 0) {
     const raw = String(body.imageBase64).replace(/^data:[^;]+;base64,/, "");
+    let decoded: Buffer;
     try {
-      photoData = Buffer.from(raw, "base64");
+      decoded = Buffer.from(raw, "base64");
     } catch {
       return NextResponse.json({ error: "Invalid image data" }, { status: 400 });
     }
-    if (!photoData.length) {
+    if (!decoded.length) {
       return NextResponse.json({ error: "Empty image" }, { status: 400 });
     }
-    if (photoData.length > MAX_PHOTO_BYTES) {
+    if (decoded.length > MAX_PHOTO_BYTES) {
       return NextResponse.json(
         { error: "Photo is too large. Take a closer selfie and try again." },
         { status: 400 }
@@ -68,10 +69,13 @@ export async function PUT(req: Request) {
     if (!mime.startsWith("image/")) {
       return NextResponse.json({ error: "Image required" }, { status: 400 });
     }
+    // Copy into a real ArrayBuffer so Prisma Bytes typing accepts it.
+    photoBytes = new Uint8Array(decoded.byteLength);
+    photoBytes.set(decoded);
     photoMime = mime === "image/png" ? "image/png" : "image/jpeg";
   }
 
-  if (gender == null && photoData == null) {
+  if (gender == null && photoBytes == null) {
     return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
   }
 
@@ -79,9 +83,9 @@ export async function PUT(req: Request) {
     where: { id: session.stylistId },
     data: {
       ...(gender != null ? { gender } : {}),
-      ...(photoData
+      ...(photoBytes
         ? {
-            photoData,
+            photoData: photoBytes,
             photoMime,
             photoUpdatedAt: new Date(),
           }
@@ -106,7 +110,7 @@ export async function PUT(req: Request) {
       hasPhoto,
       photoUrl: stylistPhotoUrl({ ...updated, hasPhoto }),
     },
-    message: photoData ? "Photo updated." : "Profile updated.",
+    message: photoBytes ? "Photo updated." : "Profile updated.",
   });
 }
 
