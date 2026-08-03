@@ -1,16 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Stylist = {
   id: string;
   name: string;
   bio: string | null;
   color: string;
-  gender: string;
-  photoUrl: string;
-  hasPhoto: boolean;
+  gender?: string;
+  photoUrl?: string;
+  hasPhoto?: boolean;
   active: boolean;
   loginEmail: string | null;
   userId: string | null;
@@ -22,6 +22,7 @@ type IssuedCredentials = {
   email: string;
   temporaryPassword: string;
   stylistName: string;
+  reason: "created" | "reset";
 };
 
 export default function StylistsAdminPage() {
@@ -32,8 +33,11 @@ export default function StylistsAdminPage() {
   const [bio, setBio] = useState("");
   const [gender, setGender] = useState("FEMALE");
   const [saving, setSaving] = useState(false);
+  const [resettingId, setResettingId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [issued, setIssued] = useState<IssuedCredentials | null>(null);
+  const [copied, setCopied] = useState(false);
+  const issuedRef = useRef<HTMLDivElement>(null);
   const appUrl = typeof window !== "undefined" ? window.location.origin : "";
 
   async function load() {
@@ -52,10 +56,17 @@ export default function StylistsAdminPage() {
     load();
   }, []);
 
+  useEffect(() => {
+    if (!issued) return;
+    issuedRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    void copyText(`${issued.email}\n${issued.temporaryPassword}`);
+  }, [issued]);
+
   async function addStylist(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     setError("");
+    setCopied(false);
     const res = await fetch("/api/admin/stylists", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -75,6 +86,7 @@ export default function StylistsAdminPage() {
         email: data.credentials.email,
         temporaryPassword: data.credentials.temporaryPassword,
         stylistName: data.stylist?.name || name,
+        reason: "created",
       });
     }
     await load();
@@ -82,28 +94,40 @@ export default function StylistsAdminPage() {
 
   async function resetPassword(stylistId: string, stylistName: string) {
     if (!window.confirm(`Generate a new temporary password for ${stylistName}?`)) return;
+    setError("");
+    setCopied(false);
+    setResettingId(stylistId);
     const res = await fetch("/api/admin/stylists", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "resetPassword", stylistId }),
     });
     const data = await res.json();
+    setResettingId(null);
     if (!res.ok) {
       setError(data.error || "Reset failed");
+      return;
+    }
+    if (!data.temporaryPassword || !data.loginEmail) {
+      setError("Reset succeeded but password was not returned. Try again.");
       return;
     }
     setIssued({
       email: data.loginEmail,
       temporaryPassword: data.temporaryPassword,
       stylistName,
+      reason: "reset",
     });
   }
 
   async function copyText(text: string) {
     try {
       await navigator.clipboard.writeText(text);
+      setCopied(true);
+      return true;
     } catch {
-      /* ignore */
+      setCopied(false);
+      return false;
     }
   }
 
@@ -119,42 +143,6 @@ export default function StylistsAdminPage() {
           temporary password. They can change it on their phone under Account.
         </p>
       </div>
-
-      {issued ? (
-        <div
-          className="rounded-2xl border border-[#9fe3b8]/40 bg-[#1a2a22] p-5 text-[#fffaf6]"
-          role="status"
-        >
-          <p className="text-xs font-semibold uppercase tracking-wide text-[#9fe3b8]">
-            Share with {issued.stylistName} — shown once
-          </p>
-          <p className="mt-3 text-sm text-[#d4c4b0]">Login (username)</p>
-          <p className="font-mono text-lg text-[#f0c987]">{issued.email}</p>
-          <p className="mt-3 text-sm text-[#d4c4b0]">Temporary password</p>
-          <p className="font-mono text-lg text-[#f0c987]">{issued.temporaryPassword}</p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <button
-              type="button"
-              className="btn-solid rounded-full px-4 py-2 text-sm"
-              onClick={() =>
-                copyText(`${issued.email}\n${issued.temporaryPassword}`)
-              }
-            >
-              Copy login + password
-            </button>
-            <button
-              type="button"
-              className="rounded-full border border-[#c9a87c]/50 px-4 py-2 text-sm text-[#f0c987]"
-              onClick={() => setIssued(null)}
-            >
-              Done
-            </button>
-          </div>
-          <p className="mt-3 text-xs text-[#a89a8c]">
-            Portal: {appUrl}/stylist/login — ask them to change the password after first login.
-          </p>
-        </div>
-      ) : null}
 
       {error ? <p className="text-sm text-[#f5a8a8]">{error}</p> : null}
 
@@ -207,7 +195,7 @@ export default function StylistsAdminPage() {
                 <p className="flex items-center gap-3 text-xl font-bold text-[#fffaf6]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={s.photoUrl}
+                    src={s.photoUrl || "/avatars/stylist-neutral.svg"}
                     alt=""
                     width={44}
                     height={44}
@@ -252,10 +240,11 @@ export default function StylistsAdminPage() {
                 {s.loginEmail ? (
                   <button
                     type="button"
+                    disabled={resettingId === s.id}
                     onClick={() => resetPassword(s.id, s.name)}
                     className="rounded-full border border-[#c9a87c]/50 px-4 py-2 text-sm text-[#f0c987]"
                   >
-                    Reset password
+                    {resettingId === s.id ? "Resetting…" : "Reset password"}
                   </button>
                 ) : null}
                 {s.connectUrl && (
@@ -271,6 +260,78 @@ export default function StylistsAdminPage() {
           </article>
         ))}
       </div>
+
+      {issued ? (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-4 sm:items-center"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="issued-creds-title"
+        >
+          <div
+            ref={issuedRef}
+            className="w-full max-w-md rounded-2xl border border-[#9fe3b8]/50 bg-[#1a2a22] p-5 text-[#fffaf6] shadow-2xl"
+          >
+            <p
+              id="issued-creds-title"
+              className="text-xs font-semibold uppercase tracking-wide text-[#9fe3b8]"
+            >
+              {issued.reason === "reset"
+                ? `New password for ${issued.stylistName}`
+                : `Share with ${issued.stylistName} — shown once`}
+            </p>
+            <p className="mt-2 text-sm text-[#d4c4b0]">
+              Copy these now. The temporary password is not shown again after you close this.
+            </p>
+            <p className="mt-4 text-sm text-[#d4c4b0]">Login (username)</p>
+            <p className="break-all font-mono text-lg text-[#f0c987]" data-testid="issued-email">
+              {issued.email}
+            </p>
+            <p className="mt-3 text-sm text-[#d4c4b0]">Temporary password</p>
+            <p
+              className="select-all break-all font-mono text-2xl font-semibold tracking-wide text-[#f0c987]"
+              data-testid="issued-password"
+            >
+              {issued.temporaryPassword}
+            </p>
+            {copied ? (
+              <p className="mt-2 text-sm text-[#9fe3b8]">Copied to clipboard</p>
+            ) : null}
+            <div className="mt-5 flex flex-wrap gap-2">
+              <button
+                type="button"
+                className="btn-solid rounded-full px-4 py-2 text-sm"
+                onClick={() =>
+                  copyText(`${issued.email}\n${issued.temporaryPassword}`)
+                }
+              >
+                Copy login + password
+              </button>
+              <button
+                type="button"
+                className="rounded-full border border-[#c9a87c]/50 px-4 py-2 text-sm text-[#f0c987]"
+                onClick={() => copyText(issued.temporaryPassword)}
+              >
+                Copy password only
+              </button>
+              <button
+                type="button"
+                className="rounded-full border border-[#c9a87c]/50 px-4 py-2 text-sm text-[#f0c987]"
+                onClick={() => {
+                  setIssued(null);
+                  setCopied(false);
+                }}
+              >
+                Done
+              </button>
+            </div>
+            <p className="mt-3 text-xs text-[#a89a8c]">
+              Portal: {appUrl}/stylist/login — ask them to change the password under Account after
+              login.
+            </p>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }

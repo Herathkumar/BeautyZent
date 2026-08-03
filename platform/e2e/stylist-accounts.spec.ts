@@ -23,16 +23,17 @@ test.describe("Stylist account provisioning", () => {
     await page.getByPlaceholder(/bio/i).fill("E2E provisioned stylist");
     await page.getByRole("button", { name: /add stylist \+ login/i }).click();
 
-    const issued = page.getByRole("status");
+    const issued = page.getByRole("dialog");
     await expect(issued).toBeVisible({ timeout: 20_000 });
-    await expect(issued.getByText(/share with/i)).toBeVisible();
+    await expect(issued.getByText(/share with|new password/i)).toBeVisible();
 
-    const emailText = await issued.locator(".font-mono").nth(0).innerText();
-    const tempPassword = await issued.locator(".font-mono").nth(1).innerText();
+    const emailText = await issued.getByTestId("issued-email").innerText();
+    const tempPassword = await issued.getByTestId("issued-password").innerText();
     expect(emailText).toMatch(new RegExp(`^${unique.toLowerCase()}@`, "i"));
     expect(tempPassword.length).toBeGreaterThanOrEqual(8);
 
-    await expect(page.getByText(emailText).first()).toBeVisible();
+    await issued.getByRole("button", { name: /^done$/i }).click();
+    await expect(issued).toBeHidden();
 
     await page.context().clearCookies();
     await loginAsStylist(page, emailText.trim(), tempPassword.trim());

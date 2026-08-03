@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 type Appt = {
@@ -59,6 +60,8 @@ function phoneHref(phone: string) {
 
 export default function StylistHomePage() {
   const [name, setName] = useState("");
+  const [photoUrl, setPhotoUrl] = useState("/avatars/stylist-neutral.svg");
+  const [hasPhoto, setHasPhoto] = useState(false);
   const [appointments, setAppointments] = useState<Appt[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -71,6 +74,8 @@ export default function StylistHomePage() {
     }
     const meData = await me.json();
     setName(meData.stylist?.name || meData.user?.name || "");
+    if (meData.stylist?.photoUrl) setPhotoUrl(meData.stylist.photoUrl);
+    setHasPhoto(Boolean(meData.stylist?.hasPhoto));
 
     const res = await fetch("/api/stylist/appointments?days=14");
     const data = await res.json();
@@ -219,23 +224,45 @@ export default function StylistHomePage() {
 
   return (
     <main className="space-y-8">
-      <header className="space-y-1">
-        <p className="text-sm uppercase tracking-[0.18em] text-champagne">
-          {formatDay(new Date())}
-        </p>
-        <h1 className="font-[family-name:var(--font-display)] text-3xl">
-          Hi{name ? `, ${name.split(" ")[0]}` : ""}
-        </h1>
-        <p className="text-muted">
-          {today.length === 0
-            ? "No clients today — enjoy the quiet."
-            : `${today.length} today · ${doneToday} done`}
-          {nextOpen
-            ? ` · next at ${formatTime(nextOpen.startsAt)}`
-            : today.length > 0
-              ? " · all wrapped up"
-              : ""}
-        </p>
+      <header className="flex items-start gap-4">
+        <Link
+          href="/stylist/account"
+          className="shrink-0"
+          aria-label="Update your booking photo"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={photoUrl}
+            alt=""
+            width={64}
+            height={64}
+            data-testid="stylist-home-photo"
+            className="h-16 w-16 rounded-full object-cover ring-2 ring-champagne/40"
+          />
+        </Link>
+        <div className="min-w-0 space-y-1">
+          <p className="text-sm uppercase tracking-[0.18em] text-champagne">
+            {formatDay(new Date())}
+          </p>
+          <h1 className="font-[family-name:var(--font-display)] text-3xl">
+            Hi{name ? `, ${name.split(" ")[0]}` : ""}
+          </h1>
+          <p className="text-muted">
+            {today.length === 0
+              ? "No clients today — enjoy the quiet."
+              : `${today.length} today · ${doneToday} done`}
+            {nextOpen
+              ? ` · next at ${formatTime(nextOpen.startsAt)}`
+              : today.length > 0
+                ? " · all wrapped up"
+                : ""}
+          </p>
+          <p className="pt-1 text-sm">
+            <Link href="/stylist/account" className="text-champagne underline-offset-2 hover:underline">
+              {hasPhoto ? "Change booking photo" : "Add selfie for online booking"}
+            </Link>
+          </p>
+        </div>
       </header>
 
       <section className="space-y-3">

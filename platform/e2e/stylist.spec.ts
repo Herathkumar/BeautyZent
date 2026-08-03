@@ -5,6 +5,8 @@ test.describe("Stylist phone portal", () => {
   test("login lands on My Day", async ({ page }) => {
     await stylistLogin(page);
     await expect(page.getByText(/hi,|today|my day/i).first()).toBeVisible();
+    await expect(page.getByTestId("stylist-home-photo")).toBeVisible();
+    await expect(page.getByRole("link", { name: /add selfie for online booking|change booking photo/i })).toBeVisible();
     await expect(page.getByRole("link", { name: /^today$/i })).toBeVisible();
     await expect(page.getByRole("link", { name: /^away$/i })).toBeVisible();
     await expect(page.getByRole("link", { name: /^account$/i })).toBeVisible();

@@ -41,4 +41,31 @@ test.describe("Admin — book for client", () => {
     await expect(page.getByRole("heading", { name: /stylist/i })).toBeVisible();
     await expect(page.getByText(/farzana/i).first()).toBeVisible();
   });
+
+  test("reset password shows copyable credentials dialog", async ({ page }) => {
+    const unique = `Rst${Date.now().toString(36)}`;
+    await adminLogin(page);
+    await page.goto("/admin/stylists");
+
+    await page.getByPlaceholder(/stylist name/i).fill(`${unique} Stylist`);
+    await page.getByRole("button", { name: /add stylist \+ login/i }).click();
+    const createDialog = page.getByRole("dialog");
+    await expect(createDialog).toBeVisible({ timeout: 20_000 });
+    await createDialog.getByRole("button", { name: /^done$/i }).click();
+
+    page.once("dialog", (d) => d.accept());
+    const card = page.locator("article").filter({ hasText: new RegExp(unique, "i") }).first();
+    await card.getByRole("button", { name: /reset password/i }).click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible({ timeout: 15_000 });
+    await expect(dialog.getByText(new RegExp(`new password for ${unique}`, "i"))).toBeVisible();
+    const pwd = (await dialog.getByTestId("issued-password").innerText()).trim();
+    expect(pwd.length).toBeGreaterThanOrEqual(8);
+    await expect(dialog.getByTestId("issued-email")).toContainText(new RegExp(`^${unique.toLowerCase()}@`, "i"));
+    await dialog.getByRole("button", { name: /copy password only/i }).click();
+    await dialog.getByRole("button", { name: /^done$/i }).click();
+    await expect(dialog).toBeHidden();
+  });
 });
+
+
