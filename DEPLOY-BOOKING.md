@@ -103,6 +103,18 @@ Do **not** set Netlify root to `platform` — leave it publishing the static HTM
 
 ---
 
+## Local QA automation (Playwright)
+
+From `platform/`:
+
+```powershell
+pnpm db:seed          # ensure demo logins exist
+pnpm test:e2e         # runs all flows; writes HTML report
+pnpm test:e2e:report  # open playwright-report
+```
+
+Details: `platform/e2e/README.md`.
+
 ## Local development after Postgres switch
 
 `platform` now expects **PostgreSQL** (not SQLite).
