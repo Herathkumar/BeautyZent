@@ -8,6 +8,7 @@ export function StylistBottomNav() {
   const router = useRouter();
   const onToday = pathname === "/stylist";
   const onAway = pathname.startsWith("/stylist/schedule");
+  const onAccount = pathname.startsWith("/stylist/account");
 
   return (
     <nav className="stylist-bottom-nav" aria-label="Stylist">
@@ -18,6 +19,10 @@ export function StylistBottomNav() {
       <Link href="/stylist/schedule" className={onAway ? "active" : undefined}>
         <span aria-hidden>◷</span>
         Away
+      </Link>
+      <Link href="/stylist/account" className={onAccount ? "active" : undefined}>
+        <span aria-hidden>✎</span>
+        Account
       </Link>
       <button
         type="button"

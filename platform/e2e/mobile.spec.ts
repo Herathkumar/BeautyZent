@@ -22,6 +22,7 @@ test.describe("Mobile viewport", () => {
     await stylistLogin(page);
     await expect(page.getByRole("link", { name: /^today$/i })).toBeVisible();
     await expect(page.getByRole("link", { name: /^away$/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /^account$/i })).toBeVisible();
     await expect(page.getByRole("button", { name: /log out/i })).toBeVisible();
   });
 

@@ -20,11 +20,8 @@ test.describe("Admin — book for client", () => {
       stylistOptions.find((o) => /farzana/i.test(o));
     if (pick) await selects.nth(1).selectOption({ label: pick.trim() });
 
-    // Prefer last open slot of a day further out
+    // pickFirstSlot already selects an open time; avoid a second click that can race DOM refresh
     await pickFirstSlot(page, nextOpenDate());
-    const slots = page.getByRole("button").filter({ hasText: /\d{1,2}:\d{2}|a\.m\.|p\.m\./i });
-    const count = await slots.count();
-    if (count > 1) await slots.nth(count - 1).click();
 
     await page.locator('label:has-text("Client name") input').fill(clientName);
     await page.locator('label:has-text("Client phone") input').fill("9055550222");
