@@ -6,15 +6,15 @@ import { usePathname, useRouter } from "next/navigation";
 export function StylistBottomNav() {
   const pathname = usePathname();
   const router = useRouter();
-  const onToday = pathname === "/stylist";
+  const onBookings = pathname === "/stylist";
   const onSchedule = pathname.startsWith("/stylist/schedule");
   const onAccount = pathname.startsWith("/stylist/account");
 
   return (
     <nav className="stylist-bottom-nav" aria-label="Stylist">
-      <Link href="/stylist" className={onToday ? "active" : undefined}>
+      <Link href="/stylist" className={onBookings ? "active" : undefined}>
         <span aria-hidden>◉</span>
-        Today
+        My Bookings
       </Link>
       <Link href="/stylist/schedule" className={onSchedule ? "active" : undefined}>
         <span aria-hidden>◷</span>

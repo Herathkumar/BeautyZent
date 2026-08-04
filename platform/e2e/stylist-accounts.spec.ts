@@ -59,6 +59,6 @@ test.describe("Stylist account provisioning", () => {
     await expect(page.getByText(/invalid|failed|error/i)).toBeVisible();
 
     await loginAsStylist(page, emailText.trim(), newPassword);
-    await expect(page.getByRole("link", { name: /^today$/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /^my bookings$/i })).toBeVisible();
   });
 });
