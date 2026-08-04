@@ -20,7 +20,7 @@ test.describe("Mobile viewport", () => {
 
   test("stylist portal bottom nav on phone", async ({ page }) => {
     await stylistLogin(page);
-    await expect(page.getByRole("link", { name: /^my bookings$/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /^my jobs$/i })).toBeVisible();
     await expect(page.getByRole("link", { name: /^schedule$/i })).toBeVisible();
     await expect(page.getByRole("link", { name: /^earnings$/i })).toBeVisible();
     await expect(page.getByRole("link", { name: /^account$/i })).toBeVisible();
@@ -39,7 +39,7 @@ test.describe("Mobile viewport", () => {
     const sheet = page.getByRole("dialog", { name: /salon menu/i });
     await expect(sheet).toBeVisible();
     await sheet.getByRole("link", { name: /services/i }).click();
-    await expect(page).toHaveURL(/\/admin\/services/);
+    await expect(page).toHaveURL(/\/manager\/services/);
   });
 
   test("demo hub cards are tappable", async ({ page }) => {

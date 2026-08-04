@@ -5,10 +5,10 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const SALON_LINKS = [
-  { href: "/admin/services", label: "Services", hint: "Menu & durations" },
-  { href: "/admin/products", label: "Products", hint: "Retail & add-ons" },
-  { href: "/admin/stylists", label: "Stylists", hint: "Team & schedules" },
-  { href: "/admin/pay", label: "Pay & hours", hint: "Earnings & leave approval" },
+  { href: "/manager/services", label: "Services", hint: "Menu & durations" },
+  { href: "/manager/products", label: "Products", hint: "Retail & add-ons" },
+  { href: "/manager/stylists", label: "Stylists", hint: "Team & schedules" },
+  { href: "/manager/pay", label: "Pay & hours", hint: "Earnings & leave approval" },
 ] as const;
 
 function useIsDesktop() {
@@ -43,13 +43,21 @@ export function AdminBottomNav() {
     return () => window.removeEventListener("keydown", onKey);
   }, [salonOpen]);
 
-  if (pathname.startsWith("/admin/login") || isDesktop) return null;
+  if (pathname.startsWith("/manager/login") || pathname.startsWith("/admin/login") || isDesktop) {
+    return null;
+  }
 
-  const onDashboard = pathname === "/admin";
+  const onDashboard = pathname === "/manager" || pathname === "/admin";
   const onBookings =
-    pathname.startsWith("/admin/appointments") || pathname.startsWith("/admin/book");
-  const onSalon = SALON_LINKS.some((l) => pathname.startsWith(l.href));
-  const onAccount = pathname.startsWith("/admin/account");
+    pathname.startsWith("/manager/appointments") ||
+    pathname.startsWith("/manager/book") ||
+    pathname.startsWith("/admin/appointments") ||
+    pathname.startsWith("/admin/book");
+  const onSalon = SALON_LINKS.some(
+    (l) => pathname.startsWith(l.href) || pathname.startsWith(l.href.replace("/manager", "/admin"))
+  );
+  const onAccount =
+    pathname.startsWith("/manager/account") || pathname.startsWith("/admin/account");
 
   return (
     <>
@@ -84,12 +92,12 @@ export function AdminBottomNav() {
         </div>
       ) : null}
 
-      <nav className="admin-bottom-nav" aria-label="Admin">
-        <Link href="/admin" className={onDashboard ? "active" : undefined}>
+      <nav className="admin-bottom-nav" aria-label="Manager">
+        <Link href="/manager" className={onDashboard ? "active" : undefined}>
           <span aria-hidden>▣</span>
           Dashboard
         </Link>
-        <Link href="/admin/appointments" className={onBookings ? "active" : undefined}>
+        <Link href="/manager/appointments" className={onBookings ? "active" : undefined}>
           <span aria-hidden>◉</span>
           Bookings
         </Link>
@@ -102,7 +110,7 @@ export function AdminBottomNav() {
           <span aria-hidden>◫</span>
           Salon
         </button>
-        <Link href="/admin/account" className={onAccount ? "active" : undefined}>
+        <Link href="/manager/account" className={onAccount ? "active" : undefined}>
           <span aria-hidden>✎</span>
           Account
         </Link>

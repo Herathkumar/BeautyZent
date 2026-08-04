@@ -82,7 +82,7 @@ export default function AppointmentsAdminPage() {
 
     const res = await fetch(`/api/admin/appointments?${params.toString()}`);
     if (res.status === 401) {
-      window.location.href = "/admin/login";
+      window.location.href = "/manager/login";
       return;
     }
     const data = await res.json();
@@ -133,7 +133,7 @@ export default function AppointmentsAdminPage() {
           <h1 className="font-[family-name:var(--font-display)] text-3xl">Bookings</h1>
           <p className="text-muted">{rangeHint} across stylists.</p>
         </div>
-        <Link href="/admin/book" className="btn-solid rounded-full px-4 py-2.5 text-sm">
+        <Link href="/manager/book" className="btn-solid rounded-full px-4 py-2.5 text-sm">
           Book for client
         </Link>
       </div>

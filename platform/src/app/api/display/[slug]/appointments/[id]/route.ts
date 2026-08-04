@@ -27,6 +27,7 @@ export async function PATCH(
     appointmentId: appt.id,
     status,
     chargedCents: body.chargedCents,
+    tipCents: body.tipCents,
     chargedByUserId: null,
   });
   if ("error" in result) {

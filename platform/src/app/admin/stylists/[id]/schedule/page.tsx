@@ -53,7 +53,7 @@ export default function StylistSchedulePage() {
   async function load() {
     const res = await fetch(`/api/admin/stylists/${id}/schedule`);
     if (res.status === 401) {
-      window.location.href = "/admin/login";
+      window.location.href = "/manager/login";
       return;
     }
     const text = await res.text();
@@ -169,7 +169,7 @@ export default function StylistSchedulePage() {
   return (
     <main className="space-y-10">
       <div>
-        <Link href="/admin/stylists" className="text-sm text-muted hover:text-ink">
+        <Link href="/manager/stylists" className="text-sm text-muted hover:text-ink">
           ← Back to stylists
         </Link>
         <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl">

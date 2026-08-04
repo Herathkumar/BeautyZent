@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { promptChargedCents } from "@/lib/pay";
+import { promptCompleteAmounts } from "@/lib/pay";
 
 type Appt = {
   id: string;
@@ -10,6 +10,7 @@ type Appt = {
   status: string;
   notes: string | null;
   chargedCents?: number | null;
+  tipCents?: number | null;
   client: { name: string; phone: string | null };
   service: { name: string; priceCents?: number };
   stylist: { name: string; color: string };
@@ -65,7 +66,7 @@ function AppointmentActions({
   onStatus,
 }: {
   a: Appt;
-  onStatus: (id: string, status: string, chargedCents?: number) => void;
+  onStatus: (id: string, status: string, chargedCents?: number, tipCents?: number) => void;
 }) {
   if (["COMPLETED", "CANCELLED", "NO_SHOW"].includes(a.status)) return null;
   return (
@@ -83,9 +84,9 @@ function AppointmentActions({
         <button
           type="button"
           onClick={() => {
-            const cents = promptChargedCents(a.service.priceCents || 0);
-            if (cents == null) return;
-            onStatus(a.id, "COMPLETED", cents);
+            const amounts = promptCompleteAmounts(a.service.priceCents || 0);
+            if (!amounts) return;
+            onStatus(a.id, "COMPLETED", amounts.chargedCents, amounts.tipCents);
           }}
           className="rounded-full border border-white/30 px-3 py-2 text-sm"
         >
@@ -185,11 +186,16 @@ export function DisplayBoard({ slug }: { slug: string }) {
     return Array.from(map.entries());
   }, [appointments, tKey]);
 
-  async function setStatus(id: string, status: string, chargedCents?: number) {
+  async function setStatus(
+    id: string,
+    status: string,
+    chargedCents?: number,
+    tipCents?: number
+  ) {
     await fetch(`/api/display/${slug}/appointments/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status, chargedCents }),
+      body: JSON.stringify({ status, chargedCents, tipCents }),
     });
     load();
   }

@@ -9,13 +9,13 @@ export async function GET(req: Request) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
   if (!code || !stylistId) {
-    return NextResponse.redirect(`${appUrl}/admin/stylists?error=missing_code`);
+    return NextResponse.redirect(`${appUrl}/manager/stylists?error=missing_code`);
   }
 
   try {
     const tokens = await exchangeGoogleCode(code);
     if (!tokens.refresh_token) {
-      return NextResponse.redirect(`${appUrl}/admin/stylists?error=no_refresh_token`);
+      return NextResponse.redirect(`${appUrl}/manager/stylists?error=no_refresh_token`);
     }
     await prisma.stylist.update({
       where: { id: stylistId },
@@ -25,9 +25,9 @@ export async function GET(req: Request) {
         googleCalendarId: "primary",
       },
     });
-    return NextResponse.redirect(`${appUrl}/admin/stylists?connected=1`);
+    return NextResponse.redirect(`${appUrl}/manager/stylists?connected=1`);
   } catch (err) {
     console.error(err);
-    return NextResponse.redirect(`${appUrl}/admin/stylists?error=oauth_failed`);
+    return NextResponse.redirect(`${appUrl}/manager/stylists?error=oauth_failed`);
   }
 }

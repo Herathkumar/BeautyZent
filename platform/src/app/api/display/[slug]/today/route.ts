@@ -30,6 +30,7 @@ export async function GET(
       notes: true,
       client: { select: { name: true, phone: true } },
       chargedCents: true,
+      tipCents: true,
       service: { select: { name: true, priceCents: true } },
       stylist: { select: { name: true, color: true } },
     },

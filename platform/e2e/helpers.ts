@@ -75,11 +75,11 @@ export function toLocalDateTimeInput(d: Date) {
 }
 
 export async function adminLogin(page: Page) {
-  await page.goto("/admin/login");
+  await page.goto("/manager/login");
   await page.getByLabel(/email/i).fill(DEMO.adminEmail);
   await page.getByLabel(/password/i).fill(DEMO.password);
   await page.locator('form button[type="submit"]').click();
-  await expect(page).toHaveURL(/\/admin(?!\/login)/, { timeout: 20_000 });
+  await expect(page).toHaveURL(/\/manager(?!\/login)/, { timeout: 20_000 });
 }
 
 export async function stylistLogin(page: Page) {

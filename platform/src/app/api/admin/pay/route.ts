@@ -65,6 +65,7 @@ export async function GET(req: Request) {
       (sum, a) => sum + (a.chargedCents ?? a.service.priceCents ?? 0),
       0
     );
+    const tipCentsTotal = completed.reduce((sum, a) => sum + (a.tipCents ?? 0), 0);
     const workedMinutes = completed.reduce(
       (sum, a) => sum + (a.service.durationMin || 0),
       0
@@ -74,6 +75,7 @@ export async function GET(req: Request) {
       hourlyRateCents: s.hourlyRateCents,
       commissionBps: s.commissionBps,
       chargedCentsTotal,
+      tipCentsTotal,
       workedMinutes,
     });
 
@@ -102,8 +104,10 @@ export async function GET(req: Request) {
         serviceName: a.service.name,
         durationMin: a.service.durationMin,
         chargedCents: a.chargedCents ?? a.service.priceCents,
+        tipCents: a.tipCents ?? 0,
       })),
       chargedCentsTotal,
+      tipCentsTotal,
       workedMinutes,
       ...pay,
       payouts,

@@ -26,7 +26,7 @@ test.describe("Salon day — full path", () => {
     const isToday = bookedDate === todayDate();
 
     await adminLogin(page);
-    await page.goto("/admin/appointments");
+    await page.goto("/manager/appointments");
     await expect(page.getByText(clientName).first()).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText(/E2E salon-day flow/i).first()).toBeVisible();
 
@@ -40,8 +40,12 @@ test.describe("Salon day — full path", () => {
         await page.waitForTimeout(500);
       }
       if (await card.getByRole("button", { name: /^done$/i }).count()) {
-        page.once("dialog", async (d) => {
-          await d.accept(d.message().includes("$") ? "45.00" : "OK");
+        // Done prompts: service charge, then tip
+        page.on("dialog", async (d) => {
+          const msg = d.message().toLowerCase();
+          if (msg.includes("tip")) await d.accept("5.00");
+          else if (msg.includes("charge") || msg.includes("$")) await d.accept("45.00");
+          else await d.accept("0");
         });
         await card.getByRole("button", { name: /^done$/i }).click();
         await expect(card.getByText(/^done$/i).first()).toBeVisible({ timeout: 10_000 });

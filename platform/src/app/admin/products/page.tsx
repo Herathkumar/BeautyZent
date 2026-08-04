@@ -22,7 +22,7 @@ export default function ProductsAdminPage() {
   async function load() {
     const res = await fetch("/api/admin/products");
     if (res.status === 401) {
-      window.location.href = "/admin/login";
+      window.location.href = "/manager/login";
       return;
     }
     const data = await res.json();

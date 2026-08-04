@@ -438,10 +438,48 @@ a {
   color: #f0c987;
 }
 
+.stylist-theme .stylist-bottom-nav a {
+  position: relative;
+}
+
+.stylist-theme .stylist-nav-badge {
+  position: absolute;
+  top: 0.2rem;
+  right: calc(50% - 1.35rem);
+  min-width: 1.1rem;
+  height: 1.1rem;
+  padding: 0 0.25rem;
+  border-radius: 999px;
+  background: #e8a04a;
+  color: #1c1714;
+  font-size: 0.62rem;
+  font-weight: 800;
+  line-height: 1.1rem;
+  text-align: center;
+}
+
 .stylist-theme .earnings-hero {
   background: linear-gradient(160deg, #3d2b22 0%, #241c18 55%, #1c1714 100%);
   border: 1px solid rgba(201, 168, 124, 0.35);
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+}
+
+.stylist-theme .earnings-goal-ring {
+  position: relative;
+}
+
+.stylist-theme .earnings-goal-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.stylist-theme .earnings-goal-progress {
+  transition: stroke-dashoffset 0.6s ease;
 }
 
 .stylist-theme .earnings-week-nav {

@@ -24,7 +24,7 @@ export default function ServicesAdminPage() {
   async function load() {
     const res = await fetch("/api/admin/services");
     if (res.status === 401) {
-      window.location.href = "/admin/login";
+      window.location.href = "/manager/login";
       return;
     }
     const data = await res.json();

@@ -18,7 +18,7 @@ export default function AdminAccountPage() {
     fetch("/api/admin/account")
       .then(async (res) => {
         if (res.status === 401) {
-          window.location.href = "/admin/login";
+          window.location.href = "/manager/login";
           return null;
         }
         return res.json();
@@ -32,7 +32,7 @@ export default function AdminAccountPage() {
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/admin/login");
+    router.push("/manager/login");
     router.refresh();
   }
 

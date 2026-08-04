@@ -6,7 +6,7 @@ test.describe("Admin — book for client", () => {
     const clientName = `WalkIn ${Date.now()}`;
 
     await adminLogin(page);
-    await page.goto("/admin/book");
+    await page.goto("/manager/book");
     await expect(page.getByRole("heading", { name: /book for a client/i })).toBeVisible();
 
     const selects = page.locator("form select");
@@ -35,9 +35,9 @@ test.describe("Admin — book for client", () => {
 
   test("products and stylists admin pages load", async ({ page }) => {
     await adminLogin(page);
-    await page.goto("/admin/products");
+    await page.goto("/manager/products");
     await expect(page.getByRole("heading", { name: /product/i })).toBeVisible();
-    await page.goto("/admin/stylists");
+    await page.goto("/manager/stylists");
     await expect(page.getByRole("heading", { name: /stylist/i })).toBeVisible();
     await expect(page.getByText(/farzana/i).first()).toBeVisible();
   });
@@ -45,7 +45,7 @@ test.describe("Admin — book for client", () => {
   test("reset password shows credentials in the same stylist card", async ({ page }) => {
     const unique = `Rst${Date.now().toString(36)}`;
     await adminLogin(page);
-    await page.goto("/admin/stylists");
+    await page.goto("/manager/stylists");
 
     await page.getByPlaceholder(/stylist name/i).fill(`${unique} Stylist`);
     await page.getByRole("button", { name: /add stylist \+ login/i }).click();

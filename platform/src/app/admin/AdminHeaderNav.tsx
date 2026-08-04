@@ -5,10 +5,10 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 const SALON_LINKS = [
-  { href: "/admin/services", label: "Services" },
-  { href: "/admin/products", label: "Products" },
-  { href: "/admin/stylists", label: "Stylists" },
-  { href: "/admin/pay", label: "Pay & hours" },
+  { href: "/manager/services", label: "Services" },
+  { href: "/manager/products", label: "Products" },
+  { href: "/manager/stylists", label: "Stylists" },
+  { href: "/manager/pay", label: "Pay & hours" },
 ] as const;
 
 export function AdminHeaderNav() {
@@ -40,13 +40,13 @@ export function AdminHeaderNav() {
 
   return (
     <nav className="admin-nav admin-header-nav flex flex-wrap items-center justify-end gap-x-4 gap-y-2 text-sm">
-      <Link href="/admin" className={pathname === "/admin" ? "is-active" : undefined}>
+      <Link href="/manager" className={pathname === "/manager" ? "is-active" : undefined}>
         Dashboard
       </Link>
       <Link
-        href="/admin/appointments"
+        href="/manager/appointments"
         className={
-          pathname.startsWith("/admin/appointments") || pathname.startsWith("/admin/book")
+          pathname.startsWith("/manager/appointments") || pathname.startsWith("/manager/book")
             ? "is-active"
             : undefined
         }
@@ -78,8 +78,8 @@ export function AdminHeaderNav() {
         ) : null}
       </div>
       <Link
-        href="/admin/account"
-        className={pathname.startsWith("/admin/account") ? "is-active" : undefined}
+        href="/manager/account"
+        className={pathname.startsWith("/manager/account") ? "is-active" : undefined}
       >
         Account
       </Link>

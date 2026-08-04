@@ -38,7 +38,7 @@ export default function HomePage() {
           Salon tablet display
         </Link>
         <Link
-          href="/admin"
+          href="/manager"
           className="rounded-full border border-ink/20 px-5 py-3 font-medium text-ink-soft hover:border-ink"
         >
           Admin portal

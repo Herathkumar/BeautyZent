@@ -78,6 +78,8 @@ model Stylist {
   hourlyRateCents      Int?
   /// Commission in basis points (5000 = 50%)
   commissionBps        Int?          @default(5000)
+  /// Weekly earnings goal for stylist Earnings ring (cents)
+  weeklyGoalCents      Int?          @default(50000)
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
 
@@ -198,8 +200,10 @@ model Appointment {
   status           String   @default("BOOKED") // BOOKED | CHECKED_IN | COMPLETED | CANCELLED | NO_SHOW
   source           String   @default("ONLINE") // ONLINE | WALK_IN | PHONE | ADMIN
   notes            String?
-  /// Amount actually charged when completed (cents). Prefills from service price.
+  /// Amount actually charged for the service when completed (cents).
   chargedCents     Int?
+  /// Tip given to the stylist (cents) — counts fully toward stylist earnings.
+  tipCents         Int?
   chargedAt        DateTime?
   chargedByUserId  String?
   /// Google Calendar event id for sync
@@ -229,6 +233,8 @@ model StylistPayout {
   note        String?
   status      String    @default("PAID") // DRAFT | PAID
   paidAt      DateTime?
+  /// When stylist opens Earnings after a payout, we set this (clears nav badge).
+  seenByStylistAt DateTime?
   createdAt   DateTime  @default(now())
 
   salon   Salon   @relation(fields: [salonId], references: [id], onDelete: Cascade)

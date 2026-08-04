@@ -48,9 +48,9 @@ const demos = [
   },
   {
     step: "5",
-    href: "/admin/login",
+    href: "/manager/login",
     external: false,
-    title: "Admin",
+    title: "Manager",
     subtitle: "Front desk — services & walk-ins",
     hint: "Salon manager account",
     accent: "from-[#4a3520] to-[#1c1714]",

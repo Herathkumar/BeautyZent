@@ -27,7 +27,7 @@ export default function StylistLoginPage() {
       return;
     }
     if (data.user?.role && data.user.role !== "STYLIST") {
-      router.push("/admin");
+      router.push("/manager");
       return;
     }
     router.push("/stylist");
@@ -93,7 +93,7 @@ export default function StylistLoginPage() {
 
       <p className="text-sm text-muted">
         Salon manager?{" "}
-        <Link href="/admin/login" className="text-champagne">
+        <Link href="/manager/login" className="text-champagne">
           Manager portal
         </Link>
       </p>

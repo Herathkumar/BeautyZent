@@ -16,7 +16,7 @@ test.describe("Stylist account provisioning", () => {
     const newPassword = `Changed${Date.now().toString(36)}9`;
 
     await adminLogin(page);
-    await page.goto("/admin/stylists");
+    await page.goto("/manager/stylists");
     await expect(page.getByRole("heading", { name: /stylists & logins/i })).toBeVisible();
 
     await page.getByPlaceholder(/stylist name/i).fill(stylistName);
@@ -59,6 +59,6 @@ test.describe("Stylist account provisioning", () => {
     await expect(page.getByText(/invalid|failed|error/i)).toBeVisible();
 
     await loginAsStylist(page, emailText.trim(), newPassword);
-    await expect(page.getByRole("link", { name: /^my bookings$/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /^my jobs$/i })).toBeVisible();
   });
 });

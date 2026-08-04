@@ -13,7 +13,7 @@ test.describe("Admin bookings filters & no-show", () => {
     });
 
     await adminLogin(page);
-    await page.goto("/admin/appointments");
+    await page.goto("/manager/appointments");
     await expect(page.getByRole("heading", { name: /^bookings$/i })).toBeVisible();
     const stylistFilter = page.getByRole("combobox", { name: /stylist/i });
     const statusFilter = page.getByRole("combobox", { name: /status/i });
@@ -40,7 +40,7 @@ test.describe("Admin bookings filters & no-show", () => {
 
   test("status no-show filter loads without error", async ({ page }) => {
     await adminLogin(page);
-    await page.goto("/admin/appointments");
+    await page.goto("/manager/appointments");
     await expect(page.getByRole("heading", { name: /^bookings$/i })).toBeVisible();
     await page.getByRole("combobox", { name: /status/i }).selectOption("no_show");
     await expect(

@@ -169,6 +169,7 @@ export async function PATCH(req: Request) {
     appointmentId: appt.id,
     status: body.status,
     chargedCents: body.chargedCents,
+    tipCents: body.tipCents,
     chargedByUserId: session!.userId,
   });
   if ("error" in result) {

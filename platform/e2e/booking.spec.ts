@@ -63,13 +63,13 @@ test.describe("Client online booking flow", () => {
   test("new admin service appears with stylists (regression)", async ({ page }) => {
     const serviceName = `QA Auto Service ${Date.now()}`;
 
-    await page.goto("/admin/login");
+    await page.goto("/manager/login");
     await page.getByLabel(/email/i).fill(DEMO.adminEmail);
     await page.getByLabel(/password/i).fill(DEMO.password);
     await page.locator('form button[type="submit"]').click();
-    await page.waitForURL(/\/admin(?!\/login)/, { timeout: 20_000 });
+    await page.waitForURL(/\/manager(?!\/login)/, { timeout: 20_000 });
 
-    await page.goto("/admin/services");
+    await page.goto("/manager/services");
     await page.getByPlaceholder(/service name/i).fill(serviceName);
     await page.locator("form select").first().selectOption("MEN");
     await page.locator('form input[type="number"]').first().fill("20");

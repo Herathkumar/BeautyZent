@@ -125,7 +125,7 @@ export default function StylistsAdminPage() {
   async function load() {
     const res = await fetch("/api/admin/stylists");
     if (res.status === 401) {
-      window.location.href = "/admin/login";
+      window.location.href = "/manager/login";
       return;
     }
     const data = await res.json();
@@ -399,7 +399,7 @@ export default function StylistsAdminPage() {
                 </div>
                 <div className="flex flex-col gap-2">
                   <Link
-                    href={`/admin/stylists/${s.id}/schedule`}
+                    href={`/manager/stylists/${s.id}/schedule`}
                     className="btn-solid rounded-full px-4 py-2 text-center text-sm"
                   >
                     Manage schedule

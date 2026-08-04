@@ -18,7 +18,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               Salon manager
             </p>
             <Link
-              href={showChrome ? "/admin" : "/admin/login"}
+              href={showChrome ? "/manager" : "/manager/login"}
               className="font-[family-name:var(--font-display)] text-2xl text-[#fffaf6]"
             >
               Salon manager

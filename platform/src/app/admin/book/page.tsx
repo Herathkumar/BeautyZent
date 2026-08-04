@@ -25,7 +25,7 @@ export default function AdminBookPage() {
     fetch("/api/admin/stylists")
       .then((r) => {
         if (r.status === 401) {
-          window.location.href = "/admin/login";
+          window.location.href = "/manager/login";
           return null;
         }
         return r.json();

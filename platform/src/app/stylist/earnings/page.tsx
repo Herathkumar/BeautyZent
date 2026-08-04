@@ -9,6 +9,7 @@ type DayBar = {
   jobCount: number;
   earningsCents: number;
   chargedCentsTotal: number;
+  tipCentsTotal: number;
   workedMinutes: number;
 };
 
@@ -23,13 +24,21 @@ type EarningsPayload = {
     label: string;
     isCurrentWeek: boolean;
   };
+  goal: {
+    weeklyGoalCents: number;
+    weekEarningsCents: number;
+    progress: number;
+    remainingCents: number;
+  };
   summary: {
     weekEarningsCents: number;
     weekChargedCents: number;
+    weekTipCents: number;
     weekJobs: number;
     weekHours: number;
     hourlyPayCents: number;
     commissionPayCents: number;
+    tipPayCents: number;
     ytdEarningsCents: number;
     paidCents: number;
     pendingCents: number;
@@ -41,14 +50,59 @@ type EarningsPayload = {
     clientName: string;
     serviceName: string;
     chargedCents: number;
+    tipCents: number;
     durationMin: number;
   }[];
 };
+
+function GoalRing({ progress, earned, goal }: { progress: number; earned: number; goal: number }) {
+  const size = 148;
+  const stroke = 10;
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const offset = c * (1 - Math.min(1, Math.max(0, progress)));
+
+  return (
+    <div className="earnings-goal-ring mx-auto" style={{ width: size, height: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden>
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke="rgba(201,168,124,0.2)"
+          strokeWidth={stroke}
+        />
+        <circle
+          className="earnings-goal-progress"
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke="#f0c987"
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={c}
+          strokeDashoffset={offset}
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        />
+      </svg>
+      <div className="earnings-goal-center">
+        <p className="text-[10px] font-semibold tracking-wide text-[#c9a87c] uppercase">Goal</p>
+        <p className="font-[family-name:var(--font-display)] text-xl text-[#f0c987]">
+          ${centsToDollars(earned)}
+        </p>
+        <p className="text-[11px] text-muted">of ${centsToDollars(goal)}</p>
+      </div>
+    </div>
+  );
+}
 
 export default function StylistEarningsPage() {
   const [data, setData] = useState<EarningsPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [goalMsg, setGoalMsg] = useState("");
 
   const load = useCallback(async (weekMonday?: string | null) => {
     setLoading(true);
@@ -67,11 +121,39 @@ export default function StylistEarningsPage() {
     }
     setData(json);
     setLoading(false);
+
+    // Clear payout badge once stylist opens Earnings.
+    void fetch("/api/stylist/earnings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "markPayoutsSeen" }),
+    });
   }, []);
 
   useEffect(() => {
     void load(null);
   }, [load]);
+
+  async function editGoal() {
+    if (!data) return;
+    const raw = window.prompt(
+      "Weekly earnings goal ($)",
+      centsToDollars(data.goal.weeklyGoalCents)
+    );
+    if (raw === null) return;
+    const res = await fetch("/api/stylist/earnings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "setWeeklyGoal", weeklyGoalDollars: raw }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setGoalMsg(json.error || "Could not save goal");
+      return;
+    }
+    setGoalMsg("Goal updated.");
+    await load(data.week.monday);
+  }
 
   const maxBar = Math.max(1, ...(data?.days.map((d) => d.earningsCents) || [1]));
 
@@ -90,6 +172,7 @@ export default function StylistEarningsPage() {
       </header>
 
       {error ? <p className="text-sm text-[#f5a8a8]">{error}</p> : null}
+      {goalMsg ? <p className="text-sm text-[#9fe3b8]">{goalMsg}</p> : null}
       {loading && !data ? (
         <p className="py-10 text-center text-muted">Loading your week…</p>
       ) : null}
@@ -123,7 +206,15 @@ export default function StylistEarningsPage() {
               </button>
             </div>
 
-            <p className="mt-6 text-center text-xs tracking-[0.18em] text-[#c9a87c] uppercase">
+            <div className="mt-5">
+              <GoalRing
+                progress={data.goal.progress}
+                earned={data.goal.weekEarningsCents}
+                goal={data.goal.weeklyGoalCents}
+              />
+            </div>
+
+            <p className="mt-4 text-center text-xs tracking-[0.18em] text-[#c9a87c] uppercase">
               Week total
             </p>
             <p className="mt-1 text-center font-[family-name:var(--font-display)] text-5xl text-[#f0c987]">
@@ -133,7 +224,26 @@ export default function StylistEarningsPage() {
               {data.summary.weekJobs} job{data.summary.weekJobs === 1 ? "" : "s"} ·{" "}
               {data.summary.weekHours} hrs · ${centsToDollars(data.summary.weekChargedCents)}{" "}
               charged
+              {data.summary.weekTipCents > 0
+                ? ` · $${centsToDollars(data.summary.weekTipCents)} tips`
+                : ""}
             </p>
+            {data.goal.remainingCents > 0 ? (
+              <p className="mt-2 text-center text-sm text-[#c9a87c]">
+                ${centsToDollars(data.goal.remainingCents)} to hit your goal
+              </p>
+            ) : (
+              <p className="mt-2 text-center text-sm text-[#9fe3b8]">Weekly goal reached</p>
+            )}
+            <div className="mt-3 text-center">
+              <button
+                type="button"
+                onClick={() => void editGoal()}
+                className="text-xs font-semibold tracking-wide text-[#c9a87c] underline-offset-2 hover:underline"
+              >
+                Edit weekly goal
+              </button>
+            </div>
           </section>
 
           <section className="grid grid-cols-3 gap-2">
@@ -190,8 +300,10 @@ export default function StylistEarningsPage() {
             </div>
           </section>
 
-          {(data.summary.hourlyPayCents > 0 || data.summary.commissionPayCents > 0) && (
-            <section className="grid gap-2 sm:grid-cols-2">
+          {(data.summary.hourlyPayCents > 0 ||
+            data.summary.commissionPayCents > 0 ||
+            data.summary.tipPayCents > 0) && (
+            <section className="grid gap-2 sm:grid-cols-3">
               {data.summary.hourlyPayCents > 0 ? (
                 <div className="rounded-2xl border border-ink/15 bg-cream px-4 py-3">
                   <p className="text-xs text-muted">Hourly portion</p>
@@ -205,6 +317,14 @@ export default function StylistEarningsPage() {
                   <p className="text-xs text-muted">Commission portion</p>
                   <p className="text-xl font-bold text-[#fffaf6]">
                     ${centsToDollars(data.summary.commissionPayCents)}
+                  </p>
+                </div>
+              ) : null}
+              {data.summary.tipPayCents > 0 ? (
+                <div className="rounded-2xl border border-ink/15 bg-cream px-4 py-3">
+                  <p className="text-xs text-muted">Tips (100%)</p>
+                  <p className="text-xl font-bold text-[#fffaf6]">
+                    ${centsToDollars(data.summary.tipPayCents)}
                   </p>
                 </div>
               ) : null}
@@ -232,15 +352,20 @@ export default function StylistEarningsPage() {
                       })}
                     </p>
                   </div>
-                  <p className="shrink-0 font-bold text-[#f0c987]">
-                    ${centsToDollars(j.chargedCents)}
-                  </p>
+                  <div className="shrink-0 text-right">
+                    <p className="font-bold text-[#f0c987]">
+                      ${centsToDollars(j.chargedCents)}
+                    </p>
+                    {j.tipCents > 0 ? (
+                      <p className="text-xs text-[#9fe3b8]">+${centsToDollars(j.tipCents)} tip</p>
+                    ) : null}
+                  </div>
                 </div>
               ))}
             </div>
             <p className="text-xs text-muted">
-              Charged amounts are what the client paid. Your pay is calculated from your
-              hourly / commission settings.
+              Charged amounts are what the client paid for the service. Tips go 100% to you on
+              top of hourly / commission pay.
             </p>
           </section>
         </>

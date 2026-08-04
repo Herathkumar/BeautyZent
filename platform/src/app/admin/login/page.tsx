@@ -28,7 +28,7 @@ export default function AdminLoginPage() {
     if (data.user?.role === "STYLIST") {
       router.push("/stylist");
     } else {
-      router.push("/admin");
+      router.push("/manager");
     }
     router.refresh();
   }

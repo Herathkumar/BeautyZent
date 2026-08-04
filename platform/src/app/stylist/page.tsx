@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { promptChargedCents } from "@/lib/pay";
+import { promptCompleteAmounts } from "@/lib/pay";
 
 type Appt = {
   id: string;
@@ -12,6 +12,7 @@ type Appt = {
   source: string;
   notes: string | null;
   chargedCents?: number | null;
+  tipCents?: number | null;
   client: { name: string; phone: string | null };
   service: { name: string; priceCents?: number; durationMin?: number };
 };
@@ -119,16 +120,18 @@ export default function StylistHomePage() {
   async function setStatus(id: string, status: string, defaultPriceCents = 0) {
     if (status === "CANCELLED" && !window.confirm("Cancel this booking?")) return;
     let chargedCents: number | undefined;
+    let tipCents: number | undefined;
     if (status === "COMPLETED") {
-      const cents = promptChargedCents(defaultPriceCents);
-      if (cents == null) return;
-      chargedCents = cents;
+      const amounts = promptCompleteAmounts(defaultPriceCents);
+      if (!amounts) return;
+      chargedCents = amounts.chargedCents;
+      tipCents = amounts.tipCents;
     }
     setBusyId(id);
     await fetch("/api/stylist/appointments", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, status, chargedCents }),
+      body: JSON.stringify({ id, status, chargedCents, tipCents }),
     });
     await load();
     setBusyId(null);
