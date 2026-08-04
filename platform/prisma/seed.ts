@@ -34,7 +34,7 @@ async function main() {
       email: "admin@fhsalon.ca",
       passwordHash,
       name: "Salon Admin",
-      role: "ADMIN",
+      role: "ADMIN", // Manager portal (ADMIN kept for existing accounts; UI says Manager)
     },
   });
 

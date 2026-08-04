@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { addMinutes } from "date-fns";
 import { z } from "zod";
-import { getSession } from "@/lib/auth";
+import { getSession, isSalonStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { syncAppointmentToGoogle } from "@/lib/calendar";
 
@@ -18,7 +18,7 @@ const schema = z.object({
 /** Admin / front desk books on behalf of a client for a stylist */
 export async function POST(req: Request) {
   const session = await getSession();
-  if (!session || (session.role !== "ADMIN" && session.role !== "FRONT_DESK")) {
+  if (!session || !isSalonStaff(session.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

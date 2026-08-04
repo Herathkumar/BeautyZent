@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { getSession } from "@/lib/auth";
+import { getSession, isSalonStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 function isStaff(role: string) {
-  return role === "ADMIN" || role === "FRONT_DESK";
+  return isSalonStaff(role);
 }
 
 export async function GET() {

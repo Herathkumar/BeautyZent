@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 type Gender = "FEMALE" | "MALE" | "UNSPECIFIED";
 
@@ -58,6 +59,7 @@ async function fileToJpegDataUrl(file: File, maxSize = 480): Promise<string> {
 }
 
 export default function StylistAccountPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -335,6 +337,18 @@ export default function StylistAccountPage() {
           {saving ? "Saving…" : "Save login"}
         </button>
       </form>
+
+      <button
+        type="button"
+        className="stylist-tap w-full rounded-2xl border border-[#c9a87c]/45 px-5 py-3 text-sm font-semibold text-[#f0c987]"
+        onClick={async () => {
+          await fetch("/api/auth/logout", { method: "POST" });
+          router.push("/stylist/login");
+          router.refresh();
+        }}
+      >
+        Log out
+      </button>
     </main>
   );
 }

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getSession } from "@/lib/auth";
+import { getSession, isSalonStaff } from "@/lib/auth";
 import { AdminBottomNav } from "./AdminBottomNav";
 import { AdminHeaderNav } from "./AdminHeaderNav";
 
@@ -7,8 +7,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
-  const showChrome =
-    session?.role === "ADMIN" || session?.role === "FRONT_DESK";
+  const showChrome = isSalonStaff(session?.role);
 
   return (
     <div className="admin-theme min-h-screen">
@@ -16,13 +15,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-4">
           <div>
             <p className="text-[11px] font-semibold tracking-[0.2em] text-[#c9a87c] uppercase">
-              Salon control
+              Salon manager
             </p>
             <Link
               href={showChrome ? "/admin" : "/admin/login"}
               className="font-[family-name:var(--font-display)] text-2xl text-[#fffaf6]"
             >
-              Salon admin
+              Salon manager
             </Link>
           </div>
           {showChrome ? <AdminHeaderNav /> : null}

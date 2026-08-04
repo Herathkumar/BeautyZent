@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { TZDate } from "@date-fns/tz";
-import { getSession } from "@/lib/auth";
+import { getSession, isSalonStaff } from "@/lib/auth";
 import { syncAppointmentToGoogle } from "@/lib/calendar";
 import { updateAppointmentStatus } from "@/lib/complete-appointment";
 import { applyAutoNoShows } from "@/lib/no-show";
@@ -12,7 +12,7 @@ import {
 } from "@/lib/salon-time";
 
 function isAdmin(session: { role: string } | null) {
-  return session?.role === "ADMIN" || session?.role === "FRONT_DESK";
+  return isSalonStaff(session?.role);
 }
 
 function toDate(d: { getTime: () => number }) {

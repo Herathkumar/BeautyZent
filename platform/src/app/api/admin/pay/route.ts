@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/auth";
+import { getSession, isSalonStaff } from "@/lib/auth";
 import { calcStylistPay, normalizePayType } from "@/lib/pay";
 import { prisma } from "@/lib/prisma";
 import { calendarDateInTz, zonedStartOfDay } from "@/lib/salon-time";
@@ -10,7 +10,7 @@ function toDate(d: { getTime: () => number }) {
 
 export async function GET(req: Request) {
   const session = await getSession();
-  if (!session || (session.role !== "ADMIN" && session.role !== "FRONT_DESK")) {
+  if (!session || !isSalonStaff(session.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -137,7 +137,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   const session = await getSession();
-  if (!session || (session.role !== "ADMIN" && session.role !== "FRONT_DESK")) {
+  if (!session || !isSalonStaff(session.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

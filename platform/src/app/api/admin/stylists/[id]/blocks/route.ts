@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { canManageStylist } from "@/lib/auth";
+import { canManageStylist, isSalonStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 function parseRange(body: { startsAt?: string; endsAt?: string }) {
@@ -29,7 +29,7 @@ export async function POST(
   const stylist = await prisma.stylist.findUnique({ where: { id } });
   if (!stylist) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const isStaff = session.role === "ADMIN" || session.role === "FRONT_DESK";
+  const isStaff = isSalonStaff(session.role);
   const status =
     isStaff || stylist.selfManageSchedule ? "APPROVED" : "PENDING";
 
@@ -65,7 +65,7 @@ export async function PATCH(
   });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const isStaff = session.role === "ADMIN" || session.role === "FRONT_DESK";
+  const isStaff = isSalonStaff(session.role);
 
   // Admin approve / reject pending leave
   if (body.action === "approve" || body.action === "reject") {

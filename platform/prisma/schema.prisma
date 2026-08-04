@@ -37,7 +37,7 @@ model User {
   email        String
   passwordHash String
   name         String
-  role         String   @default("ADMIN") // ADMIN | FRONT_DESK | STYLIST
+  role         String   @default("ADMIN") // ADMIN | MANAGER | FRONT_DESK | STYLIST (UI: Manager)
   /// When role is STYLIST, links this login to a stylist profile
   stylistId    String?  @unique
   createdAt    DateTime @default(now())

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { canManageStylist } from "@/lib/auth";
+import { canManageStylist, isSalonStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 const DAYS = [0, 1, 2, 3, 4, 5, 6];
@@ -56,7 +56,7 @@ export async function PUT(
   const stylist = await prisma.stylist.findUnique({ where: { id } });
   if (!stylist) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const isStaff = session.role === "ADMIN" || session.role === "FRONT_DESK";
+  const isStaff = isSalonStaff(session.role);
   if (!isStaff && !stylist.selfManageSchedule) {
     return NextResponse.json(
       { error: "Ask admin to update your work hours, or request leave for time off." },

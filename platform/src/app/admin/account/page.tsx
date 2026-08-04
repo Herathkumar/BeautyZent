@@ -79,10 +79,10 @@ export default function AdminAccountPage() {
       <div className="rounded-2xl border border-[#c9a87c]/30 bg-[#2a211c] p-4 text-sm text-[#d4c4b0]">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <p>
-              Signed in as{" "}
-              <span className="font-semibold text-[#f0c987]">{name || "Admin"}</span>
-            </p>
+        <p className="mt-2 text-[#d4c4b0]">
+          Signed in as{" "}
+          <span className="font-semibold text-[#f0c987]">{name || "Manager"}</span>
+        </p>
             <p className="mt-1 break-all font-mono text-[#f0c987]">{email}</p>
           </div>
           <button

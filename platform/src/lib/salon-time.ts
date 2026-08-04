@@ -65,3 +65,23 @@ export function formatDayChipLabel(ymd: string, timeZone = DEFAULT_TZ) {
     day: "numeric",
   }).format(dt);
 }
+
+/** Monday (YYYY-MM-DD) of the week containing `ymd` in salon TZ. */
+export function mondayOfWeekContaining(ymd: string, timeZone = DEFAULT_TZ) {
+  const [y, m, d] = ymd.split("-").map(Number);
+  const dt = new TZDate(y!, m! - 1, d!, 12, 0, 0, 0, timeZone);
+  const dow = dt.getDay(); // 0 Sun … 6 Sat
+  const diff = dow === 0 ? -6 : 1 - dow;
+  const mon = new TZDate(y!, m! - 1, d! + diff, 12, 0, 0, 0, timeZone);
+  return calendarDateInTz(timeZone, mon);
+}
+
+export function addCalendarDays(ymd: string, delta: number, timeZone = DEFAULT_TZ) {
+  const [y, m, d] = ymd.split("-").map(Number);
+  const dt = new TZDate(y!, m! - 1, d! + delta, 12, 0, 0, 0, timeZone);
+  return calendarDateInTz(timeZone, dt);
+}
+
+export function weekDayKeys(mondayYmd: string, timeZone = DEFAULT_TZ) {
+  return upcomingCalendarDays(7, timeZone, mondayYmd);
+}

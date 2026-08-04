@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 export function StylistBottomNav() {
   const pathname = usePathname();
-  const router = useRouter();
   const onBookings = pathname === "/stylist";
   const onSchedule = pathname.startsWith("/stylist/schedule");
+  const onEarnings = pathname.startsWith("/stylist/earnings");
   const onAccount = pathname.startsWith("/stylist/account");
 
   return (
@@ -20,21 +20,14 @@ export function StylistBottomNav() {
         <span aria-hidden>◷</span>
         Schedule
       </Link>
+      <Link href="/stylist/earnings" className={onEarnings ? "active" : undefined}>
+        <span aria-hidden>$</span>
+        Earnings
+      </Link>
       <Link href="/stylist/account" className={onAccount ? "active" : undefined}>
         <span aria-hidden>✎</span>
         Account
       </Link>
-      <button
-        type="button"
-        onClick={async () => {
-          await fetch("/api/auth/logout", { method: "POST" });
-          router.push("/stylist/login");
-          router.refresh();
-        }}
-      >
-        <span aria-hidden>⎋</span>
-        Log out
-      </button>
     </nav>
   );
 }

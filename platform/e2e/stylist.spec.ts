@@ -9,6 +9,7 @@ test.describe("Stylist phone portal", () => {
     await expect(page.getByRole("link", { name: /add selfie for online booking|change booking photo/i })).toBeVisible();
     await expect(page.getByRole("link", { name: /^my bookings$/i })).toBeVisible();
     await expect(page.getByRole("link", { name: /^schedule$/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /^earnings$/i })).toBeVisible();
     await expect(page.getByRole("link", { name: /^account$/i })).toBeVisible();
   });
 
@@ -27,6 +28,7 @@ test.describe("Stylist phone portal", () => {
     await expect(page.getByTestId("stylist-photo-preview")).toBeVisible();
     await expect(page.getByLabel(/login email/i)).toBeVisible();
     await expect(page.getByLabel(/current password/i)).toBeVisible();
+    await expect(page.getByRole("button", { name: /^log out$/i })).toBeVisible();
   });
 });
 

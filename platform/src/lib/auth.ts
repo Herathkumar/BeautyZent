@@ -20,6 +20,11 @@ export type SessionUser = {
   stylistId?: string | null;
 };
 
+/** Salon manager / front desk (ADMIN kept for existing accounts; MANAGER is the preferred label). */
+export function isSalonStaff(role: string | null | undefined) {
+  return role === "ADMIN" || role === "MANAGER" || role === "FRONT_DESK";
+}
+
 export async function login(email: string, password: string) {
   const user = await prisma.user.findFirst({
     where: { email: email.toLowerCase().trim() },
@@ -77,7 +82,7 @@ export async function requireSession() {
 
 export async function requireAdmin() {
   const session = await requireSession();
-  if (session.role !== "ADMIN" && session.role !== "FRONT_DESK") {
+  if (!isSalonStaff(session.role)) {
     throw new Error("FORBIDDEN");
   }
   return session;
@@ -91,11 +96,11 @@ export async function requireStylist() {
   return session as SessionUser & { stylistId: string };
 }
 
-/** Admin managing any stylist in salon, or stylist managing self */
+/** Manager managing any stylist in salon, or stylist managing self */
 export async function canManageStylist(stylistId: string) {
   const session = await getSession();
   if (!session) return null;
-  if ((session.role === "ADMIN" || session.role === "FRONT_DESK") && session.salonId) {
+  if (isSalonStaff(session.role) && session.salonId) {
     const stylist = await prisma.stylist.findFirst({
       where: { id: stylistId, salonId: session.salonId },
     });

@@ -22,8 +22,8 @@ test.describe("Mobile viewport", () => {
     await stylistLogin(page);
     await expect(page.getByRole("link", { name: /^my bookings$/i })).toBeVisible();
     await expect(page.getByRole("link", { name: /^schedule$/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /^earnings$/i })).toBeVisible();
     await expect(page.getByRole("link", { name: /^account$/i })).toBeVisible();
-    await expect(page.getByRole("button", { name: /log out/i })).toBeVisible();
   });
 
   test("admin portal bottom nav on phone", async ({ page }) => {

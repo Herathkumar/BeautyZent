@@ -36,13 +36,13 @@ export default function AdminLoginPage() {
   return (
     <main className="mx-auto max-w-md">
       <p className="text-xs font-semibold tracking-[0.2em] text-[#c9a87c] uppercase">
-        Salon control
+        Salon manager
       </p>
       <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl text-[#fffaf6]">
-        Admin login
+        Manager login
       </h1>
       <p className="mt-2 text-sm text-muted">
-        Sign in with the salon admin account to manage services, stylists, and bookings.
+        Sign in with the salon manager account to manage services, stylists, and bookings.
       </p>
       <form
         onSubmit={onSubmit}

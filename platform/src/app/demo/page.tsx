@@ -52,7 +52,7 @@ const demos = [
     external: false,
     title: "Admin",
     subtitle: "Front desk — services & walk-ins",
-    hint: "Salon admin account",
+    hint: "Salon manager account",
     accent: "from-[#4a3520] to-[#1c1714]",
   },
 ] as const;

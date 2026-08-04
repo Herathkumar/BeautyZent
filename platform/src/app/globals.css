@@ -438,6 +438,45 @@ a {
   color: #f0c987;
 }
 
+.stylist-theme .earnings-hero {
+  background: linear-gradient(160deg, #3d2b22 0%, #241c18 55%, #1c1714 100%);
+  border: 1px solid rgba(201, 168, 124, 0.35);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+}
+
+.stylist-theme .earnings-week-nav {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(201, 168, 124, 0.4);
+  background: rgba(201, 168, 124, 0.1);
+  color: #f0c987;
+  font-size: 1.4rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stylist-theme .earnings-week-nav:disabled {
+  opacity: 0.35;
+}
+
+.stylist-theme .earnings-stat {
+  border: 1px solid rgba(201, 168, 124, 0.25);
+  background: rgba(42, 33, 28, 0.9);
+}
+
+.stylist-theme .earnings-bar {
+  background: rgba(201, 168, 124, 0.18);
+  transition: height 0.35s ease;
+}
+
+.stylist-theme .earnings-bar.has-earn {
+  background: linear-gradient(180deg, #f0c987 0%, #c9a87c 100%);
+  box-shadow: 0 0 12px rgba(240, 201, 135, 0.25);
+}
+
 .stylist-theme .stylist-tap {
   min-height: 52px;
   font-size: 1rem;
