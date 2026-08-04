@@ -1,25 +1,27 @@
-import {
-  addMinutes,
-  isBefore,
-  setHours,
-  setMinutes,
-  startOfDay,
-} from "date-fns";
+import { addMinutes, isBefore } from "date-fns";
 import { prisma } from "./prisma";
+import {
+  calendarDateInTz,
+  dayOfWeekInTz,
+  nowInTz,
+  zonedDateTime,
+} from "./salon-time";
 
 export async function getAvailableSlots(opts: {
   salonId: string;
   stylistId: string;
   serviceId: string;
-  day: Date;
+  /** Calendar day YYYY-MM-DD in the salon timezone */
+  date: string;
 }) {
   const salon = await prisma.salon.findUniqueOrThrow({ where: { id: opts.salonId } });
   const service = await prisma.service.findFirstOrThrow({
     where: { id: opts.serviceId, salonId: opts.salonId, active: true },
   });
 
-  const dayStart = startOfDay(opts.day);
-  const dayOfWeek = dayStart.getDay(); // 0 Sun … 6 Sat
+  const timeZone = salon.timezone || "America/Toronto";
+  const ymd = opts.date;
+  const dayOfWeek = dayOfWeekInTz(ymd, timeZone); // 0 Sun … 6 Sat
 
   const weekHour = await prisma.stylistWeekHour.findUnique({
     where: {
@@ -30,7 +32,6 @@ export async function getAvailableSlots(opts: {
     },
   });
 
-  // Explicit day off, or no custom hours → use salon hours (unless day off)
   if (weekHour?.isOff) return [];
 
   const openHour = weekHour?.startHour ?? salon.openHour;
@@ -38,12 +39,12 @@ export async function getAvailableSlots(opts: {
   const closeHour = weekHour?.endHour ?? salon.closeHour;
   const closeMinute = weekHour?.endMinute ?? 0;
 
-  const open = setMinutes(setHours(dayStart, openHour), openMinute);
-  const close = setMinutes(setHours(dayStart, closeHour), closeMinute);
+  const open = zonedDateTime(ymd, openHour, openMinute, timeZone);
+  const close = zonedDateTime(ymd, closeHour, closeMinute, timeZone);
   if (!isBefore(open, close)) return [];
 
-  const now = new Date();
-  const dayEnd = addMinutes(close, 0);
+  const now = nowInTz(timeZone);
+  const dayEnd = close;
 
   const [appointments, blocks] = await Promise.all([
     prisma.appointment.findMany({
@@ -68,14 +69,20 @@ export async function getAvailableSlots(opts: {
   const busy = [...appointments, ...blocks];
 
   const slots: string[] = [];
-  let cursor = open;
+  let cursor: Date = open;
   while (isBefore(addMinutes(cursor, service.durationMin), addMinutes(close, 1))) {
     const end = addMinutes(cursor, service.durationMin);
     const overlaps = busy.some((b) => cursor < b.endsAt && end > b.startsAt);
+    // Keep only future starts (salon-local "now")
     if (!overlaps && isBefore(now, cursor)) {
       slots.push(cursor.toISOString());
     }
     cursor = addMinutes(cursor, salon.slotMinutes);
   }
   return slots;
+}
+
+/** Today’s YYYY-MM-DD for a salon (server-safe). */
+export function salonToday(timeZone?: string | null) {
+  return calendarDateInTz(timeZone || "America/Toronto");
 }

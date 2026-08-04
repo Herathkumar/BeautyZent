@@ -18,12 +18,16 @@ export async function GET(
   const salon = await prisma.salon.findUnique({ where: { slug } });
   if (!salon) return NextResponse.json({ error: "Salon not found" }, { status: 404 });
 
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return NextResponse.json({ error: "date must be YYYY-MM-DD" }, { status: 400 });
+  }
+
   const slots = await getAvailableSlots({
     salonId: salon.id,
     stylistId,
     serviceId,
-    day: new Date(`${date}T12:00:00`),
+    date,
   });
 
-  return NextResponse.json({ slots });
+  return NextResponse.json({ slots, timezone: salon.timezone });
 }

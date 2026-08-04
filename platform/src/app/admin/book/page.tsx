@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { calendarDateInTz } from "@/lib/salon-time";
 
 type Service = { id: string; name: string; durationMin: number; priceCents: number };
 type Stylist = { id: string; name: string; serviceIds: string[] };
@@ -11,7 +12,8 @@ export default function AdminBookPage() {
   const [slug, setSlug] = useState("fhsalon");
   const [serviceId, setServiceId] = useState("");
   const [stylistId, setStylistId] = useState("");
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [minDate, setMinDate] = useState(() => calendarDateInTz("America/Toronto"));
+  const [date, setDate] = useState(() => calendarDateInTz("America/Toronto"));
   const [slots, setSlots] = useState<string[]>([]);
   const [startsAt, setStartsAt] = useState("");
   const [clientName, setClientName] = useState("");
@@ -35,6 +37,11 @@ export default function AdminBookPage() {
         setSlug(cat.salon?.slug || slug);
         setServices(cat.services || []);
         setStylists(cat.stylists || []);
+        const today =
+          cat.salon?.today ||
+          calendarDateInTz(cat.salon?.timezone || "America/Toronto");
+        setMinDate(today);
+        setDate((prev) => (prev < today ? today : prev));
       });
   }, []);
 
@@ -137,7 +144,7 @@ export default function AdminBookPage() {
             type="date"
             required
             value={date}
-            min={new Date().toISOString().slice(0, 10)}
+            min={minDate}
             onChange={(e) => {
               setDate(e.target.value);
               setStartsAt("");

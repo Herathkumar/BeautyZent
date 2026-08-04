@@ -40,8 +40,15 @@ export async function GET(
       slug: salon.slug,
       phone: salon.phone,
       address: salon.address,
+      timezone: salon.timezone,
       openHour: salon.openHour,
       closeHour: salon.closeHour,
+      today: new Intl.DateTimeFormat("en-CA", {
+        timeZone: salon.timezone || "America/Toronto",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(new Date()),
     },
     services: salon.services,
     stylists: salon.stylists.map((s) => {

@@ -11,22 +11,51 @@ function pad(n: number) {
   return String(n).padStart(2, "0");
 }
 
+/** Salon calendar date (America/Toronto) — avoids UTC day-rollover bugs. */
+export function salonCalendarDate(d: Date = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Toronto",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(d);
+}
+
 export function formatDate(d: Date) {
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  return salonCalendarDate(d);
 }
 
 export function todayDate() {
-  return formatDate(new Date());
+  return salonCalendarDate(new Date());
+}
+
+function salonWeekday(d: Date = new Date()) {
+  // 0 Sun … 6 Sat in Toronto
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Toronto",
+    weekday: "short",
+  }).formatToParts(d);
+  const wd = parts.find((p) => p.type === "weekday")?.value;
+  const map: Record<string, number> = {
+    Sun: 0,
+    Mon: 1,
+    Tue: 2,
+    Wed: 3,
+    Thu: 4,
+    Fri: 5,
+    Sat: 6,
+  };
+  return map[wd || "Mon"] ?? 1;
 }
 
 /** Today if Mon–Sat, otherwise next Monday — Sundays are typically off in seed. */
 export function bookableDateNearToday() {
   const d = new Date();
   for (let i = 0; i < 8; i++) {
-    if (d.getDay() !== 0) return formatDate(d);
+    if (salonWeekday(d) !== 0) return salonCalendarDate(d);
     d.setDate(d.getDate() + 1);
   }
-  return formatDate(d);
+  return salonCalendarDate(d);
 }
 
 /** Next weekday (Mon–Sat) as YYYY-MM-DD — Sundays are typically off in seed. */
@@ -34,10 +63,10 @@ export function nextOpenDate() {
   const d = new Date();
   d.setDate(d.getDate() + 1);
   for (let i = 0; i < 8; i++) {
-    if (d.getDay() !== 0) break;
+    if (salonWeekday(d) !== 0) break;
     d.setDate(d.getDate() + 1);
   }
-  return formatDate(d);
+  return salonCalendarDate(d);
 }
 
 export function toLocalDateTimeInput(d: Date) {

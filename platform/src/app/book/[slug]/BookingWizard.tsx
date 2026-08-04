@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { formatCad } from "@/lib/money";
+import { calendarDateInTz } from "@/lib/salon-time";
 
 type Service = {
   id: string;
@@ -26,6 +27,8 @@ type Salon = {
   name: string;
   phone: string | null;
   address: string | null;
+  timezone?: string;
+  today?: string;
 };
 
 const STEPS = ["Service", "Stylist", "Time", "Details"] as const;
@@ -36,7 +39,8 @@ export function BookingWizard({ slug }: { slug: string }) {
   const [stylists, setStylists] = useState<Stylist[]>([]);
   const [serviceId, setServiceId] = useState("");
   const [stylistId, setStylistId] = useState("");
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [minDate, setMinDate] = useState(() => calendarDateInTz("America/Toronto"));
+  const [date, setDate] = useState(() => calendarDateInTz("America/Toronto"));
   const [slots, setSlots] = useState<string[]>([]);
   const [startsAt, setStartsAt] = useState("");
   const [name, setName] = useState("");
@@ -60,6 +64,11 @@ export function BookingWizard({ slug }: { slug: string }) {
         setSalon(data.salon);
         setServices(data.services);
         setStylists(data.stylists);
+        const today =
+          data.salon?.today ||
+          calendarDateInTz(data.salon?.timezone || "America/Toronto");
+        setMinDate(today);
+        setDate((prev) => (prev < today ? today : prev));
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -297,7 +306,7 @@ export function BookingWizard({ slug }: { slug: string }) {
           <input
             type="date"
             value={date}
-            min={new Date().toISOString().slice(0, 10)}
+            min={minDate}
             onChange={(e) => {
               setDate(e.target.value);
               setStartsAt("");
