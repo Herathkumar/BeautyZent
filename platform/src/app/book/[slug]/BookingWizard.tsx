@@ -2,11 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { formatCad } from "@/lib/money";
-import {
-  calendarDateInTz,
-  formatDayChipLabel,
-  upcomingCalendarDays,
-} from "@/lib/salon-time";
+import { calendarDateInTz } from "@/lib/salon-time";
 
 type Service = {
   id: string;
@@ -307,50 +303,26 @@ export function BookingWizard({ slug }: { slug: string }) {
       {stylistId ? (
         <section className="space-y-3">
           <h2 className="font-[family-name:var(--font-display)] text-2xl">Pick a time</h2>
-          <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {upcomingCalendarDays(14, salon?.timezone || "America/Toronto", minDate).map(
-              (day) => {
-                const selected = date === day;
-                return (
-                  <button
-                    key={day}
-                    type="button"
-                    onClick={() => {
-                      setDate(day);
-                      setStartsAt("");
-                    }}
-                    className={`shrink-0 rounded-2xl border px-3 py-2.5 text-left text-sm transition ${
-                      selected
-                        ? "border-[#f2c4b0] bg-[rgba(242,196,176,0.18)] text-[#fffaf6]"
-                        : "border-[rgba(232,180,162,0.35)] bg-[#241820] text-[#f0e4d8]"
-                    }`}
-                  >
-                    <span className="block font-semibold">
-                      {formatDayChipLabel(day, salon?.timezone || "America/Toronto")}
-                    </span>
-                    <span className="mt-0.5 block text-xs text-muted">
-                      {day.slice(5).replace("-", "/")}
-                    </span>
-                  </button>
-                );
+          <input
+            type="date"
+            value={date}
+            min={minDate}
+            onChange={(e) => {
+              const next = e.target.value;
+              if (!next) return;
+              setDate(next);
+              setStartsAt("");
+            }}
+            onClick={(e) => {
+              const el = e.currentTarget;
+              try {
+                el.showPicker?.();
+              } catch {
+                /* browser may block if not trusted; native icon still works */
               }
-            )}
-          </div>
-          <label className="grid gap-1.5 text-sm text-muted">
-            Or pick another date
-            <input
-              type="date"
-              value={date}
-              min={minDate}
-              onChange={(e) => {
-                const next = e.target.value;
-                if (!next) return;
-                setDate(next);
-                setStartsAt("");
-              }}
-              className="book-date-input w-full rounded-2xl border border-ink/15 px-4 py-3 text-[#fffaf6]"
-            />
-          </label>
+            }}
+            className="w-full rounded-2xl border border-ink/15 px-4 py-3"
+          />
           <div className="flex flex-wrap gap-2">
             {slots.length === 0 ? (
               <p className="text-sm text-muted">No open slots this day. Try another date.</p>
