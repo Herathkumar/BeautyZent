@@ -16,6 +16,8 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
+    "test:e2e:isolated": "tsx scripts/run-e2e-isolated.ts",
+    "test:e2e:isolated:headed": "tsx scripts/run-e2e-isolated.ts -- --headed",
     "test:e2e:report": "playwright show-report playwright-report"
   },
   "prisma": {
@@ -41,6 +43,8 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.4.2",
+    "embedded-postgres": "18.4.0-beta.17",
     "eslint": "^9",
     "eslint-config-next": "15.5.22",
     "prisma": "^6.19.3",

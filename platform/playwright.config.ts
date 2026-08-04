@@ -1,4 +1,12 @@
 import { defineConfig, devices } from "@playwright/test";
+import path from "path";
+import { config as loadEnv } from "dotenv";
+
+// Prefer isolated E2E DB URL when provided (never required — falls back to .env).
+loadEnv({ path: path.join(__dirname, ".env") });
+if (process.env.E2E_DATABASE_URL) {
+  process.env.DATABASE_URL = process.env.E2E_DATABASE_URL;
+}
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL || "http://localhost:3000";
 
@@ -25,7 +33,12 @@ export default defineConfig({
   webServer: {
     command: "pnpm dev",
     url: baseURL,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: !process.env.CI && !process.env.E2E_DATABASE_URL,
     timeout: 120_000,
+    env: {
+      ...process.env,
+      DATABASE_URL: process.env.DATABASE_URL || "",
+      AUTH_SECRET: process.env.AUTH_SECRET || "e2e-auth-secret-not-for-production",
+    },
   },
 });

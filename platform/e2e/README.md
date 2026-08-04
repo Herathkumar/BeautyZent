@@ -21,28 +21,37 @@ Still out of scope: Google Calendar OAuth, multi-tenant slugs, Netlify marketing
 
 ## Prerequisites
 
-1. `platform/.env` has a working `DATABASE_URL`
-2. Seeded demo data: `pnpm db:seed`
-3. Browsers (run in **your** terminal):
+1. Chromium for Playwright:
 
 ```powershell
 pnpm exec playwright install chromium
 ```
 
-## Run
+2. For **isolated** runs (recommended): no Neon/live DB needed — a local throwaway Postgres is started automatically.
+3. For runs against an existing DB: `platform/.env` `DATABASE_URL` + `pnpm db:seed` (avoid production).
+
+## Run (isolated — does not touch live Neon)
 
 ```powershell
 cd C:\Users\hkathira\a3-it-solutions\platform
 
-pnpm test:e2e            # headless + HTML report
-pnpm test:e2e:headed     # watch the browser
-pnpm test:e2e:ui         # interactive runner
-pnpm test:e2e:report     # open last HTML report
+pnpm test:e2e:isolated            # headless against local Postgres + demo seed
+pnpm test:e2e:isolated:headed     # same, headed browser
+pnpm test:e2e:report              # open HTML report
 ```
 
-Staging:
+## Run (against current DATABASE_URL — use carefully)
 
 ```powershell
-$env:PLAYWRIGHT_BASE_URL="https://fhsalon.vercel.app"
+pnpm db:seed
+pnpm test:e2e
+pnpm test:e2e:headed
+pnpm test:e2e:ui
+```
+
+Staging (also mutates that environment’s DB — do not use production):
+
+```powershell
+$env:PLAYWRIGHT_BASE_URL="https://your-staging.vercel.app"
 pnpm test:e2e:headed
 ```
