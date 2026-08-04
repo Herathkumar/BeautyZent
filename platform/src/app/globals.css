@@ -159,13 +159,6 @@ a {
   backdrop-filter: blur(12px);
 }
 
-@media (min-width: 768px) {
-  .admin-theme .admin-bottom-nav,
-  .admin-theme .admin-salon-sheet {
-    display: none;
-  }
-}
-
 .admin-theme .admin-bottom-nav a,
 .admin-theme .admin-bottom-nav button {
   display: flex;

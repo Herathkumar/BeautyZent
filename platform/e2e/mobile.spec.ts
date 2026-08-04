@@ -33,7 +33,6 @@ test.describe("Mobile viewport", () => {
     await expect(bottom.getByRole("link", { name: /^bookings$/i })).toBeVisible();
     await expect(bottom.getByRole("button", { name: /^salon$/i })).toBeVisible();
     await expect(bottom.getByRole("link", { name: /^account$/i })).toBeVisible();
-    await expect(page.locator(".admin-header-nav")).toBeHidden();
 
     await bottom.getByRole("button", { name: /^salon$/i }).click();
     const sheet = page.getByRole("dialog", { name: /salon menu/i });

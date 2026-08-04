@@ -5,8 +5,7 @@ import { AdminHeaderNav } from "./AdminHeaderNav";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
-  const showChrome =
-    session?.role === "ADMIN" || session?.role === "FRONT_DESK";
+  const showChrome = Boolean(session);
 
   return (
     <div className="admin-theme min-h-screen">
@@ -26,9 +25,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           {showChrome ? <AdminHeaderNav /> : null}
         </div>
       </header>
-      <div
-        className={`mx-auto max-w-5xl px-4 py-6 md:px-6 md:py-8 ${showChrome ? "pb-28 md:pb-8" : ""}`}
-      >
+      <div className={`mx-auto max-w-5xl px-4 py-6 md:px-6 md:py-8 ${showChrome ? "pb-28" : ""}`}>
         {children}
       </div>
       {showChrome ? <AdminBottomNav /> : null}
