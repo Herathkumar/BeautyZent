@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { syncAppointmentToGoogle } from "@/lib/calendar";
+import { updateAppointmentStatus } from "@/lib/complete-appointment";
+import { prisma } from "@/lib/prisma";
 
 export async function PATCH(
   req: Request,
@@ -10,7 +11,8 @@ export async function PATCH(
   const salon = await prisma.salon.findUnique({ where: { slug } });
   if (!salon) return NextResponse.json({ error: "Salon not found" }, { status: 404 });
 
-  const { status } = await req.json();
+  const body = await req.json();
+  const status = body.status;
   const allowed = ["BOOKED", "CHECKED_IN", "COMPLETED", "CANCELLED", "NO_SHOW"];
   if (!allowed.includes(status)) {
     return NextResponse.json({ error: "Invalid status" }, { status: 400 });
@@ -21,10 +23,16 @@ export async function PATCH(
   });
   if (!appt) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const updated = await prisma.appointment.update({
-    where: { id },
-    data: { status },
+  const result = await updateAppointmentStatus({
+    appointmentId: appt.id,
+    status,
+    chargedCents: body.chargedCents,
+    chargedByUserId: null,
   });
-  await syncAppointmentToGoogle(updated.id);
-  return NextResponse.json({ appointment: updated });
+  if ("error" in result) {
+    return NextResponse.json({ error: result.error }, { status: result.status });
+  }
+
+  await syncAppointmentToGoogle(result.appointment.id);
+  return NextResponse.json({ appointment: result.appointment });
 }

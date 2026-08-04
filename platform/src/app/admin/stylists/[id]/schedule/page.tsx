@@ -21,6 +21,7 @@ type Block = {
   endsAt: string;
   reason: string;
   note: string | null;
+  status?: string;
 };
 
 function hourOptions() {
@@ -318,14 +319,51 @@ export default function StylistSchedulePage() {
           {blocks.map((b) => (
             <div key={b.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
               <div>
-                <p className="font-medium uppercase tracking-wide text-cocoa text-xs">{b.reason}</p>
+                <p className="font-medium uppercase tracking-wide text-cocoa text-xs">
+                  {b.reason}
+                  {b.status ? ` · ${b.status}` : ""}
+                </p>
                 <p className="text-sm">
                   {new Date(b.startsAt).toLocaleString("en-CA")} →{" "}
                   {new Date(b.endsAt).toLocaleString("en-CA")}
                 </p>
                 {b.note && <p className="text-sm text-muted">{b.note}</p>}
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
+                {b.status === "PENDING" ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await fetch(`/api/admin/stylists/${id}/blocks`, {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ id: b.id, action: "approve" }),
+                        });
+                        setMessage("Leave approved.");
+                        load();
+                      }}
+                      className="btn-solid rounded-full px-3 py-1 text-sm"
+                    >
+                      Approve
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await fetch(`/api/admin/stylists/${id}/blocks`, {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ id: b.id, action: "reject" }),
+                        });
+                        setMessage("Leave rejected.");
+                        load();
+                      }}
+                      className="rounded-full border border-[rgba(245,168,168,0.45)] px-3 py-1 text-sm text-[#f5a8a8]"
+                    >
+                      Reject
+                    </button>
+                  </>
+                ) : null}
                 <button
                   type="button"
                   onClick={() => startEdit(b)}

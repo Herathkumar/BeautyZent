@@ -12,6 +12,10 @@ type Stylist = {
   photoUrl?: string;
   hasPhoto?: boolean;
   active: boolean;
+  selfManageSchedule?: boolean;
+  payType?: string;
+  hourlyRateCents?: number | null;
+  commissionBps?: number | null;
   loginEmail: string | null;
   userId: string | null;
   calendarConnected: boolean;
@@ -106,6 +110,10 @@ export default function StylistsAdminPage() {
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
   const [gender, setGender] = useState("FEMALE");
+  const [selfManageSchedule, setSelfManageSchedule] = useState(false);
+  const [payType, setPayType] = useState("COMMISSION");
+  const [commissionPct, setCommissionPct] = useState("50");
+  const [hourlyRate, setHourlyRate] = useState("");
   const [saving, setSaving] = useState(false);
   const [resettingId, setResettingId] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -144,7 +152,15 @@ export default function StylistsAdminPage() {
     const res = await fetch("/api/admin/stylists", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, bio, gender }),
+      body: JSON.stringify({
+        name,
+        bio,
+        gender,
+        selfManageSchedule,
+        payType,
+        commissionBps: Math.round(Number(commissionPct || 0) * 100),
+        hourlyRateCents: hourlyRate ? Math.round(Number(hourlyRate) * 100) : null,
+      }),
     });
     const data = await res.json();
     setSaving(false);
@@ -156,6 +172,10 @@ export default function StylistsAdminPage() {
     setName("");
     setBio("");
     setGender("FEMALE");
+    setSelfManageSchedule(false);
+    setPayType("COMMISSION");
+    setCommissionPct("50");
+    setHourlyRate("");
     if (data.credentials) {
       setIssued({
         email: data.credentials.email,
@@ -238,7 +258,7 @@ export default function StylistsAdminPage() {
       )}
 
       <div className="rounded-2xl border border-[#c9a87c]/30 bg-[#2a211c] p-4">
-        <form onSubmit={addStylist} className="grid gap-3 sm:grid-cols-4">
+        <form onSubmit={addStylist} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <input
             required
             placeholder="Stylist name"
@@ -262,6 +282,43 @@ export default function StylistsAdminPage() {
             <option value="MALE">Male (avatar)</option>
             <option value="UNSPECIFIED">Neutral avatar</option>
           </select>
+          <select
+            value={payType}
+            onChange={(e) => setPayType(e.target.value)}
+            aria-label="Pay type"
+            className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+          >
+            <option value="COMMISSION">Commission</option>
+            <option value="HOURLY">Hourly</option>
+            <option value="BOTH">Hourly + commission</option>
+          </select>
+          <input
+            type="number"
+            min={0}
+            max={100}
+            step={1}
+            placeholder="Commission %"
+            value={commissionPct}
+            onChange={(e) => setCommissionPct(e.target.value)}
+            className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+          />
+          <input
+            type="number"
+            min={0}
+            step={0.5}
+            placeholder="Hourly rate $"
+            value={hourlyRate}
+            onChange={(e) => setHourlyRate(e.target.value)}
+            className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+          />
+          <label className="flex items-center gap-2 text-sm text-[#d4c4b0]">
+            <input
+              type="checkbox"
+              checked={selfManageSchedule}
+              onChange={(e) => setSelfManageSchedule(e.target.checked)}
+            />
+            Self-manage schedule (no leave approval)
+          </label>
           <button type="submit" disabled={saving} className="btn-solid rounded-full px-4 py-2">
             {saving ? "Creating…" : "Add stylist + login"}
           </button>
@@ -308,6 +365,19 @@ export default function StylistsAdminPage() {
                   </p>
                   {s.bio && <p className="mt-2 text-base text-[#d4c4b0]">{s.bio}</p>}
                   <p className="mt-3 text-sm text-[#d4c4b0]">
+                    Pay:{" "}
+                    <span className="font-semibold text-[#f0c987]">
+                      {s.payType || "COMMISSION"}
+                      {s.commissionBps != null ? ` · ${(s.commissionBps / 100).toFixed(0)}%` : ""}
+                      {s.hourlyRateCents != null
+                        ? ` · $${(s.hourlyRateCents / 100).toFixed(2)}/hr`
+                        : ""}
+                    </span>
+                    {s.selfManageSchedule ? (
+                      <span className="text-[#9fe3b8]"> · Self-manage</span>
+                    ) : null}
+                  </p>
+                  <p className="mt-2 text-sm text-[#d4c4b0]">
                     Login:{" "}
                     {s.loginEmail ? (
                       <span className="font-semibold text-[#f0c987]">{s.loginEmail}</span>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { promptChargedCents } from "@/lib/pay";
 
 type Appt = {
   id: string;
@@ -8,8 +9,9 @@ type Appt = {
   endsAt: string;
   status: string;
   notes: string | null;
+  chargedCents?: number | null;
   client: { name: string; phone: string | null };
-  service: { name: string };
+  service: { name: string; priceCents?: number };
   stylist: { name: string; color: string };
 };
 
@@ -63,7 +65,7 @@ function AppointmentActions({
   onStatus,
 }: {
   a: Appt;
-  onStatus: (id: string, status: string) => void;
+  onStatus: (id: string, status: string, chargedCents?: number) => void;
 }) {
   if (["COMPLETED", "CANCELLED", "NO_SHOW"].includes(a.status)) return null;
   return (
@@ -80,7 +82,11 @@ function AppointmentActions({
       {["BOOKED", "CHECKED_IN"].includes(a.status) && (
         <button
           type="button"
-          onClick={() => onStatus(a.id, "COMPLETED")}
+          onClick={() => {
+            const cents = promptChargedCents(a.service.priceCents || 0);
+            if (cents == null) return;
+            onStatus(a.id, "COMPLETED", cents);
+          }}
           className="rounded-full border border-white/30 px-3 py-2 text-sm"
         >
           Done
@@ -179,11 +185,11 @@ export function DisplayBoard({ slug }: { slug: string }) {
     return Array.from(map.entries());
   }, [appointments, tKey]);
 
-  async function setStatus(id: string, status: string) {
+  async function setStatus(id: string, status: string, chargedCents?: number) {
     await fetch(`/api/display/${slug}/appointments/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ status, chargedCents }),
     });
     load();
   }

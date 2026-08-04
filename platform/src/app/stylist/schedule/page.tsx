@@ -19,6 +19,7 @@ type Block = {
   endsAt: string;
   reason: string;
   note: string | null;
+  status?: string;
 };
 
 function toLocalInput(iso: string) {
@@ -43,6 +44,7 @@ function reasonLabel(reason: string) {
 
 export default function StylistOwnSchedulePage() {
   const [stylistId, setStylistId] = useState("");
+  const [selfManage, setSelfManage] = useState(false);
   const [weekHours, setWeekHours] = useState<WeekHour[]>([]);
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [message, setMessage] = useState("");
@@ -67,7 +69,12 @@ export default function StylistOwnSchedulePage() {
   async function loadSchedule(id: string) {
     const res = await fetch(`/api/admin/stylists/${id}/schedule`);
     const text = await res.text();
-    let data: { weekHours?: WeekHour[]; blocks?: Block[]; error?: string } = {};
+    let data: {
+      weekHours?: WeekHour[];
+      blocks?: Block[];
+      stylist?: { selfManageSchedule?: boolean };
+      error?: string;
+    } = {};
     try {
       data = text ? JSON.parse(text) : {};
     } catch {
@@ -80,6 +87,7 @@ export default function StylistOwnSchedulePage() {
     }
     setWeekHours(data.weekHours || []);
     setBlocks(data.blocks || []);
+    setSelfManage(Boolean(data.stylist?.selfManageSchedule));
   }
 
   useEffect(() => {
@@ -150,8 +158,15 @@ export default function StylistOwnSchedulePage() {
       return;
     }
     const wasEdit = Boolean(editingId);
+    const saved = await res.json().catch(() => ({}));
     cancelEdit();
-    setMessage(wasEdit ? "Updated." : "Marked away — those times are hidden from booking.");
+    if (!wasEdit && saved.block?.status === "PENDING") {
+      setMessage("Leave requested — waiting for admin approval.");
+    } else {
+      setMessage(
+        wasEdit ? "Updated." : "Marked away — those times are hidden from booking."
+      );
+    }
     await loadSchedule(stylistId);
   }
 
@@ -251,6 +266,8 @@ export default function StylistOwnSchedulePage() {
               <div>
                 <p className="text-xs font-bold uppercase tracking-wide text-champagne">
                   {reasonLabel(b.reason)}
+                  {b.status === "PENDING" ? " · Awaiting admin" : ""}
+                  {b.status === "REJECTED" ? " · Rejected" : ""}
                 </p>
                 <p className="mt-1 text-sm">
                   {new Date(b.startsAt).toLocaleString("en-CA", {

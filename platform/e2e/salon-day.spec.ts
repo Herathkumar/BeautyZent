@@ -40,6 +40,9 @@ test.describe("Salon day — full path", () => {
         await page.waitForTimeout(500);
       }
       if (await card.getByRole("button", { name: /^done$/i }).count()) {
+        page.once("dialog", async (d) => {
+          await d.accept(d.message().includes("$") ? "45.00" : "OK");
+        });
         await card.getByRole("button", { name: /^done$/i }).click();
         await expect(card.getByText(/^done$/i).first()).toBeVisible({ timeout: 10_000 });
       }

@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getGoogleAuthUrl, isGoogleConfigured } from "@/lib/calendar";
 import { linkStylistToAllServices } from "@/lib/service-links";
+import { normalizePayType } from "@/lib/pay";
 import {
   createStylistLogin,
   resetStylistPassword,
@@ -40,6 +41,10 @@ export async function GET() {
           photoUpdatedAt: s.photoUpdatedAt,
         }),
         active: s.active,
+        selfManageSchedule: s.selfManageSchedule,
+        payType: s.payType,
+        hourlyRateCents: s.hourlyRateCents,
+        commissionBps: s.commissionBps,
         loginEmail: s.user?.email || null,
         userId: s.user?.id || null,
         calendarConnected: Boolean(s.googleRefreshToken),
@@ -54,6 +59,32 @@ export async function POST(req: Request) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const body = await req.json();
+
+  if (body.action === "updatePay") {
+    if (!body.stylistId) {
+      return NextResponse.json({ error: "stylistId required" }, { status: 400 });
+    }
+    const stylist = await prisma.stylist.findFirst({
+      where: { id: body.stylistId, salonId: session.salonId },
+    });
+    if (!stylist) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    const updated = await prisma.stylist.update({
+      where: { id: stylist.id },
+      data: {
+        selfManageSchedule: Boolean(body.selfManageSchedule),
+        payType: normalizePayType(body.payType),
+        hourlyRateCents:
+          body.hourlyRateCents === "" || body.hourlyRateCents == null
+            ? null
+            : Math.round(Number(body.hourlyRateCents)),
+        commissionBps:
+          body.commissionBps === "" || body.commissionBps == null
+            ? null
+            : Math.round(Number(body.commissionBps)),
+      },
+    });
+    return NextResponse.json({ stylist: updated });
+  }
 
   // Admin reset password for an existing stylist login
   if (body.action === "resetPassword") {
@@ -90,6 +121,16 @@ export async function POST(req: Request) {
       color: body.color || "#6e4a38",
       gender,
       active: true,
+      selfManageSchedule: Boolean(body.selfManageSchedule),
+      payType: normalizePayType(body.payType),
+      hourlyRateCents:
+        body.hourlyRateCents === "" || body.hourlyRateCents == null
+          ? null
+          : Math.round(Number(body.hourlyRateCents)),
+      commissionBps:
+        body.commissionBps === "" || body.commissionBps == null
+          ? 5000
+          : Math.round(Number(body.commissionBps)),
     },
   });
   await linkStylistToAllServices(session.salonId, stylist.id);

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { promptChargedCents } from "@/lib/pay";
 
 type Appt = {
   id: string;
@@ -10,8 +11,9 @@ type Appt = {
   status: string;
   source: string;
   notes: string | null;
+  chargedCents?: number | null;
   client: { name: string; phone: string | null };
-  service: { name: string };
+  service: { name: string; priceCents?: number; durationMin?: number };
 };
 
 function statusLabel(status: string) {
@@ -114,13 +116,19 @@ export default function StylistHomePage() {
 
   const nextOpen = today.find((a) => ["BOOKED", "CHECKED_IN"].includes(a.status));
 
-  async function setStatus(id: string, status: string) {
+  async function setStatus(id: string, status: string, defaultPriceCents = 0) {
     if (status === "CANCELLED" && !window.confirm("Cancel this booking?")) return;
+    let chargedCents: number | undefined;
+    if (status === "COMPLETED") {
+      const cents = promptChargedCents(defaultPriceCents);
+      if (cents == null) return;
+      chargedCents = cents;
+    }
     setBusyId(id);
     await fetch("/api/stylist/appointments", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, status }),
+      body: JSON.stringify({ id, status, chargedCents }),
     });
     await load();
     setBusyId(null);
@@ -194,7 +202,7 @@ export default function StylistHomePage() {
               <button
                 type="button"
                 disabled={busyId === a.id}
-                onClick={() => setStatus(a.id, "COMPLETED")}
+                onClick={() => setStatus(a.id, "COMPLETED", a.service.priceCents || 0)}
                 className={`stylist-tap rounded-2xl border border-ink/20 ${
                   a.status === "CHECKED_IN" ? "btn-solid col-span-2" : ""
                 }`}

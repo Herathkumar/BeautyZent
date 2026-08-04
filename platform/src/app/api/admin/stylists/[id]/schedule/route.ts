@@ -53,6 +53,17 @@ export async function PUT(
   const session = await canManageStylist(id);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const stylist = await prisma.stylist.findUnique({ where: { id } });
+  if (!stylist) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  const isStaff = session.role === "ADMIN" || session.role === "FRONT_DESK";
+  if (!isStaff && !stylist.selfManageSchedule) {
+    return NextResponse.json(
+      { error: "Ask admin to update your work hours, or request leave for time off." },
+      { status: 403 }
+    );
+  }
+
   const body = await req.json();
   const weekHours = Array.isArray(body.weekHours) ? body.weekHours : [];
 

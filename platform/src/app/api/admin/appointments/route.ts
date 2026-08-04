@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { TZDate } from "@date-fns/tz";
 import { getSession } from "@/lib/auth";
 import { syncAppointmentToGoogle } from "@/lib/calendar";
+import { updateAppointmentStatus } from "@/lib/complete-appointment";
 import { applyAutoNoShows } from "@/lib/no-show";
 import { prisma } from "@/lib/prisma";
 import {
@@ -164,15 +165,16 @@ export async function PATCH(req: Request) {
     );
   }
 
-  const updated = await prisma.appointment.update({
-    where: { id: appt.id },
-    data: { status: body.status },
-    include: {
-      client: true,
-      service: true,
-      stylist: true,
-    },
+  const result = await updateAppointmentStatus({
+    appointmentId: appt.id,
+    status: body.status,
+    chargedCents: body.chargedCents,
+    chargedByUserId: session!.userId,
   });
-  await syncAppointmentToGoogle(updated.id);
-  return NextResponse.json({ appointment: updated });
+  if ("error" in result) {
+    return NextResponse.json({ error: result.error }, { status: result.status });
+  }
+
+  await syncAppointmentToGoogle(result.appointment.id);
+  return NextResponse.json({ appointment: result.appointment });
 }

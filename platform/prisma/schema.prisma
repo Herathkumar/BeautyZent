@@ -28,6 +28,7 @@ model Salon {
   products     Product[]
   clients      Client[]
   appointments Appointment[]
+  payouts      StylistPayout[]
 }
 
 model User {
@@ -70,6 +71,13 @@ model Stylist {
   googleRefreshToken   String?
   googleCalendarId     String?       @default("primary")
   googleConnectedAt    DateTime?
+  /// Special stylists: leave/blocks and week hours apply without admin approval.
+  selfManageSchedule   Boolean       @default(false)
+  /// HOURLY | COMMISSION | BOTH
+  payType              String        @default("COMMISSION")
+  hourlyRateCents      Int?
+  /// Commission in basis points (5000 = 50%)
+  commissionBps        Int?          @default(5000)
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
 
@@ -79,6 +87,7 @@ model Stylist {
   appointments Appointment[]
   weekHours    StylistWeekHour[]
   blocks       StylistBlock[]
+  payouts      StylistPayout[]
 }
 
 /// Weekly working hours per stylist (0 = Sunday … 6 = Saturday)
@@ -97,19 +106,24 @@ model StylistWeekHour {
   @@unique([stylistId, dayOfWeek])
 }
 
-/// Leave, vacation, lunch, or blocked time — hidden from client booking
+/// Leave, vacation, lunch, or blocked time — hidden from client booking when PENDING/APPROVED
 model StylistBlock {
-  id        String   @id @default(cuid())
-  stylistId String
-  startsAt  DateTime
-  endsAt    DateTime
-  reason    String   @default("LEAVE") // LEAVE | BREAK | BLOCKED | OTHER
-  note      String?
-  createdAt DateTime @default(now())
+  id           String    @id @default(cuid())
+  stylistId    String
+  startsAt     DateTime
+  endsAt       DateTime
+  reason       String    @default("LEAVE") // LEAVE | BREAK | BLOCKED | OTHER
+  note         String?
+  /// PENDING | APPROVED | REJECTED
+  status       String    @default("APPROVED")
+  reviewedAt   DateTime?
+  reviewedById String?
+  createdAt    DateTime  @default(now())
 
   stylist Stylist @relation(fields: [stylistId], references: [id], onDelete: Cascade)
 
   @@index([stylistId, startsAt])
+  @@index([stylistId, status])
 }
 
 model Service {
@@ -184,6 +198,10 @@ model Appointment {
   status           String   @default("BOOKED") // BOOKED | CHECKED_IN | COMPLETED | CANCELLED | NO_SHOW
   source           String   @default("ONLINE") // ONLINE | WALK_IN | PHONE | ADMIN
   notes            String?
+  /// Amount actually charged when completed (cents). Prefills from service price.
+  chargedCents     Int?
+  chargedAt        DateTime?
+  chargedByUserId  String?
   /// Google Calendar event id for sync
   googleEventId    String?
   calendarSyncedAt DateTime?
@@ -197,4 +215,24 @@ model Appointment {
 
   @@index([salonId, startsAt])
   @@index([stylistId, startsAt])
+  @@index([stylistId, status, startsAt])
+}
+
+/// Admin payout record for a stylist pay period
+model StylistPayout {
+  id          String    @id @default(cuid())
+  salonId     String
+  stylistId   String
+  periodStart DateTime
+  periodEnd   DateTime
+  amountCents Int
+  note        String?
+  status      String    @default("PAID") // DRAFT | PAID
+  paidAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  salon   Salon   @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  stylist Stylist @relation(fields: [stylistId], references: [id], onDelete: Cascade)
+
+  @@index([salonId, stylistId, periodStart])
 }

@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { addDays, endOfDay, startOfDay } from "date-fns";
 import { getSession } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { syncAppointmentToGoogle } from "@/lib/calendar";
+import { updateAppointmentStatus } from "@/lib/complete-appointment";
+import { prisma } from "@/lib/prisma";
 
 export async function GET(req: Request) {
   const session = await getSession();
@@ -47,10 +48,16 @@ export async function PATCH(req: Request) {
   });
   if (!appt) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const updated = await prisma.appointment.update({
-    where: { id: appt.id },
-    data: { status: body.status },
+  const result = await updateAppointmentStatus({
+    appointmentId: appt.id,
+    status: body.status,
+    chargedCents: body.chargedCents,
+    chargedByUserId: session.userId,
   });
-  await syncAppointmentToGoogle(updated.id);
-  return NextResponse.json({ appointment: updated });
+  if ("error" in result) {
+    return NextResponse.json({ error: result.error }, { status: result.status });
+  }
+
+  await syncAppointmentToGoogle(result.appointment.id);
+  return NextResponse.json({ appointment: result.appointment });
 }

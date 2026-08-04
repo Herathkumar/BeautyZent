@@ -8,6 +8,7 @@ const SALON_LINKS = [
   { href: "/admin/services", label: "Services", hint: "Menu & durations" },
   { href: "/admin/products", label: "Products", hint: "Retail & add-ons" },
   { href: "/admin/stylists", label: "Stylists", hint: "Team & schedules" },
+  { href: "/admin/pay", label: "Pay & hours", hint: "Earnings & leave approval" },
 ] as const;
 
 function useIsDesktop() {

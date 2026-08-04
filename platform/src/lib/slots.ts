@@ -59,6 +59,7 @@ export async function getAvailableSlots(opts: {
     prisma.stylistBlock.findMany({
       where: {
         stylistId: opts.stylistId,
+        status: { in: ["PENDING", "APPROVED"] },
         startsAt: { lt: dayEnd },
         endsAt: { gt: open },
       },

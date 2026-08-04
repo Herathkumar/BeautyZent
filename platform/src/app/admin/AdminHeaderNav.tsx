@@ -8,6 +8,7 @@ const SALON_LINKS = [
   { href: "/admin/services", label: "Services" },
   { href: "/admin/products", label: "Products" },
   { href: "/admin/stylists", label: "Stylists" },
+  { href: "/admin/pay", label: "Pay & hours" },
 ] as const;
 
 export function AdminHeaderNav() {
