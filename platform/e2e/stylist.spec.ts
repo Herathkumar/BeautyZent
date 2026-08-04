@@ -8,14 +8,14 @@ test.describe("Stylist phone portal", () => {
     await expect(page.getByTestId("stylist-home-photo")).toBeVisible();
     await expect(page.getByRole("link", { name: /add selfie for online booking|change booking photo/i })).toBeVisible();
     await expect(page.getByRole("link", { name: /^today$/i })).toBeVisible();
-    await expect(page.getByRole("link", { name: /^away$/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /^schedule$/i })).toBeVisible();
     await expect(page.getByRole("link", { name: /^account$/i })).toBeVisible();
   });
 
-  test("away & hours page loads", async ({ page }) => {
+  test("schedule page loads", async ({ page }) => {
     await stylistLogin(page);
-    await page.getByRole("link", { name: /^away$/i }).click();
-    await expect(page.getByRole("heading", { name: "Away & hours" })).toBeVisible();
+    await page.getByRole("link", { name: /^schedule$/i }).click();
+    await expect(page.getByRole("heading", { name: "Schedule" })).toBeVisible();
     await expect(page.getByRole("button", { name: /mark me away|save work days/i }).first()).toBeVisible();
   });
 

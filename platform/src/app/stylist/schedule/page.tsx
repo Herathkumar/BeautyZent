@@ -168,9 +168,9 @@ export default function StylistOwnSchedulePage() {
   return (
     <main className="space-y-10">
       <div>
-        <h1 className="font-[family-name:var(--font-display)] text-3xl">Away & hours</h1>
+        <h1 className="font-[family-name:var(--font-display)] text-3xl">Schedule</h1>
         <p className="mt-2 text-muted">
-          Tell the book when you work and when you&apos;re off. Clients can&apos;t book those times.
+          Set your work days and mark time off. Clients can&apos;t book when you&apos;re away.
         </p>
       </div>
 

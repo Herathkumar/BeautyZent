@@ -21,7 +21,7 @@ test.describe("Mobile viewport", () => {
   test("stylist portal bottom nav on phone", async ({ page }) => {
     await stylistLogin(page);
     await expect(page.getByRole("link", { name: /^today$/i })).toBeVisible();
-    await expect(page.getByRole("link", { name: /^away$/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /^schedule$/i })).toBeVisible();
     await expect(page.getByRole("link", { name: /^account$/i })).toBeVisible();
     await expect(page.getByRole("button", { name: /log out/i })).toBeVisible();
   });

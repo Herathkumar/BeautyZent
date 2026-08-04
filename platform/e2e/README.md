@@ -12,7 +12,7 @@ Broader end-to-end coverage for the salon booking system (local or staging).
 | `salon-day.spec.ts` | Book → display check-in → stylist Done → admin list |
 | `admin.spec.ts` | Admin login, services, book-for-client page, bad password |
 | `admin-book.spec.ts` | Admin creates booking; products & stylists pages |
-| `stylist.spec.ts` | Stylist login, My Day, Away nav |
+| `stylist.spec.ts` | Stylist login, My Day, Schedule nav |
 | `stylist-schedule.spec.ts` | Mark leave + remove; save work days |
 | `auth.spec.ts` | Redirects, bad password, role routing, logout |
 | `mobile.spec.ts` | iPhone viewport: book, stylist nav, demo hub |

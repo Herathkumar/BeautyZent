@@ -4,8 +4,8 @@ import { stylistLogin, toLocalDateTimeInput } from "./helpers";
 test.describe("Stylist — schedule & leave", () => {
   test("can mark away and remove it", async ({ page }) => {
     await stylistLogin(page);
-    await page.getByRole("link", { name: /^away$/i }).click();
-    await expect(page.getByRole("heading", { name: "Away & hours" })).toBeVisible();
+    await page.getByRole("link", { name: /^schedule$/i }).click();
+    await expect(page.getByRole("heading", { name: "Schedule" })).toBeVisible();
 
     const start = new Date();
     start.setDate(start.getDate() + 20);
