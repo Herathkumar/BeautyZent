@@ -9,7 +9,9 @@ test.describe("Manager portal", () => {
     await expect(page.getByRole("button", { name: /salon/i }).first()).toBeVisible();
     await expect(page.getByRole("link", { name: /^account$/i }).first()).toBeVisible();
     await expect(page.getByRole("link", { name: /active services/i })).toBeVisible();
-    await expect(page.getByTestId("dashboard-who-working")).toBeVisible();
+    const floor = page.getByTestId("dashboard-who-working");
+    await expect(floor).toBeVisible();
+    await expect(floor.getByText(/on floor|no one on the floor/i)).toBeVisible();
   });
 
   test("who's working page lists team for a day", async ({ page }) => {

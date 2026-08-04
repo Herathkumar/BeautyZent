@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { endOfDay, startOfDay } from "date-fns";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { DashboardFloorToday } from "./DashboardFloorToday";
 import { DashboardStoreEarnings } from "./DashboardStoreEarnings";
 import { PendingLeavePanel } from "./PendingLeavePanel";
 
@@ -54,21 +55,7 @@ export default async function AdminHome() {
 
       <DashboardStoreEarnings salonId={session.salonId} />
 
-      <div className="mt-8">
-        <Link
-          href="/manager/working"
-          className="admin-stat-card block rounded-2xl p-5"
-          data-testid="dashboard-who-working"
-        >
-          <p className="text-sm text-[#c9a87c]">Floor today</p>
-          <p className="mt-2 font-[family-name:var(--font-display)] text-2xl text-[#fffaf6]">
-            Who&apos;s working
-          </p>
-          <p className="mt-1 text-sm text-muted">
-            See schedules, vacations, and breaks by day
-          </p>
-        </Link>
-      </div>
+      <DashboardFloorToday salonId={session.salonId} />
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
