@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { promptCompleteAmounts } from "@/lib/pay";
+import { centsToDollars, promptCompleteAmounts } from "@/lib/pay";
 
 type Appt = {
   id: string;
@@ -157,6 +157,21 @@ export default function StylistHomePage() {
             </p>
             <p className="mt-1 text-xl font-semibold">{a.client.name}</p>
             <p className="text-sm text-muted">{a.service.name}</p>
+            {a.status === "COMPLETED" ? (
+              <p className="mt-2 text-base font-semibold text-[#f0c987]">
+                $
+                {centsToDollars(
+                  a.chargedCents ?? a.service.priceCents ?? 0
+                )}{" "}
+                charged
+                {(a.tipCents ?? 0) > 0 ? (
+                  <span className="text-[#9fe3b8]">
+                    {" "}
+                    · +${centsToDollars(a.tipCents ?? 0)} tip
+                  </span>
+                ) : null}
+              </p>
+            ) : null}
           </div>
           <span
             className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${
