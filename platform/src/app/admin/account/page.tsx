@@ -129,7 +129,7 @@ export default function AdminAccountPage() {
 
       <button
         type="button"
-        className="w-full rounded-full border border-[#c9a87c]/45 px-5 py-3 text-sm font-semibold text-[#f0c987] hover:bg-[#c9a87c]/10"
+        className="mb-4 w-full rounded-full border border-[#c9a87c]/45 px-5 py-3 text-sm font-semibold text-[#f0c987] hover:bg-[#c9a87c]/10 md:mb-0"
         onClick={async () => {
           await fetch("/api/auth/logout", { method: "POST" });
           router.push("/admin/login");

@@ -169,6 +169,14 @@ a {
   backdrop-filter: blur(12px);
 }
 
+/* Desktop uses the top nav; bottom bar is phone-only so Log out stays reachable */
+@media (min-width: 768px) {
+  .admin-theme .admin-bottom-nav,
+  .admin-theme .admin-salon-sheet {
+    display: none;
+  }
+}
+
 .admin-theme .admin-bottom-nav a,
 .admin-theme .admin-bottom-nav button {
   display: flex;

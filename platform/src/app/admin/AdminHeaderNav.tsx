@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 const SALON_LINKS = [
@@ -12,6 +12,7 @@ const SALON_LINKS = [
 
 export function AdminHeaderNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -82,6 +83,17 @@ export function AdminHeaderNav() {
       >
         Account
       </Link>
+      <button
+        type="button"
+        className="text-[#a89a8c] hover:text-[#f0c987]"
+        onClick={async () => {
+          await fetch("/api/auth/logout", { method: "POST" });
+          router.push("/admin/login");
+          router.refresh();
+        }}
+      >
+        Log out
+      </button>
     </nav>
   );
 }
