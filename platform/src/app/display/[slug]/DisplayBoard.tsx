@@ -173,8 +173,14 @@ export function DisplayBoard({ slug }: { slug: string }) {
   }, [load]);
 
   const tKey = todayKey();
+  /** Floor list: open bookings only — hide completed / no-show / cancelled */
   const todayAppts = useMemo(
-    () => appointments.filter((a) => dayKey(a.startsAt) === tKey),
+    () =>
+      appointments.filter(
+        (a) =>
+          dayKey(a.startsAt) === tKey &&
+          (a.status === "BOOKED" || a.status === "CHECKED_IN")
+      ),
     [appointments, tKey]
   );
   const futureGrouped = useMemo(() => {
@@ -182,12 +188,17 @@ export function DisplayBoard({ slug }: { slug: string }) {
     for (const a of appointments) {
       const key = dayKey(a.startsAt);
       if (key === tKey) continue;
+      if (a.status === "COMPLETED" || a.status === "NO_SHOW") continue;
       const list = map.get(key) || [];
       list.push(a);
       map.set(key, list);
     }
     return Array.from(map.entries());
   }, [appointments, tKey]);
+  const futureCount = useMemo(
+    () => futureGrouped.reduce((n, [, list]) => n + list.length, 0),
+    [futureGrouped]
+  );
 
   async function setStatus(
     id: string,
@@ -251,9 +262,7 @@ export function DisplayBoard({ slug }: { slug: string }) {
               }`}
             >
               Future
-              <span className="ml-2 opacity-80">
-                ({appointments.length - todayAppts.length})
-              </span>
+              <span className="ml-2 opacity-80">({futureCount})</span>
             </button>
           </div>
 
@@ -281,20 +290,20 @@ export function DisplayBoard({ slug }: { slug: string }) {
         </div>
       </header>
 
-      {/* Waitlist always visible — Seat now → Check in → Done with payment */}
-      <div className="border-b border-white/10 px-6 py-5">
-        <WalkInPanel
-          mode="display"
-          slug={slug}
-          showForm={false}
-          showWaitlist
-          pollMs={15_000}
-          onCreated={load}
-        />
-      </div>
-
       {tab === "today" && (
         <div className="px-6 py-6">
+          {/* In-store waitlist — walk-ins physically here until seated */}
+          <section className="mb-6 rounded-3xl border border-[#c9a87c]/30 bg-[#241c18]/80 p-4 md:p-5">
+            <WalkInPanel
+              mode="display"
+              slug={slug}
+              showForm={false}
+              showWaitlist
+              pollMs={15_000}
+              onCreated={load}
+            />
+          </section>
+
           {/* Promo band */}
           <section className="relative mb-6 overflow-hidden rounded-3xl border border-[#c9a87c]/35 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
             <div className="absolute inset-0">

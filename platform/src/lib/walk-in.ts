@@ -26,7 +26,8 @@ async function isFreeWindow(opts: {
     prisma.appointment.findFirst({
       where: {
         stylistId: opts.stylistId,
-        status: { notIn: ["CANCELLED", "NO_SHOW"] },
+        // Completed frees the chair for the next walk-in
+        status: { notIn: ["CANCELLED", "NO_SHOW", "COMPLETED"] },
         startsAt: { lt: opts.endsAt },
         endsAt: { gt: opts.startsAt },
       },
@@ -160,7 +161,7 @@ export async function findNextAvailableWalkIns(opts: {
         prisma.appointment.findFirst({
           where: {
             stylistId: s.id,
-            status: { notIn: ["CANCELLED", "NO_SHOW"] },
+            status: { notIn: ["CANCELLED", "NO_SHOW", "COMPLETED"] },
             startsAt: { lt: end },
             endsAt: { gt: immediate },
           },
@@ -240,7 +241,7 @@ export async function createWalkInAppointment(opts: {
   const conflict = await prisma.appointment.findFirst({
     where: {
       stylistId: stylist.id,
-      status: { notIn: ["CANCELLED", "NO_SHOW"] },
+      status: { notIn: ["CANCELLED", "NO_SHOW", "COMPLETED"] },
       startsAt: { lt: endsAt },
       endsAt: { gt: startsAt },
     },

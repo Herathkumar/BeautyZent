@@ -57,15 +57,56 @@ test.describe("Walk-in appointments", () => {
     await expect(page.getByText(clientName).first()).toBeVisible({ timeout: 10_000 });
   });
 
-  test("display board shows waitlist anytime and walk-in form toggles", async ({
+  test("display board shows waitlist on Today only and walk-in form toggles", async ({
     page,
   }) => {
     await page.goto("/display/fhsalon");
+    await expect(page.getByRole("button", { name: /^today/i })).toBeVisible();
     await expect(page.getByTestId("walk-in-waitlist")).toBeVisible();
     await expect(page.getByText(/seat now → check in → done with payment/i)).toBeVisible();
+
+    await page.getByRole("button", { name: /^future/i }).click();
+    await expect(page.getByTestId("walk-in-waitlist")).toHaveCount(0);
+
+    await page.getByRole("button", { name: /^today/i }).click();
+    await expect(page.getByTestId("walk-in-waitlist")).toBeVisible();
     await expect(page.getByRole("heading", { name: /walk-in desk/i })).toBeVisible();
     await page.getByTestId("display-walk-in-toggle").click();
     await expect(page.getByLabel("Walk-in service")).toBeVisible();
+  });
+
+  test("display today hides completed bookings", async ({ page }) => {
+    await adminLogin(page);
+    const catalog = await page.request.get("/api/public/fhsalon/catalog");
+    const cat = await catalog.json();
+    const service = (cat.services || []).find((s: { name: string }) =>
+      /^men.?s haircut/i.test(s.name)
+    );
+    const omar = (cat.stylists || []).find((s: { name: string }) => /omar/i.test(s.name));
+    expect(service?.id && omar?.id).toBeTruthy();
+
+    const clientName = `DoneHide ${Date.now()}`;
+    const walk = await page.request.post("/api/admin/walk-in", {
+      data: {
+        serviceId: service.id,
+        stylistId: omar.id,
+        nextAvailable: false,
+        clientName,
+      },
+    });
+    expect(walk.ok()).toBeTruthy();
+    const created = await walk.json();
+    const id = created.appointment?.id as string;
+    expect(id).toBeTruthy();
+
+    const done = await page.request.patch(`/api/display/fhsalon/appointments/${id}`, {
+      data: { status: "COMPLETED", chargedCents: 2500, tipCents: 0 },
+    });
+    expect(done.ok()).toBeTruthy();
+
+    await page.goto("/display/fhsalon");
+    await expect(page.getByRole("button", { name: /^today/i })).toBeVisible();
+    await expect(page.locator("article").filter({ hasText: clientName })).toHaveCount(0);
   });
 
   test("display waitlist seat then check in then done with payment", async ({
@@ -128,6 +169,9 @@ test.describe("Walk-in appointments", () => {
       else await d.accept("0");
     });
     await row.getByRole("button", { name: /^done$/i }).click();
-    await expect(row.getByText(/completed/i)).toBeVisible({ timeout: 15_000 });
+    // Completed jobs drop off today's floor list
+    await expect(
+      page.locator("article").filter({ hasText: clientName })
+    ).toHaveCount(0, { timeout: 15_000 });
   });
 });
