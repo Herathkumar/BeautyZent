@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { addDays } from "date-fns";
 import { canManageStylist, isSalonStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -15,14 +16,20 @@ export async function GET(
   const stylist = await prisma.stylist.findUnique({ where: { id } });
   if (!stylist) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+  // Upcoming + last 90 days so approved/rejected history stays visible
+  const historyFrom = addDays(new Date(), -90);
+
   const [weekHours, blocks, salon] = await Promise.all([
     prisma.stylistWeekHour.findMany({
       where: { stylistId: id },
       orderBy: { dayOfWeek: "asc" },
     }),
     prisma.stylistBlock.findMany({
-      where: { stylistId: id, endsAt: { gte: new Date() } },
-      orderBy: { startsAt: "asc" },
+      where: {
+        stylistId: id,
+        endsAt: { gte: historyFrom },
+      },
+      orderBy: { startsAt: "desc" },
     }),
     prisma.salon.findUniqueOrThrow({ where: { id: session.salonId } }),
   ]);

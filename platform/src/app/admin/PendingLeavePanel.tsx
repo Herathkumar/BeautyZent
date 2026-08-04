@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 type LeaveReq = {
@@ -23,13 +24,14 @@ function formatRange(startsAt: string, endsAt: string) {
 }
 
 export function PendingLeavePanel() {
+  const router = useRouter();
   const [blocks, setBlocks] = useState<LeaveReq[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const res = await fetch("/api/admin/leave-requests");
+    const res = await fetch("/api/admin/leave-requests", { cache: "no-store" });
     if (res.status === 401) {
       window.location.href = "/manager/login";
       return;
@@ -43,22 +45,31 @@ export function PendingLeavePanel() {
     void load();
   }, [load]);
 
-  async function review(stylistId: string, blockId: string, action: "approve" | "reject") {
+  async function review(stylistId: string, blockId: string, status: "APPROVED" | "REJECTED") {
     setBusyId(blockId);
     setMessage("");
     const res = await fetch(`/api/admin/stylists/${stylistId}/blocks`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: blockId, action }),
+      cache: "no-store",
+      body: JSON.stringify({ id: blockId, status }),
     });
+    const data = await res.json().catch(() => ({}));
     setBusyId(null);
     if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
       setMessage(data.error || "Could not update leave");
       return;
     }
-    setMessage(action === "approve" ? "Leave approved." : "Leave rejected.");
+    if (data.block?.status !== status) {
+      setMessage("Could not update leave status. Try again.");
+      await load();
+      return;
+    }
+    setMessage(status === "APPROVED" ? "Leave approved." : "Leave rejected.");
+    // Optimistically remove from pending list
+    setBlocks((prev) => prev.filter((b) => b.id !== blockId));
     await load();
+    router.refresh();
   }
 
   if (loading) return null;
@@ -102,7 +113,7 @@ export function PendingLeavePanel() {
                     type="button"
                     disabled={busyId === b.id}
                     className="btn-solid rounded-full px-4 py-2 text-sm disabled:opacity-40"
-                    onClick={() => void review(b.stylist.id, b.id, "approve")}
+                    onClick={() => void review(b.stylist.id, b.id, "APPROVED")}
                   >
                     Approve
                   </button>
@@ -110,7 +121,7 @@ export function PendingLeavePanel() {
                     type="button"
                     disabled={busyId === b.id}
                     className="rounded-full border border-[rgba(245,168,168,0.45)] px-4 py-2 text-sm text-[#f5a8a8] disabled:opacity-40"
-                    onClick={() => void review(b.stylist.id, b.id, "reject")}
+                    onClick={() => void review(b.stylist.id, b.id, "REJECTED")}
                   >
                     Reject
                   </button>

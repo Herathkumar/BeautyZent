@@ -42,6 +42,32 @@ function reasonLabel(reason: string) {
   }
 }
 
+function statusLabel(status?: string) {
+  switch (String(status || "").toUpperCase()) {
+    case "PENDING":
+      return "Awaiting approval";
+    case "APPROVED":
+      return "Approved";
+    case "REJECTED":
+      return "Rejected";
+    default:
+      return status || "";
+  }
+}
+
+function statusClass(status?: string) {
+  switch (String(status || "").toUpperCase()) {
+    case "PENDING":
+      return "text-[#f0c987]";
+    case "APPROVED":
+      return "text-[#9fe3b8]";
+    case "REJECTED":
+      return "text-[#f5a8a8]";
+    default:
+      return "text-champagne";
+  }
+}
+
 export default function StylistOwnSchedulePage() {
   const [stylistId, setStylistId] = useState("");
   const [selfManage, setSelfManage] = useState(false);
@@ -266,8 +292,9 @@ export default function StylistOwnSchedulePage() {
               <div>
                 <p className="text-xs font-bold uppercase tracking-wide text-champagne">
                   {reasonLabel(b.reason)}
-                  {b.status === "PENDING" ? " · Awaiting admin" : ""}
-                  {b.status === "REJECTED" ? " · Rejected" : ""}
+                </p>
+                <p className={`mt-1 text-sm font-semibold ${statusClass(b.status)}`}>
+                  {statusLabel(b.status)}
                 </p>
                 <p className="mt-1 text-sm">
                   {new Date(b.startsAt).toLocaleString("en-CA", {
@@ -289,13 +316,17 @@ export default function StylistOwnSchedulePage() {
                 {b.note ? <p className="text-sm text-muted">{b.note}</p> : null}
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => startEdit(b)}
-                  className="stylist-tap rounded-2xl border border-ink/20"
-                >
-                  Edit
-                </button>
+                {b.status !== "REJECTED" ? (
+                  <button
+                    type="button"
+                    onClick={() => startEdit(b)}
+                    className="stylist-tap rounded-2xl border border-ink/20"
+                  >
+                    Edit
+                  </button>
+                ) : (
+                  <div />
+                )}
                 <button
                   type="button"
                   onClick={() => removeBlock(b.id)}

@@ -14,6 +14,15 @@ function parseRange(body: { startsAt?: string; endsAt?: string }) {
   return { startsAt, endsAt };
 }
 
+function resolveReviewStatus(body: { action?: unknown; status?: unknown }) {
+  const status = String(body.status || "").toUpperCase();
+  if (status === "APPROVED" || status === "REJECTED") return status;
+  const action = String(body.action || "").toLowerCase();
+  if (action === "approve" || action === "accept") return "APPROVED";
+  if (action === "reject" || action === "deny") return "REJECTED";
+  return null;
+}
+
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -66,16 +75,17 @@ export async function PATCH(
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const isStaff = isSalonStaff(session.role);
+  const reviewStatus = resolveReviewStatus(body);
 
-  // Admin approve / reject pending leave
-  if (body.action === "approve" || body.action === "reject") {
+  // Manager approve / reject pending leave
+  if (reviewStatus) {
     if (!isStaff) {
-      return NextResponse.json({ error: "Only admin can review leave" }, { status: 403 });
+      return NextResponse.json({ error: "Only manager can review leave" }, { status: 403 });
     }
     const block = await prisma.stylistBlock.update({
       where: { id: existing.id },
       data: {
-        status: body.action === "approve" ? "APPROVED" : "REJECTED",
+        status: reviewStatus,
         reviewedAt: new Date(),
         reviewedById: session.userId,
       },

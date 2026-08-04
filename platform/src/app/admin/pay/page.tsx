@@ -166,18 +166,28 @@ export default function AdminPayPage() {
     void load();
   }, [load]);
 
-  async function reviewLeave(stylistBlockStylistId: string, blockId: string, action: "approve" | "reject") {
+  async function reviewLeave(
+    stylistBlockStylistId: string,
+    blockId: string,
+    status: "APPROVED" | "REJECTED"
+  ) {
     const res = await fetch(`/api/admin/stylists/${stylistBlockStylistId}/blocks`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: blockId, action }),
+      cache: "no-store",
+      body: JSON.stringify({ id: blockId, status }),
     });
+    const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
       setMessage(data.error || "Could not update leave");
       return;
     }
-    setMessage(action === "approve" ? "Leave approved." : "Leave rejected.");
+    if (data.block?.status !== status) {
+      setMessage("Could not update leave status. Try again.");
+      await load();
+      return;
+    }
+    setMessage(status === "APPROVED" ? "Leave approved." : "Leave rejected.");
     await load();
   }
 
@@ -302,14 +312,14 @@ export default function AdminPayPage() {
                   <button
                     type="button"
                     className="btn-solid rounded-full px-3 py-1.5 text-sm"
-                    onClick={() => reviewLeave(b.stylist.id, b.id, "approve")}
+                    onClick={() => reviewLeave(b.stylist.id, b.id, "APPROVED")}
                   >
                     Approve
                   </button>
                   <button
                     type="button"
                     className="rounded-full border border-[rgba(245,168,168,0.45)] px-3 py-1.5 text-sm text-[#f5a8a8]"
-                    onClick={() => reviewLeave(b.stylist.id, b.id, "reject")}
+                    onClick={() => reviewLeave(b.stylist.id, b.id, "REJECTED")}
                   >
                     Reject
                   </button>

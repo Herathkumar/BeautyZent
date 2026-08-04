@@ -338,7 +338,7 @@ export default function StylistSchedulePage() {
                         await fetch(`/api/admin/stylists/${id}/blocks`, {
                           method: "PATCH",
                           headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ id: b.id, action: "approve" }),
+                          body: JSON.stringify({ id: b.id, status: "APPROVED" }),
                         });
                         setMessage("Leave approved.");
                         load();
@@ -353,7 +353,7 @@ export default function StylistSchedulePage() {
                         await fetch(`/api/admin/stylists/${id}/blocks`, {
                           method: "PATCH",
                           headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ id: b.id, action: "reject" }),
+                          body: JSON.stringify({ id: b.id, status: "REJECTED" }),
                         });
                         setMessage("Leave rejected.");
                         load();
