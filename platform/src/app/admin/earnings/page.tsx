@@ -40,6 +40,17 @@ type SummaryBlock = {
   voidedJobCount?: number;
 };
 
+type JobRow = {
+  id: string;
+  startsAt: string;
+  clientName: string;
+  serviceName: string;
+  stylistName: string;
+  chargedCents: number;
+  tipCents: number;
+  excludedFromEarnings: boolean;
+};
+
 type Payload = {
   today: string;
   motivation?: string;
@@ -69,16 +80,8 @@ type Payload = {
     stylistPayCents: number;
   }[];
   activities: Activity[];
-  jobs: {
-    id: string;
-    startsAt: string;
-    clientName: string;
-    serviceName: string;
-    stylistName: string;
-    chargedCents: number;
-    tipCents: number;
-    excludedFromEarnings: boolean;
-  }[];
+  jobs: JobRow[];
+  todayJobs: JobRow[];
 };
 
 function GoalRing({ progress, earned, goal }: { progress: number; earned: number; goal: number }) {
@@ -172,15 +175,19 @@ function SummaryCard({
   summary,
   testId,
   showPayout,
+  onOpen,
 }: {
   label: string;
   summary: SummaryBlock;
   testId: string;
   showPayout?: boolean;
+  onOpen: () => void;
 }) {
   return (
-    <div
-      className="rounded-2xl border border-[#c9a87c]/25 bg-[#2a211c] p-5"
+    <button
+      type="button"
+      onClick={onOpen}
+      className="admin-stat-card w-full rounded-2xl border border-[#c9a87c]/25 bg-[#2a211c] p-5 text-left"
       data-testid={testId}
     >
       <p className="text-sm text-[#c9a87c]">{label}</p>
@@ -206,6 +213,185 @@ function SummaryCard({
           {summary.jobCount} jobs · tips pass through to stylists
         </p>
       )}
+      <p className="mt-3 text-xs font-semibold tracking-wide text-[#c9a87c]">
+        View breakdown →
+      </p>
+    </button>
+  );
+}
+
+function BreakdownModal({
+  title,
+  summary,
+  jobs,
+  days,
+  byStylist,
+  showPayout,
+  onClose,
+}: {
+  title: string;
+  summary: SummaryBlock;
+  jobs: JobRow[];
+  days?: DayBar[];
+  byStylist?: Payload["byStylist"];
+  showPayout?: boolean;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const activeJobs = jobs.filter((j) => !j.excludedFromEarnings);
+  const voidedJobs = jobs.filter((j) => j.excludedFromEarnings);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 sm:items-center"
+      role="presentation"
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        data-testid="store-earnings-breakdown"
+        className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-3xl border border-[#c9a87c]/35 bg-[#1c1714] p-5 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold tracking-[0.18em] text-[#c9a87c] uppercase">
+              Breakdown
+            </p>
+            <h2 className="mt-1 font-[family-name:var(--font-display)] text-2xl text-[#fffaf6]">
+              {title}
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full border border-[#c9a87c]/35 px-3 py-1 text-sm text-[#f0c987]"
+          >
+            Close
+          </button>
+        </div>
+
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          {[
+            { label: "Charged", value: summary.chargedCents },
+            { label: "Stylist pay", value: summary.stylistPayCents },
+            { label: "Tips", value: summary.tipCents },
+            { label: "Profit", value: summary.profitCents },
+          ].map((row) => (
+            <div
+              key={row.label}
+              className="rounded-2xl border border-[#c9a87c]/20 bg-[#2a211c] px-3 py-2"
+            >
+              <p className="text-[10px] font-semibold tracking-wide text-muted uppercase">
+                {row.label}
+              </p>
+              <p className="mt-1 text-lg font-bold text-[#f0c987]">
+                ${centsToDollars(row.value)}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {showPayout ? (
+          <p className="mt-3 text-sm text-muted">
+            Paid out ${centsToDollars(summary.paidCents ?? 0)}
+            {(summary.owedCents ?? 0) > 0
+              ? ` · $${centsToDollars(summary.owedCents ?? 0)} still owed`
+              : " · paid in full for earned pay"}
+          </p>
+        ) : null}
+
+        {days && days.length > 0 ? (
+          <section className="mt-5 space-y-2">
+            <h3 className="text-sm font-semibold text-[#fffaf6]">By day</h3>
+            <ul className="space-y-1.5">
+              {days.map((d) => (
+                <li
+                  key={d.date}
+                  className="flex flex-wrap items-baseline justify-between gap-2 border-t border-[#c9a87c]/15 pt-1.5 text-sm first:border-t-0 first:pt-0"
+                >
+                  <span className="text-[#d4c4b0]">
+                    {d.weekday} · {d.jobCount} job{d.jobCount === 1 ? "" : "s"}
+                  </span>
+                  <span className="text-[#f0c987]">
+                    Rev ${centsToDollars(d.revenueCents)} · Profit $
+                    {centsToDollars(d.profitCents)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
+        {byStylist && byStylist.length > 0 ? (
+          <section className="mt-5 space-y-2">
+            <h3 className="text-sm font-semibold text-[#fffaf6]">By stylist</h3>
+            <ul className="space-y-1.5">
+              {byStylist.map((s) => (
+                <li
+                  key={s.stylistId}
+                  className="flex flex-wrap items-baseline justify-between gap-2 border-t border-[#c9a87c]/15 pt-1.5 text-sm first:border-t-0 first:pt-0"
+                >
+                  <span className="text-[#d4c4b0]">
+                    {s.stylistName} · {s.jobCount} job{s.jobCount === 1 ? "" : "s"}
+                  </span>
+                  <span className="text-[#f0c987]">
+                    ${centsToDollars(s.chargedCents)} · pay $
+                    {centsToDollars(s.stylistPayCents)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
+        <section className="mt-5 space-y-2">
+          <h3 className="text-sm font-semibold text-[#fffaf6]">
+            Jobs ({activeJobs.length}
+            {voidedJobs.length ? ` · ${voidedJobs.length} voided` : ""})
+          </h3>
+          {jobs.length === 0 ? (
+            <p className="text-sm text-muted">No completed jobs in this period.</p>
+          ) : (
+            <ul className="space-y-2">
+              {jobs.map((j) => (
+                <li
+                  key={j.id}
+                  className={`rounded-2xl border px-3 py-2 text-sm ${
+                    j.excludedFromEarnings
+                      ? "border-red-400/30 bg-red-950/20 opacity-70"
+                      : "border-[#c9a87c]/20 bg-[#2a211c]"
+                  }`}
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <p className="font-semibold text-[#fffaf6]">
+                        {j.clientName} · {j.serviceName}
+                      </p>
+                      <p className="text-xs text-muted">
+                        {j.stylistName}
+                        {j.excludedFromEarnings ? " · voided" : ""}
+                      </p>
+                    </div>
+                    <p className="font-semibold text-[#f0c987]">
+                      ${centsToDollars(j.chargedCents + j.tipCents)}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
     </div>
   );
 }
@@ -217,6 +403,7 @@ export default function StoreEarningsPage() {
   const [msg, setMsg] = useState("");
   const [goalMsg, setGoalMsg] = useState("");
   const [busyId, setBusyId] = useState("");
+  const [breakdown, setBreakdown] = useState<"today" | "week" | null>(null);
 
   const load = useCallback(async (weekMonday?: string | null) => {
     setLoading(true);
@@ -398,14 +585,36 @@ export default function StoreEarningsPage() {
               label="Today"
               summary={data.todaySummary}
               testId="store-earnings-today"
+              onOpen={() => setBreakdown("today")}
             />
             <SummaryCard
               label="This week"
               summary={data.weekSummary}
               testId="store-earnings-week"
               showPayout
+              onOpen={() => setBreakdown("week")}
             />
           </div>
+
+          {breakdown === "today" ? (
+            <BreakdownModal
+              title="Today's earnings"
+              summary={data.todaySummary}
+              jobs={data.todayJobs || []}
+              onClose={() => setBreakdown(null)}
+            />
+          ) : null}
+          {breakdown === "week" ? (
+            <BreakdownModal
+              title={`Week of ${data.week.label}`}
+              summary={data.weekSummary}
+              jobs={data.jobs}
+              days={data.days}
+              byStylist={data.byStylist}
+              showPayout
+              onClose={() => setBreakdown(null)}
+            />
+          ) : null}
 
           <section className="rounded-3xl border border-[#c9a87c]/25 bg-[#2a211c] p-4">
             <div className="flex flex-wrap items-end justify-between gap-2">

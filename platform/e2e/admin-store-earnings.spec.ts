@@ -28,6 +28,15 @@ test.describe("Manager store earnings", () => {
     await expect(page.getByTestId("store-earnings-week")).toBeVisible();
     await expect(page.getByTestId("store-earnings-today").getByText(/store profit/i)).toBeVisible();
     await expect(page.getByTestId("store-earnings-week").getByText(/^Paid out/i)).toBeVisible();
+    await page.getByTestId("store-earnings-today").click();
+    await expect(page.getByTestId("store-earnings-breakdown")).toBeVisible();
+    await expect(page.getByRole("heading", { name: /today.?s earnings/i })).toBeVisible();
+    await page.getByRole("button", { name: /^close$/i }).click();
+    await expect(page.getByTestId("store-earnings-breakdown")).toHaveCount(0);
+    await page.getByTestId("store-earnings-week").click();
+    await expect(page.getByTestId("store-earnings-breakdown")).toBeVisible();
+    await expect(page.getByRole("heading", { name: /week of/i })).toBeVisible();
+    await page.getByRole("button", { name: /^close$/i }).click();
     await expect(page.getByTestId("store-earnings-bars")).toBeVisible({ timeout: 15_000 });
     const legend = page.locator("section").filter({ has: page.getByTestId("store-earnings-bars") });
     await expect(legend.getByText("Revenue", { exact: true })).toBeVisible();

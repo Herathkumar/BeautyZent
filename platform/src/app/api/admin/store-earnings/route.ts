@@ -78,20 +78,22 @@ export async function GET(req: Request) {
       where: {
         salonId: session.salonId,
         status: "COMPLETED",
-        excludedFromEarnings: false,
         startsAt: { gte: todayStart, lt: tomorrowStart },
       },
       include: {
-        service: { select: { priceCents: true } },
+        service: { select: { name: true, priceCents: true } },
+        client: { select: { name: true } },
         stylist: {
           select: {
             id: true,
+            name: true,
             payType: true,
             hourlyRateCents: true,
             commissionBps: true,
           },
         },
       },
+      orderBy: { startsAt: "desc" },
     }),
     prisma.stylistPayout.findMany({
       where: {
@@ -205,13 +207,15 @@ export async function GET(req: Request) {
   const weekPaid = payouts.reduce((s, p) => s + p.amountCents, 0);
   const weekOwed = Math.max(0, weekStylistTotalPay - weekPaid);
 
+  const countedTodayJobs = todayJobs.filter((j) => !j.excludedFromEarnings);
+
   // Today pay (may be outside the viewed week)
   let todayStylistPay = 0;
   const todayStylists = new Map<string, (typeof todayJobs)[0]["stylist"]>();
-  for (const j of todayJobs) todayStylists.set(j.stylist.id, j.stylist);
+  for (const j of countedTodayJobs) todayStylists.set(j.stylist.id, j.stylist);
   await Promise.all(
     [...todayStylists.values()].map(async (s) => {
-      const sJobs = todayJobs.filter((j) => j.stylist.id === s.id);
+      const sJobs = countedTodayJobs.filter((j) => j.stylist.id === s.id);
       const sCharged = sJobs.reduce(
         (sum, a) => sum + (a.chargedCents ?? a.service.priceCents ?? 0),
         0
@@ -264,11 +268,11 @@ export async function GET(req: Request) {
       })
   );
 
-  const todayCharged = todayJobs.reduce(
+  const todayCharged = countedTodayJobs.reduce(
     (sum, a) => sum + (a.chargedCents ?? a.service.priceCents ?? 0),
     0
   );
-  const todayTips = todayJobs.reduce((sum, a) => sum + (a.tipCents ?? 0), 0);
+  const todayTips = countedTodayJobs.reduce((sum, a) => sum + (a.tipCents ?? 0), 0);
   const todayProfit = todayCharged - todayStylistPay;
 
   const byStylistMap = new Map<
@@ -418,7 +422,8 @@ export async function GET(req: Request) {
       stylistPayCents: todayStylistPay,
       profitCents: todayProfit,
       totalCents: todayCharged + todayTips,
-      jobCount: todayJobs.length,
+      jobCount: countedTodayJobs.length,
+      voidedJobCount: todayJobs.length - countedTodayJobs.length,
     },
     weekSummary: {
       chargedCents: weekCharged,
@@ -444,6 +449,18 @@ export async function GET(req: Request) {
       clientName: j.client.name,
       serviceName: j.service.name,
       stylistId: j.stylistId,
+      stylistName: j.stylist.name,
+      chargedCents: j.chargedCents ?? j.service.priceCents,
+      tipCents: j.tipCents ?? 0,
+      excludedFromEarnings: j.excludedFromEarnings,
+    })),
+    todayJobs: todayJobs.map((j) => ({
+      id: j.id,
+      startsAt: j.startsAt.toISOString(),
+      chargedAt: j.chargedAt?.toISOString() || null,
+      clientName: j.client.name,
+      serviceName: j.service.name,
+      stylistId: j.stylist.id,
       stylistName: j.stylist.name,
       chargedCents: j.chargedCents ?? j.service.priceCents,
       tipCents: j.tipCents ?? 0,
