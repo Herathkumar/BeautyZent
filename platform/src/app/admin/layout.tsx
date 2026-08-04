@@ -3,9 +3,12 @@ import { getSession } from "@/lib/auth";
 import { AdminBottomNav } from "./AdminBottomNav";
 import { AdminHeaderNav } from "./AdminHeaderNav";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
-  const showChrome = Boolean(session);
+  const showChrome =
+    session?.role === "ADMIN" || session?.role === "FRONT_DESK";
 
   return (
     <div className="admin-theme min-h-screen">
@@ -16,7 +19,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               Salon control
             </p>
             <Link
-              href="/admin"
+              href={showChrome ? "/admin" : "/admin/login"}
               className="font-[family-name:var(--font-display)] text-2xl text-[#fffaf6]"
             >
               Salon admin

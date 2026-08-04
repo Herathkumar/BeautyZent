@@ -119,6 +119,16 @@ a {
   color: #f0c987;
 }
 
+.admin-theme .admin-header-nav {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .admin-theme .admin-header-nav {
+    display: flex;
+  }
+}
+
 .admin-theme .admin-salon-dropdown {
   position: absolute;
   top: calc(100% + 0.5rem);

@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 export default async function AdminHome() {
   const session = await getSession();
   if (!session) redirect("/admin/login");
+  if (session.role === "STYLIST") redirect("/stylist");
 
   const salon = await prisma.salon.findUniqueOrThrow({ where: { id: session.salonId } });
   const today = new Date();

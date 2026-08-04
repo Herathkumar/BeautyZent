@@ -14,6 +14,8 @@ export function AdminBottomNav() {
   const pathname = usePathname();
   const [salonOpen, setSalonOpen] = useState(false);
 
+  if (pathname.startsWith("/admin/login")) return null;
+
   const onDashboard = pathname === "/admin";
   const onBookings =
     pathname.startsWith("/admin/appointments") || pathname.startsWith("/admin/book");
