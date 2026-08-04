@@ -259,7 +259,12 @@ export async function PATCH(req: Request) {
     const cents =
       typeof body.weeklyGoalCents === "number"
         ? Math.round(body.weeklyGoalCents)
-        : dollarsToCents(body.weeklyGoalDollars ?? "");
+        : dollarsToCents(
+            typeof body.weeklyGoalDollars === "number" ||
+              typeof body.weeklyGoalDollars === "string"
+              ? body.weeklyGoalDollars
+              : ""
+          );
     if (cents == null || cents < 0) {
       return NextResponse.json({ error: "Invalid goal amount" }, { status: 400 });
     }
