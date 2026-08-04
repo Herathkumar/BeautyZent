@@ -1,14 +1,17 @@
 import Link from "next/link";
 import { getSession } from "@/lib/auth";
-import { LogoutButton } from "./LogoutButton";
+import { AdminBottomNav } from "./AdminBottomNav";
+import { AdminHeaderNav } from "./AdminHeaderNav";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
+  const showChrome =
+    session?.role === "ADMIN" || session?.role === "FRONT_DESK";
 
   return (
-    <div className="admin-theme">
+    <div className="admin-theme min-h-screen">
       <header className="admin-header sticky top-0 z-20">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-6 py-4">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-4">
           <div>
             <p className="text-[11px] font-semibold tracking-[0.2em] text-[#c9a87c] uppercase">
               Salon control
@@ -20,21 +23,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               Salon admin
             </Link>
           </div>
-          {session ? (
-            <nav className="admin-nav flex flex-wrap items-center gap-4 text-sm">
-              <Link href="/admin">Overview</Link>
-              <Link href="/admin/appointments">Bookings</Link>
-              <Link href="/admin/book">Book for client</Link>
-              <Link href="/admin/services">Services</Link>
-              <Link href="/admin/products">Products</Link>
-              <Link href="/admin/stylists">Stylists</Link>
-              <Link href="/admin/account">Account</Link>
-              <LogoutButton />
-            </nav>
-          ) : null}
+          {showChrome ? <AdminHeaderNav /> : null}
         </div>
       </header>
-      <div className="mx-auto max-w-5xl px-6 py-8">{children}</div>
+      <div
+        className={`mx-auto max-w-5xl px-4 py-6 md:px-6 md:py-8 ${showChrome ? "pb-28 md:pb-8" : ""}`}
+      >
+        {children}
+      </div>
+      {showChrome ? <AdminBottomNav /> : null}
     </div>
   );
 }

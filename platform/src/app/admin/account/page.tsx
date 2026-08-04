@@ -1,8 +1,10 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function AdminAccountPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -124,6 +126,18 @@ export default function AdminAccountPage() {
           {saving ? "Saving…" : "Update password"}
         </button>
       </form>
+
+      <button
+        type="button"
+        className="w-full rounded-full border border-[#c9a87c]/45 px-5 py-3 text-sm font-semibold text-[#f0c987] hover:bg-[#c9a87c]/10"
+        onClick={async () => {
+          await fetch("/api/auth/logout", { method: "POST" });
+          router.push("/admin/login");
+          router.refresh();
+        }}
+      >
+        Log out
+      </button>
     </main>
   );
 }

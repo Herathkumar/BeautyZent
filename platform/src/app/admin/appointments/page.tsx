@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 type Appt = {
@@ -33,9 +34,14 @@ export default function AppointmentsAdminPage() {
 
   return (
     <main className="space-y-6">
-      <div>
-        <h1 className="font-[family-name:var(--font-display)] text-3xl">Bookings</h1>
-        <p className="text-muted">Next 14 days across all stylists.</p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="font-[family-name:var(--font-display)] text-3xl">Bookings</h1>
+          <p className="text-muted">Next 14 days across all stylists.</p>
+        </div>
+        <Link href="/admin/book" className="btn-solid rounded-full px-4 py-2.5 text-sm">
+          Book for client
+        </Link>
       </div>
       <div className="divide-y divide-ink/10 rounded-2xl border border-ink/10 bg-cream">
         {appointments.length === 0 && (

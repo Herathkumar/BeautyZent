@@ -65,12 +65,6 @@ export default async function AdminHome() {
         >
           Book for a client
         </Link>
-        <Link
-          href="/admin/account"
-          className="rounded-full border border-[#c9a87c]/50 px-4 py-2 text-sm text-[#f0c987] hover:bg-[#c9a87c]/10"
-        >
-          Change password
-        </Link>
       </div>
     </main>
   );

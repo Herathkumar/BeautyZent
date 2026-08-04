@@ -97,14 +97,135 @@ a {
 }
 
 .admin-theme .admin-nav a,
+.admin-theme .admin-nav button,
 .stylist-theme .admin-nav a {
   color: rgba(255, 250, 246, 0.72);
   transition: color 0.15s ease;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
 }
 
 .admin-theme .admin-nav a:hover,
+.admin-theme .admin-nav button:hover,
 .stylist-theme .admin-nav a:hover {
   color: #f0c987;
+}
+
+.admin-theme .admin-nav a.is-active,
+.admin-theme .admin-nav button.is-active {
+  color: #f0c987;
+}
+
+.admin-theme .admin-salon-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: 40;
+  min-width: 10rem;
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.45rem;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(201, 168, 124, 0.35);
+  background: rgba(28, 23, 20, 0.98);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+}
+
+.admin-theme .admin-salon-dropdown a {
+  display: block;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.65rem;
+  color: #fffaf6 !important;
+}
+
+.admin-theme .admin-salon-dropdown a:hover {
+  background: rgba(201, 168, 124, 0.16);
+  color: #f0c987 !important;
+}
+
+.admin-theme .admin-bottom-nav {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 30;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 0.25rem;
+  padding: 0.55rem 0.75rem calc(0.55rem + env(safe-area-inset-bottom));
+  background: rgba(28, 23, 20, 0.94);
+  border-top: 1px solid rgba(201, 168, 124, 0.3);
+  backdrop-filter: blur(12px);
+}
+
+@media (min-width: 768px) {
+  .admin-theme .admin-bottom-nav,
+  .admin-theme .admin-salon-sheet {
+    display: none;
+  }
+}
+
+.admin-theme .admin-bottom-nav a,
+.admin-theme .admin-bottom-nav button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.55rem 0.2rem;
+  border-radius: 0.9rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.15;
+  text-align: center;
+  color: rgba(255, 250, 246, 0.55);
+  background: transparent;
+  border: 0;
+}
+
+.admin-theme .admin-bottom-nav a.active,
+.admin-theme .admin-bottom-nav button.active {
+  background: rgba(201, 168, 124, 0.18);
+  color: #f0c987;
+}
+
+.admin-theme .admin-salon-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 35;
+}
+
+.admin-theme .admin-salon-sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.admin-theme .admin-salon-sheet-panel {
+  position: absolute;
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: calc(4.75rem + env(safe-area-inset-bottom));
+  padding: 1.1rem 1.15rem 1.25rem;
+  border-radius: 1.1rem;
+  border: 1px solid rgba(201, 168, 124, 0.35);
+  background: #241c18;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+
+.admin-theme .admin-salon-sheet-link {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.85rem 0.95rem;
+  border-radius: 0.85rem;
+  border: 1px solid rgba(201, 168, 124, 0.22);
+  background: rgba(201, 168, 124, 0.08);
+}
+
+.admin-theme .admin-salon-sheet-link:hover {
+  border-color: rgba(201, 168, 124, 0.45);
+  background: rgba(201, 168, 124, 0.14);
 }
 
 .admin-theme input,

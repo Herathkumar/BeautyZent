@@ -4,8 +4,22 @@ import { adminLogin, DEMO } from "./helpers";
 test.describe("Admin portal", () => {
   test("login and see dashboard links", async ({ page }) => {
     await adminLogin(page);
-    await expect(page.getByRole("link", { name: /services/i }).first()).toBeVisible();
-    await expect(page.getByRole("link", { name: /stylists|bookings|book for client/i }).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: /^dashboard$/i }).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: /^bookings$/i }).first()).toBeVisible();
+    await expect(page.getByRole("button", { name: /salon/i }).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: /^account$/i }).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: /active services/i })).toBeVisible();
+  });
+
+  test("salon menu opens services products stylists", async ({ page }) => {
+    await adminLogin(page);
+    const headerNav = page.locator(".admin-header-nav");
+    await headerNav.getByRole("button", { name: /salon/i }).click();
+    await expect(page.getByRole("menuitem", { name: /^services$/i })).toBeVisible();
+    await expect(page.getByRole("menuitem", { name: /^products$/i })).toBeVisible();
+    await expect(page.getByRole("menuitem", { name: /^stylists$/i })).toBeVisible();
+    await page.getByRole("menuitem", { name: /^services$/i }).click();
+    await expect(page).toHaveURL(/\/admin\/services/);
   });
 
   test("services page lists items and sync control", async ({ page }) => {
