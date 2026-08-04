@@ -206,6 +206,10 @@ model Appointment {
   tipCents         Int?
   chargedAt        DateTime?
   chargedByUserId  String?
+  /// Manager voided this job — excluded from store + stylist commission/tip totals.
+  excludedFromEarnings Boolean   @default(false)
+  excludedAt           DateTime?
+  excludedByUserId     String?
   /// Google Calendar event id for sync
   googleEventId    String?
   calendarSyncedAt DateTime?

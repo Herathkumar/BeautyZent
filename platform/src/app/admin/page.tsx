@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { endOfDay, startOfDay } from "date-fns";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { DashboardStoreEarnings } from "./DashboardStoreEarnings";
 import { PendingLeavePanel } from "./PendingLeavePanel";
 
 export default async function AdminHome() {
@@ -50,6 +51,8 @@ export default async function AdminHome() {
       ) : null}
 
       <PendingLeavePanel />
+
+      <DashboardStoreEarnings salonId={session.salonId} />
 
       <div className="mt-8">
         <Link

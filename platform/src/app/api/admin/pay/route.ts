@@ -3,6 +3,7 @@ import { getSession, isSalonStaff } from "@/lib/auth";
 import { calcStylistPay, normalizePayType } from "@/lib/pay";
 import { prisma } from "@/lib/prisma";
 import { calendarDateInTz, zonedStartOfDay } from "@/lib/salon-time";
+import { scheduledMinutesForStylist } from "@/lib/scheduled-hours";
 
 function toDate(d: { getTime: () => number }) {
   return new Date(d.getTime());
@@ -52,6 +53,7 @@ export async function GET(req: Request) {
       where: {
         stylistId: s.id,
         status: "COMPLETED",
+        excludedFromEarnings: false,
         startsAt: { gte: start, lt: nextMonth },
       },
       include: {
@@ -66,17 +68,21 @@ export async function GET(req: Request) {
       0
     );
     const tipCentsTotal = completed.reduce((sum, a) => sum + (a.tipCents ?? 0), 0);
-    const workedMinutes = completed.reduce(
-      (sum, a) => sum + (a.service.durationMin || 0),
-      0
-    );
+    const scheduledMinutes = await scheduledMinutesForStylist({
+      stylistId: s.id,
+      salonOpenHour: salon.openHour,
+      salonCloseHour: salon.closeHour,
+      timeZone,
+      rangeStart: start,
+      rangeEnd: nextMonth,
+    });
     const pay = calcStylistPay({
       payType: s.payType,
       hourlyRateCents: s.hourlyRateCents,
       commissionBps: s.commissionBps,
       chargedCentsTotal,
       tipCentsTotal,
-      workedMinutes,
+      workedMinutes: scheduledMinutes,
     });
 
     const payouts = await prisma.stylistPayout.findMany({
@@ -111,7 +117,8 @@ export async function GET(req: Request) {
       })),
       chargedCentsTotal,
       tipCentsTotal,
-      workedMinutes,
+      workedMinutes: scheduledMinutes,
+      scheduledMinutes,
       hourlyPay: pay.hourlyPay,
       commissionPay: pay.commissionPay,
       tipPay: pay.tipPay,
@@ -160,6 +167,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "stylistId and amountCents required" }, { status: 400 });
   }
 
+  const salon = await prisma.salon.findUniqueOrThrow({
+    where: { id: session.salonId },
+  });
+  const timeZone = salon.timezone || "America/Toronto";
+
   const stylist = await prisma.stylist.findFirst({
     where: { id: body.stylistId, salonId: session.salonId },
   });
@@ -171,11 +183,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid period" }, { status: 400 });
   }
 
-  // Recompute what is still owed for this period so we never double-pay.
   const completed = await prisma.appointment.findMany({
     where: {
       stylistId: stylist.id,
       status: "COMPLETED",
+      excludedFromEarnings: false,
       startsAt: { gte: periodStart, lt: periodEnd },
     },
     include: { service: { select: { durationMin: true, priceCents: true } } },
@@ -185,17 +197,21 @@ export async function POST(req: Request) {
     0
   );
   const tipCentsTotal = completed.reduce((sum, a) => sum + (a.tipCents ?? 0), 0);
-  const workedMinutes = completed.reduce(
-    (sum, a) => sum + (a.service.durationMin || 0),
-    0
-  );
+  const scheduledMinutes = await scheduledMinutesForStylist({
+    stylistId: stylist.id,
+    salonOpenHour: salon.openHour,
+    salonCloseHour: salon.closeHour,
+    timeZone,
+    rangeStart: periodStart,
+    rangeEnd: periodEnd,
+  });
   const earned = calcStylistPay({
     payType: stylist.payType,
     hourlyRateCents: stylist.hourlyRateCents,
     commissionBps: stylist.commissionBps,
     chargedCentsTotal,
     tipCentsTotal,
-    workedMinutes,
+    workedMinutes: scheduledMinutes,
   }).totalPay;
   const alreadyPaid = await prisma.stylistPayout.aggregate({
     where: {

@@ -9,6 +9,7 @@ const SALON_LINKS = [
   { href: "/manager/services", label: "Services" },
   { href: "/manager/products", label: "Products" },
   { href: "/manager/stylists", label: "Stylists" },
+  { href: "/manager/earnings", label: "Store Earnings" },
   { href: "/manager/pay", label: "Pay & hours" },
 ] as const;
 

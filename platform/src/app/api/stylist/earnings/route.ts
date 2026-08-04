@@ -9,6 +9,10 @@ import {
   weekDayKeys,
   zonedStartOfDay,
 } from "@/lib/salon-time";
+import {
+  scheduledMinutesByDayForWeek,
+  scheduledMinutesForStylist,
+} from "@/lib/scheduled-hours";
 
 function toDate(d: { getTime: () => number }) {
   return new Date(d.getTime());
@@ -50,18 +54,28 @@ export async function GET(req: Request) {
   const weekStart = toDate(zonedStartOfDay(monday, timeZone));
   const weekEnd = toDate(zonedStartOfDay(weekEndExclusive, timeZone));
 
-  const jobs = await prisma.appointment.findMany({
-    where: {
+  const [jobs, scheduledByDay] = await Promise.all([
+    prisma.appointment.findMany({
+      where: {
+        stylistId: stylist.id,
+        status: "COMPLETED",
+        excludedFromEarnings: false,
+        startsAt: { gte: weekStart, lt: weekEnd },
+      },
+      include: {
+        service: { select: { name: true, durationMin: true, priceCents: true } },
+        client: { select: { name: true } },
+      },
+      orderBy: { startsAt: "asc" },
+    }),
+    scheduledMinutesByDayForWeek({
       stylistId: stylist.id,
-      status: "COMPLETED",
-      startsAt: { gte: weekStart, lt: weekEnd },
-    },
-    include: {
-      service: { select: { name: true, durationMin: true, priceCents: true } },
-      client: { select: { name: true } },
-    },
-    orderBy: { startsAt: "asc" },
-  });
+      salonOpenHour: salon.openHour,
+      salonCloseHour: salon.closeHour,
+      timeZone,
+      mondayYmd: monday,
+    }),
+  ]);
 
   const byDay = days.map((ymd) => {
     const dayJobs = jobs.filter(
@@ -72,10 +86,7 @@ export async function GET(req: Request) {
       0
     );
     const tipCentsTotal = dayJobs.reduce((sum, a) => sum + (a.tipCents ?? 0), 0);
-    const workedMinutes = dayJobs.reduce(
-      (sum, a) => sum + (a.service.durationMin || 0),
-      0
-    );
+    const workedMinutes = scheduledByDay[ymd] ?? 0;
     const pay = calcStylistPay({
       payType: stylist.payType,
       hourlyRateCents: stylist.hourlyRateCents,
@@ -115,23 +126,31 @@ export async function GET(req: Request) {
 
   const year = Number(today.slice(0, 4));
   const yearStart = toDate(zonedStartOfDay(`${year}-01-01`, timeZone));
-  const allCompleted = await prisma.appointment.findMany({
-    where: {
+  const yearEnd = toDate(zonedStartOfDay(`${year + 1}-01-01`, timeZone));
+  const [allCompleted, ytdMinutes] = await Promise.all([
+    prisma.appointment.findMany({
+      where: {
+        stylistId: stylist.id,
+        status: "COMPLETED",
+        excludedFromEarnings: false,
+        startsAt: { gte: yearStart },
+      },
+      include: { service: { select: { durationMin: true, priceCents: true } } },
+    }),
+    scheduledMinutesForStylist({
       stylistId: stylist.id,
-      status: "COMPLETED",
-      startsAt: { gte: yearStart },
-    },
-    include: { service: { select: { durationMin: true, priceCents: true } } },
-  });
+      salonOpenHour: salon.openHour,
+      salonCloseHour: salon.closeHour,
+      timeZone,
+      rangeStart: yearStart,
+      rangeEnd: yearEnd,
+    }),
+  ]);
   const ytdCharged = allCompleted.reduce(
     (sum, a) => sum + (a.chargedCents ?? a.service.priceCents ?? 0),
     0
   );
   const ytdTips = allCompleted.reduce((sum, a) => sum + (a.tipCents ?? 0), 0);
-  const ytdMinutes = allCompleted.reduce(
-    (sum, a) => sum + (a.service.durationMin || 0),
-    0
-  );
   const ytdPay = calcStylistPay({
     payType: stylist.payType,
     hourlyRateCents: stylist.hourlyRateCents,

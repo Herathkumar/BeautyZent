@@ -243,8 +243,9 @@ export default function AdminPayPage() {
             Pay & hours
           </h1>
           <p className="mt-2 text-muted">
-            Worked time from completed bookings. Pay from hourly rate and/or commission on
-            service charges, plus tips (100% to stylist).
+            Hourly pay uses scheduled hours minus approved leave. Commission is on service
+            charges; tips go 100% to the stylist. Voided jobs are excluded from commission and
+            tips.
           </p>
         </div>
         <button

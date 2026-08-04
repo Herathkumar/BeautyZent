@@ -9,7 +9,8 @@ const SALON_LINKS = [
   { href: "/manager/services", label: "Services", hint: "Menu & durations" },
   { href: "/manager/products", label: "Products", hint: "Retail & add-ons" },
   { href: "/manager/stylists", label: "Stylists", hint: "Team & schedules" },
-  { href: "/manager/pay", label: "Pay & hours", hint: "Earnings & leave approval" },
+  { href: "/manager/earnings", label: "Store Earnings", hint: "Revenue & activity" },
+  { href: "/manager/pay", label: "Pay & hours", hint: "Payroll & leave approval" },
 ] as const;
 
 function useIsDesktop() {
