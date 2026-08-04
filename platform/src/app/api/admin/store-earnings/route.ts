@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession, isSalonStaff } from "@/lib/auth";
+import { calcStylistPay } from "@/lib/pay";
 import { prisma } from "@/lib/prisma";
 import {
   addCalendarDays,
@@ -8,6 +9,10 @@ import {
   weekDayKeys,
   zonedStartOfDay,
 } from "@/lib/salon-time";
+import {
+  scheduledMinutesByDayForWeek,
+  scheduledMinutesForStylist,
+} from "@/lib/scheduled-hours";
 
 function toDate(d: { getTime: () => number }) {
   return new Date(d.getTime());
@@ -24,6 +29,11 @@ function reasonLabel(reason: string) {
     default:
       return reason || "Away";
   }
+}
+
+/** Store cost = hourly + commission (tips are pass-through, not in profit). */
+function stylistCostCents(pay: ReturnType<typeof calcStylistPay>) {
+  return pay.hourlyPay + pay.commissionPay;
 }
 
 export async function GET(req: Request) {
@@ -73,6 +83,14 @@ export async function GET(req: Request) {
       },
       include: {
         service: { select: { priceCents: true } },
+        stylist: {
+          select: {
+            id: true,
+            payType: true,
+            hourlyRateCents: true,
+            commissionBps: true,
+          },
+        },
       },
     }),
     prisma.stylistPayout.findMany({
@@ -99,12 +117,32 @@ export async function GET(req: Request) {
     }),
     prisma.stylist.findMany({
       where: { salonId: session.salonId, active: true },
-      select: { id: true, name: true },
+      select: {
+        id: true,
+        name: true,
+        payType: true,
+        hourlyRateCents: true,
+        commissionBps: true,
+      },
       orderBy: { name: "asc" },
     }),
   ]);
 
   const countedJobs = weekJobs.filter((j) => !j.excludedFromEarnings);
+
+  const scheduledByStylist = new Map<string, Record<string, number>>();
+  await Promise.all(
+    stylists.map(async (s) => {
+      const byDay = await scheduledMinutesByDayForWeek({
+        stylistId: s.id,
+        salonOpenHour: salon.openHour,
+        salonCloseHour: salon.closeHour,
+        timeZone,
+        mondayYmd: monday,
+      });
+      scheduledByStylist.set(s.id, byDay);
+    })
+  );
 
   const byDay = days.map((ymd) => {
     const dayJobs = countedJobs.filter(
@@ -115,6 +153,32 @@ export async function GET(req: Request) {
       0
     );
     const tipCents = dayJobs.reduce((sum, a) => sum + (a.tipCents ?? 0), 0);
+
+    let stylistPayCents = 0; // hourly + commission only
+    let stylistTotalPayCents = 0; // includes tips
+    for (const s of stylists) {
+      const sJobs = dayJobs.filter((j) => j.stylistId === s.id);
+      const sCharged = sJobs.reduce(
+        (sum, a) => sum + (a.chargedCents ?? a.service.priceCents ?? 0),
+        0
+      );
+      const sTips = sJobs.reduce((sum, a) => sum + (a.tipCents ?? 0), 0);
+      const minutes = scheduledByStylist.get(s.id)?.[ymd] ?? 0;
+      const pay = calcStylistPay({
+        payType: s.payType,
+        hourlyRateCents: s.hourlyRateCents,
+        commissionBps: s.commissionBps,
+        chargedCentsTotal: sCharged,
+        tipCentsTotal: sTips,
+        workedMinutes: minutes,
+      });
+      stylistPayCents += stylistCostCents(pay);
+      stylistTotalPayCents += pay.totalPay;
+    }
+
+    const revenueCents = chargedCents + tipCents;
+    const profitCents = chargedCents - stylistPayCents;
+
     return {
       date: ymd,
       weekday: new Intl.DateTimeFormat("en-CA", {
@@ -124,36 +188,126 @@ export async function GET(req: Request) {
       jobCount: dayJobs.length,
       chargedCents,
       tipCents,
-      totalCents: chargedCents + tipCents,
+      revenueCents,
+      stylistPayCents,
+      stylistTotalPayCents,
+      profitCents,
+      totalCents: revenueCents,
     };
   });
 
   const weekCharged = byDay.reduce((s, d) => s + d.chargedCents, 0);
   const weekTips = byDay.reduce((s, d) => s + d.tipCents, 0);
+  const weekStylistPay = byDay.reduce((s, d) => s + d.stylistPayCents, 0);
+  const weekStylistTotalPay = byDay.reduce((s, d) => s + d.stylistTotalPayCents, 0);
   const weekJobsCount = byDay.reduce((s, d) => s + d.jobCount, 0);
+  const weekProfit = weekCharged - weekStylistPay;
+  const weekPaid = payouts.reduce((s, p) => s + p.amountCents, 0);
+  const weekOwed = Math.max(0, weekStylistTotalPay - weekPaid);
+
+  // Today pay (may be outside the viewed week)
+  let todayStylistPay = 0;
+  const todayStylists = new Map<string, (typeof todayJobs)[0]["stylist"]>();
+  for (const j of todayJobs) todayStylists.set(j.stylist.id, j.stylist);
+  await Promise.all(
+    [...todayStylists.values()].map(async (s) => {
+      const sJobs = todayJobs.filter((j) => j.stylist.id === s.id);
+      const sCharged = sJobs.reduce(
+        (sum, a) => sum + (a.chargedCents ?? a.service.priceCents ?? 0),
+        0
+      );
+      const sTips = sJobs.reduce((sum, a) => sum + (a.tipCents ?? 0), 0);
+      const minutes = await scheduledMinutesForStylist({
+        stylistId: s.id,
+        salonOpenHour: salon.openHour,
+        salonCloseHour: salon.closeHour,
+        timeZone,
+        rangeStart: todayStart,
+        rangeEnd: tomorrowStart,
+      });
+      const pay = calcStylistPay({
+        payType: s.payType,
+        hourlyRateCents: s.hourlyRateCents,
+        commissionBps: s.commissionBps,
+        chargedCentsTotal: sCharged,
+        tipCentsTotal: sTips,
+        workedMinutes: minutes,
+      });
+      todayStylistPay += stylistCostCents(pay);
+    })
+  );
+
+  // Also include hourly for stylists with no jobs today but scheduled hours
+  const todayStylistIds = new Set(todayStylists.keys());
+  await Promise.all(
+    stylists
+      .filter((s) => !todayStylistIds.has(s.id))
+      .map(async (s) => {
+        const minutes = await scheduledMinutesForStylist({
+          stylistId: s.id,
+          salonOpenHour: salon.openHour,
+          salonCloseHour: salon.closeHour,
+          timeZone,
+          rangeStart: todayStart,
+          rangeEnd: tomorrowStart,
+        });
+        if (minutes <= 0) return;
+        const pay = calcStylistPay({
+          payType: s.payType,
+          hourlyRateCents: s.hourlyRateCents,
+          commissionBps: s.commissionBps,
+          chargedCentsTotal: 0,
+          tipCentsTotal: 0,
+          workedMinutes: minutes,
+        });
+        todayStylistPay += stylistCostCents(pay);
+      })
+  );
 
   const todayCharged = todayJobs.reduce(
     (sum, a) => sum + (a.chargedCents ?? a.service.priceCents ?? 0),
     0
   );
   const todayTips = todayJobs.reduce((sum, a) => sum + (a.tipCents ?? 0), 0);
+  const todayProfit = todayCharged - todayStylistPay;
 
   const byStylistMap = new Map<
     string,
-    { stylistId: string; stylistName: string; chargedCents: number; tipCents: number; jobCount: number }
+    {
+      stylistId: string;
+      stylistName: string;
+      chargedCents: number;
+      tipCents: number;
+      jobCount: number;
+      stylistPayCents: number;
+    }
   >();
-  for (const j of countedJobs) {
-    const cur = byStylistMap.get(j.stylistId) || {
-      stylistId: j.stylistId,
-      stylistName: j.stylist.name,
-      chargedCents: 0,
-      tipCents: 0,
-      jobCount: 0,
-    };
-    cur.chargedCents += j.chargedCents ?? j.service.priceCents ?? 0;
-    cur.tipCents += j.tipCents ?? 0;
-    cur.jobCount += 1;
-    byStylistMap.set(j.stylistId, cur);
+  for (const s of stylists) {
+    const sJobs = countedJobs.filter((j) => j.stylistId === s.id);
+    const chargedCents = sJobs.reduce(
+      (sum, a) => sum + (a.chargedCents ?? a.service.priceCents ?? 0),
+      0
+    );
+    const tipCents = sJobs.reduce((sum, a) => sum + (a.tipCents ?? 0), 0);
+    let minutes = 0;
+    for (const ymd of days) minutes += scheduledByStylist.get(s.id)?.[ymd] ?? 0;
+    const pay = calcStylistPay({
+      payType: s.payType,
+      hourlyRateCents: s.hourlyRateCents,
+      commissionBps: s.commissionBps,
+      chargedCentsTotal: chargedCents,
+      tipCentsTotal: tipCents,
+      workedMinutes: minutes,
+    });
+    if (sJobs.length === 0 && stylistCostCents(pay) === 0) continue;
+    byStylistMap.set(s.id, {
+      stylistId: s.id,
+      stylistName: s.name,
+      chargedCents,
+      tipCents,
+      jobCount: sJobs.length,
+      stylistPayCents: stylistCostCents(pay),
+    });
   }
 
   type Activity = {
@@ -240,12 +394,20 @@ export async function GET(req: Request) {
     todaySummary: {
       chargedCents: todayCharged,
       tipCents: todayTips,
+      revenueCents: todayCharged + todayTips,
+      stylistPayCents: todayStylistPay,
+      profitCents: todayProfit,
       totalCents: todayCharged + todayTips,
       jobCount: todayJobs.length,
     },
     weekSummary: {
       chargedCents: weekCharged,
       tipCents: weekTips,
+      revenueCents: weekCharged + weekTips,
+      stylistPayCents: weekStylistPay,
+      profitCents: weekProfit,
+      paidCents: weekPaid,
+      owedCents: weekOwed,
       totalCents: weekCharged + weekTips,
       jobCount: weekJobsCount,
       voidedJobCount: weekJobs.length - countedJobs.length,
@@ -267,7 +429,7 @@ export async function GET(req: Request) {
       tipCents: j.tipCents ?? 0,
       excludedFromEarnings: j.excludedFromEarnings,
     })),
-    stylists,
+    stylists: stylists.map((s) => ({ id: s.id, name: s.name })),
   });
 }
 

@@ -8,8 +8,8 @@ test.describe("Manager store earnings", () => {
     const card = page.getByTestId("dashboard-store-earnings");
     await expect(card).toBeVisible({ timeout: 15_000 });
     await expect(card.getByText(/store earnings/i)).toBeVisible();
-    await expect(card.getByText(/^today$/i)).toBeVisible();
-    await expect(card.getByText(/this week/i)).toBeVisible();
+    await expect(card.getByText(/today.*profit/i)).toBeVisible();
+    await expect(card.getByText(/this week.*profit/i)).toBeVisible();
     await card.click();
     await expect(page).toHaveURL(/\/manager\/earnings/);
     await expect(page.getByRole("heading", { name: /store earnings/i })).toBeVisible();
@@ -23,7 +23,12 @@ test.describe("Manager store earnings", () => {
     await expect(page.getByTestId("store-earnings-page")).toBeVisible();
     await expect(page.getByTestId("store-earnings-today")).toBeVisible();
     await expect(page.getByTestId("store-earnings-week")).toBeVisible();
+    await expect(page.getByTestId("store-earnings-today").getByText(/store profit/i)).toBeVisible();
+    await expect(page.getByTestId("store-earnings-week").getByText(/^Paid out/i)).toBeVisible();
     await expect(page.getByTestId("store-earnings-bars")).toBeVisible({ timeout: 15_000 });
+    const legend = page.locator("section").filter({ has: page.getByTestId("store-earnings-bars") });
+    await expect(legend.getByText("Revenue", { exact: true })).toBeVisible();
+    await expect(legend.getByText("Profit", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: /download csv/i })).toBeVisible();
     await expect(page.getByRole("heading", { name: /activity/i })).toBeVisible();
   });
