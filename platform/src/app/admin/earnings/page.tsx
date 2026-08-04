@@ -410,6 +410,10 @@ export default function StoreEarningsPage() {
   const [goalMsg, setGoalMsg] = useState("");
   const [busyId, setBusyId] = useState("");
   const [breakdown, setBreakdown] = useState<BreakdownView | null>(null);
+  const [activityKind, setActivityKind] = useState<"ALL" | "JOB" | "PAYOUT" | "LEAVE">("ALL");
+  const [activityStylist, setActivityStylist] = useState("ALL");
+  const [activityStatus, setActivityStatus] = useState<"ALL" | "ACTIVE" | "VOIDED">("ALL");
+  const [activityQuery, setActivityQuery] = useState("");
 
   const load = useCallback(async (weekMonday?: string | null) => {
     setLoading(true);
@@ -455,6 +459,13 @@ export default function StoreEarningsPage() {
   }
 
   async function toggleExclude(appointmentId: string, excluded: boolean) {
+    const ok = window.confirm(
+      excluded
+        ? "Void this job from store totals and stylist commission/tips?"
+        : "Restore this job to store totals and stylist earnings?"
+    );
+    if (!ok) return;
+
     setBusyId(appointmentId);
     setMsg("");
     const res = await fetch("/api/admin/store-earnings", {
@@ -476,6 +487,27 @@ export default function StoreEarningsPage() {
     1,
     ...(data?.days.flatMap((d) => [d.revenueCents, Math.max(0, d.profitCents)]) || [1])
   );
+
+  const activityStylistOptions = Array.from(
+    new Set(
+      (data?.activities || [])
+        .map((a) => a.stylistName)
+        .filter((n): n is string => Boolean(n))
+    )
+  ).sort((a, b) => a.localeCompare(b));
+
+  const filteredActivities = (data?.activities || []).filter((a) => {
+    if (activityKind !== "ALL" && a.kind !== activityKind) return false;
+    if (activityStylist !== "ALL" && a.stylistName !== activityStylist) return false;
+    if (activityStatus === "VOIDED" && !a.excluded) return false;
+    if (activityStatus === "ACTIVE" && a.excluded) return false;
+    if (activityQuery.trim()) {
+      const q = activityQuery.trim().toLowerCase();
+      const hay = `${a.title} ${a.detail} ${a.stylistName || ""}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
 
   return (
     <main className="space-y-8" data-testid="store-earnings-page">
@@ -748,14 +780,85 @@ export default function StoreEarningsPage() {
           ) : null}
 
           <section className="space-y-3">
-            <h2 className="font-[family-name:var(--font-display)] text-xl text-[#fffaf6]">
-              Activity
-            </h2>
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <h2 className="font-[family-name:var(--font-display)] text-xl text-[#fffaf6]">
+                Activity
+              </h2>
+              <p className="text-xs text-muted">
+                {filteredActivities.length} of {data.activities.length}
+              </p>
+            </div>
+
+            <div
+              className="grid gap-3 rounded-2xl border border-[#c9a87c]/20 bg-[#2a211c] p-3 sm:grid-cols-2 lg:grid-cols-4"
+              data-testid="store-earnings-activity-filters"
+            >
+              <label className="grid gap-1 text-[10px] font-semibold tracking-wide text-[#c9a87c] uppercase">
+                Type
+                <select
+                  value={activityKind}
+                  onChange={(e) =>
+                    setActivityKind(e.target.value as typeof activityKind)
+                  }
+                  aria-label="Filter activity type"
+                  className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-sm font-normal normal-case text-[#fffaf6]"
+                >
+                  <option value="ALL">All types</option>
+                  <option value="JOB">Jobs</option>
+                  <option value="PAYOUT">Payouts</option>
+                  <option value="LEAVE">Leave</option>
+                </select>
+              </label>
+              <label className="grid gap-1 text-[10px] font-semibold tracking-wide text-[#c9a87c] uppercase">
+                Stylist
+                <select
+                  value={activityStylist}
+                  onChange={(e) => setActivityStylist(e.target.value)}
+                  aria-label="Filter activity stylist"
+                  className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-sm font-normal normal-case text-[#fffaf6]"
+                >
+                  <option value="ALL">All stylists</option>
+                  {activityStylistOptions.map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="grid gap-1 text-[10px] font-semibold tracking-wide text-[#c9a87c] uppercase">
+                Status
+                <select
+                  value={activityStatus}
+                  onChange={(e) =>
+                    setActivityStatus(e.target.value as typeof activityStatus)
+                  }
+                  aria-label="Filter activity status"
+                  className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-sm font-normal normal-case text-[#fffaf6]"
+                >
+                  <option value="ALL">All statuses</option>
+                  <option value="ACTIVE">Active (not voided)</option>
+                  <option value="VOIDED">Voided only</option>
+                </select>
+              </label>
+              <label className="grid gap-1 text-[10px] font-semibold tracking-wide text-[#c9a87c] uppercase">
+                Search
+                <input
+                  value={activityQuery}
+                  onChange={(e) => setActivityQuery(e.target.value)}
+                  aria-label="Search activity"
+                  placeholder="Client, note…"
+                  className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-sm font-normal normal-case text-[#fffaf6]"
+                />
+              </label>
+            </div>
+
             {data.activities.length === 0 ? (
               <p className="text-sm text-muted">No store activity this week yet.</p>
+            ) : filteredActivities.length === 0 ? (
+              <p className="text-sm text-muted">No activity matches these filters.</p>
             ) : (
               <ul className="space-y-2" data-testid="store-earnings-activity">
-                {data.activities.map((a) => (
+                {filteredActivities.map((a) => (
                   <li
                     key={a.id}
                     className={`rounded-2xl border px-4 py-3 ${

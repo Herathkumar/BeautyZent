@@ -55,6 +55,13 @@ test.describe("Manager store earnings", () => {
     await expect(legend.getByText("Profit", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: /download csv/i })).toBeVisible();
     await expect(page.getByRole("heading", { name: /activity/i })).toBeVisible();
+    const filters = page.getByTestId("store-earnings-activity-filters");
+    await expect(filters).toBeVisible();
+    await expect(filters.getByLabel(/filter activity type/i)).toBeVisible();
+    await expect(filters.getByLabel(/filter activity stylist/i)).toBeVisible();
+    await expect(filters.getByLabel(/filter activity status/i)).toBeVisible();
+    await expect(filters.getByLabel(/search activity/i)).toBeVisible();
+    await filters.getByLabel(/filter activity type/i).selectOption("PAYOUT");
   });
 
   test("manager can update store regular hours on Account", async ({ page }) => {
@@ -135,6 +142,7 @@ test.describe("Manager store earnings", () => {
     await expect(row).toBeVisible();
     await expect(row.getByText(/\$43\.00/)).toBeVisible();
 
+    page.once("dialog", (d) => d.accept());
     await row.getByRole("button", { name: /void \/ exclude/i }).click();
     await expect(page.getByText(/voided from store/i)).toBeVisible({ timeout: 10_000 });
     const voidedRow = page
@@ -144,6 +152,7 @@ test.describe("Manager store earnings", () => {
       .first();
     await expect(voidedRow.getByText(/job · voided/i)).toBeVisible();
 
+    page.once("dialog", (d) => d.accept());
     await voidedRow.getByRole("button", { name: /^restore$/i }).click();
     await expect(page.getByText(/restored to totals/i)).toBeVisible({ timeout: 10_000 });
     await expect(
