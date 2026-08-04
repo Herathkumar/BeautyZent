@@ -44,7 +44,7 @@ Salon staff use: `/display/fhsalon`, `/stylist`, `/admin` on the same booking ho
 
 ---
 
-## Step 3 — Create tables + seed data
+## Step 3 — Create tables + production-ready data
 
 On your PC (with Neon URL in `platform/.env` as `DATABASE_URL`):
 
@@ -53,12 +53,25 @@ cd C:\Users\hkathira\a3-it-solutions\platform
 # Put Neon DATABASE_URL + AUTH_SECRET into .env
 pnpm install
 pnpm db:push
+```
+
+**Demo / local QA only** (creates stylists, services, products + `demo1234`):
+
+```powershell
 pnpm db:seed
 ```
 
-That creates schema + Farzana salon + demo logins on the **cloud** DB.
+**Production reset** (wipes salon data; leaves salon shell + one admin only):
 
-**Then change passwords in Admin** (do not leave `demo1234` in production).
+```powershell
+$env:CONFIRM_PRODUCTION_RESET="YES"
+# optional: $env:PRODUCTION_ADMIN_PASSWORD="YourStrongPasswordHere"
+pnpm db:seed:production
+```
+
+Save the printed admin email/password. Then in Admin create real Services, Stylists, and Products.
+
+Use a **separate Neon branch** for Playwright / local demo seed so production stays clean.
 
 ---
 
@@ -92,14 +105,25 @@ Do **not** set Netlify root to `platform` — leave it publishing the static HTM
 
 ---
 
-## Step 6 — Salon smoke test (before telling clients)
+## Step 6 — Load real salon data (first admin session)
 
-1. Website → Book online → confirm reservation  
-2. Tablet: https://book.fhsalon.ca/display/fhsalon  
-3. Stylist phone: https://book.fhsalon.ca/stylist (Add to Home Screen)  
-4. Admin: https://book.fhsalon.ca/admin  
-5. Change all demo passwords  
-6. Optional: bookmark / pin floor display on the salon tablet  
+1. Open https://fhsalon.vercel.app/admin/login (or book.fhsalon.ca when DNS is ready)
+2. Sign in with the production admin password from `pnpm db:seed:production`
+3. **Services** — add real menu (name, duration, price, category)
+4. **Stylists** — add each stylist (gender for avatar); copy the temp login once and send to them
+5. On Services, use **Link all services → stylists** if booking step 2 is empty
+6. **Products** — optional retail items
+7. Ask each stylist to open `/stylist`, change password, and take a selfie under Account
+8. Change the admin password after first login (via Account tooling when available, or reset + set a new one)
+
+## Step 7 — Salon smoke test (before telling clients)
+
+1. Website → Book online → confirm a real test reservation  
+2. Tablet: https://fhsalon.vercel.app/display/fhsalon (or book.fhsalon.ca)  
+3. Stylist phone: `/stylist` → Add to Home Screen  
+4. Admin: `/admin` → see the booking  
+5. Optional: pin floor display on the salon tablet  
+6. Do **not** run `pnpm db:seed` against production (that reloads demo data)  
 
 ---
 

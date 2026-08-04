@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("admin@fhsalon.ca");
-  const [password, setPassword] = useState("demo1234");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -41,7 +41,9 @@ export default function AdminLoginPage() {
       <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl text-[#fffaf6]">
         Admin login
       </h1>
-      <p className="mt-2 text-sm text-muted">Pilot: admin@fhsalon.ca / demo1234</p>
+      <p className="mt-2 text-sm text-muted">
+        Sign in with the salon admin account to manage services, stylists, and bookings.
+      </p>
       <form
         onSubmit={onSubmit}
         className="mt-6 grid gap-3 rounded-2xl border border-[#c9a87c]/30 bg-[#2a211c] p-5"
@@ -50,6 +52,8 @@ export default function AdminLoginPage() {
           Email
           <input
             className="rounded-xl border border-ink/15 px-3 py-2"
+            type="email"
+            autoComplete="username"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
@@ -58,6 +62,7 @@ export default function AdminLoginPage() {
           Password
           <input
             type="password"
+            autoComplete="current-password"
             className="rounded-xl border border-ink/15 px-3 py-2"
             value={password}
             onChange={(e) => setPassword(e.target.value)}

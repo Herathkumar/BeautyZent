@@ -6,8 +6,8 @@ import Link from "next/link";
 
 export default function StylistLoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("farzana@fhsalon.ca");
-  const [password, setPassword] = useState("demo1234");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -81,9 +81,14 @@ export default function StylistLoginPage() {
         <ol className="mt-2 list-decimal space-y-1 pl-5">
           <li>Open this page in Safari (iPhone) or Chrome (Android)</li>
           <li>Tap Share / menu</li>
-          <li>Choose <span className="text-ink-soft">Add to Home Screen</span></li>
+          <li>
+            Choose <span className="text-ink-soft">Add to Home Screen</span>
+          </li>
         </ol>
-        <p className="mt-3 text-xs">Demo: farzana@fhsalon.ca · demo1234</p>
+        <p className="mt-3 text-xs">
+          Your salon admin creates your login and temporary password. Change it under Account after
+          first sign-in.
+        </p>
       </div>
 
       <p className="text-sm text-muted">

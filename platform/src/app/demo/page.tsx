@@ -43,7 +43,7 @@ const demos = [
     external: false,
     title: "Stylist portal",
     subtitle: "Phone app — My Day",
-    hint: "farzana@fhsalon.ca / demo1234",
+    hint: "Use the login your admin created",
     accent: "from-[#3a2f4a] to-[#1c1714]",
   },
   {
@@ -52,7 +52,7 @@ const demos = [
     external: false,
     title: "Admin",
     subtitle: "Front desk — services & walk-ins",
-    hint: "admin@fhsalon.ca / demo1234",
+    hint: "Salon admin account",
     accent: "from-[#4a3520] to-[#1c1714]",
   },
 ] as const;
@@ -122,7 +122,7 @@ export default function DemoHubPage() {
             <code className="text-[#f2c4b0]">http://localhost:5500</code>).
           </p>
           <p className="mt-3 text-xs">
-            Demo logins · Admin: admin@fhsalon.ca · Stylist: farzana@fhsalon.ca · Password: demo1234
+            Production logins are created in Admin (no shared demo password on live).
           </p>
         </div>
 
