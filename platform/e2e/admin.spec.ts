@@ -71,7 +71,7 @@ test.describe("Admin portal", () => {
     await page.getByRole("button", { name: /update password/i }).click();
     await expect(page.getByText(/password updated/i)).toBeVisible();
 
-    await page.locator("main").getByRole("button", { name: /^log out$/i }).click();
+    await page.getByRole("main").getByRole("button", { name: /^log out$/i }).click();
     await page.goto("/admin/login");
     await page.getByLabel(/email/i).fill(DEMO.adminEmail);
     await page.getByLabel(/password/i).fill(tempPassword);

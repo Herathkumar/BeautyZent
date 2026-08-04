@@ -39,7 +39,7 @@ export function AdminHeaderNav() {
   }, [open]);
 
   return (
-    <nav className="admin-nav admin-header-nav items-center gap-4 text-sm">
+    <nav className="admin-nav admin-header-nav flex flex-wrap items-center justify-end gap-x-4 gap-y-2 text-sm">
       <Link href="/admin" className={pathname === "/admin" ? "is-active" : undefined}>
         Dashboard
       </Link>

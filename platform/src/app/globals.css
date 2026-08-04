@@ -120,12 +120,12 @@ a {
 }
 
 .admin-theme .admin-header-nav {
-  display: none;
+  display: none !important;
 }
 
 @media (min-width: 768px) {
   .admin-theme .admin-header-nav {
-    display: flex;
+    display: flex !important;
   }
 }
 
@@ -169,11 +169,11 @@ a {
   backdrop-filter: blur(12px);
 }
 
-/* Desktop uses the top nav; bottom bar is phone-only so Log out stays reachable */
+/* Desktop uses the top nav; bottom bar is phone-only (also gated in AdminBottomNav JS) */
 @media (min-width: 768px) {
   .admin-theme .admin-bottom-nav,
   .admin-theme .admin-salon-sheet {
-    display: none;
+    display: none !important;
   }
 }
 

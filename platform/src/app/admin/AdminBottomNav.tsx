@@ -10,17 +10,24 @@ const SALON_LINKS = [
   { href: "/admin/stylists", label: "Stylists", hint: "Team & schedules" },
 ] as const;
 
+function useIsDesktop() {
+  const [desktop, setDesktop] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    const sync = () => setDesktop(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
+  return desktop;
+}
+
 export function AdminBottomNav() {
   const pathname = usePathname();
+  const isDesktop = useIsDesktop();
   const [salonOpen, setSalonOpen] = useState(false);
-
-  if (pathname.startsWith("/admin/login")) return null;
-
-  const onDashboard = pathname === "/admin";
-  const onBookings =
-    pathname.startsWith("/admin/appointments") || pathname.startsWith("/admin/book");
-  const onSalon = SALON_LINKS.some((l) => pathname.startsWith(l.href));
-  const onAccount = pathname.startsWith("/admin/account");
 
   useEffect(() => {
     setSalonOpen(false);
@@ -34,6 +41,14 @@ export function AdminBottomNav() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [salonOpen]);
+
+  if (pathname.startsWith("/admin/login") || isDesktop) return null;
+
+  const onDashboard = pathname === "/admin";
+  const onBookings =
+    pathname.startsWith("/admin/appointments") || pathname.startsWith("/admin/book");
+  const onSalon = SALON_LINKS.some((l) => pathname.startsWith(l.href));
+  const onAccount = pathname.startsWith("/admin/account");
 
   return (
     <>
