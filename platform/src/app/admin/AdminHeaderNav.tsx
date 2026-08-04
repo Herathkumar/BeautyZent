@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 const SALON_LINKS = [
+  { href: "/manager/working", label: "Who's working" },
   { href: "/manager/services", label: "Services" },
   { href: "/manager/products", label: "Products" },
   { href: "/manager/stylists", label: "Stylists" },
@@ -42,6 +43,12 @@ export function AdminHeaderNav() {
     <nav className="admin-nav admin-header-nav flex flex-wrap items-center justify-end gap-x-4 gap-y-2 text-sm">
       <Link href="/manager" className={pathname === "/manager" ? "is-active" : undefined}>
         Dashboard
+      </Link>
+      <Link
+        href="/manager/working"
+        className={pathname.startsWith("/manager/working") ? "is-active" : undefined}
+      >
+        Who&apos;s working
       </Link>
       <Link
         href="/manager/appointments"

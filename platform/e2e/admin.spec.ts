@@ -9,7 +9,16 @@ test.describe("Manager portal", () => {
     await expect(page.getByRole("button", { name: /salon/i }).first()).toBeVisible();
     await expect(page.getByRole("link", { name: /^account$/i }).first()).toBeVisible();
     await expect(page.getByRole("link", { name: /active services/i })).toBeVisible();
-    await expect(page.getByRole("link", { name: /pay & hours/i })).toBeVisible();
+    await expect(page.getByTestId("dashboard-who-working")).toBeVisible();
+  });
+
+  test("who's working page lists team for a day", async ({ page }) => {
+    await adminLogin(page);
+    await page.goto("/manager/working");
+    await expect(page.getByRole("heading", { name: /who.?s working/i })).toBeVisible();
+    await expect(page.getByLabel(/^date$/i)).toBeVisible();
+    await expect(page.getByTestId("working-roster-row").first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(/on floor|away|day off/i).first()).toBeVisible();
   });
 
   test("salon menu opens services products stylists", async ({ page }) => {

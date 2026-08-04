@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const SALON_LINKS = [
+  { href: "/manager/working", label: "Who's working", hint: "Floor roster by day" },
   { href: "/manager/services", label: "Services", hint: "Menu & durations" },
   { href: "/manager/products", label: "Products", hint: "Retail & add-ons" },
   { href: "/manager/stylists", label: "Stylists", hint: "Team & schedules" },

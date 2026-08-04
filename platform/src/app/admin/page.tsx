@@ -51,7 +51,23 @@ export default async function AdminHome() {
 
       <PendingLeavePanel />
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-8">
+        <Link
+          href="/manager/working"
+          className="admin-stat-card block rounded-2xl p-5"
+          data-testid="dashboard-who-working"
+        >
+          <p className="text-sm text-[#c9a87c]">Floor today</p>
+          <p className="mt-2 font-[family-name:var(--font-display)] text-2xl text-[#fffaf6]">
+            Who&apos;s working
+          </p>
+          <p className="mt-1 text-sm text-muted">
+            See schedules, vacations, and breaks by day
+          </p>
+        </Link>
+      </div>
+
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
           { label: "Today's bookings", value: bookingsToday, href: "/manager/appointments" },
           { label: "Active services", value: services, href: "/manager/services" },
@@ -65,30 +81,6 @@ export default async function AdminHome() {
             </p>
           </Link>
         ))}
-      </div>
-
-      <div className="mt-8 flex flex-wrap gap-3">
-        <Link href={`/book/${salon.slug}`} className="btn-solid rounded-full px-4 py-2 text-sm">
-          Open client booking
-        </Link>
-        <Link
-          href={`/display/${salon.slug}`}
-          className="rounded-full border border-[#c9a87c]/50 px-4 py-2 text-sm text-[#f0c987] hover:bg-[#c9a87c]/10"
-        >
-          Open tablet display
-        </Link>
-        <Link
-          href="/manager/book"
-          className="rounded-full border border-[#c9a87c]/50 px-4 py-2 text-sm text-[#f0c987] hover:bg-[#c9a87c]/10"
-        >
-          Book for a client
-        </Link>
-        <Link
-          href="/manager/pay"
-          className="rounded-full border border-[#c9a87c]/50 px-4 py-2 text-sm text-[#f0c987] hover:bg-[#c9a87c]/10"
-        >
-          Pay & hours
-        </Link>
       </div>
     </main>
   );
