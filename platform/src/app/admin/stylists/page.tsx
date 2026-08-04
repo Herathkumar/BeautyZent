@@ -217,6 +217,30 @@ export default function StylistsAdminPage() {
     });
   }
 
+  async function toggleSelfManage(stylist: Stylist, next: boolean) {
+    setError("");
+    const res = await fetch("/api/admin/stylists", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "updatePay",
+        stylistId: stylist.id,
+        selfManageSchedule: next,
+        payType: stylist.payType || "COMMISSION",
+        commissionBps: stylist.commissionBps,
+        hourlyRateCents: stylist.hourlyRateCents,
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setError(data.error || "Could not update self-manage setting");
+      return;
+    }
+    setStylists((prev) =>
+      prev.map((s) => (s.id === stylist.id ? { ...s, selfManageSchedule: next } : s))
+    );
+  }
+
   async function copyText(text: string) {
     try {
       await navigator.clipboard.writeText(text);
@@ -375,8 +399,18 @@ export default function StylistsAdminPage() {
                     </span>
                     {s.selfManageSchedule ? (
                       <span className="text-[#9fe3b8]"> · Self-manage</span>
-                    ) : null}
+                    ) : (
+                      <span className="text-[#a89a8c]"> · Needs leave approval</span>
+                    )}
                   </p>
+                  <label className="mt-3 flex items-center gap-2 text-sm text-[#d4c4b0]">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(s.selfManageSchedule)}
+                      onChange={(e) => void toggleSelfManage(s, e.target.checked)}
+                    />
+                    Self-manage schedule (no leave approval)
+                  </label>
                   <p className="mt-2 text-sm text-[#d4c4b0]">
                     Login:{" "}
                     {s.loginEmail ? (
