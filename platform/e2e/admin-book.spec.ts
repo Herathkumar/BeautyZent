@@ -42,6 +42,51 @@ test.describe("Admin — book for client", () => {
     await expect(page.getByText(/farzana/i).first()).toBeVisible();
   });
 
+  test("manager can toggle self-manage schedule on existing stylist", async ({ page }) => {
+    await adminLogin(page);
+    await page.goto("/manager/stylists");
+    await expect(page.getByRole("heading", { name: /stylists & logins/i })).toBeVisible();
+
+    // Aisha is seeded without self-manage
+    const card = page.locator("article").filter({ hasText: /aisha/i }).first();
+    await expect(card).toBeVisible({ timeout: 15_000 });
+    const toggle = card.getByRole("checkbox", { name: /self-manage schedule/i });
+    await expect(toggle).toBeVisible();
+    await expect(toggle).not.toBeChecked();
+    await expect(card.getByText(/needs leave approval/i)).toBeVisible();
+
+    const saveResp = page.waitForResponse(
+      (r) =>
+        r.url().includes("/api/admin/stylists") &&
+        r.request().method() === "POST" &&
+        r.request().postDataJSON()?.action === "updateSelfManage"
+    );
+    await toggle.check();
+    const saved = await saveResp;
+    expect(saved.ok()).toBeTruthy();
+    const savedJson = await saved.json();
+    expect(savedJson.stylist?.selfManageSchedule).toBe(true);
+    await expect(toggle).toBeChecked();
+    await expect(card.getByText(/· self-manage/i)).toBeVisible({ timeout: 10_000 });
+
+    await page.reload();
+    const cardAfter = page.locator("article").filter({ hasText: /aisha/i }).first();
+    const toggleAfter = cardAfter.getByRole("checkbox", { name: /self-manage schedule/i });
+    await expect(toggleAfter).toBeChecked({ timeout: 15_000 });
+
+    const restoreResp = page.waitForResponse(
+      (r) =>
+        r.url().includes("/api/admin/stylists") &&
+        r.request().method() === "POST" &&
+        r.request().postDataJSON()?.action === "updateSelfManage"
+    );
+    await toggleAfter.uncheck();
+    const restored = await restoreResp;
+    expect(restored.ok()).toBeTruthy();
+    await expect(toggleAfter).not.toBeChecked();
+    await expect(cardAfter.getByText(/needs leave approval/i)).toBeVisible({ timeout: 10_000 });
+  });
+
   test("reset password shows credentials in the same stylist card", async ({ page }) => {
     const unique = `Rst${Date.now().toString(36)}`;
     await adminLogin(page);

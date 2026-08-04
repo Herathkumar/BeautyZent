@@ -219,26 +219,27 @@ export default function StylistsAdminPage() {
 
   async function toggleSelfManage(stylist: Stylist, next: boolean) {
     setError("");
+    setStylists((prev) =>
+      prev.map((s) => (s.id === stylist.id ? { ...s, selfManageSchedule: next } : s))
+    );
     const res = await fetch("/api/admin/stylists", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        action: "updatePay",
+        action: "updateSelfManage",
         stylistId: stylist.id,
         selfManageSchedule: next,
-        payType: stylist.payType || "COMMISSION",
-        commissionBps: stylist.commissionBps,
-        hourlyRateCents: stylist.hourlyRateCents,
       }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
+      setStylists((prev) =>
+        prev.map((s) =>
+          s.id === stylist.id ? { ...s, selfManageSchedule: !next } : s
+        )
+      );
       setError(data.error || "Could not update self-manage setting");
-      return;
     }
-    setStylists((prev) =>
-      prev.map((s) => (s.id === stylist.id ? { ...s, selfManageSchedule: next } : s))
-    );
   }
 
   async function copyText(text: string) {

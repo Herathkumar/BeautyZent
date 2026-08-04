@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/auth";
+import { getSession, isSalonStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getGoogleAuthUrl, isGoogleConfigured } from "@/lib/calendar";
 import { linkStylistToAllServices } from "@/lib/service-links";
@@ -58,30 +58,55 @@ export async function GET() {
 export async function POST(req: Request) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const body = await req.json();
+  let body: Record<string, unknown> = {};
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
 
-  if (body.action === "updatePay") {
-    if (!body.stylistId) {
+  if (body.action === "updateSelfManage" || body.action === "updatePay") {
+    const stylistId = String(body.stylistId || "");
+    if (!stylistId) {
       return NextResponse.json({ error: "stylistId required" }, { status: 400 });
     }
+    if (!isSalonStaff(session.role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
     const stylist = await prisma.stylist.findFirst({
-      where: { id: body.stylistId, salonId: session.salonId },
+      where: { id: stylistId, salonId: session.salonId },
     });
     if (!stylist) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    const updated = await prisma.stylist.update({
-      where: { id: stylist.id },
-      data: {
-        selfManageSchedule: Boolean(body.selfManageSchedule),
-        payType: normalizePayType(body.payType),
-        hourlyRateCents:
+
+    const data: {
+      selfManageSchedule?: boolean;
+      payType?: string;
+      hourlyRateCents?: number | null;
+      commissionBps?: number | null;
+    } = {};
+
+    if (body.selfManageSchedule !== undefined) {
+      data.selfManageSchedule = Boolean(body.selfManageSchedule);
+    }
+    if (body.action === "updatePay") {
+      if (body.payType !== undefined) data.payType = normalizePayType(body.payType);
+      if (body.hourlyRateCents !== undefined) {
+        data.hourlyRateCents =
           body.hourlyRateCents === "" || body.hourlyRateCents == null
             ? null
-            : Math.round(Number(body.hourlyRateCents)),
-        commissionBps:
+            : Math.round(Number(body.hourlyRateCents));
+      }
+      if (body.commissionBps !== undefined) {
+        data.commissionBps =
           body.commissionBps === "" || body.commissionBps == null
             ? null
-            : Math.round(Number(body.commissionBps)),
-      },
+            : Math.round(Number(body.commissionBps));
+      }
+    }
+
+    const updated = await prisma.stylist.update({
+      where: { id: stylist.id },
+      data,
     });
     return NextResponse.json({ stylist: updated });
   }
