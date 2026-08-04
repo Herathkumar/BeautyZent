@@ -154,6 +154,8 @@ export async function PATCH(req: Request) {
       clientPhone: entry.clientPhone,
       notes: entry.note,
       startsAt: new Date(options[0].startsAt),
+      // Floor can Check in → Done + payment
+      status: "BOOKED",
     });
     if ("error" in result) {
       return NextResponse.json({ error: result.error }, { status: result.status });

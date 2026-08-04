@@ -111,19 +111,23 @@ export async function findNextAvailableWalkIns(opts: {
 
   for (const s of stylists) {
     const hours = await dayHours(salon, s.id, today);
-    if (!hours) continue;
+    const step = Math.min(5, salon.slotMinutes || 30);
+    const immediate = ceilToMinutes(now, step);
 
     const candidates: Date[] = [];
-    const immediate = ceilToMinutes(now, Math.min(5, salon.slotMinutes || 30));
-    if (immediate >= hours.open) candidates.push(immediate);
+    if (hours && immediate >= hours.open && immediate < hours.close) {
+      candidates.push(immediate);
+    }
 
-    const slots = await getAvailableSlots({
-      salonId: opts.salonId,
-      stylistId: s.id,
-      serviceId: opts.serviceId,
-      date: today,
-    });
-    for (const iso of slots) candidates.push(new Date(iso));
+    if (hours) {
+      const slots = await getAvailableSlots({
+        salonId: opts.salonId,
+        stylistId: s.id,
+        serviceId: opts.serviceId,
+        date: today,
+      });
+      for (const iso of slots) candidates.push(new Date(iso));
+    }
 
     candidates.sort((a, b) => a.getTime() - b.getTime());
 
@@ -131,17 +135,48 @@ export async function findNextAvailableWalkIns(opts: {
     for (const start of candidates) {
       if (start < now) continue;
       const end = addMinutes(start, service.durationMin);
+      // Service may finish after posted close — only require start before close
+      const withinHours =
+        !hours || (start >= hours.open && start < hours.close);
+      if (!withinHours) continue;
       const free = await isFreeWindow({
         stylistId: s.id,
         startsAt: start,
         endsAt: end,
-        open: hours.open,
-        close: hours.close,
+        open: hours?.open ?? start,
+        // Allow finishing past close for late walk-ins
+        close: addMinutes(end, 1),
       });
       if (free) {
         chosen = start;
         break;
       }
+    }
+
+    // Floor override: if booked day is full / after hours, still seat now when chair is free
+    if (!chosen) {
+      const end = addMinutes(immediate, service.durationMin);
+      const [conflict, block] = await Promise.all([
+        prisma.appointment.findFirst({
+          where: {
+            stylistId: s.id,
+            status: { notIn: ["CANCELLED", "NO_SHOW"] },
+            startsAt: { lt: end },
+            endsAt: { gt: immediate },
+          },
+          select: { id: true },
+        }),
+        prisma.stylistBlock.findFirst({
+          where: {
+            stylistId: s.id,
+            status: { in: ["PENDING", "APPROVED"] },
+            startsAt: { lt: end },
+            endsAt: { gt: immediate },
+          },
+          select: { id: true },
+        }),
+      ]);
+      if (!conflict && !block) chosen = immediate;
     }
 
     if (!chosen) continue;
@@ -169,6 +204,11 @@ export async function createWalkInAppointment(opts: {
   notes?: string | null;
   /** When omitted, uses next available for that stylist+service */
   startsAt?: Date | null;
+  /**
+   * Direct seat defaults to CHECKED_IN (guest is here).
+   * Waitlist "Seat now" uses BOOKED so floor can Check in → Done + payment.
+   */
+  status?: "BOOKED" | "CHECKED_IN";
 }) {
   const salon = await prisma.salon.findUniqueOrThrow({ where: { id: opts.salonId } });
   const [stylist, service] = await Promise.all([
@@ -233,6 +273,8 @@ export async function createWalkInAppointment(opts: {
     });
   }
 
+  const status = opts.status === "BOOKED" ? "BOOKED" : "CHECKED_IN";
+
   const appointment = await prisma.appointment.create({
     data: {
       salonId: opts.salonId,
@@ -241,7 +283,7 @@ export async function createWalkInAppointment(opts: {
       clientId: client.id,
       startsAt,
       endsAt,
-      status: "CHECKED_IN",
+      status,
       source: "WALK_IN",
       notes: opts.notes || null,
     },

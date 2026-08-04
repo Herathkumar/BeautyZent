@@ -36,6 +36,12 @@ type Props = {
   /** When stylist mode, lock to this stylist */
   lockedStylistId?: string;
   lockedStylistName?: string;
+  /** Show the seat / add form (default true) */
+  showForm?: boolean;
+  /** Show the waitlist list (default true except stylist) */
+  showWaitlist?: boolean;
+  /** Poll waitlist while mounted (display board) */
+  pollMs?: number;
   onCreated?: () => void;
 };
 
@@ -53,8 +59,12 @@ export function WalkInPanel({
   slug,
   lockedStylistId,
   lockedStylistName,
+  showForm = true,
+  showWaitlist,
+  pollMs,
   onCreated,
 }: Props) {
+  const includeWaitlist = showWaitlist ?? mode !== "stylist";
   const [services, setServices] = useState<Service[]>([]);
   const [stylists, setStylists] = useState<Stylist[]>([]);
   const [serviceId, setServiceId] = useState("");
@@ -79,6 +89,7 @@ export function WalkInPanel({
     mode === "display" ? `/api/display/${slug}/waitlist` : "/api/admin/waitlist";
 
   const loadCatalog = useCallback(async () => {
+    if (!showForm) return;
     const res = await fetch(walkInBase);
     if (res.status === 401) {
       window.location.href =
@@ -96,18 +107,18 @@ export function WalkInPanel({
     } else {
       setStylists(data.stylists || []);
     }
-  }, [walkInBase, mode, lockedStylistId, lockedStylistName]);
+  }, [walkInBase, mode, lockedStylistId, lockedStylistName, showForm]);
 
   const loadWaitlist = useCallback(async () => {
-    if (mode === "stylist") return;
+    if (!includeWaitlist) return;
     const res = await fetch(waitlistBase);
     if (!res.ok) return;
     const data = await res.json();
     setWaitlist(data.waitlist || []);
-  }, [mode, waitlistBase]);
+  }, [includeWaitlist, waitlistBase]);
 
   const loadNext = useCallback(async () => {
-    if (!serviceId) {
+    if (!showForm || !serviceId) {
       setOptions([]);
       return;
     }
@@ -126,6 +137,7 @@ export function WalkInPanel({
     setOptions(data.options || []);
     if (data.services?.length) setServices(data.services);
   }, [
+    showForm,
     serviceId,
     stylistId,
     useNextAvailable,
@@ -142,6 +154,12 @@ export function WalkInPanel({
   useEffect(() => {
     void loadNext();
   }, [loadNext]);
+
+  useEffect(() => {
+    if (!pollMs || !includeWaitlist) return;
+    const id = window.setInterval(() => void loadWaitlist(), pollMs);
+    return () => window.clearInterval(id);
+  }, [pollMs, includeWaitlist, loadWaitlist]);
 
   const filteredStylists = useMemo(() => {
     if (!serviceId) return stylists;
@@ -241,9 +259,12 @@ export function WalkInPanel({
     setBusy(false);
     if (!res.ok) {
       setError(data.error || "Could not seat guest");
+      await loadWaitlist();
       return;
     }
-    setMessage(`Seated ${data.appointment?.client?.name || "guest"}`);
+    setMessage(
+      `Seated ${data.appointment?.client?.name || "guest"} — Check in when they sit, then Done with payment`
+    );
     await loadWaitlist();
     await loadNext();
     onCreated?.();
@@ -270,6 +291,7 @@ export function WalkInPanel({
 
   return (
     <div className="space-y-6" data-testid="walk-in-panel">
+      {showForm ? (
       <form
         className="grid gap-4 rounded-2xl border border-[#c9a87c]/30 bg-[#2a211c] p-5"
         onSubmit={(e) => {
@@ -402,16 +424,25 @@ export function WalkInPanel({
             >
               Add to waitlist
             </button>
-          ) : null}
+            ) : null}
         </div>
       </form>
+      ) : null}
 
-      {mode !== "stylist" ? (
+      {includeWaitlist ? (
         <section className="space-y-3" data-testid="walk-in-waitlist">
           <div className="flex items-end justify-between gap-2">
-            <h2 className="font-[family-name:var(--font-display)] text-xl text-[#fffaf6]">
-              Waitlist
-            </h2>
+            <div>
+              <h2 className="font-[family-name:var(--font-display)] text-xl text-[#fffaf6]">
+                Waitlist
+                {waitlist.length > 0 ? (
+                  <span className="ml-2 text-base text-[#f0c987]">({waitlist.length})</span>
+                ) : null}
+              </h2>
+              <p className="text-sm text-muted">
+                Seat now → Check in → Done with payment
+              </p>
+            </div>
             <button
               type="button"
               onClick={() => void loadWaitlist()}
@@ -420,6 +451,8 @@ export function WalkInPanel({
               Refresh
             </button>
           </div>
+          {error && !showForm ? <p className="text-sm text-[#f5a8a8]">{error}</p> : null}
+          {message && !showForm ? <p className="text-sm text-[#9fe3b8]">{message}</p> : null}
           {waitlist.length === 0 ? (
             <p className="text-sm text-muted">No one waiting.</p>
           ) : (

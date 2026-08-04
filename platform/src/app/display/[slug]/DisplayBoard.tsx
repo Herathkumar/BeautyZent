@@ -281,6 +281,18 @@ export function DisplayBoard({ slug }: { slug: string }) {
         </div>
       </header>
 
+      {/* Waitlist always visible — Seat now → Check in → Done with payment */}
+      <div className="border-b border-white/10 px-6 py-5">
+        <WalkInPanel
+          mode="display"
+          slug={slug}
+          showForm={false}
+          showWaitlist
+          pollMs={15_000}
+          onCreated={load}
+        />
+      </div>
+
       {tab === "today" && (
         <div className="px-6 py-6">
           {/* Promo band */}
@@ -334,7 +346,7 @@ export function DisplayBoard({ slug }: { slug: string }) {
                   Walk-in desk
                 </h2>
                 <p className="text-sm text-white/65">
-                  Seat a guest or add them to the waitlist with an estimated wait.
+                  Seat a guest now, or add them to the waitlist above.
                 </p>
               </div>
               <button
@@ -348,7 +360,13 @@ export function DisplayBoard({ slug }: { slug: string }) {
             </div>
             {walkInOpen ? (
               <div className="mt-4">
-                <WalkInPanel mode="display" slug={slug} onCreated={load} />
+                <WalkInPanel
+                  mode="display"
+                  slug={slug}
+                  showForm
+                  showWaitlist={false}
+                  onCreated={load}
+                />
               </div>
             ) : null}
           </section>
