@@ -16,6 +16,11 @@ type DayBar = {
 type EarningsPayload = {
   stylistName: string;
   motivation: string;
+  paySettings: {
+    payType: string;
+    hourlyRateCents: number;
+    commissionBps: number;
+  };
   week: {
     monday: string;
     prevWeek: string;
@@ -170,6 +175,49 @@ export default function StylistEarningsPage() {
           <p className="mt-2 text-sm text-muted">{data.motivation}</p>
         ) : null}
       </header>
+
+      {data?.paySettings ? (
+        <section className="rounded-2xl border border-[#c9a87c]/25 bg-[#2a211c] px-4 py-3">
+          <p className="text-[10px] font-semibold tracking-[0.18em] text-[#c9a87c] uppercase">
+            Your pay plan
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {(data.paySettings.payType === "HOURLY" ||
+              data.paySettings.payType === "BOTH") && (
+              <div className="rounded-xl border border-[#c9a87c]/25 bg-[#1c1714] px-3 py-2">
+                <p className="text-[10px] font-semibold tracking-wide text-muted uppercase">
+                  Hourly rate
+                </p>
+                <p className="mt-0.5 text-lg font-bold text-[#f0c987]">
+                  {data.paySettings.hourlyRateCents > 0
+                    ? `$${centsToDollars(data.paySettings.hourlyRateCents)}/hr`
+                    : "Not set"}
+                </p>
+              </div>
+            )}
+            {(data.paySettings.payType === "COMMISSION" ||
+              data.paySettings.payType === "BOTH" ||
+              !["HOURLY", "BOTH"].includes(data.paySettings.payType)) && (
+              <div className="rounded-xl border border-[#c9a87c]/25 bg-[#1c1714] px-3 py-2">
+                <p className="text-[10px] font-semibold tracking-wide text-muted uppercase">
+                  Commission
+                </p>
+                <p className="mt-0.5 text-lg font-bold text-[#f0c987]">
+                  {data.paySettings.commissionBps > 0
+                    ? `${(data.paySettings.commissionBps / 100).toFixed(0)}%`
+                    : "Not set"}
+                </p>
+              </div>
+            )}
+            <div className="rounded-xl border border-[#c9a87c]/25 bg-[#1c1714] px-3 py-2">
+              <p className="text-[10px] font-semibold tracking-wide text-muted uppercase">
+                Tips
+              </p>
+              <p className="mt-0.5 text-lg font-bold text-[#9fe3b8]">100%</p>
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       {error ? <p className="text-sm text-[#f5a8a8]">{error}</p> : null}
       {goalMsg ? <p className="text-sm text-[#9fe3b8]">{goalMsg}</p> : null}

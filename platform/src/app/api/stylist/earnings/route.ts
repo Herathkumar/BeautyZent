@@ -187,6 +187,11 @@ export async function GET(req: Request) {
   return NextResponse.json({
     stylistName: stylist.name,
     payType: stylist.payType,
+    paySettings: {
+      payType: stylist.payType,
+      hourlyRateCents: stylist.hourlyRateCents ?? 0,
+      commissionBps: stylist.commissionBps ?? 0,
+    },
     unreadPayouts,
     week: {
       monday,

@@ -6,6 +6,7 @@ test.describe("Stylist earnings", () => {
     await stylistLogin(page);
     await page.getByRole("link", { name: /^earnings$/i }).click();
     await expect(page.getByRole("heading", { name: /^earnings$/i })).toBeVisible();
+    await expect(page.getByText(/your pay plan/i)).toBeVisible();
     await expect(page.getByText(/week total/i)).toBeVisible();
     await expect(page.getByText(/^goal$/i).first()).toBeVisible();
     await expect(page.getByRole("button", { name: /edit weekly goal/i })).toBeVisible();
