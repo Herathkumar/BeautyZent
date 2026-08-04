@@ -37,7 +37,7 @@ test.describe("Stylist — schedule & leave", () => {
   test("can save work days", async ({ page }) => {
     await stylistLogin(page);
     await page.goto("/stylist/schedule");
-    await expect(page.getByRole("heading", { name: "Away & hours" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Schedule" })).toBeVisible();
     await page.getByRole("button", { name: /save work days/i }).click();
     await expect(page.getByText(/saved|clients only see/i)).toBeVisible({ timeout: 10_000 });
   });
