@@ -35,3 +35,33 @@ export function dayOfWeekInTz(ymd: string, timeZone = DEFAULT_TZ) {
 export function nowInTz(timeZone = DEFAULT_TZ) {
   return TZDate.tz(timeZone);
 }
+
+/** Next N calendar days as YYYY-MM-DD in salon timezone, starting from `fromYmd` or today. */
+export function upcomingCalendarDays(
+  count = 14,
+  timeZone = DEFAULT_TZ,
+  fromYmd?: string
+) {
+  const start = fromYmd || calendarDateInTz(timeZone);
+  const [y, m, d] = start.split("-").map(Number);
+  const days: string[] = [];
+  for (let i = 0; i < count; i++) {
+    const dt = new TZDate(y!, m! - 1, d! + i, 12, 0, 0, 0, timeZone);
+    days.push(calendarDateInTz(timeZone, dt));
+  }
+  return days;
+}
+
+export function formatDayChipLabel(ymd: string, timeZone = DEFAULT_TZ) {
+  const dt = zonedDateTime(ymd, 12, 0, timeZone);
+  const today = calendarDateInTz(timeZone);
+  const tomorrow = upcomingCalendarDays(2, timeZone, today)[1];
+  if (ymd === today) return "Today";
+  if (ymd === tomorrow) return "Tomorrow";
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  }).format(dt);
+}

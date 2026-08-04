@@ -330,6 +330,25 @@ a {
   background: #241820 !important;
   color: #fffaf6 !important;
   border-color: rgba(232, 180, 162, 0.35) !important;
+  color-scheme: dark;
+}
+
+/* Native date picker is easy to miss on dark mobile UIs — enlarge the calendar control */
+.book-theme .book-date-input {
+  min-height: 52px;
+  position: relative;
+}
+
+.book-theme .book-date-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 1;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0.35rem;
+  margin-left: 0.25rem;
+  border-radius: 0.5rem;
+  background-color: rgba(242, 196, 176, 0.2);
+  filter: invert(1) brightness(1.15);
 }
 
 .book-theme input::placeholder,
