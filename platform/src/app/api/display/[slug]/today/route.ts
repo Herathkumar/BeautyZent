@@ -27,6 +27,7 @@ export async function GET(
       startsAt: true,
       endsAt: true,
       status: true,
+      source: true,
       notes: true,
       client: { select: { name: true, phone: true } },
       chargedCents: true,

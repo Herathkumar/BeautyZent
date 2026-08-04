@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 
 const SALON_LINKS = [
   { href: "/manager/working", label: "Who's working" },
+  { href: "/manager/walk-in", label: "Walk-in desk" },
   { href: "/manager/services", label: "Services" },
   { href: "/manager/products", label: "Products" },
   { href: "/manager/stylists", label: "Stylists" },
@@ -54,7 +55,9 @@ export function AdminHeaderNav() {
       <Link
         href="/manager/appointments"
         className={
-          pathname.startsWith("/manager/appointments") || pathname.startsWith("/manager/book")
+          pathname.startsWith("/manager/appointments") ||
+          pathname.startsWith("/manager/book") ||
+          pathname.startsWith("/manager/walk-in")
             ? "is-active"
             : undefined
         }

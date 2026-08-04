@@ -1,0 +1,260 @@
+import { addMinutes, isBefore } from "date-fns";
+import { syncAppointmentToGoogle } from "@/lib/calendar";
+import { prisma } from "@/lib/prisma";
+import {
+  calendarDateInTz,
+  dayOfWeekInTz,
+  nowInTz,
+  zonedDateTime,
+} from "@/lib/salon-time";
+import { getAvailableSlots } from "@/lib/slots";
+
+function ceilToMinutes(d: Date, stepMin: number) {
+  const ms = stepMin * 60_000;
+  return new Date(Math.ceil(d.getTime() / ms) * ms);
+}
+
+async function isFreeWindow(opts: {
+  stylistId: string;
+  startsAt: Date;
+  endsAt: Date;
+  open: Date;
+  close: Date;
+}) {
+  if (opts.startsAt < opts.open || opts.endsAt > opts.close) return false;
+  const [conflict, block] = await Promise.all([
+    prisma.appointment.findFirst({
+      where: {
+        stylistId: opts.stylistId,
+        status: { notIn: ["CANCELLED", "NO_SHOW"] },
+        startsAt: { lt: opts.endsAt },
+        endsAt: { gt: opts.startsAt },
+      },
+      select: { id: true },
+    }),
+    prisma.stylistBlock.findFirst({
+      where: {
+        stylistId: opts.stylistId,
+        status: { in: ["PENDING", "APPROVED"] },
+        startsAt: { lt: opts.endsAt },
+        endsAt: { gt: opts.startsAt },
+      },
+      select: { id: true },
+    }),
+  ]);
+  return !conflict && !block;
+}
+
+async function dayHours(
+  salon: { openHour: number; closeHour: number; timezone: string },
+  stylistId: string,
+  ymd: string
+) {
+  const timeZone = salon.timezone || "America/Toronto";
+  const dayOfWeek = dayOfWeekInTz(ymd, timeZone);
+  const weekHour = await prisma.stylistWeekHour.findUnique({
+    where: { stylistId_dayOfWeek: { stylistId, dayOfWeek } },
+  });
+  if (weekHour?.isOff) return null;
+  const open = zonedDateTime(
+    ymd,
+    weekHour?.startHour ?? salon.openHour,
+    weekHour?.startMinute ?? 0,
+    timeZone
+  );
+  const close = zonedDateTime(
+    ymd,
+    weekHour?.endHour ?? salon.closeHour,
+    weekHour?.endMinute ?? 0,
+    timeZone
+  );
+  if (!isBefore(open, close)) return null;
+  return { open: new Date(open.getTime()), close: new Date(close.getTime()), timeZone };
+}
+
+export type NextAvailableOption = {
+  stylistId: string;
+  stylistName: string;
+  startsAt: string;
+  endsAt: string;
+  waitMinutes: number;
+};
+
+/** Next free walk-in start for one or all stylists who offer the service. */
+export async function findNextAvailableWalkIns(opts: {
+  salonId: string;
+  serviceId: string;
+  stylistId?: string | null;
+}): Promise<NextAvailableOption[]> {
+  const salon = await prisma.salon.findUniqueOrThrow({ where: { id: opts.salonId } });
+  const service = await prisma.service.findFirst({
+    where: { id: opts.serviceId, salonId: opts.salonId, active: true },
+  });
+  if (!service) return [];
+
+  const timeZone = salon.timezone || "America/Toronto";
+  const today = calendarDateInTz(timeZone);
+  const now = new Date(nowInTz(timeZone).getTime());
+
+  const stylists = await prisma.stylist.findMany({
+    where: {
+      salonId: opts.salonId,
+      active: true,
+      ...(opts.stylistId ? { id: opts.stylistId } : {}),
+      services: { some: { serviceId: opts.serviceId } },
+    },
+    select: { id: true, name: true },
+    orderBy: { name: "asc" },
+  });
+
+  const options: NextAvailableOption[] = [];
+
+  for (const s of stylists) {
+    const hours = await dayHours(salon, s.id, today);
+    if (!hours) continue;
+
+    const candidates: Date[] = [];
+    const immediate = ceilToMinutes(now, Math.min(5, salon.slotMinutes || 30));
+    if (immediate >= hours.open) candidates.push(immediate);
+
+    const slots = await getAvailableSlots({
+      salonId: opts.salonId,
+      stylistId: s.id,
+      serviceId: opts.serviceId,
+      date: today,
+    });
+    for (const iso of slots) candidates.push(new Date(iso));
+
+    candidates.sort((a, b) => a.getTime() - b.getTime());
+
+    let chosen: Date | null = null;
+    for (const start of candidates) {
+      if (start < now) continue;
+      const end = addMinutes(start, service.durationMin);
+      const free = await isFreeWindow({
+        stylistId: s.id,
+        startsAt: start,
+        endsAt: end,
+        open: hours.open,
+        close: hours.close,
+      });
+      if (free) {
+        chosen = start;
+        break;
+      }
+    }
+
+    if (!chosen) continue;
+    const endsAt = addMinutes(chosen, service.durationMin);
+    const waitMinutes = Math.max(0, Math.round((chosen.getTime() - now.getTime()) / 60_000));
+    options.push({
+      stylistId: s.id,
+      stylistName: s.name,
+      startsAt: chosen.toISOString(),
+      endsAt: endsAt.toISOString(),
+      waitMinutes,
+    });
+  }
+
+  options.sort((a, b) => a.waitMinutes - b.waitMinutes || a.stylistName.localeCompare(b.stylistName));
+  return options;
+}
+
+export async function createWalkInAppointment(opts: {
+  salonId: string;
+  stylistId: string;
+  serviceId: string;
+  clientName: string;
+  clientPhone?: string | null;
+  notes?: string | null;
+  /** When omitted, uses next available for that stylist+service */
+  startsAt?: Date | null;
+}) {
+  const salon = await prisma.salon.findUniqueOrThrow({ where: { id: opts.salonId } });
+  const [stylist, service] = await Promise.all([
+    prisma.stylist.findFirst({
+      where: { id: opts.stylistId, salonId: opts.salonId, active: true },
+    }),
+    prisma.service.findFirst({
+      where: { id: opts.serviceId, salonId: opts.salonId, active: true },
+    }),
+  ]);
+  if (!stylist || !service) {
+    return { error: "Invalid stylist or service", status: 400 as const };
+  }
+
+  let startsAt = opts.startsAt || null;
+  if (!startsAt) {
+    const next = await findNextAvailableWalkIns({
+      salonId: opts.salonId,
+      serviceId: opts.serviceId,
+      stylistId: opts.stylistId,
+    });
+    if (!next[0]) {
+      return { error: "No open walk-in slot today for this stylist", status: 409 as const };
+    }
+    startsAt = new Date(next[0].startsAt);
+  }
+
+  const endsAt = addMinutes(startsAt, service.durationMin);
+  const conflict = await prisma.appointment.findFirst({
+    where: {
+      stylistId: stylist.id,
+      status: { notIn: ["CANCELLED", "NO_SHOW"] },
+      startsAt: { lt: endsAt },
+      endsAt: { gt: startsAt },
+    },
+  });
+  if (conflict) {
+    return { error: "Stylist already booked at that time", status: 409 as const };
+  }
+
+  const name = opts.clientName.trim() || "Walk-in";
+  const phone = (opts.clientPhone || "").trim() || null;
+
+  let client =
+    phone
+      ? await prisma.client.findFirst({
+          where: { salonId: opts.salonId, phone },
+        })
+      : null;
+  if (!client) {
+    client = await prisma.client.create({
+      data: {
+        salonId: opts.salonId,
+        name,
+        phone,
+      },
+    });
+  } else if (client.name !== name) {
+    client = await prisma.client.update({
+      where: { id: client.id },
+      data: { name },
+    });
+  }
+
+  const appointment = await prisma.appointment.create({
+    data: {
+      salonId: opts.salonId,
+      stylistId: stylist.id,
+      serviceId: service.id,
+      clientId: client.id,
+      startsAt,
+      endsAt,
+      status: "CHECKED_IN",
+      source: "WALK_IN",
+      notes: opts.notes || null,
+    },
+    include: { client: true, service: true, stylist: true },
+  });
+
+  await syncAppointmentToGoogle(appointment.id);
+
+  const timeZone = salon.timezone || "America/Toronto";
+  const now = new Date(nowInTz(timeZone).getTime());
+  const waitMinutes = Math.max(0, Math.round((startsAt.getTime() - now.getTime()) / 60_000));
+
+  return { appointment, waitMinutes };
+}
+
+export { sourceLabel } from "@/lib/appointment-source";

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 
 const SALON_LINKS = [
   { href: "/manager/working", label: "Who's working", hint: "Floor roster by day" },
+  { href: "/manager/walk-in", label: "Walk-in desk", hint: "Seat guests & waitlist" },
   { href: "/manager/services", label: "Services", hint: "Menu & durations" },
   { href: "/manager/products", label: "Products", hint: "Retail & add-ons" },
   { href: "/manager/stylists", label: "Stylists", hint: "Team & schedules" },
@@ -53,8 +54,10 @@ export function AdminBottomNav() {
   const onBookings =
     pathname.startsWith("/manager/appointments") ||
     pathname.startsWith("/manager/book") ||
+    pathname.startsWith("/manager/walk-in") ||
     pathname.startsWith("/admin/appointments") ||
-    pathname.startsWith("/admin/book");
+    pathname.startsWith("/admin/book") ||
+    pathname.startsWith("/admin/walk-in");
   const onSalon = SALON_LINKS.some(
     (l) => pathname.startsWith(l.href) || pathname.startsWith(l.href.replace("/manager", "/admin"))
   );

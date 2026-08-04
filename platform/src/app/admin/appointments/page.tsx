@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { sourceLabel } from "@/lib/appointment-source";
 
 type Appt = {
   id: string;
@@ -61,6 +62,7 @@ export default function AppointmentsAdminPage() {
 
   const [stylistId, setStylistId] = useState("");
   const [status, setStatus] = useState("all");
+  const [source, setSource] = useState("all");
   const [year, setYear] = useState("");
   const [month, setMonth] = useState("");
   const [day, setDay] = useState("");
@@ -71,6 +73,7 @@ export default function AppointmentsAdminPage() {
     const params = new URLSearchParams();
     if (stylistId) params.set("stylistId", stylistId);
     if (status && status !== "all") params.set("status", status);
+    if (source && source !== "all") params.set("source", source);
     if (day) params.set("day", day);
     else {
       if (year) params.set("year", year);
@@ -92,7 +95,7 @@ export default function AppointmentsAdminPage() {
       setMessage(`${data.autoNoShows} past open booking(s) marked no-show.`);
     }
     setLoading(false);
-  }, [stylistId, status, year, month, day]);
+  }, [stylistId, status, source, year, month, day]);
 
   useEffect(() => {
     void load();
@@ -133,12 +136,23 @@ export default function AppointmentsAdminPage() {
           <h1 className="font-[family-name:var(--font-display)] text-3xl">Bookings</h1>
           <p className="text-muted">{rangeHint} across stylists.</p>
         </div>
-        <Link href="/manager/book" className="btn-solid rounded-full px-4 py-2.5 text-sm">
-          Book for client
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/manager/walk-in"
+            className="btn-solid rounded-full px-4 py-2.5 text-sm"
+          >
+            Add walk-in
+          </Link>
+          <Link
+            href="/manager/book"
+            className="rounded-full border border-[#c9a87c]/45 px-4 py-2.5 text-sm text-[#f0c987]"
+          >
+            Book for client
+          </Link>
+        </div>
       </div>
 
-      <div className="grid gap-3 rounded-2xl border border-[#c9a87c]/25 bg-[#2a211c] p-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-3 rounded-2xl border border-[#c9a87c]/25 bg-[#2a211c] p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <label className="grid gap-1 text-xs font-semibold tracking-wide text-[#c9a87c] uppercase">
           Stylist
           <select
@@ -167,6 +181,22 @@ export default function AppointmentsAdminPage() {
             <option value="no_show">No shows</option>
             <option value="completed">Completed</option>
             <option value="cancelled">Cancelled</option>
+          </select>
+        </label>
+
+        <label className="grid gap-1 text-xs font-semibold tracking-wide text-[#c9a87c] uppercase">
+          Source
+          <select
+            value={source}
+            onChange={(e) => setSource(e.target.value)}
+            aria-label="Source"
+            className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-sm font-normal normal-case text-[#fffaf6]"
+          >
+            <option value="all">All sources</option>
+            <option value="WALK_IN">Walk-in</option>
+            <option value="ONLINE">Online</option>
+            <option value="ADMIN">Front desk</option>
+            <option value="PHONE">Phone</option>
           </select>
         </label>
 
@@ -228,6 +258,7 @@ export default function AppointmentsAdminPage() {
           onClick={() => {
             setStylistId("");
             setStatus("all");
+            setSource("all");
             setYear("");
             setMonth("");
             setDay("");
@@ -264,8 +295,20 @@ export default function AppointmentsAdminPage() {
                   })}
                 </p>
                 <p className={`text-xs uppercase ${statusClass(a.status)}`}>
-                  {statusLabel(a.status)} · {a.source}
+                  {statusLabel(a.status)}
                 </p>
+                {a.source === "WALK_IN" ? (
+                  <span
+                    data-testid="walk-in-badge"
+                    className="mt-1 inline-block rounded-full bg-[rgba(240,201,135,0.18)] px-2 py-0.5 text-[10px] font-bold tracking-wide text-[#f0c987] uppercase"
+                  >
+                    Walk-in
+                  </span>
+                ) : (
+                  <p className="mt-1 text-[10px] tracking-wide text-muted uppercase">
+                    {sourceLabel(a.source)}
+                  </p>
+                )}
               </div>
               <div>
                 <p className="font-medium">{a.client.name}</p>

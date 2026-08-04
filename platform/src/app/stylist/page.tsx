@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { WalkInPanel } from "@/components/WalkInPanel";
 import { centsToDollars, promptCompleteAmounts } from "@/lib/pay";
 
 type Appt = {
@@ -63,11 +64,13 @@ function phoneHref(phone: string) {
 
 export default function StylistHomePage() {
   const [name, setName] = useState("");
+  const [stylistId, setStylistId] = useState("");
   const [photoUrl, setPhotoUrl] = useState("/avatars/stylist-neutral.svg");
   const [hasPhoto, setHasPhoto] = useState(false);
   const [appointments, setAppointments] = useState<Appt[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [walkInOpen, setWalkInOpen] = useState(false);
 
   const load = useCallback(async () => {
     const me = await fetch("/api/stylist/me");
@@ -77,6 +80,7 @@ export default function StylistHomePage() {
     }
     const meData = await me.json();
     setName(meData.stylist?.name || meData.user?.name || "");
+    setStylistId(meData.stylist?.id || "");
     if (meData.stylist?.photoUrl) setPhotoUrl(meData.stylist.photoUrl);
     setHasPhoto(Boolean(meData.stylist?.hasPhoto));
 
@@ -155,7 +159,17 @@ export default function StylistHomePage() {
                 – {formatTime(a.endsAt)}
               </span>
             </p>
-            <p className="mt-1 text-xl font-semibold">{a.client.name}</p>
+            <p className="mt-1 text-xl font-semibold">
+              {a.client.name}
+              {a.source === "WALK_IN" ? (
+                <span
+                  data-testid="walk-in-badge"
+                  className="ml-2 align-middle rounded-full bg-[rgba(240,201,135,0.18)] px-2 py-0.5 text-[10px] font-bold tracking-wide text-[#f0c987] uppercase"
+                >
+                  Walk-in
+                </span>
+              ) : null}
+            </p>
             <p className="text-sm text-muted">{a.service.name}</p>
             {a.status === "COMPLETED" ? (
               <p className="mt-2 text-base font-semibold text-[#f0c987]">
@@ -290,6 +304,33 @@ export default function StylistHomePage() {
           </p>
         </div>
       </header>
+
+      <section className="space-y-3 rounded-2xl border border-ink/15 bg-cream p-4">
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">
+              Walk-in
+            </h2>
+            <p className="text-sm text-muted">Seat a guest for your next open slot.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setWalkInOpen((v) => !v)}
+            className="rounded-full border border-ink/20 px-3 py-2 text-sm font-semibold text-champagne"
+            data-testid="stylist-walk-in-toggle"
+          >
+            {walkInOpen ? "Hide" : "Add walk-in"}
+          </button>
+        </div>
+        {walkInOpen && stylistId ? (
+          <WalkInPanel
+            mode="stylist"
+            lockedStylistId={stylistId}
+            lockedStylistName={name}
+            onCreated={() => void load()}
+          />
+        ) : null}
+      </section>
 
       <section className="space-y-3">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">Today</h2>

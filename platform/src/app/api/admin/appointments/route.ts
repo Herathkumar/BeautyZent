@@ -68,6 +68,7 @@ export async function GET(req: Request) {
   const month = Number(url.searchParams.get("month") || 0);
   const year = Number(url.searchParams.get("year") || 0);
   const status = (url.searchParams.get("status") || "all").toLowerCase();
+  const source = (url.searchParams.get("source") || "all").toUpperCase();
   const days = Math.min(90, Math.max(1, Number(url.searchParams.get("days") || 14)));
 
   const todayYmd = calendarDateInTz(timeZone);
@@ -111,12 +112,21 @@ export async function GET(req: Request) {
               ? { status: "BOOKED" }
               : {};
 
+  const sourceWhere =
+    source === "WALK_IN" ||
+    source === "ONLINE" ||
+    source === "ADMIN" ||
+    source === "PHONE"
+      ? { source }
+      : {};
+
   const appointments = await prisma.appointment.findMany({
     where: {
       salonId: salon.id,
       startsAt,
       ...(stylistId ? { stylistId } : {}),
       ...statusWhere,
+      ...sourceWhere,
     },
     include: {
       client: true,

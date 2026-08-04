@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { WalkInPanel } from "@/components/WalkInPanel";
 import { promptCompleteAmounts } from "@/lib/pay";
 
 type Appt = {
@@ -8,6 +9,7 @@ type Appt = {
   startsAt: string;
   endsAt: string;
   status: string;
+  source?: string;
   notes: string | null;
   chargedCents?: number | null;
   tipCents?: number | null;
@@ -148,6 +150,7 @@ export function DisplayBoard({ slug }: { slug: string }) {
   const [days, setDays] = useState(14);
   const [tab, setTab] = useState<Tab>("today");
   const [now, setNow] = useState(() => new Date());
+  const [walkInOpen, setWalkInOpen] = useState(false);
 
   const load = useCallback(() => {
     fetch(`/api/display/${slug}/today?days=${days}`)
@@ -324,6 +327,32 @@ export function DisplayBoard({ slug }: { slug: string }) {
             </div>
           </section>
 
+          <section className="mb-6 rounded-3xl border border-[#c9a87c]/30 bg-[#241c18]/80 p-4 md:p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="font-[family-name:var(--font-display)] text-2xl">
+                  Walk-in desk
+                </h2>
+                <p className="text-sm text-white/65">
+                  Seat a guest or add them to the waitlist with an estimated wait.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setWalkInOpen((v) => !v)}
+                className="rounded-full bg-[#c9a87c] px-4 py-2 text-sm font-semibold text-[#1c1714]"
+                data-testid="display-walk-in-toggle"
+              >
+                {walkInOpen ? "Hide form" : "Add walk-in"}
+              </button>
+            </div>
+            {walkInOpen ? (
+              <div className="mt-4">
+                <WalkInPanel mode="display" slug={slug} onCreated={load} />
+              </div>
+            ) : null}
+          </section>
+
           {/* Today bookings — colourful cards */}
           <div className="grid gap-4">
             {todayAppts.length === 0 && (
@@ -361,13 +390,23 @@ export function DisplayBoard({ slug }: { slug: string }) {
                   <div>
                     <p className="text-2xl font-semibold">{a.client.name}</p>
                     <StylistLine a={a} />
-                    <span
-                      className={`mt-2 inline-block rounded-full px-2.5 py-0.5 text-[11px] font-semibold tracking-wide uppercase ${
-                        STATUS_STYLES[a.status] || STATUS_STYLES.BOOKED
-                      }`}
-                    >
-                      {a.status.replace("_", " ")}
-                    </span>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <span
+                        className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-semibold tracking-wide uppercase ${
+                          STATUS_STYLES[a.status] || STATUS_STYLES.BOOKED
+                        }`}
+                      >
+                        {a.status.replace("_", " ")}
+                      </span>
+                      {a.source === "WALK_IN" ? (
+                        <span
+                          data-testid="walk-in-badge"
+                          className="inline-block rounded-full bg-[#f0c987]/20 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide text-[#f0c987] uppercase"
+                        >
+                          Walk-in
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
                   <AppointmentActions a={a} onStatus={setStatus} />
                 </article>
