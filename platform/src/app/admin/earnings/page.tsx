@@ -45,11 +45,17 @@ type JobRow = {
   startsAt: string;
   clientName: string;
   serviceName: string;
+  stylistId?: string;
   stylistName: string;
   chargedCents: number;
   tipCents: number;
   excludedFromEarnings: boolean;
 };
+
+type BreakdownView =
+  | { kind: "today" }
+  | { kind: "week" }
+  | { kind: "stylist"; stylistId: string };
 
 type Payload = {
   today: string;
@@ -403,7 +409,7 @@ export default function StoreEarningsPage() {
   const [msg, setMsg] = useState("");
   const [goalMsg, setGoalMsg] = useState("");
   const [busyId, setBusyId] = useState("");
-  const [breakdown, setBreakdown] = useState<"today" | "week" | null>(null);
+  const [breakdown, setBreakdown] = useState<BreakdownView | null>(null);
 
   const load = useCallback(async (weekMonday?: string | null) => {
     setLoading(true);
@@ -585,18 +591,18 @@ export default function StoreEarningsPage() {
               label="Today"
               summary={data.todaySummary}
               testId="store-earnings-today"
-              onOpen={() => setBreakdown("today")}
+              onOpen={() => setBreakdown({ kind: "today" })}
             />
             <SummaryCard
               label="This week"
               summary={data.weekSummary}
               testId="store-earnings-week"
               showPayout
-              onOpen={() => setBreakdown("week")}
+              onOpen={() => setBreakdown({ kind: "week" })}
             />
           </div>
 
-          {breakdown === "today" ? (
+          {breakdown?.kind === "today" ? (
             <BreakdownModal
               title="Today's earnings"
               summary={data.todaySummary}
@@ -604,7 +610,7 @@ export default function StoreEarningsPage() {
               onClose={() => setBreakdown(null)}
             />
           ) : null}
-          {breakdown === "week" ? (
+          {breakdown?.kind === "week" ? (
             <BreakdownModal
               title={`Week of ${data.week.label}`}
               summary={data.weekSummary}
@@ -615,6 +621,34 @@ export default function StoreEarningsPage() {
               onClose={() => setBreakdown(null)}
             />
           ) : null}
+          {breakdown?.kind === "stylist"
+            ? (() => {
+                const s = data.byStylist.find((x) => x.stylistId === breakdown.stylistId);
+                if (!s) return null;
+                const stylistJobs = data.jobs.filter(
+                  (j) => j.stylistId === s.stylistId || j.stylistName === s.stylistName
+                );
+                const active = stylistJobs.filter((j) => !j.excludedFromEarnings);
+                const profitCents = s.chargedCents - s.stylistPayCents;
+                return (
+                  <BreakdownModal
+                    title={`${s.stylistName} · this week`}
+                    summary={{
+                      chargedCents: s.chargedCents,
+                      tipCents: s.tipCents,
+                      revenueCents: s.chargedCents + s.tipCents,
+                      stylistPayCents: s.stylistPayCents,
+                      profitCents,
+                      totalCents: s.chargedCents + s.tipCents,
+                      jobCount: s.jobCount,
+                      voidedJobCount: stylistJobs.length - active.length,
+                    }}
+                    jobs={stylistJobs}
+                    onClose={() => setBreakdown(null)}
+                  />
+                );
+              })()
+            : null}
 
           <section className="rounded-3xl border border-[#c9a87c]/25 bg-[#2a211c] p-4">
             <div className="flex flex-wrap items-end justify-between gap-2">
@@ -683,15 +717,18 @@ export default function StoreEarningsPage() {
           </section>
 
           {data.byStylist.length > 0 ? (
-            <section className="space-y-3">
+            <section className="space-y-3" data-testid="store-earnings-by-stylist">
               <h2 className="font-[family-name:var(--font-display)] text-xl text-[#fffaf6]">
                 By stylist
               </h2>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {data.byStylist.map((s) => (
-                  <div
+                  <button
                     key={s.stylistId}
-                    className="rounded-2xl border border-[#c9a87c]/20 bg-[#2a211c] px-4 py-3"
+                    type="button"
+                    className="admin-stat-card rounded-2xl border border-[#c9a87c]/20 bg-[#2a211c] px-4 py-3 text-left"
+                    data-testid={`store-earnings-stylist-${s.stylistId}`}
+                    onClick={() => setBreakdown({ kind: "stylist", stylistId: s.stylistId })}
                   >
                     <p className="font-semibold text-[#fffaf6]">{s.stylistName}</p>
                     <p className="mt-1 text-sm text-[#f0c987]">
@@ -701,7 +738,10 @@ export default function StoreEarningsPage() {
                     <p className="text-xs text-muted">
                       {s.jobCount} jobs · tips ${centsToDollars(s.tipCents)}
                     </p>
-                  </div>
+                    <p className="mt-2 text-xs font-semibold tracking-wide text-[#c9a87c]">
+                      View breakdown →
+                    </p>
+                  </button>
                 ))}
               </div>
             </section>

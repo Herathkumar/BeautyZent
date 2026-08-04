@@ -37,6 +37,18 @@ test.describe("Manager store earnings", () => {
     await expect(page.getByTestId("store-earnings-breakdown")).toBeVisible();
     await expect(page.getByRole("heading", { name: /week of/i })).toBeVisible();
     await page.getByRole("button", { name: /^close$/i }).click();
+    const stylistCard = page.getByTestId("store-earnings-by-stylist").locator("button").first();
+    if (await stylistCard.count()) {
+      const name = (await stylistCard.locator("p").first().textContent()) || "";
+      await stylistCard.click();
+      await expect(page.getByTestId("store-earnings-breakdown")).toBeVisible();
+      if (name.trim()) {
+        await expect(
+          page.getByRole("heading", { name: new RegExp(name.trim(), "i") })
+        ).toBeVisible();
+      }
+      await page.getByRole("button", { name: /^close$/i }).click();
+    }
     await expect(page.getByTestId("store-earnings-bars")).toBeVisible({ timeout: 15_000 });
     const legend = page.locator("section").filter({ has: page.getByTestId("store-earnings-bars") });
     await expect(legend.getByText("Revenue", { exact: true })).toBeVisible();
