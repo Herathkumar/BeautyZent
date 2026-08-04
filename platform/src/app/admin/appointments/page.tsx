@@ -210,7 +210,14 @@ export default function AppointmentsAdminPage() {
             type="date"
             value={day}
             onChange={(e) => setDay(e.target.value)}
-            className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-sm font-normal normal-case text-[#fffaf6]"
+            onClick={(e) => {
+              try {
+                e.currentTarget.showPicker?.();
+              } catch {
+                /* native calendar icon still works */
+              }
+            }}
+            className="admin-date-input w-full rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-sm font-normal normal-case text-[#fffaf6]"
           />
         </label>
       </div>
