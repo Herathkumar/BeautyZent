@@ -290,7 +290,8 @@ export default function AdminPayPage() {
                 className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
               >
                 <div>
-                  <p className="font-medium">{b.stylist.name}</p>
+                  <p className="text-sm text-[#c9a87c]">Leave request from</p>
+                  <p className="font-medium text-[#fffaf6]">{b.stylist.name}</p>
                   <p className="text-sm text-muted">
                     {b.reason} · {new Date(b.startsAt).toLocaleString("en-CA")} →{" "}
                     {new Date(b.endsAt).toLocaleString("en-CA")}

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { endOfDay, startOfDay } from "date-fns";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { PendingLeavePanel } from "./PendingLeavePanel";
 
 export default async function AdminHome() {
   const session = await getSession();
@@ -11,7 +12,7 @@ export default async function AdminHome() {
 
   const salon = await prisma.salon.findUniqueOrThrow({ where: { id: session.salonId } });
   const today = new Date();
-  const [bookingsToday, services, products, stylists] = await Promise.all([
+  const [bookingsToday, services, products, stylists, pendingLeaveCount] = await Promise.all([
     prisma.appointment.count({
       where: {
         salonId: session.salonId,
@@ -22,6 +23,13 @@ export default async function AdminHome() {
     prisma.service.count({ where: { salonId: session.salonId, active: true } }),
     prisma.product.count({ where: { salonId: session.salonId, active: true } }),
     prisma.stylist.count({ where: { salonId: session.salonId, active: true } }),
+    prisma.stylistBlock.count({
+      where: {
+        status: "PENDING",
+        stylist: { salonId: session.salonId },
+        endsAt: { gte: new Date() },
+      },
+    }),
   ]);
 
   return (
@@ -33,6 +41,15 @@ export default async function AdminHome() {
         {salon.name}
       </h1>
       <p className="mt-2 text-muted">Welcome, {session.name}</p>
+
+      {pendingLeaveCount > 0 ? (
+        <p className="mt-3 rounded-xl border border-[#f0c987]/35 bg-[#3a2a22] px-4 py-2 text-sm text-[#f0c987]">
+          {pendingLeaveCount} leave request{pendingLeaveCount === 1 ? "" : "s"} awaiting your
+          approval — review below.
+        </p>
+      ) : null}
+
+      <PendingLeavePanel />
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
@@ -65,6 +82,12 @@ export default async function AdminHome() {
           className="rounded-full border border-[#c9a87c]/50 px-4 py-2 text-sm text-[#f0c987] hover:bg-[#c9a87c]/10"
         >
           Book for a client
+        </Link>
+        <Link
+          href="/manager/pay"
+          className="rounded-full border border-[#c9a87c]/50 px-4 py-2 text-sm text-[#f0c987] hover:bg-[#c9a87c]/10"
+        >
+          Pay & hours
         </Link>
       </div>
     </main>

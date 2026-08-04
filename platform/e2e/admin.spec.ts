@@ -9,6 +9,7 @@ test.describe("Manager portal", () => {
     await expect(page.getByRole("button", { name: /salon/i }).first()).toBeVisible();
     await expect(page.getByRole("link", { name: /^account$/i }).first()).toBeVisible();
     await expect(page.getByRole("link", { name: /active services/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /pay & hours/i })).toBeVisible();
   });
 
   test("salon menu opens services products stylists", async ({ page }) => {
