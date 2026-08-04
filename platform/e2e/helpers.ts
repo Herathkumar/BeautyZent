@@ -1,10 +1,11 @@
 import { expect, type Page } from "@playwright/test";
 
 export const DEMO = {
-  adminEmail: "admin@fhsalon.ca",
-  stylistEmail: "farzana@fhsalon.ca",
-  password: "demo1234",
-  slug: "fhsalon",
+  adminEmail: process.env.E2E_ADMIN_EMAIL || "admin@fhsalon.ca",
+  stylistEmail: process.env.E2E_STYLIST_EMAIL || "farzana@fhsalon.ca",
+  /** Override with E2E_ADMIN_PASSWORD when testing against production DB. */
+  password: process.env.E2E_ADMIN_PASSWORD || "demo1234",
+  slug: process.env.E2E_SALON_SLUG || "fhsalon",
 };
 
 function pad(n: number) {

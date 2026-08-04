@@ -28,6 +28,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               <Link href="/admin/services">Services</Link>
               <Link href="/admin/products">Products</Link>
               <Link href="/admin/stylists">Stylists</Link>
+              <Link href="/admin/account">Account</Link>
               <LogoutButton />
             </nav>
           ) : null}
