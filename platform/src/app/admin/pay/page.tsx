@@ -30,6 +30,10 @@ type Report = {
   commissionPay: number;
   tipPay: number;
   totalPay: number;
+  earnedCents: number;
+  paidCents: number;
+  owedCents: number;
+  isPaid: boolean;
   payouts: { id: string; amountCents: number; paidAt: string | null; note: string | null }[];
 };
 
@@ -62,7 +66,9 @@ function downloadPayCsv(reports: Report[], year: string, month: string) {
       "Hourly pay ($)",
       "Commission pay ($)",
       "Tip pay ($)",
-      "Total pay ($)",
+      "Earned ($)",
+      "Paid ($)",
+      "Owed ($)",
     ].join(","),
   ];
 
@@ -81,7 +87,9 @@ function downloadPayCsv(reports: Report[], year: string, month: string) {
           centsToDollars(r.hourlyPay),
           centsToDollars(r.commissionPay),
           centsToDollars(r.tipPay),
-          centsToDollars(r.totalPay),
+          centsToDollars(r.earnedCents ?? r.totalPay),
+          centsToDollars(r.paidCents ?? 0),
+          centsToDollars(r.owedCents ?? r.totalPay),
         ].join(",")
       );
       continue;
@@ -101,6 +109,8 @@ function downloadPayCsv(reports: Report[], year: string, month: string) {
           "",
           centsToDollars(j.tipCents),
           "",
+          "",
+          "",
         ].join(",")
       );
     }
@@ -117,7 +127,9 @@ function downloadPayCsv(reports: Report[], year: string, month: string) {
         centsToDollars(r.hourlyPay),
         centsToDollars(r.commissionPay),
         centsToDollars(r.tipPay),
-        centsToDollars(r.totalPay),
+        centsToDollars(r.earnedCents ?? r.totalPay),
+        centsToDollars(r.paidCents ?? 0),
+        centsToDollars(r.owedCents ?? r.totalPay),
       ].join(",")
     );
   }
@@ -192,7 +204,12 @@ export default function AdminPayPage() {
   }
 
   async function markPaid(report: Report) {
-    if (!window.confirm(`Mark $${centsToDollars(report.totalPay)} paid to ${report.stylist.name}?`)) {
+    const amount = report.owedCents ?? report.totalPay;
+    if (amount <= 0) {
+      setMessage("Nothing left to pay for this period.");
+      return;
+    }
+    if (!window.confirm(`Mark $${centsToDollars(amount)} paid to ${report.stylist.name}?`)) {
       return;
     }
     const res = await fetch("/api/admin/pay", {
@@ -200,14 +217,14 @@ export default function AdminPayPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         stylistId: report.stylist.id,
-        amountCents: report.totalPay,
+        amountCents: amount,
         periodStart,
         periodEnd,
         note: `${year}-${month} payout`,
       }),
     });
+    const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
       setMessage(data.error || "Could not save payout");
       return;
     }
@@ -355,9 +372,19 @@ export default function AdminPayPage() {
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-sm text-[#c9a87c]">Estimated pay</p>
-                <p className="font-[family-name:var(--font-display)] text-3xl text-[#f0c987]">
-                  ${centsToDollars(r.totalPay)}
+                <p className="text-sm text-[#c9a87c]">Amount owed</p>
+                <p
+                  className={`font-[family-name:var(--font-display)] text-3xl ${
+                    (r.owedCents ?? r.totalPay) <= 0 ? "text-[#9fe3b8]" : "text-[#f0c987]"
+                  }`}
+                >
+                  ${centsToDollars(r.owedCents ?? r.totalPay)}
+                </p>
+                <p className="text-xs text-muted">
+                  Earned ${centsToDollars(r.earnedCents ?? r.totalPay)}
+                  {(r.paidCents ?? 0) > 0
+                    ? ` · Paid $${centsToDollars(r.paidCents)}`
+                    : ""}
                 </p>
                 <p className="text-xs text-muted">
                   Charged ${centsToDollars(r.chargedCentsTotal)}
@@ -400,14 +427,27 @@ export default function AdminPayPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                disabled={r.totalPay <= 0}
-                onClick={() => markPaid(r)}
-                className="btn-solid rounded-full px-4 py-2 text-sm disabled:opacity-40"
-              >
-                Mark period paid
-              </button>
+              {(r.owedCents ?? r.totalPay) > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => markPaid(r)}
+                  className="btn-solid rounded-full px-4 py-2 text-sm"
+                >
+                  Mark period paid
+                </button>
+              ) : (r.earnedCents ?? r.totalPay) > 0 ? (
+                <p className="rounded-full border border-[#9fe3b8]/40 px-4 py-2 text-sm font-semibold text-[#9fe3b8]">
+                  Paid in full
+                </p>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  className="btn-solid rounded-full px-4 py-2 text-sm disabled:opacity-40"
+                >
+                  Mark period paid
+                </button>
+              )}
               {r.payouts[0] ? (
                 <p className="text-sm text-[#9fe3b8]">
                   Last payout ${centsToDollars(r.payouts[0].amountCents)}

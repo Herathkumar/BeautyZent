@@ -9,7 +9,7 @@ test.describe("Manager pay & hours", () => {
     await expect(page.getByRole("combobox", { name: /^year$/i })).toBeVisible();
     await expect(page.getByRole("combobox", { name: /^month$/i })).toBeVisible();
     await expect(page.getByRole("button", { name: /download csv/i })).toBeVisible();
-    await expect(page.getByText(/estimated pay|no completed jobs/i).first()).toBeVisible({
+    await expect(page.getByText(/amount owed|no completed jobs|paid in full/i).first()).toBeVisible({
       timeout: 15_000,
     });
   });
