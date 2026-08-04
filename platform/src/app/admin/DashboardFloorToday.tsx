@@ -7,8 +7,9 @@ export async function DashboardFloorToday({ salonId }: { salonId: string }) {
   const away = data.away;
 
   return (
-    <section
-      className="mt-8 rounded-2xl border border-[#c9a87c]/25 bg-[#2a211c] p-5"
+    <Link
+      href="/manager/working"
+      className="admin-stat-card mt-8 block rounded-2xl p-5"
       data-testid="dashboard-who-working"
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -52,13 +53,6 @@ export async function DashboardFloorToday({ salonId }: { salonId: string }) {
           Away: {away.map((a) => a.name).join(", ")}
         </p>
       ) : null}
-
-      <Link
-        href="/manager/working"
-        className="mt-4 inline-block text-sm text-[#c9a87c] hover:text-[#f0c987]"
-      >
-        Full roster →
-      </Link>
-    </section>
+    </Link>
   );
 }
