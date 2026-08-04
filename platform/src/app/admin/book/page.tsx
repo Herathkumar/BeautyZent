@@ -146,10 +146,19 @@ export default function AdminBookPage() {
             value={date}
             min={minDate}
             onChange={(e) => {
-              setDate(e.target.value);
+              const next = e.target.value;
+              if (!next) return;
+              setDate(next);
               setStartsAt("");
             }}
-            className="rounded-xl border border-ink/15 bg-white px-3 py-2 text-ink"
+            onClick={(e) => {
+              try {
+                e.currentTarget.showPicker?.();
+              } catch {
+                /* native calendar icon still works */
+              }
+            }}
+            className="admin-date-input w-full rounded-xl border border-ink/15 px-3 py-2"
           />
         </label>
 

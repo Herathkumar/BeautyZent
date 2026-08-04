@@ -118,6 +118,23 @@ a {
   border-color: rgba(201, 168, 124, 0.35) !important;
 }
 
+.admin-theme input[type="date"],
+.admin-theme input[type="datetime-local"],
+.stylist-theme input[type="date"],
+.stylist-theme input[type="datetime-local"] {
+  color-scheme: dark;
+  min-height: 48px;
+}
+
+.admin-theme input[type="date"]::-webkit-calendar-picker-indicator,
+.admin-theme input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+.stylist-theme input[type="date"]::-webkit-calendar-picker-indicator,
+.stylist-theme input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.9;
+  filter: invert(0.9);
+}
+
 .admin-theme input::placeholder,
 .admin-theme textarea::placeholder,
 .stylist-theme input::placeholder,
