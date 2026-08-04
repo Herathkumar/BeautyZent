@@ -54,6 +54,8 @@ const STATUS_STYLES: Record<string, string> = {
   BOOKED: "bg-[#3d2b22] text-[#f0c987]",
   CHECKED_IN: "bg-[#2a4a3a] text-[#9fe3b8]",
   COMPLETED: "bg-white/10 text-white/60",
+  CANCELLED: "bg-white/10 text-red-200/80",
+  NO_SHOW: "bg-[#3d2b22] text-[#f0c987]",
 };
 
 function AppointmentActions({
@@ -63,7 +65,7 @@ function AppointmentActions({
   a: Appt;
   onStatus: (id: string, status: string) => void;
 }) {
-  if (a.status === "COMPLETED" || a.status === "CANCELLED") return null;
+  if (["COMPLETED", "CANCELLED", "NO_SHOW"].includes(a.status)) return null;
   return (
     <div className="flex flex-wrap gap-2">
       {a.status === "BOOKED" && (
@@ -82,6 +84,19 @@ function AppointmentActions({
           className="rounded-full border border-white/30 px-3 py-2 text-sm"
         >
           Done
+        </button>
+      )}
+      {["BOOKED", "CHECKED_IN"].includes(a.status) && (
+        <button
+          type="button"
+          onClick={() => {
+            if (window.confirm("Mark this booking as no-show?")) {
+              onStatus(a.id, "NO_SHOW");
+            }
+          }}
+          className="rounded-full border border-[#c9a87c]/50 px-3 py-2 text-sm text-[#f0c987]"
+        >
+          No show
         </button>
       )}
       <button
