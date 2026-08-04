@@ -142,8 +142,8 @@ export async function POST(req: Request) {
     data: {
       salonId: session.salonId,
       name,
-      bio: body.bio || null,
-      color: body.color || "#6e4a38",
+      bio: body.bio ? String(body.bio) : null,
+      color: body.color ? String(body.color) : "#6e4a38",
       gender,
       active: true,
       selfManageSchedule: Boolean(body.selfManageSchedule),
