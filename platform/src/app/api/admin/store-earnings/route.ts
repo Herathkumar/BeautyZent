@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession, isSalonStaff } from "@/lib/auth";
-import { calcStylistPay } from "@/lib/pay";
+import { calcStylistPay, dollarsToCents } from "@/lib/pay";
 import { prisma } from "@/lib/prisma";
 import {
   addCalendarDays,
@@ -380,9 +380,23 @@ export async function GET(req: Request) {
     day: "numeric",
   }).format(zonedStartOfDay(sunday, timeZone))}`;
 
+  const weeklyProfitGoalCents = salon.weeklyProfitGoalCents ?? 200_000;
+  const goalProgress = Math.min(
+    1,
+    Math.max(0, weekProfit) / Math.max(1, weeklyProfitGoalCents)
+  );
+
+  let motivation = "Track store profit against your weekly goal.";
+  if (goalProgress >= 1) motivation = "Weekly profit goal reached — strong week!";
+  else if (weekProfit > 0) motivation = "Profit is building — keep the floor busy.";
+  else if (weekCharged > 0) motivation = "Revenue is in — watch stylist pay vs charged.";
+  else if (monday === thisMonday) motivation = "Fresh week. Completions will fill the ring.";
+  else motivation = "Quiet week on record — browse another week or check activity.";
+
   return NextResponse.json({
     today,
     timeZone,
+    motivation,
     week: {
       monday,
       prevWeek,
@@ -390,6 +404,12 @@ export async function GET(req: Request) {
       canGoNext: monday < thisMonday,
       label: weekLabel,
       isCurrentWeek: monday === thisMonday,
+    },
+    goal: {
+      weeklyProfitGoalCents,
+      weekProfitCents: weekProfit,
+      progress: goalProgress,
+      remainingCents: Math.max(0, weeklyProfitGoalCents - Math.max(0, weekProfit)),
     },
     todaySummary: {
       chargedCents: todayCharged,
@@ -431,6 +451,45 @@ export async function GET(req: Request) {
     })),
     stylists: stylists.map((s) => ({ id: s.id, name: s.name })),
   });
+}
+
+export async function PATCH(req: Request) {
+  const session = await getSession();
+  if (!session || !isSalonStaff(session.role)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  let body: Record<string, unknown> = {};
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  if (body.action !== "setWeeklyGoal") {
+    return NextResponse.json({ error: "Unknown action" }, { status: 400 });
+  }
+
+  const cents =
+    typeof body.weeklyProfitGoalCents === "number"
+      ? Math.round(body.weeklyProfitGoalCents)
+      : dollarsToCents(
+          typeof body.weeklyGoalDollars === "number" ||
+            typeof body.weeklyGoalDollars === "string"
+            ? body.weeklyGoalDollars
+            : ""
+        );
+  if (cents == null || cents < 0) {
+    return NextResponse.json({ error: "Invalid goal amount" }, { status: 400 });
+  }
+
+  const salon = await prisma.salon.update({
+    where: { id: session.salonId },
+    data: { weeklyProfitGoalCents: cents },
+    select: { weeklyProfitGoalCents: true },
+  });
+
+  return NextResponse.json({ weeklyProfitGoalCents: salon.weeklyProfitGoalCents });
 }
 
 export async function POST(req: Request) {

@@ -21,6 +21,9 @@ test.describe("Manager store earnings", () => {
     await page.getByRole("menuitem", { name: /store earnings/i }).click();
     await expect(page).toHaveURL(/\/manager\/earnings/);
     await expect(page.getByTestId("store-earnings-page")).toBeVisible();
+    await expect(page.getByTestId("store-earnings-goal")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("store-earnings-goal").getByText(/^goal$/i)).toBeVisible();
+    await expect(page.getByRole("button", { name: /edit weekly goal/i })).toBeVisible();
     await expect(page.getByTestId("store-earnings-today")).toBeVisible();
     await expect(page.getByTestId("store-earnings-week")).toBeVisible();
     await expect(page.getByTestId("store-earnings-today").getByText(/store profit/i)).toBeVisible();

@@ -42,6 +42,7 @@ type SummaryBlock = {
 
 type Payload = {
   today: string;
+  motivation?: string;
   week: {
     monday: string;
     prevWeek: string;
@@ -49,6 +50,12 @@ type Payload = {
     canGoNext: boolean;
     label: string;
     isCurrentWeek: boolean;
+  };
+  goal: {
+    weeklyProfitGoalCents: number;
+    weekProfitCents: number;
+    progress: number;
+    remainingCents: number;
   };
   todaySummary: SummaryBlock;
   weekSummary: SummaryBlock;
@@ -74,6 +81,49 @@ type Payload = {
   }[];
 };
 
+function GoalRing({ progress, earned, goal }: { progress: number; earned: number; goal: number }) {
+  const size = 148;
+  const stroke = 10;
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const offset = c * (1 - Math.min(1, Math.max(0, progress)));
+
+  return (
+    <div className="earnings-goal-ring mx-auto" style={{ width: size, height: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden>
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke="rgba(201,168,124,0.2)"
+          strokeWidth={stroke}
+        />
+        <circle
+          className="earnings-goal-progress"
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke="#f0c987"
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={c}
+          strokeDashoffset={offset}
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        />
+      </svg>
+      <div className="earnings-goal-center">
+        <p className="text-[10px] font-semibold tracking-wide text-[#c9a87c] uppercase">Goal</p>
+        <p className="font-[family-name:var(--font-display)] text-xl text-[#f0c987]">
+          ${centsToDollars(earned)}
+        </p>
+        <p className="text-[11px] text-muted">of ${centsToDollars(goal)}</p>
+      </div>
+    </div>
+  );
+}
+
 function csvEscape(value: string | number) {
   const s = String(value);
   if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
@@ -82,14 +132,7 @@ function csvEscape(value: string | number) {
 
 function downloadStoreCsv(data: Payload) {
   const rows: string[] = [
-    [
-      "Type",
-      "When",
-      "Title",
-      "Detail",
-      "Amount ($)",
-      "Excluded",
-    ].join(","),
+    ["Type", "When", "Title", "Detail", "Amount ($)", "Excluded"].join(","),
   ];
   for (const a of data.activities) {
     rows.push(
@@ -111,28 +154,9 @@ function downloadStoreCsv(data: Payload) {
       `Revenue $${centsToDollars(data.weekSummary.revenueCents)}`,
       `Stylist pay $${centsToDollars(data.weekSummary.stylistPayCents)}`,
       `Profit $${centsToDollars(data.weekSummary.profitCents)}`,
-      `Paid $${centsToDollars(data.weekSummary.paidCents ?? 0)} · Owed $${centsToDollars(data.weekSummary.owedCents ?? 0)}`,
+      `Goal $${centsToDollars(data.goal.weeklyProfitGoalCents)}`,
     ].join(",")
   );
-  rows.push(
-    ["Date", "Weekday", "Revenue ($)", "Profit ($)", "Charged ($)", "Tips ($)", "Stylist pay ($)", "Jobs"].join(
-      ","
-    )
-  );
-  for (const d of data.days) {
-    rows.push(
-      [
-        csvEscape(d.date),
-        csvEscape(d.weekday),
-        csvEscape(centsToDollars(d.revenueCents)),
-        csvEscape(centsToDollars(d.profitCents)),
-        csvEscape(centsToDollars(d.chargedCents)),
-        csvEscape(centsToDollars(d.tipCents)),
-        csvEscape(centsToDollars(d.stylistPayCents)),
-        csvEscape(d.jobCount),
-      ].join(",")
-    );
-  }
 
   const blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
@@ -175,9 +199,7 @@ function SummaryCard({
           {(summary.owedCents ?? 0) > 0
             ? ` · $${centsToDollars(summary.owedCents ?? 0)} still owed`
             : " · paid in full for earned pay"}
-          {summary.voidedJobCount
-            ? ` · ${summary.voidedJobCount} voided`
-            : ""}
+          {summary.voidedJobCount ? ` · ${summary.voidedJobCount} voided` : ""}
         </p>
       ) : (
         <p className="mt-1 text-xs text-muted">
@@ -193,6 +215,7 @@ export default function StoreEarningsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
+  const [goalMsg, setGoalMsg] = useState("");
   const [busyId, setBusyId] = useState("");
 
   const load = useCallback(async (weekMonday?: string | null) => {
@@ -216,6 +239,27 @@ export default function StoreEarningsPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  async function editGoal() {
+    if (!data) return;
+    const raw = window.prompt(
+      "Weekly store profit goal ($)",
+      centsToDollars(data.goal.weeklyProfitGoalCents)
+    );
+    if (raw === null) return;
+    const res = await fetch("/api/admin/store-earnings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "setWeeklyGoal", weeklyGoalDollars: raw }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setGoalMsg(json.error || "Could not save goal");
+      return;
+    }
+    setGoalMsg("Goal updated.");
+    await load(data.week.monday);
+  }
 
   async function toggleExclude(appointmentId: string, excluded: boolean) {
     setBusyId(appointmentId);
@@ -250,10 +294,13 @@ export default function StoreEarningsPage() {
           <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl">
             Store Earnings
           </h1>
-          <p className="mt-2 text-muted">
-            Profit = charged − stylist pay (hourly + commission). Tips pass through to stylists
-            and are not counted in profit.
-          </p>
+          {data?.motivation ? (
+            <p className="mt-2 text-sm text-muted">{data.motivation}</p>
+          ) : (
+            <p className="mt-2 text-muted">
+              Profit = charged − stylist pay (hourly + commission). Tips pass through to stylists.
+            </p>
+          )}
         </div>
         <button
           type="button"
@@ -275,9 +322,77 @@ export default function StoreEarningsPage() {
           {msg}
         </p>
       ) : null}
+      {goalMsg ? <p className="text-sm text-[#9fe3b8]">{goalMsg}</p> : null}
 
       {data ? (
         <>
+          <section className="earnings-hero rounded-3xl p-5" data-testid="store-earnings-goal">
+            <div className="flex items-center justify-between gap-2">
+              <button
+                type="button"
+                className="earnings-week-nav"
+                aria-label="Previous week"
+                onClick={() => load(data.week.prevWeek)}
+              >
+                ‹
+              </button>
+              <div className="text-center">
+                <p className="text-xs font-semibold tracking-wide text-[#c9a87c] uppercase">
+                  {data.week.isCurrentWeek ? "This week" : "Week of"}
+                </p>
+                <p className="mt-1 text-sm font-semibold text-[#fffaf6]">{data.week.label}</p>
+              </div>
+              <button
+                type="button"
+                className="earnings-week-nav"
+                aria-label="Next week"
+                disabled={!data.week.canGoNext}
+                onClick={() => data.week.canGoNext && load(data.week.nextWeek)}
+              >
+                ›
+              </button>
+            </div>
+
+            <div className="mt-5">
+              <GoalRing
+                progress={data.goal.progress}
+                earned={Math.max(0, data.goal.weekProfitCents)}
+                goal={data.goal.weeklyProfitGoalCents}
+              />
+            </div>
+
+            <p className="mt-4 text-center text-xs tracking-[0.18em] text-[#c9a87c] uppercase">
+              Week profit
+            </p>
+            <p className="mt-1 text-center font-[family-name:var(--font-display)] text-5xl text-[#f0c987]">
+              ${centsToDollars(data.weekSummary.profitCents)}
+            </p>
+            <p className="mt-2 text-center text-sm text-muted">
+              {data.weekSummary.jobCount} job{data.weekSummary.jobCount === 1 ? "" : "s"} · $
+              {centsToDollars(data.weekSummary.chargedCents)} charged · $
+              {centsToDollars(data.weekSummary.stylistPayCents)} stylist pay
+              {data.weekSummary.tipCents > 0
+                ? ` · $${centsToDollars(data.weekSummary.tipCents)} tips`
+                : ""}
+            </p>
+            {data.goal.remainingCents > 0 ? (
+              <p className="mt-2 text-center text-sm text-[#c9a87c]">
+                ${centsToDollars(data.goal.remainingCents)} to hit your goal
+              </p>
+            ) : (
+              <p className="mt-2 text-center text-sm text-[#9fe3b8]">Weekly goal reached</p>
+            )}
+            <div className="mt-3 text-center">
+              <button
+                type="button"
+                onClick={() => void editGoal()}
+                className="text-xs font-semibold tracking-wide text-[#c9a87c] underline-offset-2 hover:underline"
+              >
+                Edit weekly goal
+              </button>
+            </div>
+          </section>
+
           <div className="grid gap-4 sm:grid-cols-2">
             <SummaryCard
               label="Today"
@@ -290,30 +405,6 @@ export default function StoreEarningsPage() {
               testId="store-earnings-week"
               showPayout
             />
-          </div>
-
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                className="rounded-full border border-[#c9a87c]/35 px-3 py-1.5 text-sm text-[#f0c987]"
-                onClick={() => load(data.week.prevWeek)}
-              >
-                ← Prev
-              </button>
-              <button
-                type="button"
-                disabled={!data.week.canGoNext}
-                className="rounded-full border border-[#c9a87c]/35 px-3 py-1.5 text-sm text-[#f0c987] disabled:opacity-40"
-                onClick={() => load(data.week.nextWeek)}
-              >
-                Next →
-              </button>
-            </div>
-            <p className="text-sm text-[#d4c4b0]">
-              {data.week.label}
-              {data.week.isCurrentWeek ? " · Current week" : ""}
-            </p>
           </div>
 
           <section className="rounded-3xl border border-[#c9a87c]/25 bg-[#2a211c] p-4">
@@ -346,10 +437,7 @@ export default function StoreEarningsPage() {
               {data.days.map((d) => {
                 const revH = Math.max(4, Math.round((d.revenueCents / maxBar) * 110));
                 const profitVis = Math.max(0, d.profitCents);
-                const profitH = Math.max(
-                  d.profitCents !== 0 ? 4 : 4,
-                  Math.round((profitVis / maxBar) * 110)
-                );
+                const profitH = Math.max(4, Math.round((profitVis / maxBar) * 110));
                 return (
                   <div key={d.date} className="flex flex-1 flex-col items-center gap-1">
                     <div className="flex h-[110px] items-end justify-center gap-0.5">

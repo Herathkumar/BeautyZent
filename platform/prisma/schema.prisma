@@ -19,6 +19,8 @@ model Salon {
   openHour     Int      @default(9)
   closeHour    Int      @default(18)
   slotMinutes  Int      @default(30)
+  /// Weekly store profit goal for manager Store Earnings ring (cents)
+  weeklyProfitGoalCents Int? @default(200000)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

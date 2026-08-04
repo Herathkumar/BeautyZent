@@ -458,16 +458,19 @@ a {
   text-align: center;
 }
 
+.earnings-hero,
 .stylist-theme .earnings-hero {
   background: linear-gradient(160deg, #3d2b22 0%, #241c18 55%, #1c1714 100%);
   border: 1px solid rgba(201, 168, 124, 0.35);
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
 }
 
+.earnings-goal-ring,
 .stylist-theme .earnings-goal-ring {
   position: relative;
 }
 
+.earnings-goal-center,
 .stylist-theme .earnings-goal-center {
   position: absolute;
   inset: 0;
@@ -478,10 +481,12 @@ a {
   text-align: center;
 }
 
+.earnings-goal-progress,
 .stylist-theme .earnings-goal-progress {
   transition: stroke-dashoffset 0.6s ease;
 }
 
+.earnings-week-nav,
 .stylist-theme .earnings-week-nav {
   width: 2.5rem;
   height: 2.5rem;
@@ -496,10 +501,12 @@ a {
   justify-content: center;
 }
 
+.earnings-week-nav:disabled,
 .stylist-theme .earnings-week-nav:disabled {
   opacity: 0.35;
 }
 
+.earnings-stat,
 .stylist-theme .earnings-stat {
   border: 1px solid rgba(201, 168, 124, 0.25);
   background: rgba(42, 33, 28, 0.9);
