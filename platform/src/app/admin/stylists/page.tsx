@@ -18,6 +18,7 @@ type Stylist = {
   commissionBps?: number | null;
   loginEmail: string | null;
   userId: string | null;
+  userRole?: string | null;
   calendarConnected: boolean;
   connectUrl: string | null;
 };
@@ -242,6 +243,57 @@ export default function StylistsAdminPage() {
     }
   }
 
+  async function setStylistActive(stylist: Stylist, active: boolean) {
+    if (
+      !active &&
+      !window.confirm(
+        `Disable ${stylist.name}?\n\nThey won't appear for online booking or on the floor until you enable them again.`
+      )
+    ) {
+      return;
+    }
+    setError("");
+    const res = await fetch("/api/admin/stylists", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "setActive", stylistId: stylist.id, active }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setError(data.error || "Could not update stylist");
+      return;
+    }
+    await load();
+  }
+
+  async function removeStylist(stylist: Stylist) {
+    const loginNote = stylist.loginEmail
+      ? stylist.userRole === "STYLIST"
+        ? `\nTheir login (${stylist.loginEmail}) will be deleted.`
+        : `\nManager login stays; stylist link is removed.`
+      : "";
+    if (
+      !window.confirm(
+        `Remove ${stylist.name} from the salon?${loginNote}\n\nThey leave booking and the floor. Past appointments are kept.`
+      )
+    ) {
+      return;
+    }
+    setError("");
+    const res = await fetch("/api/admin/stylists", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "remove", stylistId: stylist.id }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setError(data.error || "Could not remove stylist");
+      return;
+    }
+    if (issued?.stylistId === stylist.id) clearIssued();
+    await load();
+  }
+
   async function copyText(text: string) {
     try {
       await navigator.clipboard.writeText(text);
@@ -367,7 +419,12 @@ export default function StylistsAdminPage() {
           return (
             <article
               key={s.id}
-              className="rounded-2xl border border-[#c9a87c]/30 bg-[#2a211c] p-5 shadow-[0_12px_40px_rgba(0,0,0,0.25)]"
+              className={`rounded-2xl border bg-[#2a211c] p-5 shadow-[0_12px_40px_rgba(0,0,0,0.25)] ${
+                s.active
+                  ? "border-[#c9a87c]/30"
+                  : "border-[#c9a87c]/15 opacity-75"
+              }`}
+              data-testid="stylist-card"
             >
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="min-w-0 flex-1">
@@ -380,12 +437,17 @@ export default function StylistsAdminPage() {
                       height={44}
                       className="h-11 w-11 rounded-full object-cover ring-2 ring-[#f0c987]/35"
                     />
-                    <span className="flex items-center gap-2">
+                    <span className="flex flex-wrap items-center gap-2">
                       <span
                         className="h-3.5 w-3.5 shrink-0 rounded-full ring-2 ring-[#f0c987]/40"
                         style={{ background: s.color }}
                       />
                       {s.name}
+                      {!s.active ? (
+                        <span className="rounded-full border border-[#f5a8a8]/45 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-[#f5a8a8]">
+                          Disabled
+                        </span>
+                      ) : null}
                     </span>
                   </p>
                   {s.bio && <p className="mt-2 text-base text-[#d4c4b0]">{s.bio}</p>}
@@ -442,21 +504,48 @@ export default function StylistsAdminPage() {
                   {s.loginEmail ? (
                     <button
                       type="button"
-                      disabled={resettingId === s.id}
+                      disabled={resettingId === s.id || !s.active}
                       onClick={() => resetPassword(s.id, s.name)}
-                      className="rounded-full border border-[#c9a87c]/50 px-4 py-2 text-sm text-[#f0c987]"
+                      className="rounded-full border border-[#c9a87c]/50 px-4 py-2 text-sm text-[#f0c987] disabled:opacity-40"
                     >
                       {resettingId === s.id ? "Resetting…" : "Reset password"}
                     </button>
                   ) : null}
-                  {s.connectUrl && (
+                  {s.connectUrl && s.active ? (
                     <a
                       href={s.connectUrl}
                       className="rounded-full border border-[#c9a87c]/50 px-4 py-2 text-center text-sm text-[#f0c987]"
                     >
                       Connect Google Calendar
                     </a>
+                  ) : null}
+                  {s.active ? (
+                    <button
+                      type="button"
+                      onClick={() => void setStylistActive(s, false)}
+                      className="rounded-full border border-[#c9a87c]/50 px-4 py-2 text-sm text-[#f0c987]"
+                      data-testid="stylist-disable"
+                    >
+                      Disable
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => void setStylistActive(s, true)}
+                      className="rounded-full border border-[#9fe3b8]/50 px-4 py-2 text-sm text-[#9fe3b8]"
+                      data-testid="stylist-enable"
+                    >
+                      Enable
+                    </button>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => void removeStylist(s)}
+                    className="rounded-full border border-[rgba(245,168,168,0.45)] px-4 py-2 text-sm text-[#f5a8a8]"
+                    data-testid="stylist-remove"
+                  >
+                    Remove
+                  </button>
                 </div>
               </div>
               {panelHere ? (

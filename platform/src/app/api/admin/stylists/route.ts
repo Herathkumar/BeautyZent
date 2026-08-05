@@ -18,7 +18,7 @@ export async function GET() {
   const salon = await prisma.salon.findUnique({ where: { id: session.salonId } });
   const stylists = await prisma.stylist.findMany({
     where: { salonId: session.salonId },
-    include: { user: { select: { id: true, email: true } } },
+    include: { user: { select: { id: true, email: true, role: true } } },
     orderBy: { name: "asc" },
   });
 
@@ -47,6 +47,7 @@ export async function GET() {
         commissionBps: s.commissionBps,
         loginEmail: s.user?.email || null,
         userId: s.user?.id || null,
+        userRole: s.user?.role || null,
         calendarConnected: Boolean(s.googleRefreshToken),
         googleConnectedAt: s.googleConnectedAt,
         connectUrl: getGoogleAuthUrl(s.id),
@@ -63,6 +64,69 @@ export async function POST(req: Request) {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  if (body.action === "setActive") {
+    const stylistId = String(body.stylistId || "");
+    if (!stylistId) {
+      return NextResponse.json({ error: "stylistId required" }, { status: 400 });
+    }
+    if (!isSalonStaff(session.role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    const stylist = await prisma.stylist.findFirst({
+      where: { id: stylistId, salonId: session.salonId },
+    });
+    if (!stylist) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+    const active = Boolean(body.active);
+    const updated = await prisma.stylist.update({
+      where: { id: stylist.id },
+      data: { active },
+    });
+    return NextResponse.json({
+      stylist: updated,
+      message: active
+        ? `${stylist.name} is enabled again for booking and the floor.`
+        : `${stylist.name} is disabled. They won't appear for booking or on the floor.`,
+    });
+  }
+
+  if (body.action === "remove") {
+    const stylistId = String(body.stylistId || "");
+    if (!stylistId) {
+      return NextResponse.json({ error: "stylistId required" }, { status: 400 });
+    }
+    if (!isSalonStaff(session.role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    const stylist = await prisma.stylist.findFirst({
+      where: { id: stylistId, salonId: session.salonId },
+      include: { user: { select: { id: true, role: true, email: true } } },
+    });
+    if (!stylist) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+    await prisma.$transaction(async (tx) => {
+      await tx.stylist.update({
+        where: { id: stylist.id },
+        data: { active: false },
+      });
+      if (stylist.user) {
+        if (stylist.user.role === "STYLIST") {
+          await tx.user.delete({ where: { id: stylist.user.id } });
+        } else {
+          await tx.user.update({
+            where: { id: stylist.user.id },
+            data: { stylistId: null },
+          });
+        }
+      }
+    });
+
+    return NextResponse.json({
+      ok: true,
+      message: `${stylist.name} was removed from booking and the floor. Past appointments are kept.`,
+    });
   }
 
   if (body.action === "updateSelfManage" || body.action === "updatePay") {
