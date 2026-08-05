@@ -144,7 +144,14 @@ function StylistLine({ a }: { a: Appt }) {
   );
 }
 
-export function DisplayBoard({ slug }: { slug: string }) {
+export function DisplayBoard({
+  slug,
+  /** When true, board sits inside manager chrome (not the tablet URL). */
+  embedded = false,
+}: {
+  slug: string;
+  embedded?: boolean;
+}) {
   const [appointments, setAppointments] = useState<Appt[]>([]);
   const [salon, setSalon] = useState<SalonInfo | null>(null);
   const [days, setDays] = useState(14);
@@ -223,11 +230,16 @@ export function DisplayBoard({ slug }: { slug: string }) {
   const inChair = todayAppts.filter((a) => a.status === "CHECKED_IN").length;
 
   return (
-    <div className="min-h-screen bg-[#1c1714] text-[#fffaf6]">
+    <div
+      className={`${embedded ? "min-h-[70vh] overflow-hidden rounded-3xl border border-[#c9a87c]/25" : "min-h-screen"} bg-[#1c1714] text-[#fffaf6]`}
+      data-testid={embedded ? "manager-store-display-board" : "store-display-board"}
+    >
       <header className="border-b border-white/10 px-6 py-5">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-xs tracking-[0.2em] text-[#c9a87c] uppercase">Salon floor</p>
+            <p className="text-xs tracking-[0.2em] text-[#c9a87c] uppercase">
+              {embedded ? "Store display" : "Salon floor"}
+            </p>
             <h1 className="font-[family-name:var(--font-display)] text-4xl">
               {salon?.name || "Bookings"}
             </h1>

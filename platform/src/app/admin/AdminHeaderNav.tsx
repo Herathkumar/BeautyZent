@@ -57,7 +57,8 @@ export function AdminHeaderNav() {
         className={
           pathname.startsWith("/manager/appointments") ||
           pathname.startsWith("/manager/book") ||
-          pathname.startsWith("/manager/walk-in")
+          pathname.startsWith("/manager/walk-in") ||
+          pathname.startsWith("/manager/display")
             ? "is-active"
             : undefined
         }

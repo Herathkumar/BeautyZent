@@ -26,6 +26,48 @@ test.describe("Walk-in appointments", () => {
     await expect(page.getByTestId("walk-in-badge").first()).toBeVisible();
   });
 
+  test("manager opens store display from bookings and can seat waitlist", async ({
+    page,
+  }) => {
+    await adminLogin(page);
+
+    const catalog = await page.request.get("/api/public/fhsalon/catalog");
+    const cat = await catalog.json();
+    const service = (cat.services || []).find((s: { name: string }) =>
+      /^men.?s haircut/i.test(s.name)
+    );
+    expect(service?.id).toBeTruthy();
+
+    const clientName = `MgrDisplay ${Date.now()}`;
+    const add = await page.request.post("/api/admin/waitlist", {
+      data: { clientName, serviceId: service.id },
+    });
+    expect(add.ok()).toBeTruthy();
+
+    await page.goto("/manager/appointments");
+    await page.getByTestId("bookings-store-display").click();
+    await expect(page).toHaveURL(/\/manager\/display/);
+    await expect(page.getByTestId("manager-store-display")).toBeVisible();
+    await expect(page.getByTestId("manager-store-display-board")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByTestId("display-waitlist-section")).toBeVisible();
+
+    const waitlist = page.getByTestId("walk-in-waitlist");
+    const entry = waitlist.locator("[data-testid=waitlist-entry]").filter({
+      hasText: clientName,
+    });
+    await expect(entry).toBeVisible({ timeout: 15_000 });
+    await entry.getByTestId("waitlist-seat-now").click();
+    const picker = entry.getByTestId("waitlist-seat-picker");
+    await expect(picker).toBeVisible();
+    await picker.getByTestId("waitlist-confirm-seat").click();
+    await expect(page.getByText(new RegExp(`seated\\s+${clientName}`, "i"))).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByText(clientName).first()).toBeVisible({ timeout: 15_000 });
+  });
+
   test("manager can add guest to waitlist", async ({ page }) => {
     const clientName = `Waitlist ${Date.now()}`;
 

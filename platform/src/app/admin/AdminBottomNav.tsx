@@ -55,9 +55,11 @@ export function AdminBottomNav() {
     pathname.startsWith("/manager/appointments") ||
     pathname.startsWith("/manager/book") ||
     pathname.startsWith("/manager/walk-in") ||
+    pathname.startsWith("/manager/display") ||
     pathname.startsWith("/admin/appointments") ||
     pathname.startsWith("/admin/book") ||
-    pathname.startsWith("/admin/walk-in");
+    pathname.startsWith("/admin/walk-in") ||
+    pathname.startsWith("/admin/display");
   const onSalon = SALON_LINKS.some(
     (l) => pathname.startsWith(l.href) || pathname.startsWith(l.href.replace("/manager", "/admin"))
   );
