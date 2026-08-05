@@ -26,17 +26,32 @@ async function main() {
     },
   });
 
-  await prisma.user.upsert({
-    where: { salonId_email: { salonId: salon.id, email: "admin@fhsalon.ca" } },
-    update: { passwordHash, name: "Salon Admin" },
-    create: {
-      salonId: salon.id,
-      email: "admin@fhsalon.ca",
-      passwordHash,
-      name: "Salon Admin",
-      role: "ADMIN", // Manager portal (ADMIN kept for existing accounts; UI says Manager)
-    },
+  const legacyAdmin = await prisma.user.findFirst({
+    where: { salonId: salon.id, email: "admin@fhsalon.ca" },
   });
+  if (legacyAdmin) {
+    await prisma.user.update({
+      where: { id: legacyAdmin.id },
+      data: {
+        email: "manager@fhsalon.ca",
+        name: "Salon Manager",
+        passwordHash,
+        role: "ADMIN",
+      },
+    });
+  } else {
+    await prisma.user.upsert({
+      where: { salonId_email: { salonId: salon.id, email: "manager@fhsalon.ca" } },
+      update: { passwordHash, name: "Salon Manager" },
+      create: {
+        salonId: salon.id,
+        email: "manager@fhsalon.ca",
+        passwordHash,
+        name: "Salon Manager",
+        role: "ADMIN", // Manager portal (ADMIN kept for existing accounts; UI says Manager)
+      },
+    });
+  }
 
   const stylists = [
     {
@@ -172,7 +187,7 @@ async function main() {
   }
 
   console.log("Seeded Farzana Hair Salon (slug: fhsalon)");
-  console.log("Admin: admin@fhsalon.ca / demo1234");
+  console.log("Manager: manager@fhsalon.ca / demo1234");
   console.log("Stylist portal: farzana@fhsalon.ca / demo1234 (also aisha@, omar@)");
   console.log("Book: /book/fhsalon | Display: /display/fhsalon | Stylist: /stylist");
 }

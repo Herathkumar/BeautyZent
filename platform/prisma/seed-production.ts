@@ -14,7 +14,7 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 const SLUG = process.env.PRODUCTION_SALON_SLUG || "fhsalon";
-const ADMIN_EMAIL = (process.env.PRODUCTION_ADMIN_EMAIL || "admin@fhsalon.ca").toLowerCase();
+const ADMIN_EMAIL = (process.env.PRODUCTION_ADMIN_EMAIL || "manager@fhsalon.ca").toLowerCase();
 
 function generatePassword(length = 14) {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$";

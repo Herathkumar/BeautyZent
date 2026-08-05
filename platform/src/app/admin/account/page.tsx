@@ -211,10 +211,7 @@ export default function AdminAccountPage() {
   return (
     <main className="mx-auto max-w-xl space-y-6">
       <div>
-        <p className="text-xs font-semibold tracking-[0.2em] text-[#c9a87c] uppercase">
-          Account
-        </p>
-        <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl text-[#fffaf6]">
+        <h1 className="font-[family-name:var(--font-display)] text-3xl text-[#fffaf6]">
           Account
         </h1>
         <p className="mt-2 text-[#d4c4b0]">

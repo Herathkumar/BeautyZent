@@ -1,7 +1,7 @@
 import { expect, type Page } from "@playwright/test";
 
 export const DEMO = {
-  adminEmail: process.env.E2E_ADMIN_EMAIL || "admin@fhsalon.ca",
+  adminEmail: process.env.E2E_ADMIN_EMAIL || "manager@fhsalon.ca",
   stylistEmail: process.env.E2E_STYLIST_EMAIL || "farzana@fhsalon.ca",
   /** Override with E2E_ADMIN_PASSWORD when testing against production DB. */
   password: process.env.E2E_ADMIN_PASSWORD || "demo1234",

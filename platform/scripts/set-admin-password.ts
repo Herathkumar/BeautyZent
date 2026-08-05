@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 async function main() {
   const password = process.argv[2];
-  const email = (process.argv[3] || "admin@fhsalon.ca").toLowerCase();
+  const email = (process.argv[3] || "manager@fhsalon.ca").toLowerCase();
   if (!password || password.length < 8) {
     console.error("Usage: tsx scripts/set-admin-password.ts <password> [email]");
     process.exit(1);
