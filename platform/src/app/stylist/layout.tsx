@@ -4,12 +4,12 @@ import { getSession } from "@/lib/auth";
 import { StylistBottomNav } from "./StylistBottomNav";
 
 export const metadata: Metadata = {
-  title: "My Day — Stylist",
+  title: "ZLab-Salon — Stylist App",
   description: "Today's bookings, check-in, and time off — phone-friendly stylist portal.",
   manifest: "/stylist-manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    title: "My Day",
+    title: "ZLab-Salon",
     statusBarStyle: "black-translucent",
   },
   icons: {
@@ -39,9 +39,9 @@ export default async function StylistLayout({ children }: { children: React.Reac
               href="/stylist"
               className="font-[family-name:var(--font-display)] text-lg tracking-wide text-champagne"
             >
-              My Day
+              ZLab-Salon
             </Link>
-            <p className="text-xs text-muted">Phone app · no install</p>
+            <p className="text-xs text-muted">Stylist App · no install</p>
           </div>
         </header>
       ) : null}

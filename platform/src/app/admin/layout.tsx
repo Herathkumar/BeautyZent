@@ -15,13 +15,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-4">
           <div>
             <p className="text-[11px] font-semibold tracking-[0.2em] text-[#c9a87c] uppercase">
-              Salon manager
+              Manager App
             </p>
             <Link
               href={showChrome ? "/manager" : "/manager/login"}
               className="font-[family-name:var(--font-display)] text-2xl text-[#fffaf6]"
             >
-              Salon manager
+              ZLab-Salon
             </Link>
           </div>
           {showChrome ? <AdminHeaderNav /> : null}

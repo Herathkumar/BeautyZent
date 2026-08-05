@@ -38,8 +38,8 @@ export default function StylistLoginPage() {
   return (
     <main className="mx-auto max-w-md space-y-6">
       <div>
-        <p className="text-sm uppercase tracking-[0.18em] text-champagne">Stylist phone app</p>
-        <h1 className="mt-2 font-[family-name:var(--font-display)] text-4xl">My Day</h1>
+        <p className="text-sm uppercase tracking-[0.18em] text-champagne">Stylist App</p>
+        <h1 className="mt-2 font-[family-name:var(--font-display)] text-4xl">ZLab-Salon</h1>
         <p className="mt-2 text-muted">
           See today&apos;s clients, tap when they arrive, call them, and mark days off — no app
           store install.
@@ -73,7 +73,7 @@ export default function StylistLoginPage() {
           disabled={loading}
           className="stylist-tap btn-solid rounded-2xl px-5"
         >
-          {loading ? "Opening…" : "Open my day"}
+          {loading ? "Opening…" : "Open ZLab-Salon"}
         </button>
       </form>
 

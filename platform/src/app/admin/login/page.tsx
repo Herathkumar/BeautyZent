@@ -37,10 +37,10 @@ export default function AdminLoginPage() {
   return (
     <main className="mx-auto max-w-md">
       <p className="text-xs font-semibold tracking-[0.2em] text-[#c9a87c] uppercase">
-        Salon manager
+        Manager App
       </p>
       <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl text-[#fffaf6]">
-        Manager login
+        ZLab-Salon
       </h1>
       <p className="mt-2 text-sm text-muted">
         Sign in with the salon manager account to manage services, stylists, and bookings.

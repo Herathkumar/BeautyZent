@@ -42,7 +42,7 @@ const demos = [
     href: "/stylist/login",
     external: false,
     title: "Stylist portal",
-    subtitle: "Phone app — My Day",
+    subtitle: "Phone app — ZLab-Salon",
     hint: "Use the login your admin created",
     accent: "from-[#3a2f4a] to-[#1c1714]",
   },

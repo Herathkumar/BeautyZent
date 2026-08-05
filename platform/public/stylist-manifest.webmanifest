@@ -1,6 +1,6 @@
 {
-  "name": "Farzana — My Day",
-  "short_name": "My Day",
+  "name": "ZLab-Salon — Stylist App",
+  "short_name": "ZLab-Salon",
   "description": "Stylist phone app for today's bookings, check-in, and time off.",
   "start_url": "/stylist",
   "scope": "/stylist",
