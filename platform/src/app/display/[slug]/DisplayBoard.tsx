@@ -151,6 +151,11 @@ export function DisplayBoard({ slug }: { slug: string }) {
   const [tab, setTab] = useState<Tab>("today");
   const [now, setNow] = useState(() => new Date());
   const [walkInOpen, setWalkInOpen] = useState(false);
+  const [walkInWaiting, setWalkInWaiting] = useState(0);
+
+  const onWaitlistChange = useCallback((count: number) => {
+    setWalkInWaiting(count);
+  }, []);
 
   const load = useCallback(() => {
     fetch(`/api/display/${slug}/today?days=${days}`)
@@ -323,14 +328,44 @@ export function DisplayBoard({ slug }: { slug: string }) {
                   </p>
                 )}
               </div>
-              <div className="grid grid-cols-2 gap-3 md:min-w-[220px]">
-                <div className="rounded-2xl bg-[#f0c987] px-4 py-3 text-[#1c1714]">
-                  <p className="text-xs font-semibold uppercase tracking-wide opacity-70">Waiting</p>
-                  <p className="font-[family-name:var(--font-display)] text-3xl">{waiting}</p>
+              <div
+                className="grid grid-cols-3 gap-3 md:min-w-[300px]"
+                data-testid="display-floor-counts"
+              >
+                <div className="rounded-2xl bg-[#f0c987] px-3 py-3 text-[#1c1714] sm:px-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide opacity-70 sm:text-xs">
+                    Waiting
+                  </p>
+                  <p
+                    className="font-[family-name:var(--font-display)] text-3xl"
+                    data-testid="display-count-waiting"
+                  >
+                    {waiting}
+                  </p>
+                  <p className="mt-0.5 text-[10px] leading-tight opacity-65">Booked / seated</p>
                 </div>
-                <div className="rounded-2xl bg-[#9fe3b8] px-4 py-3 text-[#123022]">
-                  <p className="text-xs font-semibold uppercase tracking-wide opacity-70">In chair</p>
-                  <p className="font-[family-name:var(--font-display)] text-3xl">{inChair}</p>
+                <div className="rounded-2xl bg-[#e8c4a0] px-3 py-3 text-[#1c1714] sm:px-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide opacity-70 sm:text-xs">
+                    Walk-in
+                  </p>
+                  <p
+                    className="font-[family-name:var(--font-display)] text-3xl"
+                    data-testid="display-count-walk-in"
+                  >
+                    {walkInWaiting}
+                  </p>
+                  <p className="mt-0.5 text-[10px] leading-tight opacity-65">On waitlist</p>
+                </div>
+                <div className="rounded-2xl bg-[#9fe3b8] px-3 py-3 text-[#123022] sm:px-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide opacity-70 sm:text-xs">
+                    In chair
+                  </p>
+                  <p
+                    className="font-[family-name:var(--font-display)] text-3xl"
+                    data-testid="display-count-in-chair"
+                  >
+                    {inChair}
+                  </p>
                 </div>
               </div>
             </div>
@@ -348,6 +383,7 @@ export function DisplayBoard({ slug }: { slug: string }) {
               showWaitlist
               pollMs={15_000}
               onCreated={load}
+              onWaitlistChange={onWaitlistChange}
             />
           </section>
 

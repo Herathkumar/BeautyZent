@@ -44,6 +44,8 @@ type Props = {
   /** Poll waitlist while mounted (display board) */
   pollMs?: number;
   onCreated?: () => void;
+  /** Notify parent when waitlist length changes (display counters) */
+  onWaitlistChange?: (count: number) => void;
 };
 
 function formatWait(min: number | null | undefined) {
@@ -65,6 +67,7 @@ export function WalkInPanel({
   showWaitlist = true,
   pollMs,
   onCreated,
+  onWaitlistChange,
 }: Props) {
   const includeWaitlist = showWaitlist;
   const [services, setServices] = useState<Service[]>([]);
@@ -174,6 +177,11 @@ export function WalkInPanel({
     const id = window.setInterval(() => void loadWaitlist(), pollMs);
     return () => window.clearInterval(id);
   }, [pollMs, includeWaitlist, loadWaitlist]);
+
+  useEffect(() => {
+    if (!includeWaitlist) return;
+    onWaitlistChange?.(waitlist.length);
+  }, [includeWaitlist, waitlist.length, onWaitlistChange]);
 
   const filteredStylists = useMemo(() => {
     if (!serviceId) return stylists;

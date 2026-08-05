@@ -371,12 +371,12 @@ export async function seatWaitlistGuest(opts: {
     stylistId: chosenId,
   });
 
-  let pick = options[0] || null;
+  let pick: NextAvailableOption | null = options[0] ?? null;
   if (!chosenId && entry.stylistId) {
     pick =
-      options.find((o) => o.stylistId === entry.stylistId) || options[0] || null;
+      options.find((o) => o.stylistId === entry.stylistId) ?? options[0] ?? null;
   } else if (chosenId) {
-    pick = options.find((o) => o.stylistId === chosenId) || null;
+    pick = options.find((o) => o.stylistId === chosenId) ?? null;
   }
 
   if (!pick) {

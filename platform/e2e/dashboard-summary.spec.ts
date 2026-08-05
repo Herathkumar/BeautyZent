@@ -59,4 +59,35 @@ test.describe("Display waitlist placement", () => {
     expect(welcomeBox && waitBox).toBeTruthy();
     expect(waitBox!.y).toBeGreaterThan(welcomeBox!.y);
   });
+
+  test("welcome card shows separate walk-in waitlist count", async ({ page }) => {
+    await adminLogin(page);
+    const catalog = await page.request.get("/api/public/fhsalon/catalog");
+    const cat = await catalog.json();
+    const service = (cat.services || []).find((s: { name: string }) =>
+      /^men.?s haircut/i.test(s.name)
+    );
+    expect(service?.id).toBeTruthy();
+
+    const waitName = `FloorWait ${Date.now()}`;
+    const add = await page.request.post("/api/admin/waitlist", {
+      data: { clientName: waitName, serviceId: service.id },
+    });
+    expect(add.ok()).toBeTruthy();
+
+    await page.goto("/display/fhsalon");
+    await page.getByRole("button", { name: /^today/i }).click();
+
+    const counts = page.getByTestId("display-floor-counts");
+    await expect(counts).toBeVisible({ timeout: 15_000 });
+    await expect(counts.getByText(/^waiting$/i)).toBeVisible();
+    await expect(counts.getByText(/^walk-in$/i)).toBeVisible();
+    await expect(counts.getByText(/^in chair$/i)).toBeVisible();
+
+    await expect(page.getByText(waitName)).toBeVisible({ timeout: 15_000 });
+    const walkInCount = Number(
+      (await page.getByTestId("display-count-walk-in").textContent())?.trim()
+    );
+    expect(walkInCount).toBeGreaterThanOrEqual(1);
+  });
 });
