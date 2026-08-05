@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { addMinutes } from "date-fns";
 import { z } from "zod";
-import { getSession } from "@/lib/auth";
+import { getStylistSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { syncAppointmentToGoogle } from "@/lib/calendar";
 
@@ -18,8 +18,8 @@ const schema = z.object({
 
 /** Stylist books a future slot for a client — on their chair or a teammate's. */
 export async function POST(req: Request) {
-  const session = await getSession();
-  if (!session || session.role !== "STYLIST" || !session.stylistId) {
+  const session = await getStylistSession();
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

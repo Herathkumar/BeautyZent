@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { getSession, isSalonStaff } from "@/lib/auth";
+import { getSession, isSalonStaff, refreshSessionForUserId } from "@/lib/auth";
+import { setManagerAlsoStylist } from "@/lib/manager-stylist";
 import { prisma } from "@/lib/prisma";
 
 function isStaff(role: string) {
@@ -47,10 +48,30 @@ export async function GET() {
   }
   const user = await prisma.user.findUnique({
     where: { id: session.userId },
-    select: { id: true, email: true, name: true, phone: true, bio: true, role: true },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      phone: true,
+      bio: true,
+      role: true,
+      stylistId: true,
+      stylist: { select: { id: true, active: true, selfManageSchedule: true } },
+    },
   });
   if (!user) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  return NextResponse.json({ user });
+  return NextResponse.json({
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      phone: user.phone,
+      bio: user.bio,
+      role: user.role,
+      stylistId: user.stylistId,
+      alsoStylist: Boolean(user.stylist?.active),
+    },
+  });
 }
 
 export async function PATCH(req: Request) {
@@ -65,11 +86,13 @@ export async function PATCH(req: Request) {
 
   const wantsPassword =
     body.newPassword != null && String(body.newPassword).length > 0;
+  const wantsAlsoStylist = typeof body.alsoStylist === "boolean";
   const wantsProfile =
     body.name != null ||
     body.email != null ||
     body.phone !== undefined ||
-    body.bio !== undefined;
+    body.bio !== undefined ||
+    wantsAlsoStylist;
 
   // Profile-only update — no password required
   if (wantsProfile && !wantsPassword && !body.currentPassword) {
@@ -102,13 +125,74 @@ export async function PATCH(req: Request) {
         ...(body.phone !== undefined ? { phone: cleanPhone(body.phone) } : {}),
         ...(bioResult ? { bio: bioResult.bio } : {}),
       },
-      select: { id: true, email: true, name: true, phone: true, bio: true, role: true },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        phone: true,
+        bio: true,
+        role: true,
+        stylistId: true,
+      },
+    });
+
+    if (updated.stylistId && (name !== undefined || bioResult)) {
+      await prisma.stylist.update({
+        where: { id: updated.stylistId },
+        data: {
+          ...(name !== undefined ? { name } : {}),
+          ...(bioResult ? { bio: bioResult.bio } : {}),
+        },
+      });
+    }
+
+    let alsoStylist: boolean | undefined;
+    if (wantsAlsoStylist) {
+      const result = await setManagerAlsoStylist({
+        userId: user.id,
+        salonId: user.salonId,
+        enabled: Boolean(body.alsoStylist),
+      });
+      if ("error" in result) {
+        return NextResponse.json({ error: result.error }, { status: 400 });
+      }
+      alsoStylist = result.alsoStylist;
+      if (email !== undefined || name !== undefined) {
+        await refreshSessionForUserId(user.id);
+      }
+    }
+
+    const fresh = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        phone: true,
+        bio: true,
+        role: true,
+        stylistId: true,
+        stylist: { select: { active: true } },
+      },
     });
 
     return NextResponse.json({
       ok: true,
-      user: updated,
-      message: "Profile updated.",
+      user: {
+        id: fresh!.id,
+        email: fresh!.email,
+        name: fresh!.name,
+        phone: fresh!.phone,
+        bio: fresh!.bio,
+        role: fresh!.role,
+        stylistId: fresh!.stylistId,
+        alsoStylist: alsoStylist ?? Boolean(fresh!.stylist?.active),
+      },
+      message: wantsAlsoStylist
+        ? alsoStylist
+          ? "You are also a self-managed stylist. Open the Stylist App with this same login."
+          : "Stylist profile turned off. Manager access is unchanged."
+        : "Profile updated.",
     });
   }
 

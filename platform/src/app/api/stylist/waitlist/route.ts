@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/auth";
+import { getStylistSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
   findNextAvailableWalkIns,
@@ -8,8 +8,8 @@ import {
 } from "@/lib/walk-in";
 
 export async function GET() {
-  const session = await getSession();
-  if (!session || session.role !== "STYLIST" || !session.stylistId) {
+  const session = await getStylistSession();
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -21,8 +21,8 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const session = await getSession();
-  if (!session || session.role !== "STYLIST" || !session.stylistId) {
+  const session = await getStylistSession();
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -77,8 +77,8 @@ export async function POST(req: Request) {
 }
 
 export async function PATCH(req: Request) {
-  const session = await getSession();
-  if (!session || session.role !== "STYLIST" || !session.stylistId) {
+  const session = await getStylistSession();
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

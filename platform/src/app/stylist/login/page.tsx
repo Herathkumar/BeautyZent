@@ -27,7 +27,7 @@ export default function StylistLoginPage() {
       setError(data.error || "Login failed");
       return;
     }
-    if (data.user?.role && data.user.role !== "STYLIST") {
+    if (data.user?.role && data.user.role !== "STYLIST" && !data.user.stylistId) {
       router.push("/manager");
       return;
     }

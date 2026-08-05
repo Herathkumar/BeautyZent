@@ -63,6 +63,7 @@ export default function AdminAccountPage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [bio, setBio] = useState("");
+  const [alsoStylist, setAlsoStylist] = useState(false);
   const [profileMsg, setProfileMsg] = useState("");
   const [profileError, setProfileError] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
@@ -95,6 +96,7 @@ export default function AdminAccountPage() {
         setName(data.user.name || "");
         setPhone(data.user.phone || "");
         setBio(data.user.bio || "");
+        setAlsoStylist(Boolean(data.user.alsoStylist));
       });
     fetch("/api/admin/photo")
       .then((res) => (res.ok ? res.json() : null))
@@ -157,7 +159,13 @@ export default function AdminAccountPage() {
     const res = await fetch("/api/admin/account", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: name.trim(), email: email.trim(), phone, bio }),
+      body: JSON.stringify({
+        name: name.trim(),
+        email: email.trim(),
+        phone,
+        bio,
+        alsoStylist,
+      }),
     });
     const data = await res.json();
     setSavingProfile(false);
@@ -169,6 +177,7 @@ export default function AdminAccountPage() {
     if (data.user?.email) setEmail(data.user.email);
     setPhone(data.user?.phone || "");
     setBio(data.user?.bio || "");
+    setAlsoStylist(Boolean(data.user?.alsoStylist));
     setProfileMsg(data.message || "Profile updated.");
   }
 
@@ -333,6 +342,22 @@ export default function AdminAccountPage() {
               placeholder="Optional — a short note about you"
               className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
             />
+          </label>
+          <label className="flex items-start gap-3 rounded-xl border border-[#c9a87c]/25 bg-[#1c1714]/60 px-3 py-3 text-sm text-[#d4c4b0]">
+            <input
+              type="checkbox"
+              checked={alsoStylist}
+              onChange={(e) => setAlsoStylist(e.target.checked)}
+              className="mt-1 h-4 w-4 accent-[#c9a87c]"
+              data-testid="manager-also-stylist"
+            />
+            <span>
+              <span className="font-semibold text-[#fffaf6]">I am also a stylist</span>
+              <span className="mt-1 block text-xs text-[#d4c4b0]/90">
+                Adds you to the floor as a self-managed stylist (you set your own hours and leave).
+                Use the same login on the Stylist App.
+              </span>
+            </span>
           </label>
           {profileError ? <p className="text-sm text-[#f5a8a8]">{profileError}</p> : null}
           {profileMsg ? <p className="text-sm text-[#9fe3b8]">{profileMsg}</p> : null}

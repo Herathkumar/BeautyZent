@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/auth";
+import { getStylistSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { stylistPhotoUrl } from "@/lib/stylist-photo";
 
 export async function GET() {
-  const session = await getSession();
-  if (!session || session.role !== "STYLIST" || !session.stylistId) {
+  const session = await getStylistSession();
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

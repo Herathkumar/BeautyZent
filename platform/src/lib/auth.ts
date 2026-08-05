@@ -25,14 +25,22 @@ export function isSalonStaff(role: string | null | undefined) {
   return role === "ADMIN" || role === "MANAGER" || role === "FRONT_DESK";
 }
 
-export async function login(email: string, password: string) {
-  const user = await prisma.user.findFirst({
-    where: { email: email.toLowerCase().trim() },
-  });
-  if (!user) return null;
-  const ok = await bcrypt.compare(password, user.passwordHash);
-  if (!ok) return null;
+/** Pure stylist login, or manager who is also linked as an active stylist. */
+export function canAccessStylistPortal(
+  session: SessionUser | null | undefined
+): session is SessionUser & { stylistId: string } {
+  if (!session?.stylistId) return false;
+  return session.role === "STYLIST" || isSalonStaff(session.role);
+}
 
+async function issueSessionCookie(user: {
+  id: string;
+  salonId: string;
+  email: string;
+  name: string;
+  role: string;
+  stylistId: string | null;
+}) {
   const token = await new SignJWT({
     userId: user.id,
     salonId: user.salonId,
@@ -53,7 +61,25 @@ export async function login(email: string, password: string) {
     path: "/",
     maxAge: 60 * 60 * 24 * 14,
   });
+}
 
+/** Refresh JWT after linking/unlinking a stylist profile (e.g. manager also stylist). */
+export async function refreshSessionForUserId(userId: string) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) return null;
+  await issueSessionCookie(user);
+  return user;
+}
+
+export async function login(email: string, password: string) {
+  const user = await prisma.user.findFirst({
+    where: { email: email.toLowerCase().trim() },
+  });
+  if (!user) return null;
+  const ok = await bcrypt.compare(password, user.passwordHash);
+  if (!ok) return null;
+
+  await issueSessionCookie(user);
   return user;
 }
 
@@ -89,11 +115,21 @@ export async function requireAdmin() {
 }
 
 export async function requireStylist() {
-  const session = await requireSession();
-  if (session.role !== "STYLIST" || !session.stylistId) {
-    throw new Error("FORBIDDEN");
-  }
-  return session as SessionUser & { stylistId: string };
+  const session = await getStylistSession();
+  if (!session) throw new Error("FORBIDDEN");
+  return session;
+}
+
+/** Session allowed to use the stylist phone app (active linked stylist). */
+export async function getStylistSession(): Promise<(SessionUser & { stylistId: string }) | null> {
+  const session = await getSession();
+  if (!canAccessStylistPortal(session)) return null;
+  const stylist = await prisma.stylist.findFirst({
+    where: { id: session.stylistId, salonId: session.salonId, active: true },
+    select: { id: true },
+  });
+  if (!stylist) return null;
+  return session;
 }
 
 /** Manager managing any stylist in salon, or stylist managing self */
@@ -106,8 +142,12 @@ export async function canManageStylist(stylistId: string) {
     });
     if (stylist) return session;
   }
-  if (session.role === "STYLIST" && session.stylistId === stylistId) {
-    return session;
+  if (session.stylistId === stylistId) {
+    const active = await prisma.stylist.findFirst({
+      where: { id: stylistId, active: true },
+      select: { id: true },
+    });
+    if (active) return session;
   }
   return null;
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/auth";
+import { getStylistSession } from "@/lib/auth";
 import { calcStylistPay, centsToDollars, dollarsToCents } from "@/lib/pay";
 import { prisma } from "@/lib/prisma";
 import {
@@ -19,8 +19,8 @@ function toDate(d: { getTime: () => number }) {
 }
 
 export async function GET(req: Request) {
-  const session = await getSession();
-  if (!session || session.role !== "STYLIST" || !session.stylistId) {
+  const session = await getStylistSession();
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -255,8 +255,8 @@ export async function GET(req: Request) {
 }
 
 export async function PATCH(req: Request) {
-  const session = await getSession();
-  if (!session || session.role !== "STYLIST" || !session.stylistId) {
+  const session = await getStylistSession();
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

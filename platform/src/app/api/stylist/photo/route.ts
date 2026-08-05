@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/auth";
+import { getStylistSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
   MAX_PHOTO_BYTES,
@@ -8,8 +8,8 @@ import {
 } from "@/lib/stylist-photo";
 
 export async function GET() {
-  const session = await getSession();
-  if (!session || session.role !== "STYLIST" || !session.stylistId) {
+  const session = await getStylistSession();
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const stylist = await prisma.stylist.findUnique({
@@ -36,8 +36,8 @@ export async function GET() {
 }
 
 export async function PUT(req: Request) {
-  const session = await getSession();
-  if (!session || session.role !== "STYLIST" || !session.stylistId) {
+  const session = await getStylistSession();
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -115,8 +115,8 @@ export async function PUT(req: Request) {
 }
 
 export async function DELETE() {
-  const session = await getSession();
-  if (!session || session.role !== "STYLIST" || !session.stylistId) {
+  const session = await getStylistSession();
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

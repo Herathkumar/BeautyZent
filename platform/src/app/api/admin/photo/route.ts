@@ -69,8 +69,19 @@ export async function PUT(req: Request) {
       photoMime,
       photoUpdatedAt: new Date(),
     },
-    select: { id: true, name: true, photoMime: true, photoUpdatedAt: true },
+    select: { id: true, name: true, photoMime: true, photoUpdatedAt: true, stylistId: true },
   });
+
+  if (updated.stylistId) {
+    await prisma.stylist.update({
+      where: { id: updated.stylistId },
+      data: {
+        photoData: photoBytes,
+        photoMime,
+        photoUpdatedAt: new Date(),
+      },
+    });
+  }
 
   const hasPhoto = Boolean(updated.photoUpdatedAt && updated.photoMime);
   return NextResponse.json({
@@ -96,8 +107,19 @@ export async function DELETE() {
       photoMime: null,
       photoUpdatedAt: null,
     },
-    select: { id: true, name: true, photoMime: true, photoUpdatedAt: true },
+    select: { id: true, name: true, photoMime: true, photoUpdatedAt: true, stylistId: true },
   });
+
+  if (updated.stylistId) {
+    await prisma.stylist.update({
+      where: { id: updated.stylistId },
+      data: {
+        photoData: null,
+        photoMime: null,
+        photoUpdatedAt: null,
+      },
+    });
+  }
 
   return NextResponse.json({
     ok: true,

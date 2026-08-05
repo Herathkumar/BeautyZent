@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { addDays, endOfDay, startOfDay } from "date-fns";
-import { getSession } from "@/lib/auth";
+import { getStylistSession } from "@/lib/auth";
 import { syncAppointmentToGoogle } from "@/lib/calendar";
 import { updateAppointmentStatus } from "@/lib/complete-appointment";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(req: Request) {
-  const session = await getSession();
-  if (!session || session.role !== "STYLIST" || !session.stylistId) {
+  const session = await getStylistSession();
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -32,8 +32,8 @@ export async function GET(req: Request) {
 }
 
 export async function PATCH(req: Request) {
-  const session = await getSession();
-  if (!session || session.role !== "STYLIST" || !session.stylistId) {
+  const session = await getStylistSession();
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

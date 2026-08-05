@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
-import { getSession } from "@/lib/auth";
+import { canAccessStylistPortal, getSession } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { StylistBottomNav } from "./StylistBottomNav";
 
 export const metadata: Metadata = {
@@ -28,11 +29,18 @@ export const viewport: Viewport = {
 
 export default async function StylistLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
-  const isStylist = session?.role === "STYLIST";
+  let showStylistChrome = canAccessStylistPortal(session);
+  if (showStylistChrome && session?.stylistId) {
+    const active = await prisma.stylist.findFirst({
+      where: { id: session.stylistId, active: true },
+      select: { id: true },
+    });
+    showStylistChrome = Boolean(active);
+  }
 
   return (
     <div className="stylist-theme min-h-screen">
-      {isStylist ? (
+      {showStylistChrome ? (
         <header className="admin-header sticky top-0 z-20 px-4 py-3">
           <div className="mx-auto flex max-w-lg items-center justify-between">
             <Link
@@ -45,10 +53,10 @@ export default async function StylistLayout({ children }: { children: React.Reac
           </div>
         </header>
       ) : null}
-      <div className={`mx-auto max-w-lg px-4 ${isStylist ? "pb-28 pt-4" : "py-8"}`}>
+      <div className={`mx-auto max-w-lg px-4 ${showStylistChrome ? "pb-28 pt-4" : "py-8"}`}>
         {children}
       </div>
-      {isStylist ? <StylistBottomNav /> : null}
+      {showStylistChrome ? <StylistBottomNav /> : null}
     </div>
   );
 }
