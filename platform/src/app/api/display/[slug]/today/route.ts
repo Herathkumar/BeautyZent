@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { addDays, endOfDay, startOfDay } from "date-fns";
+import { assertDisplayAccess } from "@/lib/display-pin";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(
@@ -7,8 +8,21 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params;
-  const salon = await prisma.salon.findUnique({ where: { slug } });
+  const salon = await prisma.salon.findUnique({
+    where: { slug },
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      phone: true,
+      address: true,
+      displayPinHash: true,
+    },
+  });
   if (!salon) return NextResponse.json({ error: "Salon not found" }, { status: 404 });
+
+  const locked = await assertDisplayAccess(salon);
+  if (locked) return locked;
 
   const url = new URL(req.url);
   const days = Math.min(60, Math.max(1, Number(url.searchParams.get("days") || 14)));

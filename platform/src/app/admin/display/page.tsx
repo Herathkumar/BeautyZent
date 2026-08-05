@@ -1,12 +1,31 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { DisplayBoard } from "@/app/display/[slug]/DisplayBoard";
 
 export default function ManagerStoreDisplayPage() {
   const [slug, setSlug] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [pinSet, setPinSet] = useState(false);
+  const [pinMsg, setPinMsg] = useState("");
+  const [pinError, setPinError] = useState("");
+  const [pinBusy, setPinBusy] = useState(false);
+  const [currentPin, setCurrentPin] = useState("");
+  const [newPin, setNewPin] = useState("");
+  const [confirmPin, setConfirmPin] = useState("");
+
+  const loadPin = useCallback(async () => {
+    const res = await fetch("/api/admin/display-pin");
+    if (res.status === 401) {
+      window.location.href = "/manager/login";
+      return;
+    }
+    if (!res.ok) return;
+    const data = await res.json();
+    setPinSet(Boolean(data.pinSet));
+    if (data.slug) setSlug(data.slug);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -22,11 +41,62 @@ export default function ManagerStoreDisplayPage() {
       }
       const data = await res.json();
       if (!cancelled) setSlug(data.salon?.slug || null);
+      await loadPin();
     })();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [loadPin]);
+
+  async function savePin(e: React.FormEvent) {
+    e.preventDefault();
+    setPinError("");
+    setPinMsg("");
+    setPinBusy(true);
+    const res = await fetch("/api/admin/display-pin", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        pin: newPin,
+        confirmPin,
+        currentPin: pinSet ? currentPin : undefined,
+      }),
+    });
+    const data = await res.json();
+    setPinBusy(false);
+    if (!res.ok) {
+      setPinError(data.error || "Could not save PIN");
+      return;
+    }
+    setPinSet(true);
+    setPinMsg(data.message || "PIN saved.");
+    setCurrentPin("");
+    setNewPin("");
+    setConfirmPin("");
+  }
+
+  async function removePin(e: React.FormEvent) {
+    e.preventDefault();
+    setPinError("");
+    setPinMsg("");
+    setPinBusy(true);
+    const res = await fetch("/api/admin/display-pin", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ currentPin }),
+    });
+    const data = await res.json();
+    setPinBusy(false);
+    if (!res.ok) {
+      setPinError(data.error || "Could not remove PIN");
+      return;
+    }
+    setPinSet(false);
+    setPinMsg(data.message || "PIN removed.");
+    setCurrentPin("");
+    setNewPin("");
+    setConfirmPin("");
+  }
 
   return (
     <main className="space-y-4" data-testid="manager-store-display">
@@ -61,6 +131,90 @@ export default function ManagerStoreDisplayPage() {
           ) : null}
         </div>
       </div>
+
+      <section
+        className="rounded-2xl border border-[#c9a87c]/30 bg-[#2a211c] p-5"
+        data-testid="manager-display-pin"
+      >
+        <p className="text-xs font-semibold tracking-[0.16em] text-[#c9a87c] uppercase">
+          Tablet PIN
+        </p>
+        <h2 className="mt-1 font-[family-name:var(--font-display)] text-2xl text-[#fffaf6]">
+          Secure the cloud store board
+        </h2>
+        <p className="mt-2 text-sm text-[#d4c4b0]">
+          {pinSet
+            ? "A PIN is active. Anyone opening the tablet URL must enter it (stays unlocked on that device for 7 days)."
+            : "No PIN yet — the tablet URL is open to anyone with the link. Set a 4–6 digit PIN to lock it."}
+        </p>
+
+        <form onSubmit={savePin} className="mt-4 grid gap-3 sm:grid-cols-2">
+          {pinSet ? (
+            <label className="grid gap-1.5 text-sm text-[#d4c4b0] sm:col-span-2">
+              Current PIN
+              <input
+                type="password"
+                inputMode="numeric"
+                autoComplete="off"
+                pattern="\d{4,6}"
+                value={currentPin}
+                onChange={(e) => setCurrentPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+                placeholder="••••"
+              />
+            </label>
+          ) : null}
+          <label className="grid gap-1.5 text-sm text-[#d4c4b0]">
+            {pinSet ? "New PIN" : "PIN (4–6 digits)"}
+            <input
+              type="password"
+              inputMode="numeric"
+              autoComplete="off"
+              pattern="\d{4,6}"
+              required
+              value={newPin}
+              onChange={(e) => setNewPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+              placeholder="e.g. 4829"
+            />
+          </label>
+          <label className="grid gap-1.5 text-sm text-[#d4c4b0]">
+            Confirm PIN
+            <input
+              type="password"
+              inputMode="numeric"
+              autoComplete="off"
+              pattern="\d{4,6}"
+              required
+              value={confirmPin}
+              onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+              placeholder="Same PIN again"
+            />
+          </label>
+          <div className="flex flex-wrap gap-2 sm:col-span-2">
+            <button
+              type="submit"
+              disabled={pinBusy}
+              className="btn-solid rounded-full px-5 py-2.5 text-sm"
+            >
+              {pinBusy ? "Saving…" : pinSet ? "Update PIN" : "Set PIN"}
+            </button>
+            {pinSet ? (
+              <button
+                type="button"
+                disabled={pinBusy || currentPin.length < 4}
+                onClick={(e) => void removePin(e)}
+                className="rounded-full border border-[#f5a8a8]/45 px-5 py-2.5 text-sm font-semibold text-[#f5a8a8] hover:bg-[#f5a8a8]/10 disabled:opacity-50"
+              >
+                Remove PIN
+              </button>
+            ) : null}
+          </div>
+        </form>
+        {pinError ? <p className="mt-3 text-sm text-[#f5a8a8]">{pinError}</p> : null}
+        {pinMsg ? <p className="mt-3 text-sm text-[#9fe3b8]">{pinMsg}</p> : null}
+      </section>
 
       {error ? <p className="text-sm text-[#f5a8a8]">{error}</p> : null}
       {!slug && !error ? (

@@ -23,6 +23,9 @@ model Salon {
   slotMinutes  Int      @default(30)
   /// Weekly store profit goal for manager Store Earnings ring (cents)
   weeklyProfitGoalCents Int? @default(200000)
+  /// bcrypt hash of the store-display tablet PIN (null = board unlocked / no PIN)
+  displayPinHash   String?
+  displayPinSetAt  DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

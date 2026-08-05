@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { assertDisplayAccess } from "@/lib/display-pin";
 import { prisma } from "@/lib/prisma";
 import {
   findNextAvailableWalkIns,
@@ -6,13 +7,23 @@ import {
   seatWaitlistGuest,
 } from "@/lib/walk-in";
 
+async function loadSalon(slug: string) {
+  return prisma.salon.findUnique({
+    where: { slug },
+    select: { id: true, slug: true, displayPinHash: true },
+  });
+}
+
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params;
-  const salon = await prisma.salon.findUnique({ where: { slug } });
+  const salon = await loadSalon(slug);
   if (!salon) return NextResponse.json({ error: "Salon not found" }, { status: 404 });
+
+  const locked = await assertDisplayAccess(salon);
+  if (locked) return locked;
 
   const waitlist = await listWaitlistWithOptions(salon.id);
   return NextResponse.json({ waitlist });
@@ -23,8 +34,11 @@ export async function POST(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params;
-  const salon = await prisma.salon.findUnique({ where: { slug } });
+  const salon = await loadSalon(slug);
   if (!salon) return NextResponse.json({ error: "Salon not found" }, { status: 404 });
+
+  const locked = await assertDisplayAccess(salon);
+  if (locked) return locked;
 
   let body: Record<string, unknown> = {};
   try {

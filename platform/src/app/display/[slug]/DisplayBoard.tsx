@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { DisplayPinPad } from "@/components/DisplayPinPad";
 import { WalkInPanel } from "@/components/WalkInPanel";
 import { ZentraLabFooter } from "@/components/ZentraLabFooter";
 import { promptCompleteAmounts } from "@/lib/pay";
@@ -160,22 +161,50 @@ export function DisplayBoard({
   const [now, setNow] = useState(() => new Date());
   const [walkInOpen, setWalkInOpen] = useState(false);
   const [walkInWaiting, setWalkInWaiting] = useState(0);
+  const [needsPin, setNeedsPin] = useState(false);
+  const [pinSet, setPinSet] = useState(false);
+  const [unlockChecked, setUnlockChecked] = useState(false);
 
   const onWaitlistChange = useCallback((count: number) => {
     setWalkInWaiting(count);
   }, []);
 
+  const checkUnlock = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/display/${slug}/unlock`);
+      const data = await res.json();
+      if (data.salon) setSalon(data.salon);
+      setPinSet(Boolean(data.pinSet));
+      setNeedsPin(Boolean(data.needsPin));
+    } catch {
+      setNeedsPin(false);
+      setPinSet(false);
+    } finally {
+      setUnlockChecked(true);
+    }
+  }, [slug]);
+
   const load = useCallback(() => {
+    if (needsPin) return;
     fetch(`/api/display/${slug}/today?days=${days}`)
-      .then((r) => r.json())
-      .then((data) => {
+      .then(async (r) => {
+        const data = await r.json();
+        if (r.status === 401 && data.needsPin) {
+          setNeedsPin(true);
+          return;
+        }
         setAppointments(data.appointments || []);
         setSalon(data.salon || null);
       })
       .catch(() => undefined);
-  }, [slug, days]);
+  }, [slug, days, needsPin]);
 
   useEffect(() => {
+    void checkUnlock();
+  }, [checkUnlock]);
+
+  useEffect(() => {
+    if (!unlockChecked || needsPin) return;
     load();
     const poll = setInterval(load, 15000);
     const clock = setInterval(() => setNow(new Date()), 30000);
@@ -183,7 +212,7 @@ export function DisplayBoard({
       clearInterval(poll);
       clearInterval(clock);
     };
-  }, [load]);
+  }, [load, unlockChecked, needsPin]);
 
   const tKey = todayKey();
   /** Floor list: open bookings only — hide completed / no-show / cancelled */
@@ -219,18 +248,59 @@ export function DisplayBoard({
     chargedCents?: number,
     tipCents?: number
   ) {
-    await fetch(`/api/display/${slug}/appointments/${id}`, {
+    const res = await fetch(`/api/display/${slug}/appointments/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status, chargedCents, tipCents }),
     });
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 401 && data.needsPin) {
+      setNeedsPin(true);
+      return;
+    }
     load();
+  }
+
+  async function lockTablet() {
+    await fetch(`/api/display/${slug}/unlock`, { method: "DELETE" });
+    setAppointments([]);
+    await checkUnlock();
   }
 
   const waiting = todayAppts.filter(
     (a) => a.status === "BOOKED" && (a.source || "ONLINE") !== "WALK_IN"
   ).length;
   const inChair = todayAppts.filter((a) => a.status === "CHECKED_IN").length;
+
+  if (!unlockChecked) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center bg-[#1c1714] text-sm text-white/60">
+        Loading store display…
+      </div>
+    );
+  }
+
+  if (needsPin && !embedded) {
+    return (
+      <DisplayPinPad
+        slug={slug}
+        salonName={salon?.name}
+        onUnlocked={() => {
+          setNeedsPin(false);
+          setUnlockChecked(true);
+        }}
+      />
+    );
+  }
+
+  if (needsPin && embedded) {
+    return (
+      <div className="rounded-3xl border border-[#c9a87c]/30 bg-[#2a211c] p-6 text-sm text-[#d4c4b0]">
+        Store display PIN is set. Sign in as manager to use the board here, or open the tablet
+        URL and enter the PIN.
+      </div>
+    );
+  }
 
   return (
     <div
@@ -247,15 +317,26 @@ export function DisplayBoard({
               {salon?.name || "Bookings"}
             </h1>
           </div>
-          <p className="text-xl text-white/70">
-            {now.toLocaleString("en-CA", {
-              weekday: "short",
-              month: "short",
-              day: "numeric",
-              hour: "numeric",
-              minute: "2-digit",
-            })}
-          </p>
+          <div className="flex flex-col items-end gap-2">
+            <p className="text-xl text-white/70">
+              {now.toLocaleString("en-CA", {
+                weekday: "short",
+                month: "short",
+                day: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+              })}
+            </p>
+            {!embedded && pinSet ? (
+              <button
+                type="button"
+                onClick={() => void lockTablet()}
+                className="rounded-full border border-white/20 px-3 py-1 text-xs font-semibold text-white/70 hover:text-white"
+              >
+                Lock tablet
+              </button>
+            ) : null}
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3">
