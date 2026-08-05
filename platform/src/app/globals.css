@@ -433,13 +433,22 @@ a {
   border: 0;
 }
 
-.stylist-theme .stylist-bottom-nav a.active {
+.stylist-theme .stylist-bottom-nav a.active,
+.stylist-theme .stylist-bottom-nav button.active {
   background: rgba(201, 168, 124, 0.18);
   color: #f0c987;
 }
 
-.stylist-theme .stylist-bottom-nav a {
+.stylist-theme .stylist-bottom-nav a,
+.stylist-theme .stylist-bottom-nav button {
   position: relative;
+}
+
+/* Keep manager bottom nav in lockstep with stylist (shared look on iPhone) */
+.admin-theme .admin-bottom-nav,
+.stylist-theme .stylist-bottom-nav {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .stylist-theme .stylist-nav-badge {

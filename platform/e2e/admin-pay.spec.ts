@@ -1,11 +1,11 @@
 import { test, expect } from "@playwright/test";
 import { adminLogin } from "./helpers";
 
-test.describe("Manager pay & hours", () => {
+test.describe("Manager payroll", () => {
   test("pay page loads filters and reports", async ({ page }) => {
     await adminLogin(page);
     await page.goto("/manager/pay");
-    await expect(page.getByRole("heading", { name: /pay & hours/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /^payroll$/i })).toBeVisible();
     await expect(page.getByRole("combobox", { name: /^year$/i })).toBeVisible();
     await expect(page.getByRole("combobox", { name: /^month$/i })).toBeVisible();
     await expect(page.getByRole("button", { name: /download csv/i })).toBeVisible();
@@ -14,10 +14,10 @@ test.describe("Manager pay & hours", () => {
     });
   });
 
-  test("salon menu includes pay & hours", async ({ page }) => {
+  test("salon menu includes payroll", async ({ page }) => {
     await adminLogin(page);
     await page.locator(".admin-header-nav").getByRole("button", { name: /salon/i }).click();
-    await page.getByRole("menuitem", { name: /pay & hours/i }).click();
+    await page.getByRole("menuitem", { name: /^payroll$/i }).click();
     await expect(page).toHaveURL(/\/manager\/pay/);
   });
 });

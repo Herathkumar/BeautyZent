@@ -306,10 +306,10 @@ export default function AdminPayPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold tracking-[0.2em] text-[#c9a87c] uppercase">
-            Payroll
+            Money
           </p>
           <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl">
-            Pay & hours
+            Payroll
           </h1>
           <p className="mt-2 text-muted">
             Set store defaults for new stylists, review leave, and calculate monthly pay.

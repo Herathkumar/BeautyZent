@@ -16,10 +16,9 @@ test.describe("Manager store earnings", () => {
     await expect(page.getByRole("heading", { name: /store earnings/i })).toBeVisible();
   });
 
-  test("salon menu opens Store Earnings with week bars and CSV", async ({ page }) => {
+  test("store earnings page shows week bars and CSV", async ({ page }) => {
     await adminLogin(page);
-    await page.locator(".admin-header-nav").getByRole("button", { name: /salon/i }).click();
-    await page.getByRole("menuitem", { name: /store earnings/i }).click();
+    await page.goto("/manager/earnings");
     await expect(page).toHaveURL(/\/manager\/earnings/);
     await expect(page.getByTestId("store-earnings-page")).toBeVisible();
     await expect(page.getByTestId("store-earnings-goal")).toBeVisible({ timeout: 15_000 });
@@ -65,7 +64,7 @@ test.describe("Manager store earnings", () => {
     await filters.getByLabel(/filter activity type/i).selectOption("PAYOUT");
   });
 
-  test("manager can update store regular hours on Pay & hours", async ({ page }) => {
+  test("manager can update store regular hours on Payroll", async ({ page }) => {
     await adminLogin(page);
     await page.goto("/manager/pay");
     const form = page.getByTestId("store-hours-form");

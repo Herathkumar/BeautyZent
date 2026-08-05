@@ -1,9 +1,28 @@
+import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { getSession, isSalonStaff } from "@/lib/auth";
 import { AdminBottomNav } from "./AdminBottomNav";
 import { AdminHeaderNav } from "./AdminHeaderNav";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "FHSalon — Manager App",
+  description: "Dashboard, bookings, earnings, and team — phone-friendly manager portal.",
+  appleWebApp: {
+    capable: true,
+    title: "FHSalon",
+    statusBarStyle: "black-translucent",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#1c1714",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: "cover",
+};
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
@@ -13,7 +32,18 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <div className="admin-theme min-h-screen">
       {showChrome ? (
         <header className="admin-header sticky top-0 z-20">
-          <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-4">
+          {/* Mobile — same chrome pattern as Stylist App */}
+          <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 md:hidden">
+            <Link
+              href="/manager"
+              className="font-[family-name:var(--font-display)] text-lg tracking-wide text-champagne"
+            >
+              FHSalon
+            </Link>
+            <p className="text-xs text-muted">Manager App · no install</p>
+          </div>
+          {/* Desktop */}
+          <div className="mx-auto hidden max-w-5xl flex-wrap items-center justify-between gap-3 px-6 py-4 md:flex">
             <div>
               <p className="text-[11px] font-semibold tracking-[0.2em] text-[#c9a87c] uppercase">
                 Manager App
@@ -31,7 +61,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       ) : null}
       <div
         className={`mx-auto max-w-5xl px-4 ${
-          showChrome ? "py-6 pb-28 md:px-6 md:py-8 md:pb-8" : "py-8 md:px-6"
+          showChrome ? "pb-28 pt-4 md:px-6 md:py-8 md:pb-8" : "py-8 md:px-6"
         }`}
       >
         {children}

@@ -7,7 +7,7 @@ test.describe("Manager portal", () => {
     await expect(page.getByRole("link", { name: /^dashboard$/i }).first()).toBeVisible();
     await expect(page.getByRole("link", { name: /^bookings$/i }).first()).toBeVisible();
     await expect(page.getByRole("button", { name: /salon/i }).first()).toBeVisible();
-    await expect(page.getByRole("link", { name: /^account$/i }).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: /^profile$/i }).first()).toBeVisible();
     await expect(page.getByRole("link", { name: /active services/i })).toBeVisible();
     const floor = page.getByTestId("dashboard-who-working");
     await expect(floor).toBeVisible();
@@ -70,13 +70,17 @@ test.describe("Manager portal", () => {
     }
   });
 
-  test("salon menu opens services products stylists", async ({ page }) => {
+  test("salon menu opens services products stylists payroll", async ({ page }) => {
     await adminLogin(page);
     const headerNav = page.locator(".admin-header-nav");
     await headerNav.getByRole("button", { name: /salon/i }).click();
     await expect(page.getByRole("menuitem", { name: /^services$/i })).toBeVisible();
     await expect(page.getByRole("menuitem", { name: /^products$/i })).toBeVisible();
     await expect(page.getByRole("menuitem", { name: /^stylists$/i })).toBeVisible();
+    await expect(page.getByRole("menuitem", { name: /^payroll$/i })).toBeVisible();
+    await expect(page.getByRole("menuitem", { name: /store earnings|who.?s working|walk-in/i })).toHaveCount(
+      0
+    );
     await page.getByRole("menuitem", { name: /^services$/i }).click();
     await expect(page).toHaveURL(/\/manager\/services/);
   });
@@ -106,7 +110,7 @@ test.describe("Manager portal", () => {
   test("account page loads and rejects wrong current password", async ({ page }) => {
     await adminLogin(page);
     await page.goto("/manager/account");
-    await expect(page.getByRole("heading", { name: /^account$/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /^profile$/i })).toBeVisible();
     await expect(page.getByTestId("manager-photo-preview")).toBeVisible();
     await expect(page.getByRole("button", { name: /take selfie/i })).toBeVisible();
     await expect(page.getByText(DEMO.adminEmail)).toBeVisible();

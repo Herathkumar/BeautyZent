@@ -217,7 +217,7 @@ export default function AdminAccountPage() {
     <main className="mx-auto max-w-xl space-y-6">
       <div>
         <h1 className="font-[family-name:var(--font-display)] text-3xl text-[#fffaf6]">
-          Account
+          Profile
         </h1>
         <p className="mt-2 text-[#d4c4b0]">
           Update your profile and login password for this salon.

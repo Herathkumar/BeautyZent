@@ -5,13 +5,10 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 const SALON_LINKS = [
-  { href: "/manager/working", label: "Who's working" },
-  { href: "/manager/walk-in", label: "Walk-in desk" },
   { href: "/manager/services", label: "Services" },
   { href: "/manager/products", label: "Products" },
   { href: "/manager/stylists", label: "Stylists" },
-  { href: "/manager/earnings", label: "Store Earnings" },
-  { href: "/manager/pay", label: "Pay & hours" },
+  { href: "/manager/pay", label: "Payroll" },
 ] as const;
 
 export function AdminHeaderNav() {
@@ -87,7 +84,7 @@ export function AdminHeaderNav() {
         href="/manager/account"
         className={pathname.startsWith("/manager/account") ? "is-active" : undefined}
       >
-        Account
+        Profile
       </Link>
     </nav>
   );

@@ -88,7 +88,7 @@ export default function AdminLoginPage() {
           </li>
         </ol>
         <p className="mt-3 text-xs">
-          Use the salon manager account. Change the password under Account after first sign-in.
+          Use the salon manager account. Change the password under Profile after first sign-in.
         </p>
       </div>
 

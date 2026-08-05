@@ -31,15 +31,16 @@ test.describe("Mobile viewport", () => {
     const bottom = page.locator(".admin-bottom-nav");
     await expect(bottom.getByRole("link", { name: /^dashboard$/i })).toBeVisible();
     await expect(bottom.getByRole("link", { name: /^bookings$/i })).toBeVisible();
-    await expect(bottom.getByRole("button", { name: /^salon$/i })).toBeVisible();
-    await expect(bottom.getByRole("link", { name: /^account$/i })).toBeVisible();
+    await expect(bottom.getByRole("button", { name: /^money$/i })).toBeVisible();
+    await expect(bottom.getByRole("link", { name: /^profile$/i })).toBeVisible();
     await expect(page.locator(".admin-header-nav")).toBeHidden();
 
-    await bottom.getByRole("button", { name: /^salon$/i }).click();
-    const sheet = page.getByRole("dialog", { name: /salon menu/i });
+    await bottom.getByRole("button", { name: /^money$/i }).click();
+    const sheet = page.getByRole("dialog", { name: /money menu/i });
     await expect(sheet).toBeVisible();
-    await sheet.getByRole("link", { name: /services/i }).click();
-    await expect(page).toHaveURL(/\/manager\/services/);
+    await expect(sheet.getByRole("link", { name: /store earnings/i })).toBeVisible();
+    await sheet.getByRole("link", { name: /^payroll$/i }).click();
+    await expect(page).toHaveURL(/\/manager\/pay/);
   });
 
   test("demo hub cards are tappable", async ({ page }) => {

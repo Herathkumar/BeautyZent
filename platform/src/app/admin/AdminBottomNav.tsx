@@ -4,14 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-const SALON_LINKS = [
-  { href: "/manager/working", label: "Who's working", hint: "Floor roster by day" },
-  { href: "/manager/walk-in", label: "Walk-in desk", hint: "Seat guests & waitlist" },
-  { href: "/manager/services", label: "Services", hint: "Menu & durations" },
-  { href: "/manager/products", label: "Products", hint: "Retail & add-ons" },
-  { href: "/manager/stylists", label: "Stylists", hint: "Team & schedules" },
+const MONEY_LINKS = [
   { href: "/manager/earnings", label: "Store Earnings", hint: "Revenue & activity" },
-  { href: "/manager/pay", label: "Pay & hours", hint: "Payroll & leave approval" },
+  { href: "/manager/pay", label: "Payroll", hint: "Pay, hours & leave" },
 ] as const;
 
 function useIsDesktop() {
@@ -31,20 +26,20 @@ function useIsDesktop() {
 export function AdminBottomNav() {
   const pathname = usePathname();
   const isDesktop = useIsDesktop();
-  const [salonOpen, setSalonOpen] = useState(false);
+  const [moneyOpen, setMoneyOpen] = useState(false);
 
   useEffect(() => {
-    setSalonOpen(false);
+    setMoneyOpen(false);
   }, [pathname]);
 
   useEffect(() => {
-    if (!salonOpen) return;
+    if (!moneyOpen) return;
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setSalonOpen(false);
+      if (e.key === "Escape") setMoneyOpen(false);
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [salonOpen]);
+  }, [moneyOpen]);
 
   if (pathname.startsWith("/manager/login") || pathname.startsWith("/admin/login") || isDesktop) {
     return null;
@@ -60,34 +55,34 @@ export function AdminBottomNav() {
     pathname.startsWith("/admin/book") ||
     pathname.startsWith("/admin/walk-in") ||
     pathname.startsWith("/admin/display");
-  const onSalon = SALON_LINKS.some(
+  const onMoney = MONEY_LINKS.some(
     (l) => pathname.startsWith(l.href) || pathname.startsWith(l.href.replace("/manager", "/admin"))
   );
-  const onAccount =
+  const onProfile =
     pathname.startsWith("/manager/account") || pathname.startsWith("/admin/account");
 
   return (
     <>
-      {salonOpen ? (
-        <div className="admin-salon-sheet" role="dialog" aria-label="Salon menu">
+      {moneyOpen ? (
+        <div className="admin-salon-sheet" role="dialog" aria-label="Money menu">
           <button
             type="button"
             className="admin-salon-sheet-backdrop"
-            aria-label="Close salon menu"
-            onClick={() => setSalonOpen(false)}
+            aria-label="Close money menu"
+            onClick={() => setMoneyOpen(false)}
           />
           <div className="admin-salon-sheet-panel">
             <p className="text-xs font-semibold tracking-[0.18em] text-[#c9a87c] uppercase">
-              Salon
+              Money
             </p>
-            <p className="mt-1 text-sm text-[#d4c4b0]">Services, products, and team</p>
+            <p className="mt-1 text-sm text-[#d4c4b0]">Store earnings and payroll</p>
             <ul className="mt-4 grid gap-2">
-              {SALON_LINKS.map((item) => (
+              {MONEY_LINKS.map((item) => (
                 <li key={item.href}>
                   <Link
                     href={item.href}
                     className="admin-salon-sheet-link"
-                    onClick={() => setSalonOpen(false)}
+                    onClick={() => setMoneyOpen(false)}
                   >
                     <span className="font-semibold text-[#fffaf6]">{item.label}</span>
                     <span className="text-sm text-[#d4c4b0]">{item.hint}</span>
@@ -110,16 +105,16 @@ export function AdminBottomNav() {
         </Link>
         <button
           type="button"
-          className={onSalon || salonOpen ? "active" : undefined}
-          aria-expanded={salonOpen}
-          onClick={() => setSalonOpen((v) => !v)}
+          className={onMoney || moneyOpen ? "active" : undefined}
+          aria-expanded={moneyOpen}
+          onClick={() => setMoneyOpen((v) => !v)}
         >
-          <span aria-hidden>◫</span>
-          Salon
+          <span aria-hidden>$</span>
+          Money
         </button>
-        <Link href="/manager/account" className={onAccount ? "active" : undefined}>
+        <Link href="/manager/account" className={onProfile ? "active" : undefined}>
           <span aria-hidden>✎</span>
-          Account
+          Profile
         </Link>
       </nav>
     </>
