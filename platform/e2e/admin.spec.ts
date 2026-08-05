@@ -110,7 +110,7 @@ test.describe("Manager portal", () => {
     await expect(page.getByTestId("manager-profile-card")).toBeVisible();
     await expect(page.getByTestId("manager-photo-preview")).toBeVisible();
     await expect(page.getByTestId("manager-edit-profile")).toBeVisible();
-    await expect(page.getByRole("button", { name: /take selfie/i })).toBeVisible();
+    await expect(page.getByTestId("manager-photo-button")).toBeVisible();
     await expect(page.getByText(DEMO.adminEmail)).toBeVisible();
 
     await page.getByLabel(/^current password$/i).fill("wrong-current-password");

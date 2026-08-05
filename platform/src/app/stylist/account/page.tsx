@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { SelfieCamera } from "@/components/SelfieCamera";
 
 type Gender = "FEMALE" | "MALE" | "UNSPECIFIED";
 
@@ -81,7 +82,7 @@ export default function StylistAccountPage() {
   const [photoBusy, setPhotoBusy] = useState(false);
   const [photoMessage, setPhotoMessage] = useState("");
   const [photoError, setPhotoError] = useState("");
-  const fileRef = useRef<HTMLInputElement>(null);
+  const [cameraOpen, setCameraOpen] = useState(false);
 
   useEffect(() => {
     fetch("/api/stylist/account")
@@ -152,7 +153,6 @@ export default function StylistAccountPage() {
       setPhotoError(e instanceof Error ? e.message : "Could not save photo");
     } finally {
       setPhotoBusy(false);
-      if (fileRef.current) fileRef.current.value = "";
     }
   }
 
@@ -261,7 +261,14 @@ export default function StylistAccountPage() {
       >
         <div className="px-5 pb-5 pt-7 sm:px-6">
           <div className="flex flex-col items-center text-center">
-            <div className="relative">
+            <button
+              type="button"
+              disabled={photoBusy}
+              onClick={() => setCameraOpen(true)}
+              className="relative rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#b5ebe0]"
+              aria-label={hasPhoto ? "Update selfie" : "Take selfie"}
+              data-testid="stylist-photo-button"
+            >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={photoUrl}
@@ -271,13 +278,10 @@ export default function StylistAccountPage() {
                 data-testid="stylist-photo-preview"
                 className="h-28 w-28 rounded-full object-cover shadow-[0_12px_40px_rgba(0,0,0,0.35)] ring-4 ring-[#7ec4b8]/35"
               />
-              <span
-                className="absolute bottom-1 right-1 rounded-full bg-[#0e1618] px-2 py-0.5 text-[10px] font-semibold tracking-wide text-[#b5ebe0] ring-1 ring-[#7ec4b8]/40"
-                aria-hidden
-              >
-                {hasPhoto ? "Photo" : "Avatar"}
+              <span className="absolute bottom-1 right-1 rounded-full bg-[#0e1618] px-2 py-0.5 text-[10px] font-semibold tracking-wide text-[#b5ebe0] ring-1 ring-[#7ec4b8]/40">
+                {photoBusy ? "…" : hasPhoto ? "Update" : "Selfie"}
               </span>
-            </div>
+            </button>
 
             <h2 className="mt-4 font-[family-name:var(--font-display)] text-3xl leading-tight text-[#f4fbfa]">
               {displayName}
@@ -293,10 +297,10 @@ export default function StylistAccountPage() {
               </p>
             ) : null}
 
-            <div className="mt-5 flex w-full max-w-sm flex-col gap-2 sm:flex-row sm:justify-center">
+            <div className="mt-5 flex w-full max-w-sm justify-center">
               <button
                 type="button"
-                className="stylist-tap btn-solid rounded-full px-5"
+                className="stylist-tap btn-solid rounded-full px-8"
                 data-testid="stylist-edit-profile"
                 onClick={() => {
                   setEditingProfile((v) => !v);
@@ -306,25 +310,15 @@ export default function StylistAccountPage() {
               >
                 {editingProfile ? "Close editor" : "Edit profile"}
               </button>
-              <button
-                type="button"
-                disabled={photoBusy}
-                className="stylist-tap rounded-full border border-[#7ec4b8]/45 px-5 font-semibold text-[#b5ebe0] hover:bg-[#7ec4b8]/10"
-                onClick={() => fileRef.current?.click()}
-              >
-                {photoBusy ? "Saving…" : hasPhoto ? "Retake selfie" : "Take selfie"}
-              </button>
             </div>
           </div>
 
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            capture="user"
-            className="sr-only"
-            data-testid="stylist-selfie-input"
-            onChange={(e) => onPickPhoto(e.target.files?.[0] || null)}
+          <SelfieCamera
+            open={cameraOpen}
+            onClose={() => setCameraOpen(false)}
+            accent="stylist"
+            fileInputTestId="stylist-selfie-input"
+            onCapture={onPickPhoto}
           />
 
           {(photoError || photoMessage || hasPhoto) && !editingProfile ? (

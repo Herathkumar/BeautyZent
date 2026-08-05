@@ -32,8 +32,16 @@ async function setAishaSelfManage(page: Page, enabled: boolean) {
   else await expect(toggle).not.toBeChecked();
 }
 
+async function openAwayForm(page: Page) {
+  const markAway = page.getByRole("button", { name: /mark me away/i });
+  if (await markAway.count()) return;
+  await page.getByRole("button", { name: /manual times/i }).click();
+  await expect(page.getByRole("button", { name: /mark me away/i })).toBeVisible();
+}
+
 async function requestLeave(page: Page, note: string, daysAhead: number) {
   await page.goto("/stylist/schedule");
+  await openAwayForm(page);
   const start = new Date();
   start.setDate(start.getDate() + daysAhead);
   start.setHours(14, 0, 0, 0);
@@ -74,6 +82,7 @@ test.describe("Stylist — schedule & leave", () => {
     const end = new Date(start);
     end.setHours(12, 0, 0, 0);
 
+    await openAwayForm(page);
     const leaveForm = page
       .locator("form")
       .filter({ has: page.getByRole("button", { name: /mark me away/i }) });

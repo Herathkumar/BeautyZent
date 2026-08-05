@@ -17,7 +17,9 @@ test.describe("Stylist phone portal", () => {
     await stylistLogin(page);
     await page.getByRole("link", { name: /^schedule$/i }).click();
     await expect(page.getByRole("heading", { name: "Schedule" })).toBeVisible();
-    await expect(page.getByRole("button", { name: /mark me away|save work days/i }).first()).toBeVisible();
+    await expect(page.getByTestId("schedule-week-ring")).toBeVisible();
+    await expect(page.getByTestId("schedule-away-strip")).toBeVisible();
+    await expect(page.getByRole("button", { name: /save work days/i })).toBeVisible();
   });
 
   test("account page loads for credential changes", async ({ page }) => {
