@@ -18,10 +18,10 @@ async function validateEmail(opts: {
   email: string;
   salonId: string;
   userId: string;
-}) {
+}): Promise<{ email: string } | { error: string }> {
   const email = opts.email.toLowerCase().trim();
   if (!email.includes("@")) {
-    return { error: "Enter a valid email" as const };
+    return { error: "Enter a valid email" };
   }
   const taken = await prisma.user.findFirst({
     where: {
@@ -31,7 +31,7 @@ async function validateEmail(opts: {
     },
   });
   if (taken) {
-    return { error: "That email is already in use" as const };
+    return { error: "That email is already in use" };
   }
   return { email };
 }
