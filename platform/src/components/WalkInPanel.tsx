@@ -27,18 +27,19 @@ type WaitEntry = {
   service: { id: string; name: string } | null;
   stylist: { id: string; name: string } | null;
   nextAvailable?: NextOpt | null;
+  availableOptions?: NextOpt[];
 };
 
 type Props = {
   mode: "manager" | "display" | "stylist";
   /** Required for display mode */
   slug?: string;
-  /** When stylist mode, lock to this stylist */
+  /** When stylist mode, lock form to this stylist */
   lockedStylistId?: string;
   lockedStylistName?: string;
   /** Show the seat / add form (default true) */
   showForm?: boolean;
-  /** Show the waitlist list (default true except stylist) */
+  /** Show the waitlist list (default true) */
   showWaitlist?: boolean;
   /** Poll waitlist while mounted (display board) */
   pollMs?: number;
@@ -47,10 +48,11 @@ type Props = {
 
 function formatWait(min: number | null | undefined) {
   if (min == null) return "—";
-  if (min <= 0) return "Ready now";
-  if (min < 60) return `~${min} min wait`;
-  const h = Math.floor(min / 60);
-  const m = min % 60;
+  const n = Math.max(0, min);
+  if (n <= 0) return "Ready now";
+  if (n < 60) return `~${n} min wait`;
+  const h = Math.floor(n / 60);
+  const m = n % 60;
   return m ? `~${h}h ${m}m wait` : `~${h}h wait`;
 }
 
@@ -60,11 +62,11 @@ export function WalkInPanel({
   lockedStylistId,
   lockedStylistName,
   showForm = true,
-  showWaitlist,
+  showWaitlist = true,
   pollMs,
   onCreated,
 }: Props) {
-  const includeWaitlist = showWaitlist ?? mode !== "stylist";
+  const includeWaitlist = showWaitlist;
   const [services, setServices] = useState<Service[]>([]);
   const [stylists, setStylists] = useState<Stylist[]>([]);
   const [serviceId, setServiceId] = useState("");
@@ -78,6 +80,8 @@ export function WalkInPanel({
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [seatingId, setSeatingId] = useState<string | null>(null);
+  const [seatPickId, setSeatPickId] = useState("");
 
   const walkInBase =
     mode === "display"
@@ -86,7 +90,12 @@ export function WalkInPanel({
         ? "/api/stylist/walk-in"
         : "/api/admin/walk-in";
   const waitlistBase =
-    mode === "display" ? `/api/display/${slug}/waitlist` : "/api/admin/waitlist";
+    mode === "display"
+      ? `/api/display/${slug}/waitlist`
+      : mode === "stylist"
+        ? "/api/stylist/waitlist"
+        : "/api/admin/waitlist";
+  const seatMethod = mode === "display" ? "POST" : "PATCH";
 
   const loadCatalog = useCallback(async () => {
     if (!showForm) return;
@@ -112,10 +121,15 @@ export function WalkInPanel({
   const loadWaitlist = useCallback(async () => {
     if (!includeWaitlist) return;
     const res = await fetch(waitlistBase);
+    if (res.status === 401) {
+      window.location.href =
+        mode === "stylist" ? "/stylist/login" : "/manager/login";
+      return;
+    }
     if (!res.ok) return;
     const data = await res.json();
     setWaitlist(data.waitlist || []);
-  }, [includeWaitlist, waitlistBase]);
+  }, [includeWaitlist, waitlistBase, mode]);
 
   const loadNext = useCallback(async () => {
     if (!showForm || !serviceId) {
@@ -170,6 +184,55 @@ export function WalkInPanel({
 
   const next = options[0] || null;
 
+  function openSeatPicker(w: WaitEntry) {
+    setError("");
+    setSeatingId(w.id);
+    const opts = w.availableOptions || [];
+    const defaultId =
+      (mode === "stylist" &&
+        lockedStylistId &&
+        opts.find((o) => o.stylistId === lockedStylistId)?.stylistId) ||
+      w.nextAvailable?.stylistId ||
+      opts[0]?.stylistId ||
+      "";
+    setSeatPickId(defaultId);
+  }
+
+  async function confirmSeat() {
+    if (!seatingId || !seatPickId) return;
+    setBusy(true);
+    setError("");
+    setMessage("");
+    const res = await fetch(waitlistBase, {
+      method: seatMethod,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "seat",
+        id: seatingId,
+        stylistId: seatPickId,
+      }),
+    });
+    const data = await res.json();
+    setBusy(false);
+    if (!res.ok) {
+      setError(data.error || "Could not seat guest");
+      await loadWaitlist();
+      return;
+    }
+    const stylistName =
+      data.appointment?.stylist?.name ||
+      data.entry?.stylist?.name ||
+      "stylist";
+    setMessage(
+      `Seated ${data.appointment?.client?.name || "guest"} with ${stylistName} — Check in when they sit, then Done with payment`
+    );
+    setSeatingId(null);
+    setSeatPickId("");
+    await loadWaitlist();
+    await loadNext();
+    onCreated?.();
+  }
+
   async function createWalkIn() {
     setBusy(true);
     setError("");
@@ -218,16 +281,22 @@ export function WalkInPanel({
     setBusy(true);
     setError("");
     setMessage("");
+    const body: Record<string, unknown> = {
+      clientName: clientName.trim() || "Walk-in guest",
+      clientPhone,
+      serviceId: serviceId || null,
+      note: notes || null,
+    };
+    if (mode === "stylist") {
+      body.stylistId = lockedStylistId || stylistId || null;
+      body.preferSelf = true;
+    } else {
+      body.stylistId = useNextAvailable ? null : stylistId || null;
+    }
     const res = await fetch(waitlistBase, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        clientName: clientName.trim() || "Walk-in guest",
-        clientPhone,
-        serviceId: serviceId || null,
-        stylistId: useNextAvailable ? null : stylistId || null,
-        note: notes || null,
-      }),
+      body: JSON.stringify(body),
     });
     const data = await res.json();
     setBusy(false);
@@ -247,34 +316,11 @@ export function WalkInPanel({
     await loadWaitlist();
   }
 
-  async function seatWaitlist(id: string) {
-    if (!window.confirm("Seat this guest now as a walk-in?")) return;
-    setBusy(true);
-    const res = await fetch(waitlistBase, {
-      method: mode === "display" ? "POST" : "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "seat", id }),
-    });
-    const data = await res.json();
-    setBusy(false);
-    if (!res.ok) {
-      setError(data.error || "Could not seat guest");
-      await loadWaitlist();
-      return;
-    }
-    setMessage(
-      `Seated ${data.appointment?.client?.name || "guest"} — Check in when they sit, then Done with payment`
-    );
-    await loadWaitlist();
-    await loadNext();
-    onCreated?.();
-  }
-
   async function cancelWaitlist(id: string) {
     if (!window.confirm("Remove this guest from the waitlist?")) return;
     setBusy(true);
     const res = await fetch(waitlistBase, {
-      method: mode === "display" ? "POST" : "PATCH",
+      method: seatMethod,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "cancel", id }),
     });
@@ -284,6 +330,10 @@ export function WalkInPanel({
       setError(data.error || "Could not cancel");
       return;
     }
+    if (seatingId === id) {
+      setSeatingId(null);
+      setSeatPickId("");
+    }
     await loadWaitlist();
   }
 
@@ -292,130 +342,130 @@ export function WalkInPanel({
   return (
     <div className="space-y-6" data-testid="walk-in-panel">
       {showForm ? (
-      <form
-        className="grid gap-4 rounded-2xl border border-[#c9a87c]/30 bg-[#2a211c] p-5"
-        onSubmit={(e) => {
-          e.preventDefault();
-          void createWalkIn();
-        }}
-      >
-        <label className="grid gap-1 text-sm text-[#d4c4b0]">
-          Service
-          <select
-            required
-            value={serviceId}
-            onChange={(e) => setServiceId(e.target.value)}
-            aria-label="Walk-in service"
-            className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
-          >
-            <option value="">Choose service</option>
-            {services.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name} · {s.durationMin} min · ${centsToDollars(s.priceCents)}
-              </option>
-            ))}
-          </select>
-        </label>
+        <form
+          className="grid gap-4 rounded-2xl border border-[#c9a87c]/30 bg-[#2a211c] p-5"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void createWalkIn();
+          }}
+        >
+          <label className="grid gap-1 text-sm text-[#d4c4b0]">
+            Service
+            <select
+              required
+              value={serviceId}
+              onChange={(e) => setServiceId(e.target.value)}
+              aria-label="Walk-in service"
+              className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+            >
+              <option value="">Choose service</option>
+              {services.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name} · {s.durationMin} min · ${centsToDollars(s.priceCents)}
+                </option>
+              ))}
+            </select>
+          </label>
 
-        {mode !== "stylist" ? (
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm text-[#d4c4b0]">
-              <input
-                type="checkbox"
-                checked={useNextAvailable}
-                onChange={(e) => setUseNextAvailable(e.target.checked)}
-              />
-              Next available stylist
-            </label>
-            {!useNextAvailable ? (
-              <label className="grid gap-1 text-sm text-[#d4c4b0]">
-                Stylist
-                <select
-                  required={!useNextAvailable}
-                  value={stylistId}
-                  onChange={(e) => setStylistId(e.target.value)}
-                  aria-label="Walk-in stylist"
-                  className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
-                >
-                  <option value="">Choose stylist</option>
-                  {filteredStylists.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : null}
-          </div>
-        ) : (
-          <p className="text-sm text-muted">
-            Walk-in for{" "}
-            <span className="text-[#f0c987]">{lockedStylistName || "you"}</span>
-          </p>
-        )}
-
-        {next ? (
-          <p
-            className="rounded-xl border border-[#9fe3b8]/30 bg-[#1c2a22] px-3 py-2 text-sm text-[#9fe3b8]"
-            data-testid="walk-in-eta"
-          >
-            Next open: {next.stylistName} ·{" "}
-            {new Date(next.startsAt).toLocaleTimeString("en-CA", {
-              hour: "numeric",
-              minute: "2-digit",
-            })}{" "}
-            · {formatWait(next.waitMinutes)}
-            {selectedService ? ` · ${selectedService.durationMin} min service` : ""}
-          </p>
-        ) : serviceId ? (
-          <p className="rounded-xl border border-[#f0c987]/30 bg-[#3a2a22] px-3 py-2 text-sm text-[#f0c987]">
-            No open slot right now — add to waitlist for an estimated wait.
-          </p>
-        ) : null}
-
-        <label className="grid gap-1 text-sm text-[#d4c4b0]">
-          Client name
-          <input
-            value={clientName}
-            onChange={(e) => setClientName(e.target.value)}
-            aria-label="Walk-in client name"
-            className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
-          />
-        </label>
-        <label className="grid gap-1 text-sm text-[#d4c4b0]">
-          Phone (optional)
-          <input
-            value={clientPhone}
-            onChange={(e) => setClientPhone(e.target.value)}
-            aria-label="Walk-in client phone"
-            className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
-          />
-        </label>
-        <label className="grid gap-1 text-sm text-[#d4c4b0]">
-          Note (optional)
-          <input
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
-          />
-        </label>
-
-        {error ? <p className="text-sm text-[#f5a8a8]">{error}</p> : null}
-        {message ? <p className="text-sm text-[#9fe3b8]">{message}</p> : null}
-
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="submit"
-            disabled={
-              busy ||
-              !serviceId ||
-              (mode !== "stylist" && !useNextAvailable && !stylistId)
-            }
-            className="btn-solid rounded-full px-5 py-2.5 disabled:opacity-40"
-          >
-            {busy ? "Saving…" : "Seat walk-in"}
-          </button>
           {mode !== "stylist" ? (
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-sm text-[#d4c4b0]">
+                <input
+                  type="checkbox"
+                  checked={useNextAvailable}
+                  onChange={(e) => setUseNextAvailable(e.target.checked)}
+                />
+                Next available stylist
+              </label>
+              {!useNextAvailable ? (
+                <label className="grid gap-1 text-sm text-[#d4c4b0]">
+                  Stylist
+                  <select
+                    required={!useNextAvailable}
+                    value={stylistId}
+                    onChange={(e) => setStylistId(e.target.value)}
+                    aria-label="Walk-in stylist"
+                    className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+                  >
+                    <option value="">Choose stylist</option>
+                    {filteredStylists.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
+            </div>
+          ) : (
+            <p className="text-sm text-muted">
+              Walk-in for{" "}
+              <span className="text-[#f0c987]">{lockedStylistName || "you"}</span>
+              {" · "}or seat waitlist guests to any open chair
+            </p>
+          )}
+
+          {next ? (
+            <p
+              className="rounded-xl border border-[#9fe3b8]/30 bg-[#1c2a22] px-3 py-2 text-sm text-[#9fe3b8]"
+              data-testid="walk-in-eta"
+            >
+              Next open: {next.stylistName} ·{" "}
+              {new Date(next.startsAt).toLocaleTimeString("en-CA", {
+                hour: "numeric",
+                minute: "2-digit",
+              })}{" "}
+              · {formatWait(next.waitMinutes)}
+              {selectedService ? ` · ${selectedService.durationMin} min service` : ""}
+            </p>
+          ) : serviceId ? (
+            <p className="rounded-xl border border-[#f0c987]/30 bg-[#3a2a22] px-3 py-2 text-sm text-[#f0c987]">
+              No open slot right now — add to waitlist for an estimated wait.
+            </p>
+          ) : null}
+
+          <label className="grid gap-1 text-sm text-[#d4c4b0]">
+            Client name
+            <input
+              value={clientName}
+              onChange={(e) => setClientName(e.target.value)}
+              aria-label="Walk-in client name"
+              className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+            />
+          </label>
+          <label className="grid gap-1 text-sm text-[#d4c4b0]">
+            Phone (optional)
+            <input
+              value={clientPhone}
+              onChange={(e) => setClientPhone(e.target.value)}
+              aria-label="Walk-in client phone"
+              className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+            />
+          </label>
+          <label className="grid gap-1 text-sm text-[#d4c4b0]">
+            Note (optional)
+            <input
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+            />
+          </label>
+
+          {error ? <p className="text-sm text-[#f5a8a8]">{error}</p> : null}
+          {message ? <p className="text-sm text-[#9fe3b8]">{message}</p> : null}
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="submit"
+              disabled={
+                busy ||
+                !serviceId ||
+                (mode !== "stylist" && !useNextAvailable && !stylistId)
+              }
+              className="btn-solid rounded-full px-5 py-2.5 disabled:opacity-40"
+            >
+              {busy ? "Saving…" : "Seat walk-in"}
+            </button>
             <button
               type="button"
               disabled={busy || !serviceId}
@@ -424,9 +474,8 @@ export function WalkInPanel({
             >
               Add to waitlist
             </button>
-            ) : null}
-        </div>
-      </form>
+          </div>
+        </form>
       ) : null}
 
       {includeWaitlist ? (
@@ -440,7 +489,7 @@ export function WalkInPanel({
                 ) : null}
               </h2>
               <p className="text-sm text-muted">
-                Seat now → Check in → Done with payment
+                Seat now → pick stylist → Check in → Done with payment
               </p>
             </div>
             <button
@@ -457,54 +506,130 @@ export function WalkInPanel({
             <p className="text-sm text-muted">No one waiting.</p>
           ) : (
             <ul className="space-y-2">
-              {waitlist.map((w) => (
-                <li
-                  key={w.id}
-                  className="rounded-2xl border border-[#c9a87c]/25 bg-[#2a211c] px-4 py-3"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-2">
-                    <div>
-                      <p className="font-semibold text-[#fffaf6]">{w.clientName}</p>
-                      <p className="text-sm text-muted">
-                        {w.service?.name || "Any service"}
-                        {w.stylist
-                          ? ` · prefers ${w.stylist.name}`
-                          : " · next available"}
-                        {w.clientPhone ? ` · ${w.clientPhone}` : ""}
-                      </p>
-                      <p className="mt-1 text-sm text-[#f0c987]">
-                        {formatWait(w.estimatedWaitMin)}
-                        {w.nextAvailable
-                          ? ` · ${w.nextAvailable.stylistName} at ${new Date(
-                              w.nextAvailable.startsAt
-                            ).toLocaleTimeString("en-CA", {
-                              hour: "numeric",
-                              minute: "2-digit",
-                            })}`
-                          : ""}
-                      </p>
+              {waitlist.map((w) => {
+                const opts = w.availableOptions || [];
+                const picking = seatingId === w.id;
+                return (
+                  <li
+                    key={w.id}
+                    className="rounded-2xl border border-[#c9a87c]/25 bg-[#2a211c] px-4 py-3"
+                    data-testid="waitlist-entry"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div>
+                        <p className="font-semibold text-[#fffaf6]">{w.clientName}</p>
+                        <p className="text-sm text-muted">
+                          {w.service?.name || "Any service"}
+                          {w.stylist
+                            ? ` · prefers ${w.stylist.name}`
+                            : " · next available"}
+                          {w.clientPhone ? ` · ${w.clientPhone}` : ""}
+                        </p>
+                        <p className="mt-1 text-sm text-[#f0c987]">
+                          {formatWait(w.estimatedWaitMin)}
+                          {w.nextAvailable
+                            ? ` · ${w.nextAvailable.stylistName} at ${new Date(
+                                w.nextAvailable.startsAt
+                              ).toLocaleTimeString("en-CA", {
+                                hour: "numeric",
+                                minute: "2-digit",
+                              })}`
+                            : ""}
+                        </p>
+                      </div>
+                      {!picking ? (
+                        <div className="flex flex-col gap-2">
+                          <button
+                            type="button"
+                            disabled={busy || opts.length === 0}
+                            onClick={() => openSeatPicker(w)}
+                            className="rounded-full bg-[#c9a87c] px-3 py-1.5 text-xs font-semibold text-[#1c1714] disabled:opacity-40"
+                            data-testid="waitlist-seat-now"
+                          >
+                            Seat now
+                          </button>
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => void cancelWaitlist(w.id)}
+                            className="text-xs text-[#f5a8a8] underline"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ) : null}
                     </div>
-                    <div className="flex flex-col gap-2">
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() => void seatWaitlist(w.id)}
-                        className="rounded-full bg-[#c9a87c] px-3 py-1.5 text-xs font-semibold text-[#1c1714]"
+
+                    {picking ? (
+                      <div
+                        className="mt-3 space-y-3 rounded-xl border border-[#c9a87c]/30 bg-[#1c1714] p-3"
+                        data-testid="waitlist-seat-picker"
                       >
-                        Seat now
-                      </button>
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() => void cancelWaitlist(w.id)}
-                        className="text-xs text-[#f5a8a8] underline"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                </li>
-              ))}
+                        <p className="text-xs font-semibold tracking-wide text-[#c9a87c] uppercase">
+                          Assign stylist
+                        </p>
+                        {opts.length === 0 ? (
+                          <p className="text-sm text-[#f5a8a8]">No open chairs right now.</p>
+                        ) : (
+                          <ul className="space-y-2">
+                            {opts.map((o) => {
+                              const isSelf =
+                                mode === "stylist" && o.stylistId === lockedStylistId;
+                              return (
+                                <li key={o.stylistId}>
+                                  <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-[#c9a87c]/20 px-3 py-2 text-sm text-[#fffaf6] has-[:checked]:border-[#f0c987] has-[:checked]:bg-[#3a2a22]/60">
+                                    <input
+                                      type="radio"
+                                      name={`seat-${w.id}`}
+                                      value={o.stylistId}
+                                      checked={seatPickId === o.stylistId}
+                                      onChange={() => setSeatPickId(o.stylistId)}
+                                      aria-label={`Seat with ${o.stylistName}`}
+                                    />
+                                    <span className="flex-1">
+                                      {o.stylistName}
+                                      {isSelf ? " (you)" : ""}
+                                    </span>
+                                    <span className="text-[#f0c987]">
+                                      {formatWait(o.waitMinutes)} ·{" "}
+                                      {new Date(o.startsAt).toLocaleTimeString("en-CA", {
+                                        hour: "numeric",
+                                        minute: "2-digit",
+                                      })}
+                                    </span>
+                                  </label>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            disabled={busy || !seatPickId}
+                            onClick={() => void confirmSeat()}
+                            className="rounded-full bg-[#c9a87c] px-4 py-1.5 text-xs font-semibold text-[#1c1714] disabled:opacity-40"
+                            data-testid="waitlist-confirm-seat"
+                          >
+                            {busy ? "Seating…" : "Confirm seat"}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => {
+                              setSeatingId(null);
+                              setSeatPickId("");
+                            }}
+                            className="text-xs text-[#c9a87c] underline"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : null}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </section>

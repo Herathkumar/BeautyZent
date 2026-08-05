@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSession, isSalonStaff } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
   findNextAvailableWalkIns,
@@ -9,17 +9,20 @@ import {
 
 export async function GET() {
   const session = await getSession();
-  if (!session || !isSalonStaff(session.role)) {
+  if (!session || session.role !== "STYLIST" || !session.stylistId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const waitlist = await listWaitlistWithOptions(session.salonId);
-  return NextResponse.json({ waitlist });
+  return NextResponse.json({
+    waitlist,
+    stylistId: session.stylistId,
+  });
 }
 
 export async function POST(req: Request) {
   const session = await getSession();
-  if (!session || !isSalonStaff(session.role)) {
+  if (!session || session.role !== "STYLIST" || !session.stylistId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -30,11 +33,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
+  // Stylists can add to waitlist for the floor
   const clientName = String(body.clientName || "").trim() || "Walk-in guest";
   const clientPhone = body.clientPhone != null ? String(body.clientPhone).trim() : "";
   const serviceId = body.serviceId ? String(body.serviceId) : null;
-  const stylistId = body.stylistId ? String(body.stylistId) : null;
   const note = body.note != null ? String(body.note) : null;
+  // Default preference to self unless they pick next-available (null)
+  const preferSelf = body.preferSelf !== false;
+  const stylistId = body.stylistId
+    ? String(body.stylistId)
+    : preferSelf
+      ? session.stylistId
+      : null;
 
   let estimatedWaitMin: number | null = null;
   if (serviceId) {
@@ -58,7 +68,7 @@ export async function POST(req: Request) {
       estimatedWaitMin,
     },
     include: {
-      service: { select: { id: true, name: true, durationMin: true } },
+      service: { select: { id: true, name: true } },
       stylist: { select: { id: true, name: true } },
     },
   });
@@ -68,7 +78,7 @@ export async function POST(req: Request) {
 
 export async function PATCH(req: Request) {
   const session = await getSession();
-  if (!session || !isSalonStaff(session.role)) {
+  if (!session || session.role !== "STYLIST" || !session.stylistId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -83,12 +93,11 @@ export async function PATCH(req: Request) {
   const action = String(body.action || "");
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
-  const entry = await prisma.walkInWaitlist.findFirst({
-    where: { id, salonId: session.salonId },
-  });
-  if (!entry) return NextResponse.json({ error: "Not found" }, { status: 404 });
-
   if (action === "cancel") {
+    const entry = await prisma.walkInWaitlist.findFirst({
+      where: { id, salonId: session.salonId, status: "WAITING" },
+    });
+    if (!entry) return NextResponse.json({ error: "Not found" }, { status: 404 });
     const updated = await prisma.walkInWaitlist.update({
       where: { id: entry.id },
       data: { status: "CANCELLED", cancelledAt: new Date() },
@@ -97,10 +106,13 @@ export async function PATCH(req: Request) {
   }
 
   if (action === "seat") {
-    const stylistId = body.stylistId ? String(body.stylistId) : null;
+    // Default to self when stylist seats without picking someone else
+    const stylistId = body.stylistId
+      ? String(body.stylistId)
+      : session.stylistId;
     const result = await seatWaitlistGuest({
       salonId: session.salonId,
-      entryId: entry.id,
+      entryId: id,
       stylistId,
     });
     if ("error" in result) {

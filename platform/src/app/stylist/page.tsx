@@ -309,9 +309,11 @@ export default function StylistHomePage() {
         <div className="flex items-center justify-between gap-2">
           <div>
             <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">
-              Walk-in
+              Walk-in &amp; waitlist
             </h2>
-            <p className="text-sm text-muted">Seat a guest for your next open slot.</p>
+            <p className="text-sm text-muted">
+              Seat a guest for yourself, or assign waitlist guests to any open chair.
+            </p>
           </div>
           <button
             type="button"
@@ -319,14 +321,17 @@ export default function StylistHomePage() {
             className="rounded-full border border-ink/20 px-3 py-2 text-sm font-semibold text-champagne"
             data-testid="stylist-walk-in-toggle"
           >
-            {walkInOpen ? "Hide" : "Add walk-in"}
+            {walkInOpen ? "Hide form" : "Add walk-in"}
           </button>
         </div>
-        {walkInOpen && stylistId ? (
+        {stylistId ? (
           <WalkInPanel
             mode="stylist"
             lockedStylistId={stylistId}
             lockedStylistName={name}
+            showForm={walkInOpen}
+            showWaitlist
+            pollMs={30_000}
             onCreated={() => void load()}
           />
         ) : null}

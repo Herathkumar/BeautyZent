@@ -300,4 +300,121 @@ export async function createWalkInAppointment(opts: {
   return { appointment, waitMinutes };
 }
 
+/** Waitlist rows with all seatable stylists for the service (for Seat now picker). */
+export async function listWaitlistWithOptions(salonId: string) {
+  const entries = await prisma.walkInWaitlist.findMany({
+    where: { salonId, status: "WAITING" },
+    include: {
+      service: { select: { id: true, name: true, durationMin: true } },
+      stylist: { select: { id: true, name: true } },
+    },
+    orderBy: { createdAt: "asc" },
+  });
+
+  return Promise.all(
+    entries.map(async (e) => {
+      if (!e.serviceId) {
+        return {
+          ...e,
+          estimatedWaitMin: e.estimatedWaitMin,
+          nextAvailable: null,
+          availableOptions: [] as NextAvailableOption[],
+        };
+      }
+      const availableOptions = await findNextAvailableWalkIns({
+        salonId,
+        serviceId: e.serviceId,
+      });
+      const preferred = e.stylistId
+        ? availableOptions.find((o) => o.stylistId === e.stylistId) || null
+        : null;
+      const nextAvailable = preferred || availableOptions[0] || null;
+      const wait = nextAvailable?.waitMinutes ?? e.estimatedWaitMin;
+      if (wait != null && wait !== e.estimatedWaitMin) {
+        await prisma.walkInWaitlist.update({
+          where: { id: e.id },
+          data: { estimatedWaitMin: wait },
+        });
+      }
+      return {
+        ...e,
+        estimatedWaitMin: wait,
+        nextAvailable,
+        availableOptions,
+      };
+    })
+  );
+}
+
+/** Seat a waitlist guest with a chosen stylist (or next available). */
+export async function seatWaitlistGuest(opts: {
+  salonId: string;
+  entryId: string;
+  /** When set, seat with this stylist; otherwise next available (honors preference if still free). */
+  stylistId?: string | null;
+}) {
+  const entry = await prisma.walkInWaitlist.findFirst({
+    where: { id: opts.entryId, salonId: opts.salonId },
+  });
+  if (!entry) return { error: "Not found", status: 404 as const };
+  if (entry.status !== "WAITING") {
+    return { error: "Guest is not waiting", status: 400 as const };
+  }
+  if (!entry.serviceId) {
+    return { error: "Assign a service before seating", status: 400 as const };
+  }
+
+  const chosenId = (opts.stylistId || "").trim() || null;
+  const options = await findNextAvailableWalkIns({
+    salonId: opts.salonId,
+    serviceId: entry.serviceId,
+    stylistId: chosenId,
+  });
+
+  let pick = options[0] || null;
+  if (!chosenId && entry.stylistId) {
+    pick =
+      options.find((o) => o.stylistId === entry.stylistId) || options[0] || null;
+  } else if (chosenId) {
+    pick = options.find((o) => o.stylistId === chosenId) || null;
+  }
+
+  if (!pick) {
+    return { error: "No open slot to seat this guest yet", status: 409 as const };
+  }
+
+  const result = await createWalkInAppointment({
+    salonId: opts.salonId,
+    stylistId: pick.stylistId,
+    serviceId: entry.serviceId,
+    clientName: entry.clientName,
+    clientPhone: entry.clientPhone,
+    notes: entry.note,
+    startsAt: new Date(pick.startsAt),
+    status: "BOOKED",
+  });
+  if ("error" in result) return result;
+
+  const updated = await prisma.walkInWaitlist.update({
+    where: { id: entry.id },
+    data: {
+      status: "SEATED",
+      seatedAt: new Date(),
+      appointmentId: result.appointment.id,
+      stylistId: result.appointment.stylistId,
+      estimatedWaitMin: 0,
+    },
+    include: {
+      service: { select: { id: true, name: true } },
+      stylist: { select: { id: true, name: true } },
+    },
+  });
+
+  return {
+    entry: updated,
+    appointment: result.appointment,
+    waitMinutes: result.waitMinutes,
+  };
+}
+
 export { sourceLabel } from "@/lib/appointment-source";

@@ -64,7 +64,9 @@ test.describe("Walk-in appointments", () => {
     await expect(page.getByRole("button", { name: /^today/i })).toBeVisible();
     await expect(page.getByTestId("display-waitlist-section")).toBeVisible();
     await expect(page.getByTestId("walk-in-waitlist")).toBeVisible();
-    await expect(page.getByText(/seat now → check in → done with payment/i)).toBeVisible();
+    await expect(
+      page.getByText(/seat now → pick stylist → check in → done with payment/i)
+    ).toBeVisible();
 
     const welcome = page.getByText(/welcome to the floor/i);
     const waitSection = page.getByTestId("display-waitlist-section");
@@ -148,20 +150,25 @@ test.describe("Walk-in appointments", () => {
 
     await page.goto("/display/fhsalon");
     const waitlist = page.getByTestId("walk-in-waitlist");
-    await expect(waitlist.getByText(clientName)).toBeVisible({ timeout: 15_000 });
-
-    // Seat via API (BOOKED) so the floor can Check in → Done with payment on the board
-    const seat = await page.request.patch("/api/admin/waitlist", {
-      data: { action: "seat", id: added.entry.id },
+    const entry = waitlist.locator("[data-testid=waitlist-entry]").filter({
+      hasText: clientName,
     });
-    if (!seat.ok()) {
-      throw new Error(`seat failed: ${seat.status()} ${await seat.text()}`);
-    }
+    await expect(entry).toBeVisible({ timeout: 15_000 });
 
-    await page.reload();
-    await expect(
-      waitlist.locator("li").filter({ hasText: clientName })
-    ).toHaveCount(0, { timeout: 10_000 });
+    await entry.getByTestId("waitlist-seat-now").click();
+    const picker = entry.getByTestId("waitlist-seat-picker");
+    await expect(picker).toBeVisible();
+    await expect(picker.getByRole("radio")).not.toHaveCount(0);
+    // Switch / confirm a specific available stylist (Omar preferred)
+    const omarRadio = picker.getByLabel(/seat with omar/i);
+    if (await omarRadio.count()) {
+      await omarRadio.check();
+    } else {
+      await picker.getByRole("radio").first().check();
+    }
+    await picker.getByTestId("waitlist-confirm-seat").click();
+
+    await expect(entry).toHaveCount(0, { timeout: 10_000 });
 
     const row = page.locator("article").filter({ hasText: clientName }).first();
     await expect(row).toBeVisible({ timeout: 15_000 });
@@ -181,5 +188,40 @@ test.describe("Walk-in appointments", () => {
     await expect(
       page.locator("article").filter({ hasText: clientName })
     ).toHaveCount(0, { timeout: 15_000 });
+  });
+
+  test("stylist can seat waitlist guest to self or another stylist", async ({
+    page,
+  }) => {
+    const clientName = `StySeat ${Date.now()}`;
+    await adminLogin(page);
+    const catalog = await page.request.get("/api/public/fhsalon/catalog");
+    const cat = await catalog.json();
+    const service = (cat.services || []).find((s: { name: string }) =>
+      /^men.?s haircut/i.test(s.name)
+    );
+    expect(service?.id).toBeTruthy();
+    const add = await page.request.post("/api/admin/waitlist", {
+      data: { clientName, serviceId: service.id },
+    });
+    expect(add.ok()).toBeTruthy();
+
+    await stylistLogin(page);
+    await page.goto("/stylist");
+    const waitlist = page.getByTestId("walk-in-waitlist");
+    const entry = waitlist.locator("[data-testid=waitlist-entry]").filter({
+      hasText: clientName,
+    });
+    await expect(entry).toBeVisible({ timeout: 15_000 });
+    await entry.getByTestId("waitlist-seat-now").click();
+    const picker = entry.getByTestId("waitlist-seat-picker");
+    await expect(picker).toBeVisible();
+    // Prefer self when available, otherwise first open chair
+    const selfLabel = picker.locator("label").filter({ hasText: /\(you\)/i });
+    if (await selfLabel.count()) await selfLabel.locator('input[type="radio"]').check();
+    else await picker.getByRole("radio").first().check();
+    await picker.getByTestId("waitlist-confirm-seat").click();
+    await expect(entry).toHaveCount(0, { timeout: 10_000 });
+    await expect(page.getByText(clientName).first()).toBeVisible({ timeout: 10_000 });
   });
 });
