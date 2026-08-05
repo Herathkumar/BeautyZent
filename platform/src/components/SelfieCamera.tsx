@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 type Props = {
   open: boolean;
@@ -11,15 +11,42 @@ type Props = {
   fileInputTestId?: string;
 };
 
-/** Oval guide geometry as fractions of the preview stage (must match CSS overlay). */
-const OVAL = {
+/** Circle guide as fractions of the preview stage (must match CSS overlay). */
+const CIRCLE = {
   cx: 0.5,
-  cy: 0.44,
-  /** Width as fraction of stage width — large enough for a full face */
-  width: 0.86,
-  /** height / width (CSS aspect-[3/4] → 4/3) */
-  aspect: 4 / 3,
+  cy: 0.42,
+  /** Diameter as a fraction of stage width */
+  diameter: 0.82,
 };
+
+function GalleryFileInput({
+  inputRef,
+  inputId,
+  testId,
+  onFile,
+}: {
+  inputRef: React.RefObject<HTMLInputElement | null>;
+  inputId: string;
+  testId?: string;
+  onFile: (file: File) => void;
+}) {
+  return (
+    <input
+      ref={inputRef}
+      id={inputId}
+      type="file"
+      accept="image/jpeg,image/png,image/webp,image/*"
+      // No capture attribute — lets iPhone open Photo Library
+      className="sr-only"
+      data-testid={testId}
+      onChange={(e) => {
+        const file = e.target.files?.[0];
+        if (file) onFile(file);
+        e.target.value = "";
+      }}
+    />
+  );
+}
 
 export function SelfieCamera({
   open,
@@ -32,6 +59,7 @@ export function SelfieCamera({
   const stageRef = useRef<HTMLDivElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const inputId = useId();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -80,6 +108,19 @@ export function SelfieCamera({
     };
   }, [open]);
 
+  async function handlePickedFile(file: File) {
+    setBusy(true);
+    setError("");
+    try {
+      await onCapture(file);
+      onClose();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not save photo");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function capture() {
     const video = videoRef.current;
     const stage = stageRef.current;
@@ -95,7 +136,6 @@ export function SelfieCamera({
       const viewW = Math.max(2, Math.round(stage.clientWidth * scaleOut));
       const viewH = Math.max(2, Math.round(stage.clientHeight * scaleOut));
 
-      // 1) Paint what object-cover shows (unmirrored)
       const covered = document.createElement("canvas");
       covered.width = viewW;
       covered.height = viewH;
@@ -108,7 +148,6 @@ export function SelfieCamera({
       const oy = (viewH - dh) / 2;
       cctx.drawImage(video, ox, oy, dw, dh);
 
-      // 2) Mirror horizontally to match on-screen preview (CSS scaleX(-1))
       const mirrored = document.createElement("canvas");
       mirrored.width = viewW;
       mirrored.height = viewH;
@@ -118,12 +157,9 @@ export function SelfieCamera({
       mctx.scale(-1, 1);
       mctx.drawImage(covered, 0, 0);
 
-      // 3) Crop the oval region (square inside oval → circular avatar)
-      const ovalW = viewW * OVAL.width;
-      const ovalH = ovalW * OVAL.aspect;
-      const cx = viewW * OVAL.cx;
-      const cy = viewH * OVAL.cy;
-      const side = Math.min(ovalW, ovalH);
+      const side = viewW * CIRCLE.diameter;
+      const cx = viewW * CIRCLE.cx;
+      const cy = viewH * CIRCLE.cy;
       const sx = Math.round(cx - side / 2);
       const sy = Math.round(cy - side / 2);
       const sw = Math.round(side);
@@ -161,18 +197,11 @@ export function SelfieCamera({
 
   if (!open) {
     return (
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/*"
-        capture="user"
-        className="sr-only"
-        data-testid={fileInputTestId}
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) void onCapture(file);
-          e.target.value = "";
-        }}
+      <GalleryFileInput
+        inputRef={fileRef}
+        inputId={inputId}
+        testId={fileInputTestId}
+        onFile={(file) => void onCapture(file)}
       />
     );
   }
@@ -183,10 +212,8 @@ export function SelfieCamera({
       : "bg-[#7ec4b8] text-[#0e1618]";
   const ring = accent === "manager" ? "border-[#f0c987]" : "border-[#b5ebe0]";
 
-  const ovalWidthPct = `${OVAL.width * 100}%`;
-  const ovalTopPct = `${OVAL.cy * 100}%`;
-  const gradRx = `${(OVAL.width / 2) * 100}%`;
-  const gradRy = `${((OVAL.width * OVAL.aspect) / 2) * 100}%`;
+  const diameterPct = `${CIRCLE.diameter * 100}%`;
+  const topPct = `${CIRCLE.cy * 100}%`;
 
   return (
     <div
@@ -197,7 +224,7 @@ export function SelfieCamera({
     >
       <div className="flex items-center justify-between px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
         <p className="text-sm font-semibold tracking-wide text-white/90">
-          Fit your face in the oval
+          Fit your face in the circle
         </p>
         <button
           type="button"
@@ -220,19 +247,19 @@ export function SelfieCamera({
           className="h-full w-full object-cover"
           style={{ transform: "scaleX(-1)" }}
         />
+        {/* Dim outside the circle via box-shadow (matches guide exactly) */}
         <div
-          className="pointer-events-none absolute inset-0"
+          className={`pointer-events-none absolute left-1/2 aspect-square -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] ${ring}`}
           style={{
-            background: `radial-gradient(ellipse ${gradRx} ${gradRy} at 50% ${ovalTopPct}, transparent 0%, transparent 69%, rgba(0,0,0,0.72) 71%)`,
+            width: diameterPct,
+            top: topPct,
+            maxWidth: "none",
+            boxShadow: "0 0 0 9999px rgba(0,0,0,0.72)",
           }}
-        />
-        <div
-          className={`pointer-events-none absolute left-1/2 aspect-[3/4] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border-[3px] ${ring}`}
-          style={{ width: ovalWidthPct, top: ovalTopPct, maxWidth: "none" }}
           aria-hidden
         />
-        <p className="pointer-events-none absolute bottom-6 left-0 right-0 text-center text-xs font-medium text-white/75">
-          Center your face · what&apos;s in the oval is saved
+        <p className="pointer-events-none absolute bottom-6 left-0 right-0 z-[1] text-center text-xs font-medium text-white/75">
+          Center your face · what&apos;s in the circle is saved
         </p>
       </div>
 
@@ -246,30 +273,22 @@ export function SelfieCamera({
         >
           {busy ? "Saving…" : "Capture"}
         </button>
-        <button
-          type="button"
-          className="w-full rounded-full border border-white/30 py-3 text-sm font-semibold text-white/90"
-          onClick={() => fileRef.current?.click()}
+        {/* Label+input is more reliable on iPhone than button.click() */}
+        <label
+          htmlFor={inputId}
+          className={`block w-full cursor-pointer rounded-full border border-white/30 py-3 text-center text-sm font-semibold text-white/90 ${
+            busy ? "pointer-events-none opacity-50" : ""
+          }`}
         >
           Choose photo instead
-        </button>
+        </label>
+        <GalleryFileInput
+          inputRef={fileRef}
+          inputId={inputId}
+          testId={fileInputTestId}
+          onFile={(file) => void handlePickedFile(file)}
+        />
       </div>
-
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/*"
-        capture="user"
-        className="sr-only"
-        data-testid={fileInputTestId}
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) {
-            void Promise.resolve(onCapture(file)).then(() => onClose());
-          }
-          e.target.value = "";
-        }}
-      />
     </div>
   );
 }
