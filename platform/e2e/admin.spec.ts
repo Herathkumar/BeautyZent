@@ -106,7 +106,9 @@ test.describe("Manager portal", () => {
   test("account page loads and rejects wrong current password", async ({ page }) => {
     await adminLogin(page);
     await page.goto("/manager/account");
-    await expect(page.getByRole("heading", { name: /change password/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /^account$/i })).toBeVisible();
+    await expect(page.getByTestId("manager-photo-preview")).toBeVisible();
+    await expect(page.getByRole("button", { name: /take selfie/i })).toBeVisible();
     await expect(page.getByText(DEMO.adminEmail)).toBeVisible();
 
     await page.getByLabel(/^current password$/i).fill("wrong-current-password");

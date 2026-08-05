@@ -68,6 +68,10 @@ model User {
   role         String   @default("ADMIN") // ADMIN | MANAGER | FRONT_DESK | STYLIST (UI: Manager)
   /// When role is STYLIST, links this login to a stylist profile
   stylistId    String?  @unique
+  /// Manager/admin selfie for the account page (JPEG/PNG, client-resized).
+  photoData      Bytes?
+  photoMime      String?
+  photoUpdatedAt DateTime?
   createdAt    DateTime @default(now())
 
   salon   Salon    @relation(fields: [salonId], references: [id], onDelete: Cascade)
