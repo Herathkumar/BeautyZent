@@ -46,7 +46,7 @@ test.describe("Stylist profile photo", () => {
 
     // Cleanup: restore avatar so later runs start from defaults
     await page.goto("/stylist/account");
-    await page.getByRole("button", { name: /use default avatar instead|use avatar instead/i }).click();
+    await page.getByRole("button", { name: /remove photo|use default avatar instead|use avatar instead/i }).click();
     await expect(page.getByText(/photo removed/i)).toBeVisible();
     await expect(page.getByTestId("stylist-photo-preview")).toHaveAttribute(
       "src",

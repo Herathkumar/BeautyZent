@@ -282,6 +282,19 @@ export default function StylistAccountPage() {
                 {photoBusy ? "…" : hasPhoto ? "Update" : "Selfie"}
               </span>
             </button>
+            <p className="mt-2 text-xs text-[#a8c4bf]">
+              Tap photo to take or update your selfie
+            </p>
+            {!hasPhoto && !editingProfile ? (
+              <button
+                type="button"
+                disabled={photoBusy}
+                onClick={() => setCameraOpen(true)}
+                className="stylist-tap mt-3 rounded-full border border-[#7ec4b8]/50 bg-[#7ec4b8]/12 px-5 py-2 text-sm font-semibold text-[#b5ebe0] hover:bg-[#7ec4b8]/20 disabled:opacity-50"
+              >
+                {photoBusy ? "Saving…" : "Take selfie"}
+              </button>
+            ) : null}
 
             <h2 className="mt-4 font-[family-name:var(--font-display)] text-3xl leading-tight text-[#f4fbfa]">
               {displayName}
@@ -322,19 +335,24 @@ export default function StylistAccountPage() {
           />
 
           {(photoError || photoMessage || hasPhoto) && !editingProfile ? (
-            <div className="mt-4 space-y-2 text-center text-sm">
-              {hasPhoto ? (
-                <button
-                  type="button"
-                  disabled={photoBusy}
-                  className="text-[#a8c4bf] underline-offset-2 hover:text-[#b5ebe0] hover:underline"
-                  onClick={removePhoto}
-                >
-                  Use default avatar instead
-                </button>
-              ) : null}
-              {photoError ? <p className="text-[#f5a8a8]">{photoError}</p> : null}
+            <div className="mt-4 space-y-3 text-center text-sm">
               {photoMessage ? <p className="text-[#b5ebe0]">{photoMessage}</p> : null}
+              {photoError ? <p className="text-[#f5a8a8]">{photoError}</p> : null}
+              {hasPhoto ? (
+                <div className="mx-auto max-w-xs space-y-1.5">
+                  <button
+                    type="button"
+                    disabled={photoBusy}
+                    className="stylist-tap w-full rounded-full border border-[#7ec4b8]/50 bg-[#10181c]/80 px-4 py-2.5 text-sm font-semibold text-[#b5ebe0] hover:bg-[#7ec4b8]/12 disabled:opacity-50"
+                    onClick={removePhoto}
+                  >
+                    {photoBusy ? "Removing…" : "Remove photo"}
+                  </button>
+                  <p className="text-xs text-[#a8c4bf]">
+                    Clears your selfie and shows the default avatar again
+                  </p>
+                </div>
+              ) : null}
             </div>
           ) : null}
         </div>
@@ -365,14 +383,17 @@ export default function StylistAccountPage() {
                 </select>
               </label>
               {hasPhoto ? (
-                <button
-                  type="button"
-                  disabled={photoBusy}
-                  className="stylist-tap rounded-2xl border border-ink/20 px-4 text-sm"
-                  onClick={removePhoto}
-                >
-                  Use avatar instead
-                </button>
+                <div className="space-y-1">
+                  <button
+                    type="button"
+                    disabled={photoBusy}
+                    className="stylist-tap rounded-2xl border border-ink/20 px-4 py-2 text-sm font-semibold text-ink disabled:opacity-50"
+                    onClick={removePhoto}
+                  >
+                    {photoBusy ? "Removing…" : "Remove photo"}
+                  </button>
+                  <p className="text-xs text-ink/55">Back to the default avatar</p>
+                </div>
               ) : null}
             </div>
             {photoError ? <p className="text-sm text-[#f5a8a8]">{photoError}</p> : null}

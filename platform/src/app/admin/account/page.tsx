@@ -266,6 +266,19 @@ export default function AdminAccountPage() {
                 {photoBusy ? "…" : hasPhoto ? "Update" : "Selfie"}
               </span>
             </button>
+            <p className="mt-2 text-xs text-[#d4c4b0]">
+              Tap photo to take or update your selfie
+            </p>
+            {!hasPhoto && !editingProfile ? (
+              <button
+                type="button"
+                disabled={photoBusy}
+                onClick={() => setCameraOpen(true)}
+                className="mt-3 rounded-full border border-[#c9a87c]/50 bg-[#c9a87c]/12 px-5 py-2 text-sm font-semibold text-[#f0c987] hover:bg-[#c9a87c]/20 disabled:opacity-50"
+              >
+                {photoBusy ? "Saving…" : "Take selfie"}
+              </button>
+            ) : null}
 
             <h2 className="mt-4 font-[family-name:var(--font-display)] text-3xl leading-tight text-[#fffaf6]">
               {displayName}
@@ -312,19 +325,24 @@ export default function AdminAccountPage() {
           />
 
           {(photoError || photoMessage || hasPhoto) && !editingProfile ? (
-            <div className="mt-4 space-y-2 text-center text-sm">
-              {hasPhoto ? (
-                <button
-                  type="button"
-                  disabled={photoBusy}
-                  className="text-[#d4c4b0] underline-offset-2 hover:text-[#f0c987] hover:underline"
-                  onClick={removePhoto}
-                >
-                  Use default avatar instead
-                </button>
-              ) : null}
-              {photoError ? <p className="text-[#f5a8a8]">{photoError}</p> : null}
+            <div className="mt-4 space-y-3 text-center text-sm">
               {photoMessage ? <p className="text-[#9fe3b8]">{photoMessage}</p> : null}
+              {photoError ? <p className="text-[#f5a8a8]">{photoError}</p> : null}
+              {hasPhoto ? (
+                <div className="mx-auto max-w-xs space-y-1.5">
+                  <button
+                    type="button"
+                    disabled={photoBusy}
+                    className="w-full rounded-full border border-[#c9a87c]/50 bg-[#1c1714]/80 px-4 py-2.5 text-sm font-semibold text-[#f0c987] hover:bg-[#c9a87c]/12 disabled:opacity-50"
+                    onClick={removePhoto}
+                  >
+                    {photoBusy ? "Removing…" : "Remove photo"}
+                  </button>
+                  <p className="text-xs text-[#d4c4b0]">
+                    Clears your selfie and shows the default avatar again
+                  </p>
+                </div>
+              ) : null}
             </div>
           ) : null}
         </div>
@@ -340,14 +358,17 @@ export default function AdminAccountPage() {
             </p>
 
             {hasPhoto ? (
-              <button
-                type="button"
-                disabled={photoBusy}
-                className="w-fit rounded-full border border-[#c9a87c]/45 px-4 py-2 text-sm font-semibold text-[#f0c987] hover:bg-[#c9a87c]/10"
-                onClick={removePhoto}
-              >
-                Use avatar instead
-              </button>
+              <div className="space-y-1">
+                <button
+                  type="button"
+                  disabled={photoBusy}
+                  className="w-fit rounded-full border border-[#c9a87c]/45 px-4 py-2 text-sm font-semibold text-[#f0c987] hover:bg-[#c9a87c]/10 disabled:opacity-50"
+                  onClick={removePhoto}
+                >
+                  {photoBusy ? "Removing…" : "Remove photo"}
+                </button>
+                <p className="text-xs text-[#d4c4b0]">Back to the default avatar</p>
+              </div>
             ) : null}
             {photoError ? <p className="text-sm text-[#f5a8a8]">{photoError}</p> : null}
             {photoMessage ? <p className="text-sm text-[#9fe3b8]">{photoMessage}</p> : null}
