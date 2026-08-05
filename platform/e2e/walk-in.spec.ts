@@ -232,6 +232,19 @@ test.describe("Walk-in appointments", () => {
     ).toHaveCount(0, { timeout: 15_000 });
   });
 
+  test("stylist opens store display from My Jobs", async ({ page }) => {
+    await stylistLogin(page);
+    await page.goto("/stylist");
+    await page.getByTestId("stylist-store-display-link").click();
+    await expect(page).toHaveURL(/\/stylist\/display/);
+    await expect(page.getByTestId("stylist-store-display")).toBeVisible();
+    await expect(page.getByTestId("manager-store-display-board")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByTestId("display-waitlist-section")).toBeVisible();
+    await expect(page.getByTestId("display-floor-counts")).toBeVisible();
+  });
+
   test("stylist can seat waitlist guest to self or another stylist", async ({
     page,
   }) => {

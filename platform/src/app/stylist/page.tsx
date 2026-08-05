@@ -306,23 +306,32 @@ export default function StylistHomePage() {
       </header>
 
       <section className="space-y-3 rounded-2xl border border-ink/15 bg-cream p-4">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">
-              Walk-in &amp; waitlist
+              Floor board
             </h2>
             <p className="text-sm text-muted">
-              Seat a guest for yourself, or assign waitlist guests to any open chair.
+              Open the store display, or seat a walk-in / waitlist guest here.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setWalkInOpen((v) => !v)}
-            className="rounded-full border border-ink/20 px-3 py-2 text-sm font-semibold text-champagne"
-            data-testid="stylist-walk-in-toggle"
-          >
-            {walkInOpen ? "Hide form" : "Add walk-in"}
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/stylist/display"
+              className="rounded-full bg-champagne px-3 py-2 text-sm font-semibold text-[#1c1714]"
+              data-testid="stylist-store-display-link"
+            >
+              Store display
+            </Link>
+            <button
+              type="button"
+              onClick={() => setWalkInOpen((v) => !v)}
+              className="rounded-full border border-ink/20 px-3 py-2 text-sm font-semibold text-champagne"
+              data-testid="stylist-walk-in-toggle"
+            >
+              {walkInOpen ? "Hide form" : "Add walk-in"}
+            </button>
+          </div>
         </div>
         {stylistId ? (
           <WalkInPanel

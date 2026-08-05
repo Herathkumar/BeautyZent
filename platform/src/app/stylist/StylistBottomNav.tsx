@@ -6,7 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 
 export function StylistBottomNav() {
   const pathname = usePathname();
-  const onJobs = pathname === "/stylist";
+  const onJobs = pathname === "/stylist" || pathname.startsWith("/stylist/display");
   const onSchedule = pathname.startsWith("/stylist/schedule");
   const onEarnings = pathname.startsWith("/stylist/earnings");
   const onAccount = pathname.startsWith("/stylist/account");
