@@ -305,7 +305,7 @@ export default function AdminPayPage() {
     <main className="space-y-8">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold tracking-[0.2em] text-[#c9a87c] uppercase">
+          <p className="text-xs font-semibold tracking-[0.2em] text-[#7d6154] uppercase">
             Money
           </p>
           <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl">
@@ -322,7 +322,7 @@ export default function AdminPayPage() {
           type="button"
           disabled={loading || reports.length === 0}
           onClick={() => downloadPayCsv(reports, year, month)}
-          className="rounded-full border border-[#c9a87c]/45 px-4 py-2 text-sm text-[#f0c987] disabled:opacity-40"
+          className="rounded-full border border-[#7d6154]/45 px-4 py-2 text-sm text-[#7d6154] disabled:opacity-40"
         >
           Download CSV
         </button>
@@ -330,26 +330,26 @@ export default function AdminPayPage() {
 
       <form
         onSubmit={onSaveHours}
-        className="grid gap-4 rounded-2xl border border-[#c9a87c]/30 bg-[#2a211c] p-5"
+        className="grid gap-4 rounded-2xl border border-[#7d6154]/30 bg-[#ffffff] p-5"
         data-testid="store-hours-form"
       >
         <div>
-          <h2 className="font-[family-name:var(--font-display)] text-xl text-[#fffaf6]">
+          <h2 className="font-[family-name:var(--font-display)] text-xl text-[#2b2521]">
             Store regular hours
           </h2>
-          <p className="mt-1 text-sm text-[#d4c4b0]">
+          <p className="mt-1 text-sm text-[#6b5b52]">
             Default open/close and off days for new stylists. Existing stylist schedules stay as
             set.
           </p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
-          <label className="grid gap-1.5 text-sm text-[#d4c4b0]">
+          <label className="grid gap-1.5 text-sm text-[#6b5b52]">
             Opens
             <select
               value={openHour}
               onChange={(e) => setOpenHour(Number(e.target.value))}
               aria-label="Store open hour"
-              className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+              className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-[#2b2521]"
             >
               {Array.from({ length: 24 }, (_, h) => (
                 <option key={h} value={h}>
@@ -358,13 +358,13 @@ export default function AdminPayPage() {
               ))}
             </select>
           </label>
-          <label className="grid gap-1.5 text-sm text-[#d4c4b0]">
+          <label className="grid gap-1.5 text-sm text-[#6b5b52]">
             Closes
             <select
               value={closeHour}
               onChange={(e) => setCloseHour(Number(e.target.value))}
               aria-label="Store close hour"
-              className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+              className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-[#2b2521]"
             >
               {Array.from({ length: 24 }, (_, i) => {
                 const h = i + 1;
@@ -378,8 +378,8 @@ export default function AdminPayPage() {
           </label>
         </div>
         <fieldset>
-          <legend className="text-sm text-[#d4c4b0]">Store off days</legend>
-          <p className="mt-1 text-xs text-[#d4c4b0]/80">
+          <legend className="text-sm text-[#6b5b52]">Store off days</legend>
+          <p className="mt-1 text-xs text-[#6b5b52]/80">
             Days the store is closed. New stylists inherit these as days off.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -390,8 +390,8 @@ export default function AdminPayPage() {
                   key={day}
                   className={`cursor-pointer rounded-full border px-3 py-1.5 text-sm ${
                     checked
-                      ? "border-[#c9a87c] bg-[#c9a87c]/15 text-[#f0c987]"
-                      : "border-[#c9a87c]/30 text-[#d4c4b0]"
+                      ? "border-[#7d6154] bg-[#7d6154]/15 text-[#7d6154]"
+                      : "border-[#7d6154]/30 text-[#6b5b52]"
                   }`}
                 >
                   <input
@@ -418,13 +418,13 @@ export default function AdminPayPage() {
         </button>
       </form>
 
-      <div className="grid gap-3 rounded-2xl border border-[#c9a87c]/25 bg-[#2a211c] p-4 sm:grid-cols-3">
-        <label className="grid gap-1 text-xs font-semibold tracking-wide text-[#c9a87c] uppercase">
+      <div className="grid gap-3 rounded-2xl border border-[#7d6154]/25 bg-[#ffffff] p-4 sm:grid-cols-3">
+        <label className="grid gap-1 text-xs font-semibold tracking-wide text-[#7d6154] uppercase">
           Year
           <select
             value={year}
             onChange={(e) => setYear(e.target.value)}
-            className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-sm font-normal normal-case text-[#fffaf6]"
+            className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-sm font-normal normal-case text-[#2b2521]"
           >
             {[now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1].map((y) => (
               <option key={y} value={String(y)}>
@@ -433,12 +433,12 @@ export default function AdminPayPage() {
             ))}
           </select>
         </label>
-        <label className="grid gap-1 text-xs font-semibold tracking-wide text-[#c9a87c] uppercase">
+        <label className="grid gap-1 text-xs font-semibold tracking-wide text-[#7d6154] uppercase">
           Month
           <select
             value={month}
             onChange={(e) => setMonth(e.target.value)}
-            className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-sm font-normal normal-case text-[#fffaf6]"
+            className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-sm font-normal normal-case text-[#2b2521]"
           >
             {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
               <option key={m} value={String(m)}>
@@ -447,12 +447,12 @@ export default function AdminPayPage() {
             ))}
           </select>
         </label>
-        <label className="grid gap-1 text-xs font-semibold tracking-wide text-[#c9a87c] uppercase">
+        <label className="grid gap-1 text-xs font-semibold tracking-wide text-[#7d6154] uppercase">
           Stylist
           <select
             value={stylistId}
             onChange={(e) => setStylistId(e.target.value)}
-            className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-sm font-normal normal-case text-[#fffaf6]"
+            className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-sm font-normal normal-case text-[#2b2521]"
           >
             <option value="">All stylists</option>
             {stylists.map((s) => (
@@ -464,7 +464,7 @@ export default function AdminPayPage() {
         </label>
       </div>
 
-      {message ? <p className="text-sm text-[#f0c987]">{message}</p> : null}
+      {message ? <p className="text-sm text-[#7d6154]">{message}</p> : null}
 
       {pendingLeave.length > 0 ? (
         <section className="space-y-3">
@@ -478,8 +478,8 @@ export default function AdminPayPage() {
                 className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
               >
                 <div>
-                  <p className="text-sm text-[#c9a87c]">Leave request from</p>
-                  <p className="font-medium text-[#fffaf6]">{b.stylist.name}</p>
+                  <p className="text-sm text-[#7d6154]">Leave request from</p>
+                  <p className="font-medium text-[#2b2521]">{b.stylist.name}</p>
                   <p className="text-sm text-muted">
                     {b.reason} · {new Date(b.startsAt).toLocaleString("en-CA")} →{" "}
                     {new Date(b.endsAt).toLocaleString("en-CA")}
@@ -514,7 +514,7 @@ export default function AdminPayPage() {
         reports.map((r) => (
           <section
             key={r.stylist.id}
-            className="space-y-3 rounded-2xl border border-[#c9a87c]/25 bg-[#2a211c] p-5"
+            className="space-y-3 rounded-2xl border border-[#7d6154]/25 bg-[#ffffff] p-5"
           >
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -533,10 +533,10 @@ export default function AdminPayPage() {
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-sm text-[#c9a87c]">Amount owed</p>
+                <p className="text-sm text-[#7d6154]">Amount owed</p>
                 <p
                   className={`font-[family-name:var(--font-display)] text-3xl ${
-                    (r.owedCents ?? r.totalPay) <= 0 ? "text-[#9fe3b8]" : "text-[#f0c987]"
+                    (r.owedCents ?? r.totalPay) <= 0 ? "text-[#9fe3b8]" : "text-[#7d6154]"
                   }`}
                 >
                   ${centsToDollars(r.owedCents ?? r.totalPay)}

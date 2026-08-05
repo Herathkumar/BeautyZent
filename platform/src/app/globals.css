@@ -69,6 +69,27 @@ html.paper-shell body {
   color: #fffaf6;
 }
 
+.app-splash--manager {
+  background:
+    radial-gradient(1000px 480px at 10% -10%, rgba(125, 97, 84, 0.1), transparent 55%),
+    radial-gradient(800px 400px at 100% 100%, rgba(140, 111, 90, 0.08), transparent 50%),
+    linear-gradient(180deg, #fdf8f3 0%, #f7f1ea 50%, #f3ebe3 100%);
+  color: #2b2521;
+}
+
+.app-splash--manager .app-splash-brand {
+  color: #2b2521;
+}
+
+.app-splash--manager .app-splash-label {
+  color: rgba(125, 97, 84, 0.75);
+}
+
+.app-splash--manager .app-splash-spinner {
+  border-color: rgba(125, 97, 84, 0.2);
+  border-top-color: #7d6154;
+}
+
 .app-splash--stylist {
   background:
     radial-gradient(900px 460px at 85% -8%, rgba(126, 196, 184, 0.2), transparent 55%),
@@ -162,30 +183,30 @@ a {
   color: #fffaf6 !important;
 }
 
-/* Manager app — warm champagne / cocoa */
+/* Manager web — Farzana cream brand (light, earthy brown accents) */
 .admin-theme {
-  --ink: #fffaf6;
-  --ink-soft: #e8ddd0;
-  --muted: #a89a8c;
-  --paper: #1c1714;
-  --champagne: #c9a87c;
-  --cocoa: #f0c987;
-  --white: #fffaf6;
-  --line: rgba(201, 168, 124, 0.22);
-  --color-ink: #fffaf6;
-  --color-ink-soft: #e8ddd0;
-  --color-muted: #a89a8c;
-  --color-paper: #1c1714;
-  --color-cream: #2a211c;
-  --color-champagne: #c9a87c;
-  --color-cocoa: #f0c987;
-  --color-white: #fffaf6;
+  --ink: #2b2521;
+  --ink-soft: #3d342e;
+  --muted: #6b5b52;
+  --paper: #fdf8f3;
+  --champagne: #7d6154;
+  --cocoa: #8c6f5a;
+  --white: #fffcf9;
+  --line: rgba(125, 97, 84, 0.18);
+  --color-ink: #2b2521;
+  --color-ink-soft: #3d342e;
+  --color-muted: #6b5b52;
+  --color-paper: #fdf8f3;
+  --color-cream: #fffcf9;
+  --color-champagne: #7d6154;
+  --color-cocoa: #8c6f5a;
+  --color-white: #fffcf9;
   min-height: 100vh;
   background:
-    radial-gradient(900px 420px at 90% -10%, rgba(240, 201, 135, 0.18), transparent 55%),
-    radial-gradient(700px 360px at 0% 100%, rgba(110, 74, 56, 0.35), transparent 50%),
-    linear-gradient(180deg, #241c18 0%, #1c1714 45%, #15110f 100%);
-  color: #fffaf6;
+    radial-gradient(1000px 480px at 12% -8%, rgba(125, 97, 84, 0.08), transparent 55%),
+    radial-gradient(800px 420px at 100% 100%, rgba(140, 111, 90, 0.07), transparent 50%),
+    linear-gradient(180deg, #fdf8f3 0%, #f7f1ea 55%, #f3ebe3 100%);
+  color: #2b2521;
 }
 
 /* Stylist app — cool sea-glass teal (distinct from manager gold) */
@@ -215,13 +236,13 @@ a {
 }
 
 .admin-theme .btn-solid {
-  background: #c9a87c;
-  color: #1c1714 !important;
+  background: #7d6154;
+  color: #fffcf9 !important;
 }
 
 .admin-theme .btn-solid:hover {
-  background: #f0c987;
-  color: #1c1714 !important;
+  background: #8c6f5a;
+  color: #fffcf9 !important;
 }
 
 .stylist-theme .btn-solid {
@@ -235,8 +256,8 @@ a {
 }
 
 .admin-theme header.admin-header {
-  background: rgba(28, 23, 20, 0.88);
-  border-bottom: 1px solid rgba(201, 168, 124, 0.28);
+  background: rgba(253, 248, 243, 0.92);
+  border-bottom: 1px solid rgba(125, 97, 84, 0.16);
   backdrop-filter: blur(14px);
 }
 
@@ -247,7 +268,16 @@ a {
 }
 
 .admin-theme .admin-nav a,
-.admin-theme .admin-nav button,
+.admin-theme .admin-nav button {
+  color: rgba(43, 37, 33, 0.62);
+  transition: color 0.15s ease;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
 .stylist-theme .admin-nav a {
   color: rgba(255, 250, 246, 0.72);
   transition: color 0.15s ease;
@@ -260,7 +290,7 @@ a {
 
 .admin-theme .admin-nav a:hover,
 .admin-theme .admin-nav button:hover {
-  color: #f0c987;
+  color: #7d6154;
 }
 
 .stylist-theme .admin-nav a:hover {
@@ -269,7 +299,7 @@ a {
 
 .admin-theme .admin-nav a.is-active,
 .admin-theme .admin-nav button.is-active {
-  color: #f0c987;
+  color: #7d6154;
 }
 
 .admin-theme .admin-header-nav {
@@ -292,21 +322,21 @@ a {
   gap: 0.15rem;
   padding: 0.45rem;
   border-radius: 0.9rem;
-  border: 1px solid rgba(201, 168, 124, 0.35);
-  background: rgba(28, 23, 20, 0.98);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(125, 97, 84, 0.2);
+  background: #fffcf9;
+  box-shadow: 0 12px 28px rgba(43, 37, 33, 0.12);
 }
 
 .admin-theme .admin-salon-dropdown a {
   display: block;
   padding: 0.55rem 0.75rem;
   border-radius: 0.65rem;
-  color: #fffaf6 !important;
+  color: #2b2521 !important;
 }
 
 .admin-theme .admin-salon-dropdown a:hover {
-  background: rgba(201, 168, 124, 0.16);
-  color: #f0c987 !important;
+  background: rgba(125, 97, 84, 0.1);
+  color: #7d6154 !important;
 }
 
 /* Viewport-locked shell: page content scrolls; bottom nav stays docked */
@@ -338,8 +368,8 @@ a {
   grid-template-columns: 1fr 1fr 1fr 1fr;
   gap: 0.25rem;
   padding: 0.55rem 0.75rem calc(0.55rem + env(safe-area-inset-bottom));
-  background: rgba(28, 23, 20, 0.98);
-  border-top: 1px solid rgba(201, 168, 124, 0.3);
+  background: rgba(255, 252, 249, 0.98);
+  border-top: 1px solid rgba(125, 97, 84, 0.16);
 }
 
 /* Desktop uses the top nav; bottom bar is phone-only (also gated in AdminBottomNav JS) */
@@ -362,15 +392,15 @@ a {
   font-weight: 600;
   line-height: 1.15;
   text-align: center;
-  color: rgba(255, 250, 246, 0.55);
+  color: rgba(43, 37, 33, 0.45);
   background: transparent;
   border: 0;
 }
 
 .admin-theme .admin-bottom-nav a.active,
 .admin-theme .admin-bottom-nav button.active {
-  background: rgba(201, 168, 124, 0.18);
-  color: #f0c987;
+  background: rgba(125, 97, 84, 0.12);
+  color: #7d6154;
 }
 
 .admin-theme .admin-salon-sheet {
@@ -383,7 +413,7 @@ a {
   position: absolute;
   inset: 0;
   border: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(43, 37, 33, 0.35);
 }
 
 .admin-theme .admin-salon-sheet-panel {
@@ -393,9 +423,9 @@ a {
   bottom: calc(4.75rem + env(safe-area-inset-bottom));
   padding: 1.1rem 1.15rem 1.25rem;
   border-radius: 1.1rem;
-  border: 1px solid rgba(201, 168, 124, 0.35);
-  background: #241c18;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(125, 97, 84, 0.2);
+  background: #fffcf9;
+  box-shadow: 0 16px 40px rgba(43, 37, 33, 0.16);
 }
 
 .admin-theme .admin-salon-sheet-link {
@@ -403,21 +433,21 @@ a {
   gap: 0.15rem;
   padding: 0.85rem 0.95rem;
   border-radius: 0.85rem;
-  border: 1px solid rgba(201, 168, 124, 0.22);
-  background: rgba(201, 168, 124, 0.08);
+  border: 1px solid rgba(125, 97, 84, 0.16);
+  background: rgba(125, 97, 84, 0.06);
 }
 
 .admin-theme .admin-salon-sheet-link:hover {
-  border-color: rgba(201, 168, 124, 0.45);
-  background: rgba(201, 168, 124, 0.14);
+  border-color: rgba(125, 97, 84, 0.35);
+  background: rgba(125, 97, 84, 0.1);
 }
 
 .admin-theme input,
 .admin-theme select,
 .admin-theme textarea {
-  background: #1c1714 !important;
-  color: #fffaf6 !important;
-  border-color: rgba(201, 168, 124, 0.35) !important;
+  background: #fffcf9 !important;
+  color: #2b2521 !important;
+  border-color: rgba(125, 97, 84, 0.28) !important;
 }
 
 .stylist-theme input,
@@ -430,9 +460,14 @@ a {
 
 .admin-theme input[type="date"],
 .admin-theme input[type="datetime-local"],
-.stylist-theme input[type="date"],
-.stylist-theme input[type="datetime-local"],
 .admin-theme .admin-date-input {
+  color-scheme: light;
+  min-height: 48px;
+  position: relative;
+}
+
+.stylist-theme input[type="date"],
+.stylist-theme input[type="datetime-local"] {
   color-scheme: dark;
   min-height: 48px;
   position: relative;
@@ -440,9 +475,16 @@ a {
 
 .admin-theme input[type="date"]::-webkit-calendar-picker-indicator,
 .admin-theme input[type="datetime-local"]::-webkit-calendar-picker-indicator,
-.stylist-theme input[type="date"]::-webkit-calendar-picker-indicator,
-.stylist-theme input[type="datetime-local"]::-webkit-calendar-picker-indicator,
 .admin-theme .admin-date-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.7;
+  filter: none;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.stylist-theme input[type="date"]::-webkit-calendar-picker-indicator,
+.stylist-theme input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   cursor: pointer;
   opacity: 1;
   filter: invert(0.9);
@@ -451,7 +493,10 @@ a {
 }
 
 .admin-theme input::placeholder,
-.admin-theme textarea::placeholder,
+.admin-theme textarea::placeholder {
+  color: rgba(43, 37, 33, 0.35);
+}
+
 .stylist-theme input::placeholder,
 .stylist-theme textarea::placeholder {
   color: rgba(255, 250, 246, 0.35);
@@ -460,7 +505,7 @@ a {
 .admin-theme input:focus,
 .admin-theme select:focus,
 .admin-theme textarea:focus {
-  outline: 2px solid rgba(240, 201, 135, 0.45);
+  outline: 2px solid rgba(125, 97, 84, 0.35);
   outline-offset: 1px;
 }
 
@@ -472,8 +517,8 @@ a {
 }
 
 .admin-theme option {
-  background: #1c1714;
-  color: #fffaf6;
+  background: #fffcf9;
+  color: #2b2521;
 }
 
 .stylist-theme option {
@@ -486,7 +531,7 @@ a {
 .admin-theme .border-ink\/15,
 .admin-theme .border-ink\/20,
 .admin-theme .border-ink\/30 {
-  border-color: rgba(201, 168, 124, 0.28) !important;
+  border-color: rgba(125, 97, 84, 0.22) !important;
 }
 
 .stylist-theme .border-ink,
@@ -498,7 +543,7 @@ a {
 }
 
 .admin-theme .divide-ink\/10 > :not([hidden]) ~ :not([hidden]) {
-  border-color: rgba(201, 168, 124, 0.18);
+  border-color: rgba(125, 97, 84, 0.14);
 }
 
 .stylist-theme .divide-ink\/10 > :not([hidden]) ~ :not([hidden]) {
@@ -512,13 +557,16 @@ a {
   color: #f5a8a8 !important;
 }
 
-.admin-theme .text-green-800,
+.admin-theme .text-green-800 {
+  color: #2f7a4f !important;
+}
+
 .stylist-theme .text-green-800 {
   color: #9fe3b8 !important;
 }
 
 .admin-theme .bg-white {
-  background-color: #1c1714 !important;
+  background-color: #ffffff !important;
 }
 
 .stylist-theme .bg-white {
@@ -526,26 +574,28 @@ a {
 }
 
 .admin-theme .admin-stat-card {
-  border: 1px solid rgba(201, 168, 124, 0.3);
-  background: linear-gradient(135deg, #3d2b22 0%, #2a211c 100%);
-  transition: border-color 0.15s ease, transform 0.15s ease;
+  border: 1px solid rgba(125, 97, 84, 0.16);
+  background: linear-gradient(135deg, #ffffff 0%, #fffcf9 100%);
+  box-shadow: 0 8px 24px rgba(43, 37, 33, 0.05);
+  transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .admin-theme .admin-stat-card:hover {
-  border-color: rgba(240, 201, 135, 0.55);
+  border-color: rgba(125, 97, 84, 0.35);
   transform: translateY(-1px);
+  box-shadow: 0 12px 28px rgba(43, 37, 33, 0.08);
 }
 
 .admin-theme .admin-stat-card:nth-child(2) {
-  background: linear-gradient(135deg, #3a2f4a 0%, #2a211c 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #faf6f1 100%);
 }
 
 .admin-theme .admin-stat-card:nth-child(3) {
-  background: linear-gradient(135deg, #2a3f3a 0%, #2a211c 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #f7f2ec 100%);
 }
 
 .admin-theme .admin-stat-card:nth-child(4) {
-  background: linear-gradient(135deg, #4a3520 0%, #2a211c 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #f3ebe3 100%);
 }
 
 .stylist-theme .admin-stat-card {
@@ -572,8 +622,8 @@ a {
 }
 
 .admin-theme .bg-cream {
-  background-color: #2a211c !important;
-  color: #fffaf6;
+  background-color: #fffcf9 !important;
+  color: #2b2521;
 }
 
 .stylist-theme .bg-cream {
@@ -584,7 +634,7 @@ a {
 .admin-theme h1,
 .admin-theme h2,
 .admin-theme h3 {
-  color: #fffaf6 !important;
+  color: #2b2521 !important;
 }
 
 .stylist-theme h1,
@@ -594,7 +644,7 @@ a {
 }
 
 .admin-theme .text-muted {
-  color: #d4c4b0 !important;
+  color: #6b5b52 !important;
 }
 
 .stylist-theme .text-muted {
@@ -603,7 +653,7 @@ a {
 
 .admin-theme .text-cocoa,
 .admin-theme .text-champagne {
-  color: #f0c987 !important;
+  color: #7d6154 !important;
 }
 
 .stylist-theme .text-cocoa,
@@ -613,7 +663,7 @@ a {
 
 .admin-theme .font-medium,
 .admin-theme .font-semibold {
-  color: #fffaf6;
+  color: #2b2521;
 }
 
 .stylist-theme .font-medium,
@@ -622,12 +672,12 @@ a {
 }
 
 .admin-theme a.rounded-full.border {
-  color: #f0c987 !important;
-  border-color: rgba(201, 168, 124, 0.45) !important;
+  color: #7d6154 !important;
+  border-color: rgba(125, 97, 84, 0.35) !important;
 }
 
 .admin-theme a.rounded-full.border:hover {
-  background: rgba(201, 168, 124, 0.12);
+  background: rgba(125, 97, 84, 0.08);
 }
 
 .stylist-theme a.rounded-full.border {
@@ -682,6 +732,51 @@ a {
   touch-action: manipulation;
 }
 
+/*
+  Remap common dark-theme arbitrary Tailwind colors used across Manager pages
+  so the cream brand applies without rewriting every className.
+*/
+.admin-theme .text-\[\#fffaf6\],
+.admin-theme .text-\[\#FFFAf6\] {
+  color: #2b2521 !important;
+}
+.admin-theme .text-\[\#f0c987\],
+.admin-theme .text-\[\#c9a87c\] {
+  color: #7d6154 !important;
+}
+.admin-theme .text-\[\#d4c4b0\],
+.admin-theme .text-\[\#a89a8c\],
+.admin-theme .text-\[\#e8ddd0\] {
+  color: #6b5b52 !important;
+}
+.admin-theme .text-\[\#9fe3b8\] {
+  color: #2f7a4f !important;
+}
+.admin-theme .bg-\[\#1c1714\],
+.admin-theme .bg-\[\#241c18\],
+.admin-theme .bg-\[\#15110f\] {
+  background-color: #fffcf9 !important;
+}
+.admin-theme .bg-\[\#2a211c\],
+.admin-theme .bg-\[\#3d2b22\],
+.admin-theme .bg-\[\#3a2a22\] {
+  background-color: #ffffff !important;
+}
+.admin-theme .border-\[\#c9a87c\],
+.admin-theme .border-\[\#f0c987\] {
+  border-color: #7d6154 !important;
+}
+.admin-theme .ring-\[\#c9a87c\],
+.admin-theme .ring-\[\#f0c987\] {
+  --tw-ring-color: rgba(125, 97, 84, 0.45) !important;
+}
+.admin-theme .shadow-\[0_12px_40px_rgba\(0\,0\,0\,0\.25\)\],
+.admin-theme .shadow-\[0_12px_40px_rgba\(0\,0\,0\,0\.35\)\],
+.admin-theme .shadow-\[0_16px_40px_rgba\(0\,0\,0\,0\.35\)\] {
+  --tw-shadow: 0 12px 40px rgba(43, 37, 33, 0.08) !important;
+  box-shadow: var(--tw-shadow) !important;
+}
+
 .stylist-theme .stylist-nav-badge {
   position: absolute;
   top: 0.2rem;
@@ -699,9 +794,15 @@ a {
 }
 
 .earnings-hero {
-  background: linear-gradient(160deg, #3d2b22 0%, #241c18 55%, #1c1714 100%);
-  border: 1px solid rgba(201, 168, 124, 0.35);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+  background: linear-gradient(160deg, #ffffff 0%, #fffcf9 55%, #f7f1ea 100%);
+  border: 1px solid rgba(125, 97, 84, 0.18);
+  box-shadow: 0 16px 40px rgba(43, 37, 33, 0.06);
+}
+
+.admin-theme .earnings-hero {
+  background: linear-gradient(160deg, #ffffff 0%, #fffcf9 55%, #f7f1ea 100%);
+  border: 1px solid rgba(125, 97, 84, 0.18);
+  box-shadow: 0 16px 40px rgba(43, 37, 33, 0.06);
 }
 
 .stylist-theme .earnings-hero {

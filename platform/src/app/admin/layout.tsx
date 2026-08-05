@@ -8,13 +8,13 @@ import { AdminHeaderNav } from "./AdminHeaderNav";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "FHSalon — Manager App",
-  description: "Dashboard, bookings, earnings, and team — phone-friendly manager portal.",
+  title: "FHSalon — Manager",
+  description: "Dashboard, bookings, earnings, and team for Farzana Hair Salon.",
   manifest: "/manager-manifest.webmanifest",
   appleWebApp: {
     capable: true,
     title: "FHSalon Manager",
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default",
   },
   icons: {
     icon: [
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#1c1714",
+  themeColor: "#fdf8f3",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -47,23 +47,25 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 md:hidden">
             <Link
               href="/manager"
-              className="font-[family-name:var(--font-display)] text-lg tracking-wide text-champagne"
+              className="font-[family-name:var(--font-display)] text-lg tracking-wide text-ink"
             >
-              FHSalon
+              Farzana <span className="text-champagne">Hair Salon</span>
             </Link>
-            <p className="text-xs text-muted">Manager App · no install</p>
+            <p className="text-xs font-semibold tracking-[0.16em] text-champagne uppercase">
+              Manager
+            </p>
           </div>
           {/* Desktop */}
           <div className="mx-auto hidden max-w-5xl flex-wrap items-center justify-between gap-3 px-6 py-4 md:flex">
             <div>
-              <p className="text-[11px] font-semibold tracking-[0.2em] text-[#c9a87c] uppercase">
-                Manager App
+              <p className="text-[11px] font-semibold tracking-[0.2em] text-[#7d6154] uppercase">
+                Dundas, Ontario
               </p>
               <Link
                 href="/manager"
-                className="font-[family-name:var(--font-display)] text-2xl text-[#fffaf6]"
+                className="font-[family-name:var(--font-display)] text-2xl text-[#2b2521]"
               >
-                FHSalon
+                Farzana <span className="text-[#7d6154]">Hair Salon</span>
               </Link>
             </div>
             <AdminHeaderNav />

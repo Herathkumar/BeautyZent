@@ -102,10 +102,10 @@ export default function ManagerStoreDisplayPage() {
     <main className="space-y-4" data-testid="manager-store-display">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold tracking-[0.18em] text-[#c9a87c] uppercase">
+          <p className="text-xs font-semibold tracking-[0.18em] text-[#7d6154] uppercase">
             Bookings
           </p>
-          <h1 className="font-[family-name:var(--font-display)] text-3xl text-[#fffaf6]">
+          <h1 className="font-[family-name:var(--font-display)] text-3xl text-[#2b2521]">
             Store display
           </h1>
           <p className="text-sm text-muted">
@@ -115,7 +115,7 @@ export default function ManagerStoreDisplayPage() {
         <div className="flex flex-wrap gap-2">
           <Link
             href="/manager/appointments"
-            className="rounded-full border border-[#c9a87c]/45 px-4 py-2.5 text-sm text-[#f0c987]"
+            className="rounded-full border border-[#7d6154]/45 px-4 py-2.5 text-sm text-[#7d6154]"
           >
             Back to bookings
           </Link>
@@ -133,16 +133,16 @@ export default function ManagerStoreDisplayPage() {
       </div>
 
       <section
-        className="rounded-2xl border border-[#c9a87c]/30 bg-[#2a211c] p-5"
+        className="rounded-2xl border border-[#7d6154]/30 bg-[#ffffff] p-5"
         data-testid="manager-display-pin"
       >
-        <p className="text-xs font-semibold tracking-[0.16em] text-[#c9a87c] uppercase">
+        <p className="text-xs font-semibold tracking-[0.16em] text-[#7d6154] uppercase">
           Tablet PIN
         </p>
-        <h2 className="mt-1 font-[family-name:var(--font-display)] text-2xl text-[#fffaf6]">
+        <h2 className="mt-1 font-[family-name:var(--font-display)] text-2xl text-[#2b2521]">
           Secure the cloud store board
         </h2>
-        <p className="mt-2 text-sm text-[#d4c4b0]">
+        <p className="mt-2 text-sm text-[#6b5b52]">
           {pinSet
             ? "A PIN is active. Anyone opening the tablet URL must enter it (stays unlocked on that device for 7 days)."
             : "No PIN yet — the tablet URL is open to anyone with the link. Set a 4–6 digit PIN to lock it."}
@@ -150,7 +150,7 @@ export default function ManagerStoreDisplayPage() {
 
         <form onSubmit={savePin} className="mt-4 grid gap-3 sm:grid-cols-2">
           {pinSet ? (
-            <label className="grid gap-1.5 text-sm text-[#d4c4b0] sm:col-span-2">
+            <label className="grid gap-1.5 text-sm text-[#6b5b52] sm:col-span-2">
               Current PIN
               <input
                 type="password"
@@ -159,12 +159,12 @@ export default function ManagerStoreDisplayPage() {
                 pattern="\d{4,6}"
                 value={currentPin}
                 onChange={(e) => setCurrentPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+                className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-[#2b2521]"
                 placeholder="••••"
               />
             </label>
           ) : null}
-          <label className="grid gap-1.5 text-sm text-[#d4c4b0]">
+          <label className="grid gap-1.5 text-sm text-[#6b5b52]">
             {pinSet ? "New PIN" : "PIN (4–6 digits)"}
             <input
               type="password"
@@ -174,11 +174,11 @@ export default function ManagerStoreDisplayPage() {
               required
               value={newPin}
               onChange={(e) => setNewPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
-              className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+              className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-[#2b2521]"
               placeholder="e.g. 4829"
             />
           </label>
-          <label className="grid gap-1.5 text-sm text-[#d4c4b0]">
+          <label className="grid gap-1.5 text-sm text-[#6b5b52]">
             Confirm PIN
             <input
               type="password"
@@ -188,7 +188,7 @@ export default function ManagerStoreDisplayPage() {
               required
               value={confirmPin}
               onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
-              className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+              className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-[#2b2521]"
               placeholder="Same PIN again"
             />
           </label>

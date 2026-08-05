@@ -174,7 +174,7 @@ export default function AdminBookPage() {
                 type="button"
                 onClick={() => setStartsAt(slot)}
                 className={`rounded-full px-3 py-1.5 text-sm ${
-                  startsAt === slot ? "bg-ink text-[#fffaf6]" : "border border-ink/20"
+                  startsAt === slot ? "bg-ink text-[#2b2521]" : "border border-ink/20"
                 }`}
               >
                 {new Date(slot).toLocaleTimeString("en-CA", {

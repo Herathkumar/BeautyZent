@@ -1,6 +1,6 @@
 const VARIANTS = {
   manager: {
-    label: "Manager App",
+    label: "Manager",
     className: "app-splash--manager",
   },
   stylist: {

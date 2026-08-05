@@ -7,7 +7,7 @@ export const metadata: Metadata = {
     "Multi-tenant salon booking with stylist calendars, tablet floor display, and admin portal.",
 };
 
-/** Paints dark shell before CSS/JS so PWA/tablet opens don't flash white. */
+/** Paints shell before CSS/JS so cold starts don't flash the wrong theme. */
 const BOOT_STYLE = `
 html,body{background:#1c1714;color:#fffaf6;min-height:100%;min-height:100dvh}
 html.paper-shell,html.paper-shell body{
@@ -15,14 +15,21 @@ html.paper-shell,html.paper-shell body{
     linear-gradient(180deg,#f7f3ee 0%,#f3eee8 45%,#ebe4db 100%);
   color:#1c1714
 }
+html.manager-shell,html.manager-shell body{
+  background:radial-gradient(1000px 480px at 12% -8%,rgba(125,97,84,.08),transparent 55%),
+    linear-gradient(180deg,#fdf8f3 0%,#f7f1ea 55%,#f3ebe3 100%);
+  color:#2b2521
+}
 `;
 
 const BOOT_SCRIPT = `
 (function(){
   try{
     var p=location.pathname||"";
-    var dark=/^\\/(manager|admin|stylist|display|book|demo)(\\/|$)/.test(p);
-    if(!dark) document.documentElement.classList.add("paper-shell");
+    var manager=/^\\/(manager|admin)(\\/|$)/.test(p);
+    var dark=/^\\/(stylist|display|book|demo)(\\/|$)/.test(p);
+    if(manager) document.documentElement.classList.add("manager-shell");
+    else if(!dark) document.documentElement.classList.add("paper-shell");
   }catch(e){}
 })();
 `;

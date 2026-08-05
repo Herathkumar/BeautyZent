@@ -221,26 +221,26 @@ export default function AdminAccountPage() {
     <main className="mx-auto max-w-xl space-y-6">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="font-[family-name:var(--font-display)] text-3xl text-[#fffaf6]">
+          <h1 className="font-[family-name:var(--font-display)] text-3xl text-[#2b2521]">
             Profile
           </h1>
-          <p className="mt-1 text-sm text-[#d4c4b0]">Your salon manager identity and login.</p>
+          <p className="mt-1 text-sm text-[#6b5b52]">Your salon manager identity and login.</p>
         </div>
         <button
           type="button"
           onClick={logout}
-          className="shrink-0 rounded-full border border-[#c9a87c]/45 px-4 py-2 text-sm font-semibold text-[#f0c987] hover:bg-[#c9a87c]/10"
+          className="shrink-0 rounded-full border border-[#7d6154]/45 px-4 py-2 text-sm font-semibold text-[#7d6154] hover:bg-[#7d6154]/10"
         >
           Log out
         </button>
       </div>
 
       <section
-        className="overflow-hidden rounded-3xl border border-[#c9a87c]/30"
+        className="overflow-hidden rounded-3xl border border-[#7d6154]/30"
         data-testid="manager-profile-card"
         style={{
           background:
-            "linear-gradient(165deg, rgba(201,168,124,0.18) 0%, rgba(42,33,28,0.96) 42%, #2a211c 100%)",
+            "linear-gradient(165deg, rgba(125,97,84,0.12) 0%, rgba(255,252,249,0.98) 42%, #ffffff 100%)",
         }}
       >
         <div className="px-5 pb-5 pt-7 sm:px-6">
@@ -249,7 +249,7 @@ export default function AdminAccountPage() {
               type="button"
               disabled={photoBusy}
               onClick={() => setCameraOpen(true)}
-              className="relative rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f0c987]"
+              className="relative rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#7d6154]"
               aria-label={hasPhoto ? "Update selfie" : "Take selfie"}
               data-testid="manager-photo-button"
             >
@@ -260,13 +260,13 @@ export default function AdminAccountPage() {
                 width={112}
                 height={112}
                 data-testid="manager-photo-preview"
-                className="h-28 w-28 rounded-full object-cover shadow-[0_12px_40px_rgba(0,0,0,0.35)] ring-[5px] ring-[#c9a87c]/55"
+                className="h-28 w-28 rounded-full object-cover shadow-[0_12px_40px_rgba(0,0,0,0.35)] ring-[5px] ring-[#7d6154]/55"
               />
-              <span className="absolute bottom-1 right-1 rounded-full bg-[#1c1714] px-2 py-0.5 text-[10px] font-semibold tracking-wide text-[#f0c987] ring-1 ring-[#c9a87c]/40">
+              <span className="absolute bottom-1 right-1 rounded-full bg-[#fffcf9] px-2 py-0.5 text-[10px] font-semibold tracking-wide text-[#7d6154] ring-1 ring-[#7d6154]/40">
                 {photoBusy ? "…" : hasPhoto ? "Update" : "Selfie"}
               </span>
             </button>
-            <p className="mt-2 text-xs text-[#d4c4b0]">
+            <p className="mt-2 text-xs text-[#6b5b52]">
               Tap photo to take a selfie, or choose one from your library
             </p>
             {!editingProfile ? (
@@ -275,12 +275,12 @@ export default function AdminAccountPage() {
                   type="button"
                   disabled={photoBusy}
                   onClick={() => setCameraOpen(true)}
-                  className="rounded-full border border-[#c9a87c]/50 bg-[#c9a87c]/12 px-5 py-2 text-sm font-semibold text-[#f0c987] hover:bg-[#c9a87c]/20 disabled:opacity-50"
+                  className="rounded-full border border-[#7d6154]/50 bg-[#7d6154]/12 px-5 py-2 text-sm font-semibold text-[#7d6154] hover:bg-[#7d6154]/20 disabled:opacity-50"
                 >
                   {photoBusy ? "Saving…" : hasPhoto ? "Update selfie" : "Take selfie"}
                 </button>
                 <label
-                  className={`relative overflow-hidden rounded-full border border-[#c9a87c]/35 px-5 py-2 text-sm font-semibold text-[#d4c4b0] hover:bg-[#c9a87c]/10 ${
+                  className={`relative overflow-hidden rounded-full border border-[#7d6154]/35 px-5 py-2 text-sm font-semibold text-[#6b5b52] hover:bg-[#7d6154]/10 ${
                     photoBusy ? "pointer-events-none opacity-50" : "cursor-pointer"
                   }`}
                 >
@@ -300,22 +300,22 @@ export default function AdminAccountPage() {
               </div>
             ) : null}
 
-            <h2 className="mt-4 font-[family-name:var(--font-display)] text-3xl leading-tight text-[#fffaf6]">
+            <h2 className="mt-4 font-[family-name:var(--font-display)] text-3xl leading-tight text-[#2b2521]">
               {displayName}
             </h2>
-            <p className="mt-1 break-all text-sm text-[#d4c4b0]">{email || "—"}</p>
+            <p className="mt-1 break-all text-sm text-[#6b5b52]">{email || "—"}</p>
             {phone.trim() ? (
-              <p className="mt-0.5 text-sm text-[#f0c987]/90">{phone.trim()}</p>
+              <p className="mt-0.5 text-sm text-[#7d6154]/90">{phone.trim()}</p>
             ) : null}
 
             {alsoStylist && !editingProfile ? (
-              <p className="mt-3 rounded-full border border-[#c9a87c]/35 bg-[#c9a87c]/10 px-3 py-1 text-xs font-semibold tracking-wide text-[#f0c987]">
+              <p className="mt-3 rounded-full border border-[#7d6154]/35 bg-[#7d6154]/10 px-3 py-1 text-xs font-semibold tracking-wide text-[#7d6154]">
                 Also a stylist
               </p>
             ) : null}
 
             {bio.trim() && !editingProfile ? (
-              <p className="mt-4 max-w-sm text-sm leading-relaxed text-[#e8ddd0]/90">
+              <p className="mt-4 max-w-sm text-sm leading-relaxed text-[#5c4f47]/90">
                 “{bio.trim()}”
               </p>
             ) : null}
@@ -353,12 +353,12 @@ export default function AdminAccountPage() {
                   <button
                     type="button"
                     disabled={photoBusy}
-                    className="w-full rounded-full border border-[#c9a87c]/50 bg-[#1c1714]/80 px-4 py-2.5 text-sm font-semibold text-[#f0c987] hover:bg-[#c9a87c]/12 disabled:opacity-50"
+                    className="w-full rounded-full border border-[#7d6154]/50 bg-[#fffcf9]/80 px-4 py-2.5 text-sm font-semibold text-[#7d6154] hover:bg-[#7d6154]/12 disabled:opacity-50"
                     onClick={removePhoto}
                   >
                     {photoBusy ? "Removing…" : "Remove photo"}
                   </button>
-                  <p className="text-xs text-[#d4c4b0]">
+                  <p className="text-xs text-[#6b5b52]">
                     Clears your selfie and shows the default avatar again
                   </p>
                 </div>
@@ -370,10 +370,10 @@ export default function AdminAccountPage() {
         {editingProfile ? (
           <form
             onSubmit={onSaveProfile}
-            className="grid gap-3 border-t border-[#c9a87c]/20 bg-[#1c1714]/55 px-5 py-5 sm:px-6"
+            className="grid gap-3 border-t border-[#7d6154]/20 bg-[#fffcf9]/55 px-5 py-5 sm:px-6"
             data-testid="manager-profile-editor"
           >
-            <p className="text-xs font-semibold tracking-[0.16em] text-[#c9a87c] uppercase">
+            <p className="text-xs font-semibold tracking-[0.16em] text-[#7d6154] uppercase">
               Edit details
             </p>
 
@@ -382,27 +382,27 @@ export default function AdminAccountPage() {
                 <button
                   type="button"
                   disabled={photoBusy}
-                  className="w-fit rounded-full border border-[#c9a87c]/45 px-4 py-2 text-sm font-semibold text-[#f0c987] hover:bg-[#c9a87c]/10 disabled:opacity-50"
+                  className="w-fit rounded-full border border-[#7d6154]/45 px-4 py-2 text-sm font-semibold text-[#7d6154] hover:bg-[#7d6154]/10 disabled:opacity-50"
                   onClick={removePhoto}
                 >
                   {photoBusy ? "Removing…" : "Remove photo"}
                 </button>
-                <p className="text-xs text-[#d4c4b0]">Back to the default avatar</p>
+                <p className="text-xs text-[#6b5b52]">Back to the default avatar</p>
               </div>
             ) : null}
             {photoError ? <p className="text-sm text-[#f5a8a8]">{photoError}</p> : null}
             {photoMessage ? <p className="text-sm text-[#9fe3b8]">{photoMessage}</p> : null}
 
-            <label className="grid gap-1.5 text-sm text-[#d4c4b0]">
+            <label className="grid gap-1.5 text-sm text-[#6b5b52]">
               Display name
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+                className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-[#2b2521]"
               />
             </label>
-            <label className="grid gap-1.5 text-sm text-[#d4c4b0]">
+            <label className="grid gap-1.5 text-sm text-[#6b5b52]">
               Email
               <input
                 type="email"
@@ -410,20 +410,20 @@ export default function AdminAccountPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="username"
-                className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+                className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-[#2b2521]"
               />
             </label>
-            <label className="grid gap-1.5 text-sm text-[#d4c4b0]">
+            <label className="grid gap-1.5 text-sm text-[#6b5b52]">
               Phone
               <input
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="Optional"
-                className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+                className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-[#2b2521]"
               />
             </label>
-            <label className="grid gap-1.5 text-sm text-[#d4c4b0]">
+            <label className="grid gap-1.5 text-sm text-[#6b5b52]">
               Short bio
               <textarea
                 value={bio}
@@ -431,20 +431,20 @@ export default function AdminAccountPage() {
                 rows={3}
                 maxLength={280}
                 placeholder="Optional — a short note about you"
-                className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+                className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-[#2b2521]"
               />
             </label>
-            <label className="flex items-start gap-3 rounded-xl border border-[#c9a87c]/25 bg-[#1c1714]/60 px-3 py-3 text-sm text-[#d4c4b0]">
+            <label className="flex items-start gap-3 rounded-xl border border-[#7d6154]/25 bg-[#fffcf9]/60 px-3 py-3 text-sm text-[#6b5b52]">
               <input
                 type="checkbox"
                 checked={alsoStylist}
                 onChange={(e) => setAlsoStylist(e.target.checked)}
-                className="mt-1 h-4 w-4 accent-[#c9a87c]"
+                className="mt-1 h-4 w-4 accent-[#7d6154]"
                 data-testid="manager-also-stylist"
               />
               <span>
-                <span className="font-semibold text-[#fffaf6]">I am also a stylist</span>
-                <span className="mt-1 block text-xs text-[#d4c4b0]/90">
+                <span className="font-semibold text-[#2b2521]">I am also a stylist</span>
+                <span className="mt-1 block text-xs text-[#6b5b52]/90">
                   Adds you to the floor as a self-managed stylist (you set your own hours and leave).
                   Use the same login on the Stylist App.
                 </span>
@@ -462,7 +462,7 @@ export default function AdminAccountPage() {
               </button>
               <button
                 type="button"
-                className="rounded-full border border-[#c9a87c]/45 px-5 py-3 text-sm font-semibold text-[#f0c987] hover:bg-[#c9a87c]/10"
+                className="rounded-full border border-[#7d6154]/45 px-5 py-3 text-sm font-semibold text-[#7d6154] hover:bg-[#7d6154]/10"
                 onClick={() => {
                   setEditingProfile(false);
                   setProfileError("");
@@ -478,15 +478,15 @@ export default function AdminAccountPage() {
 
       <form
         onSubmit={onSave}
-        className="grid gap-4 rounded-3xl border border-[#c9a87c]/30 bg-[#2a211c] p-5"
+        className="grid gap-4 rounded-3xl border border-[#7d6154]/30 bg-[#ffffff] p-5"
       >
         <div>
-          <h2 className="font-[family-name:var(--font-display)] text-xl text-[#fffaf6]">Login</h2>
-          <p className="mt-1 text-sm text-[#d4c4b0]">
+          <h2 className="font-[family-name:var(--font-display)] text-xl text-[#2b2521]">Login</h2>
+          <p className="mt-1 text-sm text-[#6b5b52]">
             Change the manager login password. Email is updated under Edit profile.
           </p>
         </div>
-        <label className="grid gap-1.5 text-sm text-[#d4c4b0]">
+        <label className="grid gap-1.5 text-sm text-[#6b5b52]">
           Current password
           <input
             type="password"
@@ -494,10 +494,10 @@ export default function AdminAccountPage() {
             autoComplete="current-password"
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
-            className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+            className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-[#2b2521]"
           />
         </label>
-        <label className="grid gap-1.5 text-sm text-[#d4c4b0]">
+        <label className="grid gap-1.5 text-sm text-[#6b5b52]">
           New password
           <input
             type="password"
@@ -507,10 +507,10 @@ export default function AdminAccountPage() {
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             placeholder="At least 8 characters"
-            className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+            className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-[#2b2521]"
           />
         </label>
-        <label className="grid gap-1.5 text-sm text-[#d4c4b0]">
+        <label className="grid gap-1.5 text-sm text-[#6b5b52]">
           Confirm new password
           <input
             type="password"
@@ -519,7 +519,7 @@ export default function AdminAccountPage() {
             autoComplete="new-password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+            className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-[#2b2521]"
           />
         </label>
 

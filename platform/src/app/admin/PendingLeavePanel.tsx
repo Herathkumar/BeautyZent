@@ -81,10 +81,10 @@ export function PendingLeavePanel() {
         <>
           <div className="flex flex-wrap items-end justify-between gap-2">
             <div>
-              <p className="text-xs font-semibold tracking-[0.18em] text-[#f0c987] uppercase">
+              <p className="text-xs font-semibold tracking-[0.18em] text-[#7d6154] uppercase">
                 Needs your attention
               </p>
-              <h2 className="mt-1 font-[family-name:var(--font-display)] text-2xl text-[#fffaf6]">
+              <h2 className="mt-1 font-[family-name:var(--font-display)] text-2xl text-[#2b2521]">
                 Leave awaiting approval
               </h2>
               <p className="mt-1 text-sm text-muted">
@@ -92,21 +92,21 @@ export function PendingLeavePanel() {
               </p>
             </div>
           </div>
-          <div className="divide-y divide-[#c9a87c]/20 overflow-hidden rounded-2xl border border-[#f0c987]/35 bg-[#3a2a22]">
+          <div className="divide-y divide-[#7d6154]/20 overflow-hidden rounded-2xl border border-[#7d6154]/35 bg-[#f3ebe3]">
             {blocks.map((b) => (
               <div
                 key={b.id}
                 className="flex flex-wrap items-center justify-between gap-3 px-4 py-4"
               >
                 <div className="min-w-0">
-                  <p className="text-sm text-[#c9a87c]">Leave request from</p>
-                  <p className="text-lg font-semibold text-[#fffaf6]">{b.stylist.name}</p>
+                  <p className="text-sm text-[#7d6154]">Leave request from</p>
+                  <p className="text-lg font-semibold text-[#2b2521]">{b.stylist.name}</p>
                   <p className="mt-1 text-sm text-muted">
                     {b.reason}
                     {b.reason ? " · " : ""}
                     {formatRange(b.startsAt, b.endsAt)}
                   </p>
-                  {b.note ? <p className="mt-1 text-sm text-[#f0c987]">{b.note}</p> : null}
+                  {b.note ? <p className="mt-1 text-sm text-[#7d6154]">{b.note}</p> : null}
                 </div>
                 <div className="flex gap-2">
                   <button

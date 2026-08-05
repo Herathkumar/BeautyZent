@@ -38,9 +38,9 @@ export default function AdminLoginPage() {
   return (
     <main className="mx-auto max-w-md space-y-6">
       <div>
-        <p className="text-sm uppercase tracking-[0.18em] text-[#c9a87c]">Manager App</p>
-        <h1 className="mt-2 font-[family-name:var(--font-display)] text-4xl text-[#fffaf6]">
-          FHSalon
+        <p className="text-sm uppercase tracking-[0.18em] text-[#7d6154]">Manager</p>
+        <h1 className="mt-2 font-[family-name:var(--font-display)] text-4xl text-[#2b2521]">
+          Farzana <span className="text-[#7d6154]">Hair Salon</span>
         </h1>
         <p className="mt-2 text-muted">
           Sign in with the salon manager account to manage services, stylists, and bookings.
@@ -51,7 +51,7 @@ export default function AdminLoginPage() {
         <label className="grid gap-1.5 text-sm">
           Email
           <input
-            className="rounded-2xl border border-ink/15 bg-[#2a211c] px-4 py-3 text-[#fffaf6]"
+            className="rounded-2xl border border-ink/15 bg-[#ffffff] px-4 py-3 text-[#2b2521]"
             type="email"
             autoComplete="username"
             value={email}
@@ -63,7 +63,7 @@ export default function AdminLoginPage() {
           <input
             type="password"
             autoComplete="current-password"
-            className="rounded-2xl border border-ink/15 bg-[#2a211c] px-4 py-3 text-[#fffaf6]"
+            className="rounded-2xl border border-ink/15 bg-[#ffffff] px-4 py-3 text-[#2b2521]"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
@@ -78,24 +78,24 @@ export default function AdminLoginPage() {
         </button>
       </form>
 
-      <div className="rounded-2xl border border-[#c9a87c]/30 bg-[#2a211c] px-4 py-4 text-sm text-muted">
-        <p className="font-semibold text-[#c9a87c]">Put it on your home screen</p>
+      <div className="rounded-2xl border border-[#7d6154]/30 bg-[#ffffff] px-4 py-4 text-sm text-muted">
+        <p className="font-semibold text-[#7d6154]">Put it on your home screen</p>
         <ol className="mt-2 list-decimal space-y-1 pl-5">
           <li>Open this page in Safari (iPhone) or Chrome (Android)</li>
           <li>Tap Share / menu</li>
           <li>
-            Choose <span className="text-[#fffaf6]">Add to Home Screen</span>
+            Choose <span className="text-[#2b2521]">Add to Home Screen</span>
           </li>
         </ol>
         <p className="mt-3 text-xs">
-          Saves as <span className="text-[#fffaf6]">FHSalon Manager</span> with the gold salon icon.
+          Saves as <span className="text-[#2b2521]">FHSalon Manager</span> with the gold salon icon.
           Use the salon manager account — change the password under Profile after first sign-in.
         </p>
       </div>
 
       <p className="text-sm text-muted">
         Stylist?{" "}
-        <Link href="/stylist/login" className="text-[#c9a87c]">
+        <Link href="/stylist/login" className="text-[#7d6154]">
           Stylist App
         </Link>
       </p>

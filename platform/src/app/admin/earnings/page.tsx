@@ -105,7 +105,7 @@ function GoalRing({ progress, earned, goal }: { progress: number; earned: number
           cy={size / 2}
           r={r}
           fill="none"
-          stroke="rgba(201,168,124,0.2)"
+          stroke="rgba(125,97,84,0.25)"
           strokeWidth={stroke}
         />
         <circle
@@ -114,7 +114,7 @@ function GoalRing({ progress, earned, goal }: { progress: number; earned: number
           cy={size / 2}
           r={r}
           fill="none"
-          stroke="#f0c987"
+          stroke="#7d6154"
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={c}
@@ -123,8 +123,8 @@ function GoalRing({ progress, earned, goal }: { progress: number; earned: number
         />
       </svg>
       <div className="earnings-goal-center">
-        <p className="text-[10px] font-semibold tracking-wide text-[#c9a87c] uppercase">Goal</p>
-        <p className="font-[family-name:var(--font-display)] text-xl text-[#f0c987]">
+        <p className="text-[10px] font-semibold tracking-wide text-[#7d6154] uppercase">Goal</p>
+        <p className="font-[family-name:var(--font-display)] text-xl text-[#7d6154]">
           ${centsToDollars(earned)}
         </p>
         <p className="text-[11px] text-muted">of ${centsToDollars(goal)}</p>
@@ -193,12 +193,12 @@ function SummaryCard({
     <button
       type="button"
       onClick={onOpen}
-      className="admin-stat-card w-full rounded-2xl border border-[#c9a87c]/25 bg-[#2a211c] p-5 text-left"
+      className="admin-stat-card w-full rounded-2xl border border-[#7d6154]/25 bg-[#ffffff] p-5 text-left"
       data-testid={testId}
     >
-      <p className="text-sm text-[#c9a87c]">{label}</p>
+      <p className="text-sm text-[#7d6154]">{label}</p>
       <p className="mt-1 text-xs uppercase tracking-wide text-muted">Store profit</p>
-      <p className="mt-1 font-[family-name:var(--font-display)] text-3xl text-[#f0c987]">
+      <p className="mt-1 font-[family-name:var(--font-display)] text-3xl text-[#7d6154]">
         ${centsToDollars(summary.profitCents)}
       </p>
       <p className="mt-2 text-sm text-muted">
@@ -219,7 +219,7 @@ function SummaryCard({
           {summary.jobCount} jobs · tips pass through to stylists
         </p>
       )}
-      <p className="mt-3 text-xs font-semibold tracking-wide text-[#c9a87c]">
+      <p className="mt-3 text-xs font-semibold tracking-wide text-[#7d6154]">
         View breakdown →
       </p>
     </button>
@@ -265,22 +265,22 @@ function BreakdownModal({
         aria-modal="true"
         aria-label={title}
         data-testid="store-earnings-breakdown"
-        className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-3xl border border-[#c9a87c]/35 bg-[#1c1714] p-5 shadow-2xl"
+        className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-3xl border border-[#7d6154]/35 bg-[#fffcf9] p-5 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-xs font-semibold tracking-[0.18em] text-[#c9a87c] uppercase">
+            <p className="text-xs font-semibold tracking-[0.18em] text-[#7d6154] uppercase">
               Breakdown
             </p>
-            <h2 className="mt-1 font-[family-name:var(--font-display)] text-2xl text-[#fffaf6]">
+            <h2 className="mt-1 font-[family-name:var(--font-display)] text-2xl text-[#2b2521]">
               {title}
             </h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full border border-[#c9a87c]/35 px-3 py-1 text-sm text-[#f0c987]"
+            className="rounded-full border border-[#7d6154]/35 px-3 py-1 text-sm text-[#7d6154]"
           >
             Close
           </button>
@@ -295,12 +295,12 @@ function BreakdownModal({
           ].map((row) => (
             <div
               key={row.label}
-              className="rounded-2xl border border-[#c9a87c]/20 bg-[#2a211c] px-3 py-2"
+              className="rounded-2xl border border-[#7d6154]/20 bg-[#ffffff] px-3 py-2"
             >
               <p className="text-[10px] font-semibold tracking-wide text-muted uppercase">
                 {row.label}
               </p>
-              <p className="mt-1 text-lg font-bold text-[#f0c987]">
+              <p className="mt-1 text-lg font-bold text-[#7d6154]">
                 ${centsToDollars(row.value)}
               </p>
             </div>
@@ -318,17 +318,17 @@ function BreakdownModal({
 
         {days && days.length > 0 ? (
           <section className="mt-5 space-y-2">
-            <h3 className="text-sm font-semibold text-[#fffaf6]">By day</h3>
+            <h3 className="text-sm font-semibold text-[#2b2521]">By day</h3>
             <ul className="space-y-1.5">
               {days.map((d) => (
                 <li
                   key={d.date}
-                  className="flex flex-wrap items-baseline justify-between gap-2 border-t border-[#c9a87c]/15 pt-1.5 text-sm first:border-t-0 first:pt-0"
+                  className="flex flex-wrap items-baseline justify-between gap-2 border-t border-[#7d6154]/15 pt-1.5 text-sm first:border-t-0 first:pt-0"
                 >
-                  <span className="text-[#d4c4b0]">
+                  <span className="text-[#6b5b52]">
                     {d.weekday} · {d.jobCount} job{d.jobCount === 1 ? "" : "s"}
                   </span>
-                  <span className="text-[#f0c987]">
+                  <span className="text-[#7d6154]">
                     Rev ${centsToDollars(d.revenueCents)} · Profit $
                     {centsToDollars(d.profitCents)}
                   </span>
@@ -340,17 +340,17 @@ function BreakdownModal({
 
         {byStylist && byStylist.length > 0 ? (
           <section className="mt-5 space-y-2">
-            <h3 className="text-sm font-semibold text-[#fffaf6]">By stylist</h3>
+            <h3 className="text-sm font-semibold text-[#2b2521]">By stylist</h3>
             <ul className="space-y-1.5">
               {byStylist.map((s) => (
                 <li
                   key={s.stylistId}
-                  className="flex flex-wrap items-baseline justify-between gap-2 border-t border-[#c9a87c]/15 pt-1.5 text-sm first:border-t-0 first:pt-0"
+                  className="flex flex-wrap items-baseline justify-between gap-2 border-t border-[#7d6154]/15 pt-1.5 text-sm first:border-t-0 first:pt-0"
                 >
-                  <span className="text-[#d4c4b0]">
+                  <span className="text-[#6b5b52]">
                     {s.stylistName} · {s.jobCount} job{s.jobCount === 1 ? "" : "s"}
                   </span>
-                  <span className="text-[#f0c987]">
+                  <span className="text-[#7d6154]">
                     ${centsToDollars(s.chargedCents)} · pay $
                     {centsToDollars(s.stylistPayCents)}
                   </span>
@@ -361,7 +361,7 @@ function BreakdownModal({
         ) : null}
 
         <section className="mt-5 space-y-2">
-          <h3 className="text-sm font-semibold text-[#fffaf6]">
+          <h3 className="text-sm font-semibold text-[#2b2521]">
             Jobs ({activeJobs.length}
             {voidedJobs.length ? ` · ${voidedJobs.length} voided` : ""})
           </h3>
@@ -375,12 +375,12 @@ function BreakdownModal({
                   className={`rounded-2xl border px-3 py-2 text-sm ${
                     j.excludedFromEarnings
                       ? "border-red-400/30 bg-red-950/20 opacity-70"
-                      : "border-[#c9a87c]/20 bg-[#2a211c]"
+                      : "border-[#7d6154]/20 bg-[#ffffff]"
                   }`}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div>
-                      <p className="font-semibold text-[#fffaf6]">
+                      <p className="font-semibold text-[#2b2521]">
                         {j.clientName} · {j.serviceName}
                       </p>
                       <p className="text-xs text-muted">
@@ -388,7 +388,7 @@ function BreakdownModal({
                         {j.excludedFromEarnings ? " · voided" : ""}
                       </p>
                     </div>
-                    <p className="font-semibold text-[#f0c987]">
+                    <p className="font-semibold text-[#7d6154]">
                       ${centsToDollars(j.chargedCents + j.tipCents)}
                     </p>
                   </div>
@@ -513,7 +513,7 @@ export default function StoreEarningsPage() {
     <main className="space-y-8" data-testid="store-earnings-page">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold tracking-[0.2em] text-[#c9a87c] uppercase">
+          <p className="text-xs font-semibold tracking-[0.2em] text-[#7d6154] uppercase">
             Revenue
           </p>
           <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl">
@@ -531,7 +531,7 @@ export default function StoreEarningsPage() {
           type="button"
           disabled={!data || loading}
           onClick={() => data && downloadStoreCsv(data)}
-          className="rounded-full border border-[#c9a87c]/45 px-4 py-2 text-sm text-[#f0c987] disabled:opacity-40"
+          className="rounded-full border border-[#7d6154]/45 px-4 py-2 text-sm text-[#7d6154] disabled:opacity-40"
         >
           Download CSV
         </button>
@@ -543,7 +543,7 @@ export default function StoreEarningsPage() {
         </p>
       ) : null}
       {msg ? (
-        <p className="rounded-xl border border-[#c9a87c]/35 bg-[#3a2a22] px-4 py-2 text-sm text-[#f0c987]">
+        <p className="rounded-xl border border-[#7d6154]/35 bg-[#f3ebe3] px-4 py-2 text-sm text-[#7d6154]">
           {msg}
         </p>
       ) : null}
@@ -562,10 +562,10 @@ export default function StoreEarningsPage() {
                 ‹
               </button>
               <div className="text-center">
-                <p className="text-xs font-semibold tracking-wide text-[#c9a87c] uppercase">
+                <p className="text-xs font-semibold tracking-wide text-[#7d6154] uppercase">
                   {data.week.isCurrentWeek ? "This week" : "Week of"}
                 </p>
-                <p className="mt-1 text-sm font-semibold text-[#fffaf6]">{data.week.label}</p>
+                <p className="mt-1 text-sm font-semibold text-[#2b2521]">{data.week.label}</p>
               </div>
               <button
                 type="button"
@@ -586,10 +586,10 @@ export default function StoreEarningsPage() {
               />
             </div>
 
-            <p className="mt-4 text-center text-xs tracking-[0.18em] text-[#c9a87c] uppercase">
+            <p className="mt-4 text-center text-xs tracking-[0.18em] text-[#7d6154] uppercase">
               Week profit
             </p>
-            <p className="mt-1 text-center font-[family-name:var(--font-display)] text-5xl text-[#f0c987]">
+            <p className="mt-1 text-center font-[family-name:var(--font-display)] text-5xl text-[#7d6154]">
               ${centsToDollars(data.weekSummary.profitCents)}
             </p>
             <p className="mt-2 text-center text-sm text-muted">
@@ -601,7 +601,7 @@ export default function StoreEarningsPage() {
                 : ""}
             </p>
             {data.goal.remainingCents > 0 ? (
-              <p className="mt-2 text-center text-sm text-[#c9a87c]">
+              <p className="mt-2 text-center text-sm text-[#7d6154]">
                 ${centsToDollars(data.goal.remainingCents)} to hit your goal
               </p>
             ) : (
@@ -611,7 +611,7 @@ export default function StoreEarningsPage() {
               <button
                 type="button"
                 onClick={() => void editGoal()}
-                className="text-xs font-semibold tracking-wide text-[#c9a87c] underline-offset-2 hover:underline"
+                className="text-xs font-semibold tracking-wide text-[#7d6154] underline-offset-2 hover:underline"
               >
                 Edit weekly goal
               </button>
@@ -682,16 +682,16 @@ export default function StoreEarningsPage() {
               })()
             : null}
 
-          <section className="rounded-3xl border border-[#c9a87c]/25 bg-[#2a211c] p-4">
+          <section className="rounded-3xl border border-[#7d6154]/25 bg-[#ffffff] p-4">
             <div className="flex flex-wrap items-end justify-between gap-2">
-              <h2 className="font-[family-name:var(--font-display)] text-xl text-[#fffaf6]">
+              <h2 className="font-[family-name:var(--font-display)] text-xl text-[#2b2521]">
                 Daily breakdown
               </h2>
               <div className="flex items-center gap-4 text-xs text-muted">
                 <span className="inline-flex items-center gap-1.5">
                   <span
                     className="inline-block h-2.5 w-2.5 rounded-sm"
-                    style={{ background: "linear-gradient(180deg, #f0c987 0%, #c9a87c 100%)" }}
+                    style={{ background: "linear-gradient(180deg, #7d6154 0%, #7d6154 100%)" }}
                   />
                   Revenue
                 </span>
@@ -716,7 +716,7 @@ export default function StoreEarningsPage() {
                 return (
                   <div key={d.date} className="flex flex-1 flex-col items-center gap-1">
                     <div className="flex min-h-[2.1rem] flex-col items-center justify-end leading-tight">
-                      <p className="text-[10px] font-semibold text-[#f0c987]">
+                      <p className="text-[10px] font-semibold text-[#7d6154]">
                         {d.revenueCents > 0 ? `$${centsToDollars(d.revenueCents)}` : ""}
                       </p>
                       <p
@@ -734,7 +734,7 @@ export default function StoreEarningsPage() {
                           height: revH,
                           background:
                             d.revenueCents > 0
-                              ? "linear-gradient(180deg, #f0c987 0%, #c9a87c 100%)"
+                              ? "linear-gradient(180deg, #7d6154 0%, #7d6154 100%)"
                               : "rgba(201, 168, 124, 0.18)",
                         }}
                         title={`Revenue $${centsToDollars(d.revenueCents)}`}
@@ -762,7 +762,7 @@ export default function StoreEarningsPage() {
 
           {data.byStylist.length > 0 ? (
             <section className="space-y-3" data-testid="store-earnings-by-stylist">
-              <h2 className="font-[family-name:var(--font-display)] text-xl text-[#fffaf6]">
+              <h2 className="font-[family-name:var(--font-display)] text-xl text-[#2b2521]">
                 By stylist
               </h2>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -770,19 +770,19 @@ export default function StoreEarningsPage() {
                   <button
                     key={s.stylistId}
                     type="button"
-                    className="admin-stat-card rounded-2xl border border-[#c9a87c]/20 bg-[#2a211c] px-4 py-3 text-left"
+                    className="admin-stat-card rounded-2xl border border-[#7d6154]/20 bg-[#ffffff] px-4 py-3 text-left"
                     data-testid={`store-earnings-stylist-${s.stylistId}`}
                     onClick={() => setBreakdown({ kind: "stylist", stylistId: s.stylistId })}
                   >
-                    <p className="font-semibold text-[#fffaf6]">{s.stylistName}</p>
-                    <p className="mt-1 text-sm text-[#f0c987]">
+                    <p className="font-semibold text-[#2b2521]">{s.stylistName}</p>
+                    <p className="mt-1 text-sm text-[#7d6154]">
                       Charged ${centsToDollars(s.chargedCents)} · pay $
                       {centsToDollars(s.stylistPayCents)}
                     </p>
                     <p className="text-xs text-muted">
                       {s.jobCount} jobs · tips ${centsToDollars(s.tipCents)}
                     </p>
-                    <p className="mt-2 text-xs font-semibold tracking-wide text-[#c9a87c]">
+                    <p className="mt-2 text-xs font-semibold tracking-wide text-[#7d6154]">
                       View breakdown →
                     </p>
                   </button>
@@ -793,7 +793,7 @@ export default function StoreEarningsPage() {
 
           <section className="space-y-3">
             <div className="flex flex-wrap items-end justify-between gap-3">
-              <h2 className="font-[family-name:var(--font-display)] text-xl text-[#fffaf6]">
+              <h2 className="font-[family-name:var(--font-display)] text-xl text-[#2b2521]">
                 Activity
               </h2>
               <p className="text-xs text-muted">
@@ -802,10 +802,10 @@ export default function StoreEarningsPage() {
             </div>
 
             <div
-              className="grid gap-3 rounded-2xl border border-[#c9a87c]/20 bg-[#2a211c] p-3 sm:grid-cols-2 lg:grid-cols-4"
+              className="grid gap-3 rounded-2xl border border-[#7d6154]/20 bg-[#ffffff] p-3 sm:grid-cols-2 lg:grid-cols-4"
               data-testid="store-earnings-activity-filters"
             >
-              <label className="grid gap-1 text-[10px] font-semibold tracking-wide text-[#c9a87c] uppercase">
+              <label className="grid gap-1 text-[10px] font-semibold tracking-wide text-[#7d6154] uppercase">
                 Type
                 <select
                   value={activityKind}
@@ -813,7 +813,7 @@ export default function StoreEarningsPage() {
                     setActivityKind(e.target.value as typeof activityKind)
                   }
                   aria-label="Filter activity type"
-                  className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-sm font-normal normal-case text-[#fffaf6]"
+                  className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-sm font-normal normal-case text-[#2b2521]"
                 >
                   <option value="ALL">All types</option>
                   <option value="JOB">Jobs</option>
@@ -821,13 +821,13 @@ export default function StoreEarningsPage() {
                   <option value="LEAVE">Leave</option>
                 </select>
               </label>
-              <label className="grid gap-1 text-[10px] font-semibold tracking-wide text-[#c9a87c] uppercase">
+              <label className="grid gap-1 text-[10px] font-semibold tracking-wide text-[#7d6154] uppercase">
                 Stylist
                 <select
                   value={activityStylist}
                   onChange={(e) => setActivityStylist(e.target.value)}
                   aria-label="Filter activity stylist"
-                  className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-sm font-normal normal-case text-[#fffaf6]"
+                  className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-sm font-normal normal-case text-[#2b2521]"
                 >
                   <option value="ALL">All stylists</option>
                   {activityStylistOptions.map((name) => (
@@ -837,7 +837,7 @@ export default function StoreEarningsPage() {
                   ))}
                 </select>
               </label>
-              <label className="grid gap-1 text-[10px] font-semibold tracking-wide text-[#c9a87c] uppercase">
+              <label className="grid gap-1 text-[10px] font-semibold tracking-wide text-[#7d6154] uppercase">
                 Status
                 <select
                   value={activityStatus}
@@ -845,21 +845,21 @@ export default function StoreEarningsPage() {
                     setActivityStatus(e.target.value as typeof activityStatus)
                   }
                   aria-label="Filter activity status"
-                  className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-sm font-normal normal-case text-[#fffaf6]"
+                  className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-sm font-normal normal-case text-[#2b2521]"
                 >
                   <option value="ALL">All statuses</option>
                   <option value="ACTIVE">Active (not voided)</option>
                   <option value="VOIDED">Voided only</option>
                 </select>
               </label>
-              <label className="grid gap-1 text-[10px] font-semibold tracking-wide text-[#c9a87c] uppercase">
+              <label className="grid gap-1 text-[10px] font-semibold tracking-wide text-[#7d6154] uppercase">
                 Search
                 <input
                   value={activityQuery}
                   onChange={(e) => setActivityQuery(e.target.value)}
                   aria-label="Search activity"
                   placeholder="Client, note…"
-                  className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-sm font-normal normal-case text-[#fffaf6]"
+                  className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-sm font-normal normal-case text-[#2b2521]"
                 />
               </label>
             </div>
@@ -876,12 +876,12 @@ export default function StoreEarningsPage() {
                     className={`rounded-2xl border px-4 py-3 ${
                       a.excluded
                         ? "border-red-400/30 bg-red-950/20 opacity-70"
-                        : "border-[#c9a87c]/20 bg-[#2a211c]"
+                        : "border-[#7d6154]/20 bg-[#ffffff]"
                     }`}
                   >
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div>
-                        <p className="text-xs font-semibold tracking-wide text-[#c9a87c] uppercase">
+                        <p className="text-xs font-semibold tracking-wide text-[#7d6154] uppercase">
                           {a.kind === "JOB"
                             ? a.excluded
                               ? "Job · voided"
@@ -890,12 +890,12 @@ export default function StoreEarningsPage() {
                               ? "Payout"
                               : "Leave"}
                         </p>
-                        <p className="mt-1 font-semibold text-[#fffaf6]">{a.title}</p>
+                        <p className="mt-1 font-semibold text-[#2b2521]">{a.title}</p>
                         <p className="text-sm text-muted">{a.detail}</p>
                       </div>
                       <div className="text-right">
                         {a.amountCents != null ? (
-                          <p className="font-semibold text-[#f0c987]">
+                          <p className="font-semibold text-[#7d6154]">
                             ${centsToDollars(a.amountCents)}
                           </p>
                         ) : null}
@@ -903,7 +903,7 @@ export default function StoreEarningsPage() {
                           <button
                             type="button"
                             disabled={busyId === a.appointmentId}
-                            className="mt-2 text-xs text-[#c9a87c] underline disabled:opacity-40"
+                            className="mt-2 text-xs text-[#7d6154] underline disabled:opacity-40"
                             onClick={() =>
                               toggleExclude(a.appointmentId!, !a.excluded)
                             }

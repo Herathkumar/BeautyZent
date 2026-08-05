@@ -18,8 +18,8 @@ export async function DashboardFloorToday({ salonId }: { salonId: string }) {
       <Link href="/manager/working" className="block">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
-            <p className="text-sm text-[#c9a87c]">Floor today</p>
-            <h2 className="mt-1 font-[family-name:var(--font-display)] text-2xl text-[#fffaf6]">
+            <p className="text-sm text-[#7d6154]">Floor today</p>
+            <h2 className="mt-1 font-[family-name:var(--font-display)] text-2xl text-[#2b2521]">
               {onFloor.length === 0
                 ? "No one on the floor"
                 : `${onFloor.length} stylist${onFloor.length === 1 ? "" : "s"} on floor`}
@@ -38,7 +38,7 @@ export async function DashboardFloorToday({ salonId }: { salonId: string }) {
           {onFloor.map((s) => (
             <li
               key={s.id}
-              className="rounded-xl border border-transparent px-2 py-2 transition hover:border-[#c9a87c]/35 hover:bg-[#1c1714]/50"
+              className="rounded-xl border border-transparent px-2 py-2 transition hover:border-[#7d6154]/35 hover:bg-[#fffcf9]/50"
               data-testid="dashboard-floor-stylist"
             >
               <Link
@@ -46,22 +46,22 @@ export async function DashboardFloorToday({ salonId }: { salonId: string }) {
                 className="block"
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <span className="font-semibold text-[#fffaf6]">{s.name}</span>
-                  <span className="text-sm text-[#f0c987]">{s.summary}</span>
+                  <span className="font-semibold text-[#2b2521]">{s.name}</span>
+                  <span className="text-sm text-[#7d6154]">{s.summary}</span>
                 </div>
                 <p className="mt-1 text-sm text-muted">
                   <span data-testid="dashboard-floor-jobs">{jobsLabel(s.assignedJobs)}</span>
                   <span className="text-white/25"> · </span>
                   <span data-testid="dashboard-floor-available">{s.availableLabel}</span>
-                  <span className="ml-2 text-xs text-[#c9a87c]">View jobs</span>
+                  <span className="ml-2 text-xs text-[#7d6154]">View jobs</span>
                 </p>
               </Link>
               {s.phone || s.email ? (
-                <p className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-[#d4c4b0]">
+                <p className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-[#6b5b52]">
                   {s.phone ? (
                     <a
                       href={`tel:${s.phone.replace(/[^\d+]/g, "")}`}
-                      className="hover:text-[#f0c987]"
+                      className="hover:text-[#7d6154]"
                       data-testid="dashboard-floor-phone"
                     >
                       {s.phone}
@@ -70,7 +70,7 @@ export async function DashboardFloorToday({ salonId }: { salonId: string }) {
                   {s.email ? (
                     <a
                       href={`mailto:${s.email}`}
-                      className="break-all hover:text-[#f0c987]"
+                      className="break-all hover:text-[#7d6154]"
                       data-testid="dashboard-floor-email"
                     >
                       {s.email}

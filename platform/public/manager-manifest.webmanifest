@@ -1,13 +1,13 @@
 {
-  "name": "FHSalon — Manager App",
+  "name": "FHSalon — Manager",
   "short_name": "FHSalon Manager",
-  "description": "Dashboard, bookings, earnings, and team — phone-friendly manager portal.",
+  "description": "Dashboard, bookings, earnings, and team for Farzana Hair Salon.",
   "start_url": "/manager",
   "scope": "/manager",
   "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#1c1714",
-  "theme_color": "#1c1714",
+  "orientation": "any",
+  "background_color": "#fdf8f3",
+  "theme_color": "#fdf8f3",
   "icons": [
     {
       "src": "/manager-icon-192.png",

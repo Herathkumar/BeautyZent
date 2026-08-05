@@ -72,10 +72,10 @@ export function AdminBottomNav() {
             onClick={() => setMoneyOpen(false)}
           />
           <div className="admin-salon-sheet-panel">
-            <p className="text-xs font-semibold tracking-[0.18em] text-[#c9a87c] uppercase">
+            <p className="text-xs font-semibold tracking-[0.18em] text-[#7d6154] uppercase">
               Money
             </p>
-            <p className="mt-1 text-sm text-[#d4c4b0]">Store earnings and payroll</p>
+            <p className="mt-1 text-sm text-[#6b5b52]">Store earnings and payroll</p>
             <ul className="mt-4 grid gap-2">
               {MONEY_LINKS.map((item) => (
                 <li key={item.href}>
@@ -84,8 +84,8 @@ export function AdminBottomNav() {
                     className="admin-salon-sheet-link"
                     onClick={() => setMoneyOpen(false)}
                   >
-                    <span className="font-semibold text-[#fffaf6]">{item.label}</span>
-                    <span className="text-sm text-[#d4c4b0]">{item.hint}</span>
+                    <span className="font-semibold text-[#2b2521]">{item.label}</span>
+                    <span className="text-sm text-[#6b5b52]">{item.hint}</span>
                   </Link>
                 </li>
               ))}

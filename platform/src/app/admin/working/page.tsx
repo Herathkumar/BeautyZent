@@ -68,7 +68,7 @@ function statusClass(status: string) {
     case "NO_SHOW":
       return "text-[#f5a8a8]";
     default:
-      return "text-[#f0c987]";
+      return "text-[#7d6154]";
   }
 }
 
@@ -98,7 +98,7 @@ function statusStyles(status: RosterRow["status"]) {
       };
     case "PARTIAL":
       return {
-        badge: "bg-[rgba(240,201,135,0.18)] text-[#f0c987]",
+        badge: "bg-[rgba(240,201,135,0.18)] text-[#7d6154]",
         label: "Partial day",
       };
     case "AWAY":
@@ -108,7 +108,7 @@ function statusStyles(status: RosterRow["status"]) {
       };
     default:
       return {
-        badge: "bg-[rgba(201,168,124,0.12)] text-[#c9a87c]",
+        badge: "bg-[rgba(125,97,84,0.12)] text-[#7d6154]",
         label: "Day off",
       };
   }
@@ -200,10 +200,10 @@ export default function WhoIsWorkingPage() {
   return (
     <main className="space-y-6">
       <div>
-        <p className="text-xs font-semibold tracking-[0.2em] text-[#c9a87c] uppercase">
+        <p className="text-xs font-semibold tracking-[0.2em] text-[#7d6154] uppercase">
           Floor roster
         </p>
-        <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl text-[#fffaf6]">
+        <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl text-[#2b2521]">
           Who&apos;s working
         </h1>
         <p className="mt-2 text-muted">
@@ -211,16 +211,16 @@ export default function WhoIsWorkingPage() {
         </p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-[#c9a87c]/25 bg-[#2a211c] p-4">
+      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-[#7d6154]/25 bg-[#ffffff] p-4">
         <button
           type="button"
-          className="rounded-full border border-[#c9a87c]/40 px-3 py-2 text-[#f0c987]"
+          className="rounded-full border border-[#7d6154]/40 px-3 py-2 text-[#7d6154]"
           aria-label="Previous day"
           onClick={() => shiftDay(-1)}
         >
           ‹
         </button>
-        <label className="grid min-w-[11rem] flex-1 gap-1 text-xs font-semibold tracking-wide text-[#c9a87c] uppercase">
+        <label className="grid min-w-[11rem] flex-1 gap-1 text-xs font-semibold tracking-wide text-[#7d6154] uppercase">
           Date
           <input
             type="date"
@@ -229,12 +229,12 @@ export default function WhoIsWorkingPage() {
               setDate(e.target.value);
               void load(e.target.value);
             }}
-            className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-sm font-normal normal-case text-[#fffaf6]"
+            className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-sm font-normal normal-case text-[#2b2521]"
           />
         </label>
         <button
           type="button"
-          className="rounded-full border border-[#c9a87c]/40 px-3 py-2 text-[#f0c987]"
+          className="rounded-full border border-[#7d6154]/40 px-3 py-2 text-[#7d6154]"
           aria-label="Next day"
           onClick={() => shiftDay(1)}
         >
@@ -243,7 +243,7 @@ export default function WhoIsWorkingPage() {
         {data && date !== data.today ? (
           <button
             type="button"
-            className="rounded-full border border-[#c9a87c]/40 px-4 py-2 text-sm text-[#f0c987]"
+            className="rounded-full border border-[#7d6154]/40 px-4 py-2 text-sm text-[#7d6154]"
             onClick={() => void load(data.today)}
           >
             Today
@@ -256,7 +256,7 @@ export default function WhoIsWorkingPage() {
       {data ? (
         <>
           <div>
-            <p className="font-[family-name:var(--font-display)] text-2xl text-[#fffaf6]">
+            <p className="font-[family-name:var(--font-display)] text-2xl text-[#2b2521]">
               {data.weekdayLabel}
             </p>
             <p className="mt-1 text-sm text-muted">
@@ -273,10 +273,10 @@ export default function WhoIsWorkingPage() {
               return (
                 <article
                   key={row.id}
-                  className={`rounded-2xl border bg-[#2a211c] p-4 transition ${
+                  className={`rounded-2xl border bg-[#ffffff] p-4 transition ${
                     open
-                      ? "border-[#f0c987]/55 shadow-[0_0_0_1px_rgba(240,201,135,0.2)]"
-                      : "border-[#c9a87c]/25 hover:border-[#c9a87c]/45"
+                      ? "border-[#7d6154]/55 shadow-[0_0_0_1px_rgba(240,201,135,0.2)]"
+                      : "border-[#7d6154]/25 hover:border-[#7d6154]/45"
                   }`}
                   data-testid="working-roster-row"
                   data-stylist-id={row.id}
@@ -289,10 +289,10 @@ export default function WhoIsWorkingPage() {
                     data-testid="working-stylist-toggle"
                   >
                     <div>
-                      <h2 className="font-[family-name:var(--font-display)] text-xl text-[#fffaf6]">
+                      <h2 className="font-[family-name:var(--font-display)] text-xl text-[#2b2521]">
                         {row.name}
                       </h2>
-                      <p className="mt-1 text-sm text-[#f0c987]">{row.summary}</p>
+                      <p className="mt-1 text-sm text-[#7d6154]">{row.summary}</p>
                       {row.status === "WORKING" || row.status === "PARTIAL" ? (
                         <p className="mt-1 text-sm text-muted">
                           {jobsLabel(row.assignedJobs ?? 0)}
@@ -309,7 +309,7 @@ export default function WhoIsWorkingPage() {
                           Scheduled {row.scheduled.startLabel} – {row.scheduled.endLabel}
                         </p>
                       ) : null}
-                      <p className="mt-2 text-xs text-[#c9a87c]">
+                      <p className="mt-2 text-xs text-[#7d6154]">
                         {open ? "Hide jobs" : "View jobs"}
                       </p>
                     </div>
@@ -325,7 +325,7 @@ export default function WhoIsWorkingPage() {
                       <p className="text-[10px] font-semibold tracking-wide text-[#9fe3b8] uppercase">
                         On floor
                       </p>
-                      <ul className="mt-1 space-y-1 text-sm text-[#fffaf6]">
+                      <ul className="mt-1 space-y-1 text-sm text-[#2b2521]">
                         {row.onFloor.map((seg, i) => (
                           <li key={`${row.id}-floor-${i}`}>
                             {seg.startLabel} – {seg.endLabel}
@@ -343,7 +343,7 @@ export default function WhoIsWorkingPage() {
                       <ul className="mt-1 space-y-2">
                         {row.absences.map((a) => (
                           <li key={a.id} className="text-sm">
-                            <span className="font-medium text-[#fffaf6]">
+                            <span className="font-medium text-[#2b2521]">
                               {a.reasonLabel}
                               {a.status === "PENDING" ? " (pending approval)" : ""}
                             </span>
@@ -353,7 +353,7 @@ export default function WhoIsWorkingPage() {
                               {a.coversFullDay ? " · full day" : ""}
                             </span>
                             {a.note ? (
-                              <span className="block text-[#c9a87c]">{a.note}</span>
+                              <span className="block text-[#7d6154]">{a.note}</span>
                             ) : null}
                           </li>
                         ))}
@@ -363,10 +363,10 @@ export default function WhoIsWorkingPage() {
 
                   {open ? (
                     <div
-                      className="mt-4 border-t border-[#c9a87c]/20 pt-4"
+                      className="mt-4 border-t border-[#7d6154]/20 pt-4"
                       data-testid="working-jobs-breakdown"
                     >
-                      <p className="text-[10px] font-semibold tracking-wide text-[#c9a87c] uppercase">
+                      <p className="text-[10px] font-semibold tracking-wide text-[#7d6154] uppercase">
                         Jobs · {date}
                       </p>
                       {jobsLoading ? (
@@ -383,11 +383,11 @@ export default function WhoIsWorkingPage() {
                           {jobs.map((job) => (
                             <li
                               key={job.id}
-                              className="rounded-xl border border-[#c9a87c]/20 bg-[#1c1714]/70 px-3 py-2.5"
+                              className="rounded-xl border border-[#7d6154]/20 bg-[#fffcf9]/70 px-3 py-2.5"
                               data-testid="working-job-row"
                             >
                               <div className="flex flex-wrap items-baseline justify-between gap-2">
-                                <p className="font-semibold text-[#fffaf6]">
+                                <p className="font-semibold text-[#2b2521]">
                                   {formatJobTime(job.startsAt, timeZone)}
                                   <span className="font-normal text-muted">
                                     {" "}
@@ -398,11 +398,11 @@ export default function WhoIsWorkingPage() {
                                   {statusLabel(job.status)}
                                 </p>
                               </div>
-                              <p className="mt-1 text-sm text-[#fffaf6]">
+                              <p className="mt-1 text-sm text-[#2b2521]">
                                 {job.client.name}
                                 <span className="text-muted"> · {job.service.name}</span>
                               </p>
-                              <p className="mt-0.5 text-xs text-[#c9a87c]">
+                              <p className="mt-0.5 text-xs text-[#7d6154]">
                                 {sourceLabel(job.source)}
                                 {job.client.phone ? ` · ${job.client.phone}` : ""}
                               </p>

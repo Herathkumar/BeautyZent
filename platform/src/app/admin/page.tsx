@@ -68,16 +68,16 @@ export default async function AdminHome() {
 
   return (
     <main>
-      <p className="text-xs font-semibold tracking-[0.2em] text-[#c9a87c] uppercase">
+      <p className="text-xs font-semibold tracking-[0.2em] text-[#7d6154] uppercase">
         Dashboard
       </p>
-      <h1 className="mt-2 font-[family-name:var(--font-display)] text-4xl text-[#fffaf6]">
+      <h1 className="mt-2 font-[family-name:var(--font-display)] text-4xl text-[#2b2521]">
         {salon.name}
       </h1>
       <p className="mt-2 text-muted">Welcome, {session.name}</p>
 
       {pendingLeaveCount > 0 ? (
-        <p className="mt-3 rounded-xl border border-[#f0c987]/35 bg-[#3a2a22] px-4 py-2 text-sm text-[#f0c987]">
+        <p className="mt-3 rounded-xl border border-[#7d6154]/35 bg-[#f3ebe3] px-4 py-2 text-sm text-[#7d6154]">
           {pendingLeaveCount} leave request{pendingLeaveCount === 1 ? "" : "s"} awaiting your
           approval — review below.
         </p>
@@ -95,22 +95,22 @@ export default async function AdminHome() {
           className="admin-stat-card rounded-2xl p-5"
           data-testid="dashboard-todays-bookings"
         >
-          <p className="text-sm text-[#c9a87c]">Today&apos;s bookings</p>
-          <p className="mt-2 font-[family-name:var(--font-display)] text-3xl text-[#fffaf6]">
+          <p className="text-sm text-[#7d6154]">Today&apos;s bookings</p>
+          <p className="mt-2 font-[family-name:var(--font-display)] text-3xl text-[#2b2521]">
             {bookingsTotal}
           </p>
           <ul className="mt-3 space-y-1 text-sm text-muted">
             <li className="flex justify-between gap-2">
               <span>Online</span>
-              <span className="text-[#fffaf6]">{onlineToday}</span>
+              <span className="text-[#2b2521]">{onlineToday}</span>
             </li>
             <li className="flex justify-between gap-2">
               <span>Walk-in</span>
-              <span className="text-[#fffaf6]">{walkInToday}</span>
+              <span className="text-[#2b2521]">{walkInToday}</span>
             </li>
             <li className="flex justify-between gap-2">
               <span>Waitlist</span>
-              <span className="text-[#f0c987]">{waitlistWaiting}</span>
+              <span className="text-[#7d6154]">{waitlistWaiting}</span>
             </li>
           </ul>
         </Link>
@@ -120,8 +120,8 @@ export default async function AdminHome() {
           { label: "Stylists", value: stylists, href: "/manager/stylists" },
         ].map((card) => (
           <Link key={card.label} href={card.href} className="admin-stat-card rounded-2xl p-5">
-            <p className="text-sm text-[#c9a87c]">{card.label}</p>
-            <p className="mt-2 font-[family-name:var(--font-display)] text-3xl text-[#fffaf6]">
+            <p className="text-sm text-[#7d6154]">{card.label}</p>
+            <p className="mt-2 font-[family-name:var(--font-display)] text-3xl text-[#2b2521]">
               {card.value}
             </p>
           </Link>

@@ -15,7 +15,7 @@ export default function ManagerWalkInPage() {
         </div>
         <Link
           href="/manager/appointments"
-          className="text-sm text-[#c9a87c] underline-offset-2 hover:underline"
+          className="text-sm text-[#7d6154] underline-offset-2 hover:underline"
         >
           View bookings
         </Link>

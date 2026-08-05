@@ -42,9 +42,9 @@ function statusClass(status: string) {
     case "COMPLETED":
       return "text-[#9fe3b8]";
     case "CANCELLED":
-      return "text-[#a89a8c]";
+      return "text-[#6b5b52]";
     case "CHECKED_IN":
-      return "text-[#f0c987]";
+      return "text-[#7d6154]";
     default:
       return "text-muted";
   }
@@ -146,26 +146,26 @@ export default function AppointmentsAdminPage() {
           </Link>
           <Link
             href="/manager/walk-in"
-            className="rounded-full border border-[#c9a87c]/45 px-4 py-2.5 text-sm text-[#f0c987]"
+            className="rounded-full border border-[#7d6154]/45 px-4 py-2.5 text-sm text-[#7d6154]"
           >
             Add walk-in
           </Link>
           <Link
             href="/manager/book"
-            className="rounded-full border border-[#c9a87c]/45 px-4 py-2.5 text-sm text-[#f0c987]"
+            className="rounded-full border border-[#7d6154]/45 px-4 py-2.5 text-sm text-[#7d6154]"
           >
             Book for client
           </Link>
         </div>
       </div>
 
-      <div className="grid gap-3 rounded-2xl border border-[#c9a87c]/25 bg-[#2a211c] p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        <label className="grid gap-1 text-xs font-semibold tracking-wide text-[#c9a87c] uppercase">
+      <div className="grid gap-3 rounded-2xl border border-[#7d6154]/25 bg-[#ffffff] p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <label className="grid gap-1 text-xs font-semibold tracking-wide text-[#7d6154] uppercase">
           Stylist
           <select
             value={stylistId}
             onChange={(e) => setStylistId(e.target.value)}
-            className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-sm font-normal normal-case text-[#fffaf6]"
+            className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-sm font-normal normal-case text-[#2b2521]"
           >
             <option value="">All stylists</option>
             {stylists.map((s) => (
@@ -176,12 +176,12 @@ export default function AppointmentsAdminPage() {
           </select>
         </label>
 
-        <label className="grid gap-1 text-xs font-semibold tracking-wide text-[#c9a87c] uppercase">
+        <label className="grid gap-1 text-xs font-semibold tracking-wide text-[#7d6154] uppercase">
           Status
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
-            className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-sm font-normal normal-case text-[#fffaf6]"
+            className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-sm font-normal normal-case text-[#2b2521]"
           >
             <option value="all">All</option>
             <option value="open">Open (booked / checked in)</option>
@@ -191,13 +191,13 @@ export default function AppointmentsAdminPage() {
           </select>
         </label>
 
-        <label className="grid gap-1 text-xs font-semibold tracking-wide text-[#c9a87c] uppercase">
+        <label className="grid gap-1 text-xs font-semibold tracking-wide text-[#7d6154] uppercase">
           Source
           <select
             value={source}
             onChange={(e) => setSource(e.target.value)}
             aria-label="Source"
-            className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-sm font-normal normal-case text-[#fffaf6]"
+            className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-sm font-normal normal-case text-[#2b2521]"
           >
             <option value="all">All sources</option>
             <option value="WALK_IN">Walk-in</option>
@@ -207,13 +207,13 @@ export default function AppointmentsAdminPage() {
           </select>
         </label>
 
-        <label className="grid gap-1 text-xs font-semibold tracking-wide text-[#c9a87c] uppercase">
+        <label className="grid gap-1 text-xs font-semibold tracking-wide text-[#7d6154] uppercase">
           Year
           <select
             value={year}
             onChange={(e) => setYear(e.target.value)}
             disabled={Boolean(day)}
-            className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-sm font-normal normal-case text-[#fffaf6] disabled:opacity-50"
+            className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-sm font-normal normal-case text-[#2b2521] disabled:opacity-50"
           >
             <option value="">Default range</option>
             {years.map((y) => (
@@ -224,13 +224,13 @@ export default function AppointmentsAdminPage() {
           </select>
         </label>
 
-        <label className="grid gap-1 text-xs font-semibold tracking-wide text-[#c9a87c] uppercase">
+        <label className="grid gap-1 text-xs font-semibold tracking-wide text-[#7d6154] uppercase">
           Month
           <select
             value={month}
             onChange={(e) => setMonth(e.target.value)}
             disabled={Boolean(day) || !year}
-            className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-sm font-normal normal-case text-[#fffaf6] disabled:opacity-50"
+            className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-sm font-normal normal-case text-[#2b2521] disabled:opacity-50"
           >
             <option value="">All months</option>
             {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
@@ -241,7 +241,7 @@ export default function AppointmentsAdminPage() {
           </select>
         </label>
 
-        <label className="grid gap-1 text-xs font-semibold tracking-wide text-[#c9a87c] uppercase">
+        <label className="grid gap-1 text-xs font-semibold tracking-wide text-[#7d6154] uppercase">
           Day
           <input
             type="date"
@@ -254,7 +254,7 @@ export default function AppointmentsAdminPage() {
                 /* native calendar icon still works */
               }
             }}
-            className="admin-date-input w-full rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-sm font-normal normal-case text-[#fffaf6]"
+            className="admin-date-input w-full rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-sm font-normal normal-case text-[#2b2521]"
           />
         </label>
       </div>
@@ -270,11 +270,11 @@ export default function AppointmentsAdminPage() {
             setMonth("");
             setDay("");
           }}
-          className="rounded-full border border-[#c9a87c]/40 px-3 py-1.5 text-sm text-[#f0c987]"
+          className="rounded-full border border-[#7d6154]/40 px-3 py-1.5 text-sm text-[#7d6154]"
         >
           Reset filters
         </button>
-        {message ? <p className="text-sm text-[#f0c987]">{message}</p> : null}
+        {message ? <p className="text-sm text-[#7d6154]">{message}</p> : null}
       </div>
 
       <div className="divide-y divide-ink/10 rounded-2xl border border-ink/10 bg-cream">
@@ -307,7 +307,7 @@ export default function AppointmentsAdminPage() {
                 {a.source === "WALK_IN" ? (
                   <span
                     data-testid="walk-in-badge"
-                    className="mt-1 inline-block rounded-full bg-[rgba(240,201,135,0.18)] px-2 py-0.5 text-[10px] font-bold tracking-wide text-[#f0c987] uppercase"
+                    className="mt-1 inline-block rounded-full bg-[rgba(240,201,135,0.18)] px-2 py-0.5 text-[10px] font-bold tracking-wide text-[#7d6154] uppercase"
                   >
                     Walk-in
                   </span>

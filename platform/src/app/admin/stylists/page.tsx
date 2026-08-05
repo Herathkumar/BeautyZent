@@ -49,7 +49,7 @@ function CredentialsPanel({
   return (
     <div
       ref={panelRef}
-      className="mt-4 rounded-xl border border-[#9fe3b8]/45 bg-[#1a2a22] p-4 text-[#fffaf6]"
+      className="mt-4 rounded-xl border border-[#9fe3b8]/45 bg-[#1a2a22] p-4 text-[#2b2521]"
       role="status"
       aria-live="polite"
       data-testid="issued-credentials"
@@ -59,16 +59,16 @@ function CredentialsPanel({
           ? `New password for ${issued.stylistName}`
           : `Share with ${issued.stylistName} — shown once`}
       </p>
-      <p className="mt-2 text-sm text-[#d4c4b0]">
+      <p className="mt-2 text-sm text-[#6b5b52]">
         Copy these now. They disappear when you press Done.
       </p>
-      <p className="mt-3 text-sm text-[#d4c4b0]">Login (username)</p>
-      <p className="break-all font-mono text-lg text-[#f0c987]" data-testid="issued-email">
+      <p className="mt-3 text-sm text-[#6b5b52]">Login (username)</p>
+      <p className="break-all font-mono text-lg text-[#7d6154]" data-testid="issued-email">
         {issued.email}
       </p>
-      <p className="mt-3 text-sm text-[#d4c4b0]">Temporary password</p>
+      <p className="mt-3 text-sm text-[#6b5b52]">Temporary password</p>
       <p
-        className="select-all break-all font-mono text-2xl font-semibold tracking-wide text-[#f0c987]"
+        className="select-all break-all font-mono text-2xl font-semibold tracking-wide text-[#7d6154]"
         data-testid="issued-password"
       >
         {issued.temporaryPassword}
@@ -84,20 +84,20 @@ function CredentialsPanel({
         </button>
         <button
           type="button"
-          className="rounded-full border border-[#c9a87c]/50 px-4 py-2 text-sm text-[#f0c987]"
+          className="rounded-full border border-[#7d6154]/50 px-4 py-2 text-sm text-[#7d6154]"
           onClick={() => onCopy(issued.temporaryPassword)}
         >
           Copy password only
         </button>
         <button
           type="button"
-          className="rounded-full border border-[#c9a87c]/50 px-4 py-2 text-sm text-[#f0c987]"
+          className="rounded-full border border-[#7d6154]/50 px-4 py-2 text-sm text-[#7d6154]"
           onClick={onDone}
         >
           Done
         </button>
       </div>
-      <p className="mt-3 text-xs text-[#a89a8c]">
+      <p className="mt-3 text-xs text-[#6b5b52]">
         Portal: {appUrl}/stylist/login — ask them to change the password under Profile after login.
       </p>
     </div>
@@ -316,12 +316,12 @@ export default function StylistsAdminPage() {
   return (
     <main className="space-y-8">
       <div>
-        <p className="text-xs font-semibold tracking-[0.2em] text-[#c9a87c] uppercase">Team</p>
-        <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl text-[#fffaf6]">
+        <p className="text-xs font-semibold tracking-[0.2em] text-[#7d6154] uppercase">Team</p>
+        <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl text-[#2b2521]">
           Stylists & logins
         </h1>
-        <p className="mt-2 text-[#d4c4b0]">
-          New stylists get a login like <code className="text-[#f0c987]">name@{emailDomain}</code> and a
+        <p className="mt-2 text-[#6b5b52]">
+          New stylists get a login like <code className="text-[#7d6154]">name@{emailDomain}</code> and a
           temporary password. They can change it on their phone under Profile.
         </p>
       </div>
@@ -329,31 +329,31 @@ export default function StylistsAdminPage() {
       {error ? <p className="text-sm text-[#f5a8a8]">{error}</p> : null}
 
       {!googleConfigured && (
-        <div className="rounded-2xl border border-[#c9a87c]/40 bg-[#2a211c] p-4 text-sm text-[#d4c4b0]">
+        <div className="rounded-2xl border border-[#7d6154]/40 bg-[#ffffff] p-4 text-sm text-[#6b5b52]">
           Google OAuth is not configured yet. ICS calendar feeds still work for phone sync.
         </div>
       )}
 
-      <div className="rounded-2xl border border-[#c9a87c]/30 bg-[#2a211c] p-4">
+      <div className="rounded-2xl border border-[#7d6154]/30 bg-[#ffffff] p-4">
         <form onSubmit={addStylist} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <input
             required
             placeholder="Stylist name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+            className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-[#2b2521]"
           />
           <input
             placeholder="Bio (optional)"
             value={bio}
             onChange={(e) => setBio(e.target.value)}
-            className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+            className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-[#2b2521]"
           />
           <select
             value={gender}
             onChange={(e) => setGender(e.target.value)}
             aria-label="Gender for avatar"
-            className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+            className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-[#2b2521]"
           >
             <option value="FEMALE">Female (avatar)</option>
             <option value="MALE">Male (avatar)</option>
@@ -363,7 +363,7 @@ export default function StylistsAdminPage() {
             value={payType}
             onChange={(e) => setPayType(e.target.value)}
             aria-label="Pay type"
-            className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+            className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-[#2b2521]"
           >
             <option value="COMMISSION">Commission</option>
             <option value="HOURLY">Hourly</option>
@@ -377,7 +377,7 @@ export default function StylistsAdminPage() {
             placeholder="Commission %"
             value={commissionPct}
             onChange={(e) => setCommissionPct(e.target.value)}
-            className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+            className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-[#2b2521]"
           />
           <input
             type="number"
@@ -386,9 +386,9 @@ export default function StylistsAdminPage() {
             placeholder="Hourly rate $"
             value={hourlyRate}
             onChange={(e) => setHourlyRate(e.target.value)}
-            className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+            className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-[#2b2521]"
           />
-          <label className="flex items-center gap-2 text-sm text-[#d4c4b0]">
+          <label className="flex items-center gap-2 text-sm text-[#6b5b52]">
             <input
               type="checkbox"
               checked={selfManageSchedule}
@@ -419,27 +419,27 @@ export default function StylistsAdminPage() {
           return (
             <article
               key={s.id}
-              className={`rounded-2xl border bg-[#2a211c] p-5 shadow-[0_12px_40px_rgba(0,0,0,0.25)] ${
+              className={`rounded-2xl border bg-[#ffffff] p-5 shadow-[0_12px_40px_rgba(0,0,0,0.25)] ${
                 s.active
-                  ? "border-[#c9a87c]/30"
-                  : "border-[#c9a87c]/15 opacity-75"
+                  ? "border-[#7d6154]/30"
+                  : "border-[#7d6154]/15 opacity-75"
               }`}
               data-testid="stylist-card"
             >
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="min-w-0 flex-1">
-                  <p className="flex items-center gap-3 text-xl font-bold text-[#fffaf6]">
+                  <p className="flex items-center gap-3 text-xl font-bold text-[#2b2521]">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={s.photoUrl || "/avatars/stylist-neutral.svg"}
                       alt=""
                       width={44}
                       height={44}
-                      className="h-11 w-11 rounded-full object-cover ring-2 ring-[#f0c987]/35"
+                      className="h-11 w-11 rounded-full object-cover ring-2 ring-[#7d6154]/35"
                     />
                     <span className="flex flex-wrap items-center gap-2">
                       <span
-                        className="h-3.5 w-3.5 shrink-0 rounded-full ring-2 ring-[#f0c987]/40"
+                        className="h-3.5 w-3.5 shrink-0 rounded-full ring-2 ring-[#7d6154]/40"
                         style={{ background: s.color }}
                       />
                       {s.name}
@@ -450,10 +450,10 @@ export default function StylistsAdminPage() {
                       ) : null}
                     </span>
                   </p>
-                  {s.bio && <p className="mt-2 text-base text-[#d4c4b0]">{s.bio}</p>}
-                  <p className="mt-3 text-sm text-[#d4c4b0]">
+                  {s.bio && <p className="mt-2 text-base text-[#6b5b52]">{s.bio}</p>}
+                  <p className="mt-3 text-sm text-[#6b5b52]">
                     Pay:{" "}
-                    <span className="font-semibold text-[#f0c987]">
+                    <span className="font-semibold text-[#7d6154]">
                       {s.payType || "COMMISSION"}
                       {s.commissionBps != null ? ` · ${(s.commissionBps / 100).toFixed(0)}%` : ""}
                       {s.hourlyRateCents != null
@@ -463,10 +463,10 @@ export default function StylistsAdminPage() {
                     {s.selfManageSchedule ? (
                       <span className="text-[#9fe3b8]"> · Self-manage</span>
                     ) : (
-                      <span className="text-[#a89a8c]"> · Needs leave approval</span>
+                      <span className="text-[#6b5b52]"> · Needs leave approval</span>
                     )}
                   </p>
-                  <label className="mt-3 flex items-center gap-2 text-sm text-[#d4c4b0]">
+                  <label className="mt-3 flex items-center gap-2 text-sm text-[#6b5b52]">
                     <input
                       type="checkbox"
                       checked={Boolean(s.selfManageSchedule)}
@@ -474,23 +474,23 @@ export default function StylistsAdminPage() {
                     />
                     Self-manage schedule (no leave approval)
                   </label>
-                  <p className="mt-2 text-sm text-[#d4c4b0]">
+                  <p className="mt-2 text-sm text-[#6b5b52]">
                     Login:{" "}
                     {s.loginEmail ? (
-                      <span className="font-semibold text-[#f0c987]">{s.loginEmail}</span>
+                      <span className="font-semibold text-[#7d6154]">{s.loginEmail}</span>
                     ) : (
                       <span className="text-[#f5a8a8]">No login yet</span>
                     )}
                   </p>
-                  <p className="mt-2 text-sm text-[#d4c4b0]">
+                  <p className="mt-2 text-sm text-[#6b5b52]">
                     Calendar:{" "}
                     {s.calendarConnected ? (
                       <span className="font-semibold text-[#9fe3b8]">Google connected</span>
                     ) : (
-                      <span className="text-[#f0c987]">Not connected via Google</span>
+                      <span className="text-[#7d6154]">Not connected via Google</span>
                     )}
                   </p>
-                  <p className="mt-3 break-all text-xs text-[#a89a8c]">
+                  <p className="mt-3 break-all text-xs text-[#6b5b52]">
                     Subscribe URL: {appUrl}/api/calendar/stylist/{s.id}/ics
                   </p>
                 </div>
@@ -506,7 +506,7 @@ export default function StylistsAdminPage() {
                       type="button"
                       disabled={resettingId === s.id || !s.active}
                       onClick={() => resetPassword(s.id, s.name)}
-                      className="rounded-full border border-[#c9a87c]/50 px-4 py-2 text-sm text-[#f0c987] disabled:opacity-40"
+                      className="rounded-full border border-[#7d6154]/50 px-4 py-2 text-sm text-[#7d6154] disabled:opacity-40"
                     >
                       {resettingId === s.id ? "Resetting…" : "Reset password"}
                     </button>
@@ -514,7 +514,7 @@ export default function StylistsAdminPage() {
                   {s.connectUrl && s.active ? (
                     <a
                       href={s.connectUrl}
-                      className="rounded-full border border-[#c9a87c]/50 px-4 py-2 text-center text-sm text-[#f0c987]"
+                      className="rounded-full border border-[#7d6154]/50 px-4 py-2 text-center text-sm text-[#7d6154]"
                     >
                       Connect Google Calendar
                     </a>
@@ -523,7 +523,7 @@ export default function StylistsAdminPage() {
                     <button
                       type="button"
                       onClick={() => void setStylistActive(s, false)}
-                      className="rounded-full border border-[#c9a87c]/50 px-4 py-2 text-sm text-[#f0c987]"
+                      className="rounded-full border border-[#7d6154]/50 px-4 py-2 text-sm text-[#7d6154]"
                       data-testid="stylist-disable"
                     >
                       Disable
