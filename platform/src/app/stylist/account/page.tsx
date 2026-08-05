@@ -283,17 +283,37 @@ export default function StylistAccountPage() {
               </span>
             </button>
             <p className="mt-2 text-xs text-[#a8c4bf]">
-              Tap photo to take or update your selfie
+              Tap photo to take a selfie, or choose one from your library
             </p>
-            {!hasPhoto && !editingProfile ? (
-              <button
-                type="button"
-                disabled={photoBusy}
-                onClick={() => setCameraOpen(true)}
-                className="stylist-tap mt-3 rounded-full border border-[#7ec4b8]/50 bg-[#7ec4b8]/12 px-5 py-2 text-sm font-semibold text-[#b5ebe0] hover:bg-[#7ec4b8]/20 disabled:opacity-50"
-              >
-                {photoBusy ? "Saving…" : "Take selfie"}
-              </button>
+            {!editingProfile ? (
+              <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+                <button
+                  type="button"
+                  disabled={photoBusy}
+                  onClick={() => setCameraOpen(true)}
+                  className="stylist-tap rounded-full border border-[#7ec4b8]/50 bg-[#7ec4b8]/12 px-5 py-2 text-sm font-semibold text-[#b5ebe0] hover:bg-[#7ec4b8]/20 disabled:opacity-50"
+                >
+                  {photoBusy ? "Saving…" : hasPhoto ? "Update selfie" : "Take selfie"}
+                </button>
+                <label
+                  className={`stylist-tap relative overflow-hidden rounded-full border border-[#7ec4b8]/35 px-5 py-2 text-sm font-semibold text-[#a8c4bf] hover:bg-[#7ec4b8]/10 ${
+                    photoBusy ? "pointer-events-none opacity-50" : "cursor-pointer"
+                  }`}
+                >
+                  Choose photo
+                  <input
+                    type="file"
+                    accept="image/*"
+                    disabled={photoBusy}
+                    className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] ?? null;
+                      void onPickPhoto(file);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+              </div>
             ) : null}
 
             <h2 className="mt-4 font-[family-name:var(--font-display)] text-3xl leading-tight text-[#f4fbfa]">

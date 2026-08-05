@@ -9,6 +9,8 @@ type Props = {
   /** Accent for capture button — stylist teal or manager gold */
   accent?: "stylist" | "manager";
   fileInputTestId?: string;
+  /** Stable id for label[htmlFor] from the profile page (no colon characters). */
+  fileInputId?: string;
 };
 
 /** Circle guide as fractions of the preview stage (must match CSS overlay). */
@@ -19,47 +21,21 @@ const CIRCLE = {
   diameter: 0.82,
 };
 
-function GalleryFileInput({
-  inputRef,
-  inputId,
-  testId,
-  onFile,
-}: {
-  inputRef: React.RefObject<HTMLInputElement | null>;
-  inputId: string;
-  testId?: string;
-  onFile: (file: File) => void;
-}) {
-  return (
-    <input
-      ref={inputRef}
-      id={inputId}
-      type="file"
-      accept="image/jpeg,image/png,image/webp,image/*"
-      // No capture attribute — lets iPhone open Photo Library
-      className="sr-only"
-      data-testid={testId}
-      onChange={(e) => {
-        const file = e.target.files?.[0];
-        if (file) onFile(file);
-        e.target.value = "";
-      }}
-    />
-  );
-}
-
 export function SelfieCamera({
   open,
   onClose,
   onCapture,
   accent = "stylist",
   fileInputTestId,
+  fileInputId,
 }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-  const inputId = useId();
+  // React useId() includes ":" which breaks label/htmlFor on iPhone Safari
+  const reactId = useId().replace(/:/g, "");
+  const inputId = fileInputId || `selfie-gallery-${reactId}`;
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -112,7 +88,7 @@ export function SelfieCamera({
     setBusy(true);
     setError("");
     try {
-      await onCapture(file);
+      await Promise.resolve(onCapture(file));
       onClose();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save photo");
@@ -186,7 +162,7 @@ export function SelfieCamera({
       );
       if (!blob) throw new Error("Could not capture");
       const file = new File([blob], "selfie.jpg", { type: "image/jpeg" });
-      await onCapture(file);
+      await Promise.resolve(onCapture(file));
       onClose();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not capture");
@@ -195,15 +171,31 @@ export function SelfieCamera({
     }
   }
 
+  /** Always mounted so e2e + iPhone can pick a photo without remounting the input. */
+  const galleryInput = (
+    <input
+      ref={fileRef}
+      id={inputId}
+      type="file"
+      accept="image/*"
+      // No capture attribute — Photo Library on iPhone
+      data-testid={fileInputTestId}
+      className={
+        open
+          ? "absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+          : "sr-only"
+      }
+      disabled={busy}
+      onChange={(e) => {
+        const file = e.target.files?.[0];
+        if (file) void handlePickedFile(file);
+        e.target.value = "";
+      }}
+    />
+  );
+
   if (!open) {
-    return (
-      <GalleryFileInput
-        inputRef={fileRef}
-        inputId={inputId}
-        testId={fileInputTestId}
-        onFile={(file) => void onCapture(file)}
-      />
-    );
+    return galleryInput;
   }
 
   const captureBtn =
@@ -247,7 +239,6 @@ export function SelfieCamera({
           className="h-full w-full object-cover"
           style={{ transform: "scaleX(-1)" }}
         />
-        {/* Dim outside the circle via box-shadow (matches guide exactly) */}
         <div
           className={`pointer-events-none absolute left-1/2 aspect-square -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] ${ring}`}
           style={{
@@ -273,21 +264,20 @@ export function SelfieCamera({
         >
           {busy ? "Saving…" : "Capture"}
         </button>
-        {/* Label+input is more reliable on iPhone than button.click() */}
-        <label
-          htmlFor={inputId}
-          className={`block w-full cursor-pointer rounded-full border border-white/30 py-3 text-center text-sm font-semibold text-white/90 ${
+        {/*
+          Full-size opacity-0 file input over the control — more reliable on iPhone
+          than htmlFor + sr-only (clipped inputs often never open the library).
+        */}
+        <div
+          className={`relative w-full overflow-hidden rounded-full border border-white/30 ${
             busy ? "pointer-events-none opacity-50" : ""
           }`}
         >
-          Choose photo instead
-        </label>
-        <GalleryFileInput
-          inputRef={fileRef}
-          inputId={inputId}
-          testId={fileInputTestId}
-          onFile={(file) => void handlePickedFile(file)}
-        />
+          <span className="block py-3 text-center text-sm font-semibold text-white/90">
+            Choose photo instead
+          </span>
+          {galleryInput}
+        </div>
       </div>
     </div>
   );
