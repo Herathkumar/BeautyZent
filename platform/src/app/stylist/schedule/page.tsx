@@ -491,7 +491,7 @@ export default function StylistOwnSchedulePage() {
       <div>
         <h1 className="font-[family-name:var(--font-display)] text-3xl">Schedule</h1>
         <p className="mt-2 text-muted">
-          Shape your week on the ring. Tap the calendar strip when you need time away.
+          Set your week on the ring first. Use the calendar below when you need time away.
         </p>
         {selfManage ? (
           <p className="mt-1 text-xs text-[#7ec4b8]">Self-managed — leave auto-approves.</p>
@@ -502,7 +502,125 @@ export default function StylistOwnSchedulePage() {
 
       {message ? <p className="text-sm text-[#b5ebe0]">{message}</p> : null}
 
-      {/* #4 Away strip */}
+      {/* My Week ring */}
+      <form
+        onSubmit={saveHours}
+        className="space-y-4 rounded-3xl border border-[#7ec4b8]/28 p-4"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(16,24,28,0.9) 0%, rgba(26,40,44,0.98) 100%)",
+        }}
+      >
+        <div className="text-center">
+          <p className="text-xs font-semibold tracking-[0.18em] text-[#7ec4b8] uppercase">
+            Regular hours
+          </p>
+          <h2 className="font-[family-name:var(--font-display)] text-xl text-[#f4fbfa]">
+            Tap a day on the ring
+          </h2>
+        </div>
+
+        <WeekRing
+          weekHours={weekHours}
+          selectedDay={selectedDay}
+          onSelectDay={setSelectedDay}
+        />
+
+        {selectedRow ? (
+          <div
+            className="grid gap-3 rounded-2xl border border-[#7ec4b8]/25 bg-[#10181c]/70 p-4"
+            data-testid="schedule-day-editor"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <p className="font-semibold text-[#f4fbfa]">{DAY_FULL[selectedDay]}</p>
+              <div className="flex rounded-full border border-[#7ec4b8]/35 p-0.5">
+                <button
+                  type="button"
+                  className={`rounded-full px-3 py-1.5 text-xs font-bold ${
+                    !selectedRow.isOff
+                      ? "bg-[#7ec4b8] text-[#0e1618]"
+                      : "text-[#a8c4bf]"
+                  }`}
+                  onClick={() => updateDay(selectedDay, { isOff: false })}
+                >
+                  Working
+                </button>
+                <button
+                  type="button"
+                  className={`rounded-full px-3 py-1.5 text-xs font-bold ${
+                    selectedRow.isOff
+                      ? "bg-[#7ec4b8]/25 text-[#b5ebe0]"
+                      : "text-[#a8c4bf]"
+                  }`}
+                  onClick={() => updateDay(selectedDay, { isOff: true })}
+                >
+                  Off
+                </button>
+              </div>
+            </div>
+
+            {selectedRow.isOff ? (
+              <p className="text-sm text-[#a8c4bf]">Clients won&apos;t see this day.</p>
+            ) : (
+              <div className="flex flex-wrap items-center gap-2 text-sm">
+                <select
+                  value={selectedRow.startHour}
+                  onChange={(e) =>
+                    updateDay(selectedDay, { startHour: Number(e.target.value) })
+                  }
+                  className="stylist-tap min-h-11 flex-1 rounded-xl border border-ink/15 bg-white px-2 text-ink"
+                  aria-label={`${DAY_NAMES[selectedDay]} start`}
+                >
+                  {Array.from({ length: 24 }, (_, h) => (
+                    <option key={h} value={h}>
+                      {String(h).padStart(2, "0")}:00
+                    </option>
+                  ))}
+                </select>
+                <span className="text-muted">to</span>
+                <select
+                  value={selectedRow.endHour}
+                  onChange={(e) =>
+                    updateDay(selectedDay, { endHour: Number(e.target.value) })
+                  }
+                  className="stylist-tap min-h-11 flex-1 rounded-xl border border-ink/15 bg-white px-2 text-ink"
+                  aria-label={`${DAY_NAMES[selectedDay]} end`}
+                >
+                  {Array.from({ length: 24 }, (_, h) => (
+                    <option key={h} value={h}>
+                      {String(h).padStart(2, "0")}:00
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+        ) : null}
+
+        <div className="flex flex-wrap justify-center gap-2">
+          {weekHours.map((row) => (
+            <button
+              key={row.dayOfWeek}
+              type="button"
+              onClick={() => setSelectedDay(row.dayOfWeek)}
+              className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                selectedDay === row.dayOfWeek
+                  ? "bg-[#b5ebe0] text-[#0e1618]"
+                  : row.isOff
+                    ? "bg-[#10181c] text-[#a8c4bf]"
+                    : "bg-[#7ec4b8]/20 text-[#b5ebe0]"
+              }`}
+            >
+              {DAY_NAMES[row.dayOfWeek]}
+            </button>
+          ))}
+        </div>
+
+        <button type="submit" className="stylist-tap btn-solid w-full rounded-full px-5">
+          Save work days
+        </button>
+      </form>
+      {/* Away calendar */}
       <section
         className="rounded-3xl border border-[#7ec4b8]/28 p-4"
         style={{
@@ -662,124 +780,6 @@ export default function StylistOwnSchedulePage() {
         </div>
       </section>
 
-      {/* #1 My Week ring */}
-      <form
-        onSubmit={saveHours}
-        className="space-y-4 rounded-3xl border border-[#7ec4b8]/28 p-4"
-        style={{
-          background:
-            "linear-gradient(180deg, rgba(16,24,28,0.9) 0%, rgba(26,40,44,0.98) 100%)",
-        }}
-      >
-        <div className="text-center">
-          <p className="text-xs font-semibold tracking-[0.18em] text-[#7ec4b8] uppercase">
-            Regular hours
-          </p>
-          <h2 className="font-[family-name:var(--font-display)] text-xl text-[#f4fbfa]">
-            Tap a day on the ring
-          </h2>
-        </div>
-
-        <WeekRing
-          weekHours={weekHours}
-          selectedDay={selectedDay}
-          onSelectDay={setSelectedDay}
-        />
-
-        {selectedRow ? (
-          <div
-            className="grid gap-3 rounded-2xl border border-[#7ec4b8]/25 bg-[#10181c]/70 p-4"
-            data-testid="schedule-day-editor"
-          >
-            <div className="flex items-center justify-between gap-3">
-              <p className="font-semibold text-[#f4fbfa]">{DAY_FULL[selectedDay]}</p>
-              <div className="flex rounded-full border border-[#7ec4b8]/35 p-0.5">
-                <button
-                  type="button"
-                  className={`rounded-full px-3 py-1.5 text-xs font-bold ${
-                    !selectedRow.isOff
-                      ? "bg-[#7ec4b8] text-[#0e1618]"
-                      : "text-[#a8c4bf]"
-                  }`}
-                  onClick={() => updateDay(selectedDay, { isOff: false })}
-                >
-                  Working
-                </button>
-                <button
-                  type="button"
-                  className={`rounded-full px-3 py-1.5 text-xs font-bold ${
-                    selectedRow.isOff
-                      ? "bg-[#7ec4b8]/25 text-[#b5ebe0]"
-                      : "text-[#a8c4bf]"
-                  }`}
-                  onClick={() => updateDay(selectedDay, { isOff: true })}
-                >
-                  Off
-                </button>
-              </div>
-            </div>
-
-            {selectedRow.isOff ? (
-              <p className="text-sm text-[#a8c4bf]">Clients won&apos;t see this day.</p>
-            ) : (
-              <div className="flex flex-wrap items-center gap-2 text-sm">
-                <select
-                  value={selectedRow.startHour}
-                  onChange={(e) =>
-                    updateDay(selectedDay, { startHour: Number(e.target.value) })
-                  }
-                  className="stylist-tap min-h-11 flex-1 rounded-xl border border-ink/15 bg-white px-2 text-ink"
-                  aria-label={`${DAY_NAMES[selectedDay]} start`}
-                >
-                  {Array.from({ length: 24 }, (_, h) => (
-                    <option key={h} value={h}>
-                      {String(h).padStart(2, "0")}:00
-                    </option>
-                  ))}
-                </select>
-                <span className="text-muted">to</span>
-                <select
-                  value={selectedRow.endHour}
-                  onChange={(e) =>
-                    updateDay(selectedDay, { endHour: Number(e.target.value) })
-                  }
-                  className="stylist-tap min-h-11 flex-1 rounded-xl border border-ink/15 bg-white px-2 text-ink"
-                  aria-label={`${DAY_NAMES[selectedDay]} end`}
-                >
-                  {Array.from({ length: 24 }, (_, h) => (
-                    <option key={h} value={h}>
-                      {String(h).padStart(2, "0")}:00
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-          </div>
-        ) : null}
-
-        <div className="flex flex-wrap justify-center gap-2">
-          {weekHours.map((row) => (
-            <button
-              key={row.dayOfWeek}
-              type="button"
-              onClick={() => setSelectedDay(row.dayOfWeek)}
-              className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
-                selectedDay === row.dayOfWeek
-                  ? "bg-[#b5ebe0] text-[#0e1618]"
-                  : row.isOff
-                    ? "bg-[#10181c] text-[#a8c4bf]"
-                    : "bg-[#7ec4b8]/20 text-[#b5ebe0]"
-              }`}
-            >
-              {DAY_NAMES[row.dayOfWeek]}
-            </button>
-          ))}
-        </div>
-
-        <button type="submit" className="stylist-tap btn-solid w-full rounded-full px-5">
-          Save work days
-        </button>
-      </form>
     </main>
   );
 }

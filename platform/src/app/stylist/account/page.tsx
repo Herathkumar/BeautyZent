@@ -276,7 +276,7 @@ export default function StylistAccountPage() {
                 width={112}
                 height={112}
                 data-testid="stylist-photo-preview"
-                className="h-28 w-28 rounded-full object-cover shadow-[0_12px_40px_rgba(0,0,0,0.35)] ring-4 ring-[#7ec4b8]/35"
+                className="h-28 w-28 rounded-full object-cover shadow-[0_12px_40px_rgba(0,0,0,0.35)] ring-[5px] ring-[#7ec4b8]/55"
               />
               <span className="absolute bottom-1 right-1 rounded-full bg-[#0e1618] px-2 py-0.5 text-[10px] font-semibold tracking-wide text-[#b5ebe0] ring-1 ring-[#7ec4b8]/40">
                 {photoBusy ? "…" : hasPhoto ? "Update" : "Selfie"}
