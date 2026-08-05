@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { ZentraLabFooter } from "@/components/ZentraLabFooter";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -77,6 +78,8 @@ export default function AdminLoginPage() {
           {loading ? "Signing in…" : "Sign in"}
         </button>
       </form>
+
+      <ZentraLabFooter compact />
     </main>
   );
 }

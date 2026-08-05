@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { ZentraLabFooter } from "@/components/ZentraLabFooter";
 
 export default function StylistLoginPage() {
   const router = useRouter();
@@ -97,6 +98,8 @@ export default function StylistLoginPage() {
           Manager portal
         </Link>
       </p>
+
+      <ZentraLabFooter compact />
     </main>
   );
 }

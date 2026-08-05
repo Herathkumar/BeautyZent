@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { ZentraLabFooter } from "@/components/ZentraLabFooter";
 import { BookingWizard } from "./BookingWizard";
 
 export default async function BookPage({
@@ -18,14 +19,15 @@ export default async function BookPage({
           <Link href="/" className="mt-4 inline-block text-champagne">
             Back home
           </Link>
+          <ZentraLabFooter compact />
         </div>
       </main>
     );
   }
 
   return (
-    <main className="book-theme min-h-screen">
-      <div className="mx-auto max-w-2xl px-4 pb-16 pt-6 sm:px-6">
+    <main className="book-theme flex min-h-screen flex-col">
+      <div className="mx-auto w-full max-w-2xl flex-1 px-4 pb-8 pt-6 sm:px-6">
         <section className="relative mb-8 overflow-hidden rounded-3xl border border-[rgba(232,180,162,0.35)] shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
           <div className="absolute inset-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -58,6 +60,10 @@ export default async function BookPage({
         </section>
 
         <BookingWizard slug={slug} />
+      </div>
+
+      <div className="mx-auto w-full max-w-2xl px-4 sm:px-6">
+        <ZentraLabFooter compact />
       </div>
     </main>
   );
