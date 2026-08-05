@@ -68,6 +68,11 @@ export default function AdminAccountPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [bio, setBio] = useState("");
+  const [profileMsg, setProfileMsg] = useState("");
+  const [profileError, setProfileError] = useState("");
+  const [savingProfile, setSavingProfile] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -100,6 +105,8 @@ export default function AdminAccountPage() {
         if (!data?.user) return;
         setEmail(data.user.email || "");
         setName(data.user.name || "");
+        setPhone(data.user.phone || "");
+        setBio(data.user.bio || "");
       });
     fetch("/api/admin/salon")
       .then((res) => (res.ok ? res.json() : null))
@@ -155,6 +162,32 @@ export default function AdminAccountPage() {
     setPhotoUrl(data.user.photoUrl);
     setHasPhoto(false);
     setPhotoMessage(data.message || "Photo removed.");
+  }
+
+  async function onSaveProfile(e: React.FormEvent) {
+    e.preventDefault();
+    setProfileError("");
+    setProfileMsg("");
+    if (!name.trim()) {
+      setProfileError("Display name is required");
+      return;
+    }
+    setSavingProfile(true);
+    const res = await fetch("/api/admin/account", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: name.trim(), phone, bio }),
+    });
+    const data = await res.json();
+    setSavingProfile(false);
+    if (!res.ok) {
+      setProfileError(data.error || "Could not update profile");
+      return;
+    }
+    if (data.user?.name) setName(data.user.name);
+    setPhone(data.user?.phone || "");
+    setBio(data.user?.bio || "");
+    setProfileMsg(data.message || "Profile updated.");
   }
 
   async function onSaveHours(e: React.FormEvent) {
@@ -215,7 +248,7 @@ export default function AdminAccountPage() {
           Account
         </h1>
         <p className="mt-2 text-[#d4c4b0]">
-          Update your photo, store hours, and login password for this salon.
+          Update your profile, store hours, and login password for this salon.
         </p>
       </div>
 
@@ -241,10 +274,10 @@ export default function AdminAccountPage() {
       <section className="grid gap-4 rounded-2xl border border-[#c9a87c]/30 bg-[#2a211c] p-5">
         <div>
           <h2 className="font-[family-name:var(--font-display)] text-xl text-[#fffaf6]">
-            Profile photo
+            Profile
           </h2>
           <p className="mt-1 text-sm text-[#d4c4b0]">
-            Shown on your account. Before a selfie, we show a generic avatar.
+            Your name, contact info, and photo. Update anytime — no password needed.
           </p>
         </div>
 
@@ -295,6 +328,48 @@ export default function AdminAccountPage() {
         </div>
         {photoError ? <p className="text-sm text-[#f5a8a8]">{photoError}</p> : null}
         {photoMessage ? <p className="text-sm text-[#9fe3b8]">{photoMessage}</p> : null}
+
+        <form onSubmit={onSaveProfile} className="grid gap-3 border-t border-[#c9a87c]/20 pt-4">
+          <label className="grid gap-1.5 text-sm text-[#d4c4b0]">
+            Display name
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+            />
+          </label>
+          <label className="grid gap-1.5 text-sm text-[#d4c4b0]">
+            Phone
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="Optional"
+              className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+            />
+          </label>
+          <label className="grid gap-1.5 text-sm text-[#d4c4b0]">
+            Short bio
+            <textarea
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              rows={3}
+              maxLength={280}
+              placeholder="Optional — a short note about you"
+              className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+            />
+          </label>
+          {profileError ? <p className="text-sm text-[#f5a8a8]">{profileError}</p> : null}
+          {profileMsg ? <p className="text-sm text-[#9fe3b8]">{profileMsg}</p> : null}
+          <button
+            type="submit"
+            disabled={savingProfile}
+            className="btn-solid rounded-full px-5 py-3"
+          >
+            {savingProfile ? "Saving…" : "Save profile"}
+          </button>
+        </form>
       </section>
 
       <form

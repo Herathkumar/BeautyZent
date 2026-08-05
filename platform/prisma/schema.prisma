@@ -65,6 +65,10 @@ model User {
   email        String
   passwordHash String
   name         String
+  /// Personal phone shown on their account profile (manager or stylist).
+  phone        String?
+  /// Short about / bio for their account profile.
+  bio          String?
   role         String   @default("ADMIN") // ADMIN | MANAGER | FRONT_DESK | STYLIST (UI: Manager)
   /// When role is STYLIST, links this login to a stylist profile
   stylistId    String?  @unique

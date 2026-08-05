@@ -7,6 +7,17 @@ function isStaff(role: string) {
   return isSalonStaff(role);
 }
 
+function cleanPhone(value: unknown) {
+  const phone = String(value ?? "").trim();
+  return phone || null;
+}
+
+function cleanBio(value: unknown) {
+  const bio = String(value ?? "").trim();
+  if (bio.length > 280) return { error: "Bio must be 280 characters or less" as const };
+  return { bio: bio || null };
+}
+
 export async function GET() {
   const session = await getSession();
   if (!session || !isStaff(session.role)) {
@@ -14,7 +25,7 @@ export async function GET() {
   }
   const user = await prisma.user.findUnique({
     where: { id: session.userId },
-    select: { id: true, email: true, name: true, role: true },
+    select: { id: true, email: true, name: true, phone: true, bio: true, role: true },
   });
   if (!user) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json({ user });
@@ -29,6 +40,39 @@ export async function PATCH(req: Request) {
   const body = await req.json();
   const user = await prisma.user.findUnique({ where: { id: session.userId } });
   if (!user) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  const wantsPassword =
+    body.newPassword != null && String(body.newPassword).length > 0;
+  const wantsProfile =
+    body.name != null || body.phone !== undefined || body.bio !== undefined;
+
+  // Profile-only update — no password required
+  if (wantsProfile && !wantsPassword && !body.currentPassword) {
+    const name = body.name != null ? String(body.name).trim() : undefined;
+    if (name !== undefined && !name) {
+      return NextResponse.json({ error: "Display name is required" }, { status: 400 });
+    }
+    const bioResult = body.bio !== undefined ? cleanBio(body.bio) : null;
+    if (bioResult && "error" in bioResult) {
+      return NextResponse.json({ error: bioResult.error }, { status: 400 });
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        ...(name !== undefined ? { name } : {}),
+        ...(body.phone !== undefined ? { phone: cleanPhone(body.phone) } : {}),
+        ...(bioResult ? { bio: bioResult.bio } : {}),
+      },
+      select: { id: true, email: true, name: true, phone: true, bio: true, role: true },
+    });
+
+    return NextResponse.json({
+      ok: true,
+      user: updated,
+      message: "Profile updated.",
+    });
+  }
 
   const currentPassword = String(body.currentPassword || "");
   if (!currentPassword) {

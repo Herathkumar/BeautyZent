@@ -62,6 +62,11 @@ export default function StylistAccountPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [bio, setBio] = useState("");
+  const [profileMsg, setProfileMsg] = useState("");
+  const [profileError, setProfileError] = useState("");
+  const [savingProfile, setSavingProfile] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -90,6 +95,8 @@ export default function StylistAccountPage() {
         if (!data?.user) return;
         setEmail(data.user.email || "");
         setName(data.user.name || "");
+        setPhone(data.user.phone || "");
+        setBio(data.user.bio || "");
       });
 
     fetch("/api/stylist/photo")
@@ -163,6 +170,32 @@ export default function StylistAccountPage() {
     setPhotoMessage(data.message || "Photo removed.");
   }
 
+  async function onSaveProfile(e: React.FormEvent) {
+    e.preventDefault();
+    setProfileError("");
+    setProfileMsg("");
+    if (!name.trim()) {
+      setProfileError("Display name is required");
+      return;
+    }
+    setSavingProfile(true);
+    const res = await fetch("/api/stylist/account", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: name.trim(), phone, bio }),
+    });
+    const data = await res.json();
+    setSavingProfile(false);
+    if (!res.ok) {
+      setProfileError(data.error || "Could not update profile");
+      return;
+    }
+    if (data.user?.name) setName(data.user.name);
+    setPhone(data.user?.phone || "");
+    setBio(data.user?.bio || "");
+    setProfileMsg(data.message || "Profile updated.");
+  }
+
   async function onSave(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -178,7 +211,6 @@ export default function StylistAccountPage() {
       body: JSON.stringify({
         currentPassword,
         email,
-        name,
         newPassword: newPassword || undefined,
       }),
     });
@@ -193,7 +225,6 @@ export default function StylistAccountPage() {
     setNewPassword("");
     setConfirmPassword("");
     if (data.user?.email) setEmail(data.user.email);
-    if (data.user?.name) setName(data.user.name);
   }
 
   return (
@@ -201,7 +232,7 @@ export default function StylistAccountPage() {
       <div>
         <h1 className="font-[family-name:var(--font-display)] text-3xl">Account</h1>
         <p className="mt-2 text-muted">
-          Update your photo for online booking, and manage login credentials.
+          Update your profile and photo for online booking, and manage login credentials.
         </p>
       </div>
 
@@ -231,9 +262,10 @@ export default function StylistAccountPage() {
 
       <section className="grid gap-4 rounded-2xl border border-ink/15 bg-cream p-4">
         <div>
-          <h2 className="font-[family-name:var(--font-display)] text-xl">Profile photo</h2>
+          <h2 className="font-[family-name:var(--font-display)] text-xl">Profile</h2>
           <p className="mt-1 text-sm text-muted">
-            Clients see this when they choose a stylist. Before a selfie, we show a gender avatar.
+            Your name, contact info, and photo. Clients see your name and bio when they book.
+            Update anytime — no password needed.
           </p>
         </div>
 
@@ -298,18 +330,52 @@ export default function StylistAccountPage() {
         </div>
         {photoError ? <p className="text-sm text-[#f5a8a8]">{photoError}</p> : null}
         {photoMessage ? <p className="text-sm text-champagne">{photoMessage}</p> : null}
+
+        <form onSubmit={onSaveProfile} className="grid gap-3 border-t border-ink/15 pt-4">
+          <label className="grid gap-1.5 text-sm">
+            Display name
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              className="stylist-tap rounded-2xl border border-ink/15 bg-white px-3 text-ink"
+            />
+          </label>
+          <label className="grid gap-1.5 text-sm">
+            Phone
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="Optional"
+              className="stylist-tap rounded-2xl border border-ink/15 bg-white px-3 text-ink"
+            />
+          </label>
+          <label className="grid gap-1.5 text-sm">
+            Short bio
+            <textarea
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              rows={3}
+              maxLength={280}
+              placeholder="Optional — shown when clients choose a stylist"
+              className="stylist-tap rounded-2xl border border-ink/15 bg-white px-3 py-2 text-ink"
+            />
+          </label>
+          {profileError ? <p className="text-sm text-[#f5a8a8]">{profileError}</p> : null}
+          {profileMsg ? <p className="text-sm text-champagne">{profileMsg}</p> : null}
+          <button
+            type="submit"
+            disabled={savingProfile}
+            className="stylist-tap btn-solid rounded-2xl"
+          >
+            {savingProfile ? "Saving…" : "Save profile"}
+          </button>
+        </form>
       </section>
 
       <form onSubmit={onSave} className="grid gap-4 rounded-2xl border border-ink/15 bg-cream p-4">
         <h2 className="font-[family-name:var(--font-display)] text-xl">Login</h2>
-        <label className="grid gap-1.5 text-sm">
-          Display name
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="stylist-tap rounded-2xl border border-ink/15 bg-white px-3 text-ink"
-          />
-        </label>
         <label className="grid gap-1.5 text-sm">
           Login email / username
           <input
