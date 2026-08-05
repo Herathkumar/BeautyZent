@@ -12,6 +12,13 @@ test.describe("Manager portal", () => {
     const floor = page.getByTestId("dashboard-who-working");
     await expect(floor).toBeVisible();
     await expect(floor.getByText(/on floor|no one on the floor/i)).toBeVisible();
+    const stylist = floor.getByTestId("dashboard-floor-stylist").first();
+    if (await stylist.count()) {
+      await expect(stylist.getByTestId("dashboard-floor-jobs")).toHaveText(/\d+\s+jobs?/i);
+      await expect(stylist.getByTestId("dashboard-floor-available")).toHaveText(
+        /open|no open time/i
+      );
+    }
   });
 
   test("who's working page lists team for a day", async ({ page }) => {

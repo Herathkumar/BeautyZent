@@ -16,6 +16,11 @@ export type FloorRosterEntry = {
   summary: string;
   scheduled: { startLabel: string; endLabel: string } | null;
   onFloor: { startLabel: string; endLabel: string }[];
+  /** Non-cancelled appointments starting today */
+  assignedJobs: number;
+  /** Free chair time today (minutes), after leave + bookings */
+  availableMinutes: number;
+  availableLabel: string;
   absences: {
     id: string;
     reasonLabel: string;
@@ -73,6 +78,18 @@ function reasonLabel(reason: string) {
   }
 }
 
+function minutesBetween(a: Date, b: Date) {
+  return Math.max(0, Math.round((b.getTime() - a.getTime()) / 60_000));
+}
+
+function formatAvailableLabel(minutes: number) {
+  if (minutes <= 0) return "No open time";
+  if (minutes < 60) return `${minutes}m open`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m ? `${h}h ${m}m open` : `${h}h open`;
+}
+
 export async function getFloorRoster(opts: {
   salonId: string;
   date?: string;
@@ -93,21 +110,40 @@ export async function getFloorRoster(opts: {
   const dayStartMs = dayStart.getTime();
   const nextDayMs = nextDay.getTime();
 
-  const stylists = await prisma.stylist.findMany({
-    where: { salonId: opts.salonId, active: true },
-    include: {
-      weekHours: true,
-      blocks: {
-        where: {
-          status: { in: ["PENDING", "APPROVED"] },
-          startsAt: { lt: new Date(nextDayMs) },
-          endsAt: { gt: new Date(dayStartMs) },
+  const [stylists, dayAppointments] = await Promise.all([
+    prisma.stylist.findMany({
+      where: { salonId: opts.salonId, active: true },
+      include: {
+        weekHours: true,
+        blocks: {
+          where: {
+            status: { in: ["PENDING", "APPROVED"] },
+            startsAt: { lt: new Date(nextDayMs) },
+            endsAt: { gt: new Date(dayStartMs) },
+          },
+          orderBy: { startsAt: "asc" },
         },
-        orderBy: { startsAt: "asc" },
       },
-    },
-    orderBy: { name: "asc" },
-  });
+      orderBy: { name: "asc" },
+    }),
+    prisma.appointment.findMany({
+      where: {
+        salonId: opts.salonId,
+        startsAt: { gte: new Date(dayStartMs), lt: new Date(nextDayMs) },
+        status: { notIn: ["CANCELLED", "NO_SHOW"] },
+      },
+      select: { stylistId: true, startsAt: true, endsAt: true },
+    }),
+  ]);
+
+  const jobsByStylist = new Map<string, number>();
+  const apptBusyByStylist = new Map<string, Interval[]>();
+  for (const a of dayAppointments) {
+    jobsByStylist.set(a.stylistId, (jobsByStylist.get(a.stylistId) || 0) + 1);
+    const list = apptBusyByStylist.get(a.stylistId) || [];
+    list.push({ start: a.startsAt, end: a.endsAt });
+    apptBusyByStylist.set(a.stylistId, list);
+  }
 
   const weekdayLabel = new Intl.DateTimeFormat("en-CA", {
     timeZone,
@@ -160,6 +196,11 @@ export async function getFloorRoster(opts: {
     let status: FloorRosterEntry["status"] = "OFF";
     let summary = "Day off";
     let onFloor: { startLabel: string; endLabel: string }[] = [];
+    let availableMinutes = 0;
+
+    const leaveBusy = s.blocks.map((b) => ({ start: b.startsAt, end: b.endsAt }));
+    const apptBusy = apptBusyByStylist.get(s.id) || [];
+    const assignedJobs = jobsByStylist.get(s.id) || 0;
 
     if (!workValid) {
       status = "OFF";
@@ -169,18 +210,26 @@ export async function getFloorRoster(opts: {
       const away = absences.find((a) => a.coversFullDay)!;
       summary = `${away.reasonLabel}${away.status === "PENDING" ? " (pending)" : ""} — all day`;
     } else {
-      const busy = s.blocks.map((b) => ({ start: b.startsAt, end: b.endsAt }));
       const free = subtractBusy(
         { start: scheduledStart, end: scheduledEnd },
-        busy
+        leaveBusy
       );
       onFloor = free.map((seg) => ({
         startLabel: formatTime(seg.start, timeZone),
         endLabel: formatTime(seg.end, timeZone),
       }));
+      const openChair = subtractBusy(
+        { start: scheduledStart, end: scheduledEnd },
+        [...leaveBusy, ...apptBusy]
+      );
+      availableMinutes = openChair.reduce(
+        (n, seg) => n + minutesBetween(seg.start, seg.end),
+        0
+      );
       if (onFloor.length === 0) {
         status = "AWAY";
         summary = "Away all day";
+        availableMinutes = 0;
       } else if (absences.length === 0) {
         status = "WORKING";
         summary = `${formatTime(scheduledStart, timeZone)} – ${formatTime(scheduledEnd, timeZone)}`;
@@ -202,6 +251,9 @@ export async function getFloorRoster(opts: {
           }
         : null,
       onFloor,
+      assignedJobs,
+      availableMinutes,
+      availableLabel: formatAvailableLabel(availableMinutes),
       absences: absences.map((a) => ({
         id: a.id,
         reasonLabel: a.reasonLabel,

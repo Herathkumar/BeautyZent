@@ -19,8 +19,15 @@ type RosterRow = {
   summary: string;
   scheduled: { startLabel: string; endLabel: string } | null;
   onFloor: { startLabel: string; endLabel: string }[];
+  assignedJobs: number;
+  availableMinutes: number;
+  availableLabel: string;
   absences: Absence[];
 };
+
+function jobsLabel(n: number) {
+  return n === 1 ? "1 job" : `${n} jobs`;
+}
 
 type Payload = {
   date: string;
@@ -178,6 +185,13 @@ export default function WhoIsWorkingPage() {
                         {row.name}
                       </h2>
                       <p className="mt-1 text-sm text-[#f0c987]">{row.summary}</p>
+                      {row.status === "WORKING" || row.status === "PARTIAL" ? (
+                        <p className="mt-1 text-sm text-muted">
+                          {jobsLabel(row.assignedJobs ?? 0)}
+                          <span className="text-white/25"> · </span>
+                          {row.availableLabel || "No open time"}
+                        </p>
+                      ) : null}
                       {row.scheduled && row.status !== "OFF" ? (
                         <p className="mt-1 text-xs text-muted">
                           Scheduled {row.scheduled.startLabel} – {row.scheduled.endLabel}

@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { getFloorRoster } from "@/lib/floor-roster";
 
+function jobsLabel(n: number) {
+  return n === 1 ? "1 job" : `${n} jobs`;
+}
+
 export async function DashboardFloorToday({ salonId }: { salonId: string }) {
   const data = await getFloorRoster({ salonId });
   const onFloor = data.onFloor;
@@ -29,14 +33,22 @@ export async function DashboardFloorToday({ salonId }: { salonId: string }) {
       </div>
 
       {onFloor.length > 0 ? (
-        <ul className="mt-4 space-y-2" data-testid="dashboard-floor-list">
+        <ul className="mt-4 space-y-3" data-testid="dashboard-floor-list">
           {onFloor.map((s) => (
             <li
               key={s.id}
-              className="flex flex-wrap items-baseline justify-between gap-2 border-t border-[#c9a87c]/15 pt-2 first:border-t-0 first:pt-0"
+              className="border-t border-[#c9a87c]/15 pt-3 first:border-t-0 first:pt-0"
+              data-testid="dashboard-floor-stylist"
             >
-              <span className="font-semibold text-[#fffaf6]">{s.name}</span>
-              <span className="text-sm text-[#f0c987]">{s.summary}</span>
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <span className="font-semibold text-[#fffaf6]">{s.name}</span>
+                <span className="text-sm text-[#f0c987]">{s.summary}</span>
+              </div>
+              <p className="mt-1 text-sm text-muted">
+                <span data-testid="dashboard-floor-jobs">{jobsLabel(s.assignedJobs)}</span>
+                <span className="text-white/25"> · </span>
+                <span data-testid="dashboard-floor-available">{s.availableLabel}</span>
+              </p>
             </li>
           ))}
         </ul>
