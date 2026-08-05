@@ -26,13 +26,116 @@
   --font-display: var(--font-display);
 }
 
+/* Default dark shell — avoids white flash on PWA / tablet cold start.
+   Marketing home uses html.paper-shell (set by boot script in root layout). */
+html,
 body {
+  background: #1c1714;
+  color: #fffaf6;
+  font-family: var(--font-body);
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+html.paper-shell,
+html.paper-shell body {
   background:
     radial-gradient(1000px 500px at 10% -10%, rgba(201, 168, 124, 0.22), transparent 55%),
     linear-gradient(180deg, #f7f3ee 0%, var(--paper) 45%, #ebe4db 100%);
   color: var(--ink);
-  font-family: var(--font-body);
-  min-height: 100vh;
+}
+
+/* Branded route loading splash (Next.js loading.tsx) */
+.app-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  background:
+    radial-gradient(900px 420px at 90% -10%, rgba(240, 201, 135, 0.16), transparent 55%),
+    radial-gradient(700px 360px at 0% 100%, rgba(110, 74, 56, 0.3), transparent 50%),
+    linear-gradient(180deg, #241c18 0%, #1c1714 50%, #15110f 100%);
+  color: #fffaf6;
+}
+
+.app-splash--stylist {
+  background:
+    radial-gradient(900px 460px at 85% -8%, rgba(126, 196, 184, 0.2), transparent 55%),
+    radial-gradient(720px 380px at 0% 100%, rgba(56, 110, 120, 0.3), transparent 52%),
+    linear-gradient(180deg, #152226 0%, #0e1618 50%, #0a1114 100%);
+}
+
+.app-splash--book {
+  background:
+    radial-gradient(900px 480px at 85% -5%, rgba(232, 180, 162, 0.2), transparent 55%),
+    radial-gradient(700px 400px at 0% 90%, rgba(110, 74, 90, 0.26), transparent 50%),
+    linear-gradient(180deg, #241820 0%, #1a1418 50%, #120e12 100%);
+}
+
+.app-splash-inner {
+  display: grid;
+  justify-items: center;
+  gap: 0.55rem;
+  text-align: center;
+}
+
+.app-splash-brand {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 6vw, 2.75rem);
+  letter-spacing: 0.02em;
+  color: #f0c987;
+}
+
+.app-splash--stylist .app-splash-brand {
+  color: #b5ebe0;
+}
+
+.app-splash--book .app-splash-brand {
+  color: #f2c4b0;
+}
+
+.app-splash-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 250, 246, 0.55);
+}
+
+.app-splash-spinner {
+  margin-top: 1.25rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  border: 2px solid rgba(201, 168, 124, 0.22);
+  border-top-color: #f0c987;
+  animation: app-splash-spin 0.75s linear infinite;
+}
+
+.app-splash--stylist .app-splash-spinner {
+  border-color: rgba(126, 196, 184, 0.22);
+  border-top-color: #b5ebe0;
+}
+
+.app-splash--book .app-splash-spinner {
+  border-color: rgba(232, 180, 162, 0.22);
+  border-top-color: #f2c4b0;
+}
+
+@keyframes app-splash-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-splash-spinner {
+    animation: none;
+    border-top-color: inherit;
+    opacity: 0.7;
+  }
 }
 
 a {
