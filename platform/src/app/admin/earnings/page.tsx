@@ -706,7 +706,7 @@ export default function StoreEarningsPage() {
             </div>
             <div
               className="mt-3 flex items-end justify-between gap-1 pt-2"
-              style={{ height: 150 }}
+              style={{ height: 180 }}
               data-testid="store-earnings-bars"
             >
               {data.days.map((d) => {
@@ -715,6 +715,18 @@ export default function StoreEarningsPage() {
                 const profitH = Math.max(4, Math.round((profitVis / maxBar) * 110));
                 return (
                   <div key={d.date} className="flex flex-1 flex-col items-center gap-1">
+                    <div className="flex min-h-[2.1rem] flex-col items-center justify-end leading-tight">
+                      <p className="text-[10px] font-semibold text-[#f0c987]">
+                        {d.revenueCents > 0 ? `$${centsToDollars(d.revenueCents)}` : ""}
+                      </p>
+                      <p
+                        className={`text-[10px] font-semibold ${
+                          d.profitCents < 0 ? "text-[#f5a8a8]" : "text-[#9fe3b8]"
+                        }`}
+                      >
+                        {d.profitCents !== 0 ? `$${centsToDollars(d.profitCents)}` : ""}
+                      </p>
+                    </div>
                     <div className="flex h-[110px] items-end justify-center gap-0.5">
                       <div
                         className="w-[10px] rounded-t-sm sm:w-3"

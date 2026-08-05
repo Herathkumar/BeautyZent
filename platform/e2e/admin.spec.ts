@@ -107,7 +107,9 @@ test.describe("Manager portal", () => {
     await adminLogin(page);
     await page.goto("/manager/account");
     await expect(page.getByRole("heading", { name: /^profile$/i })).toBeVisible();
+    await expect(page.getByTestId("manager-profile-card")).toBeVisible();
     await expect(page.getByTestId("manager-photo-preview")).toBeVisible();
+    await expect(page.getByTestId("manager-edit-profile")).toBeVisible();
     await expect(page.getByRole("button", { name: /take selfie/i })).toBeVisible();
     await expect(page.getByText(DEMO.adminEmail)).toBeVisible();
 
