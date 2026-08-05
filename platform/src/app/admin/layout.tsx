@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
+import { AppOpenSplash } from "@/components/AppOpenSplash";
 import { getSession, isSalonStaff } from "@/lib/auth";
 import { AdminBottomNav } from "./AdminBottomNav";
 import { AdminHeaderNav } from "./AdminHeaderNav";
@@ -39,6 +40,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="admin-theme min-h-screen">
+      <AppOpenSplash variant="manager" />
       {showChrome ? (
         <header className="admin-header sticky top-0 z-20">
           {/* Mobile — same chrome pattern as Stylist App */}

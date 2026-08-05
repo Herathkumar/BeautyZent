@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { AppOpenSplash } from "@/components/AppOpenSplash";
 
 type Props = {
   children: React.ReactNode;
@@ -35,5 +36,10 @@ export const viewport: Viewport = {
 };
 
 export default function DisplayLayout({ children }: Props) {
-  return children;
+  return (
+    <>
+      <AppOpenSplash variant="display" />
+      {children}
+    </>
+  );
 }

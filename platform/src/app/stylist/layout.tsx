@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
+import { AppOpenSplash } from "@/components/AppOpenSplash";
 import { canAccessStylistPortal, getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { StylistBottomNav } from "./StylistBottomNav";
@@ -44,6 +45,7 @@ export default async function StylistLayout({ children }: { children: React.Reac
 
   return (
     <div className="stylist-theme min-h-screen">
+      <AppOpenSplash variant="stylist" />
       {showStylistChrome ? (
         <header className="admin-header sticky top-0 z-20 px-4 py-3">
           <div className="mx-auto flex max-w-lg items-center justify-between">

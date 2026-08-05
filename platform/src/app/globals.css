@@ -45,7 +45,16 @@ html.paper-shell body {
   color: var(--ink);
 }
 
-/* Branded route loading splash (Next.js loading.tsx) */
+/* Open-once splash host (layout-mounted; not used for menu navigations) */
+.app-splash-host {
+  transition: opacity 0.22s ease;
+}
+
+.app-splash-host.is-leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+
 .app-splash {
   position: fixed;
   inset: 0;
