@@ -80,7 +80,7 @@ test.describe("Display waitlist placement", () => {
 
     const counts = page.getByTestId("display-floor-counts");
     await expect(counts).toBeVisible({ timeout: 15_000 });
-    await expect(counts.getByText(/^waiting$/i)).toBeVisible();
+    await expect(counts.getByText(/^online$/i)).toBeVisible();
     await expect(counts.getByText(/^walk-in$/i)).toBeVisible();
     await expect(counts.getByText(/^in chair$/i)).toBeVisible();
 

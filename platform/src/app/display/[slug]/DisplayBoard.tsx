@@ -226,12 +226,14 @@ export function DisplayBoard({
     load();
   }
 
-  const waiting = todayAppts.filter((a) => a.status === "BOOKED").length;
+  const waiting = todayAppts.filter(
+    (a) => a.status === "BOOKED" && (a.source || "ONLINE") !== "WALK_IN"
+  ).length;
   const inChair = todayAppts.filter((a) => a.status === "CHECKED_IN").length;
 
   return (
     <div
-      className={`${embedded ? "min-h-[70vh] overflow-hidden rounded-3xl border border-[#c9a87c]/25" : "min-h-screen"} bg-[#1c1714] text-[#fffaf6]`}
+      className={`flex flex-col ${embedded ? "min-h-[70vh] overflow-hidden rounded-3xl border border-[#c9a87c]/25" : "min-h-screen"} bg-[#1c1714] text-[#fffaf6]`}
       data-testid={embedded ? "manager-store-display-board" : "store-display-board"}
     >
       <header className="border-b border-white/10 px-6 py-5">
@@ -349,7 +351,7 @@ export function DisplayBoard({
               >
                 <div className="rounded-2xl bg-[#f0c987] px-3 py-3 sm:px-4">
                   <p className="text-[10px] font-bold uppercase tracking-wide !text-[#3d2b22]/85 sm:text-xs">
-                    Waiting
+                    Online
                   </p>
                   <p
                     className="font-[family-name:var(--font-display)] text-3xl !text-[#1c1714]"
@@ -358,7 +360,7 @@ export function DisplayBoard({
                     {waiting}
                   </p>
                   <p className="mt-0.5 text-[10px] leading-tight !text-[#3d2b22]/75">
-                    Booked / seated
+                    Booked ahead
                   </p>
                 </div>
                 <div className="rounded-2xl bg-[#e8c4a0] px-3 py-3 sm:px-4">
@@ -549,6 +551,41 @@ export function DisplayBoard({
           ))}
         </div>
       )}
+
+      <footer
+        className="mt-auto border-t border-white/10 px-6 py-6"
+        data-testid="display-zentralab-footer"
+      >
+        <div className="flex flex-col items-center gap-2 text-center sm:flex-row sm:items-end sm:justify-between sm:text-left">
+          <div>
+            <p className="text-[10px] font-semibold tracking-[0.22em] text-[#c9a87c]/80 uppercase">
+              Powered by
+            </p>
+            <p className="mt-1 font-[family-name:var(--font-display)] text-xl tracking-wide text-[#fffaf6]">
+              ZentraLab
+            </p>
+            <p className="mt-0.5 text-xs text-white/45">
+              © {new Date().getFullYear()} ZentraLab. All rights reserved.
+            </p>
+          </div>
+          <div className="flex flex-col items-center gap-1 text-sm sm:items-end">
+            <a
+              href="https://www.zentralab.ca"
+              target="_blank"
+              rel="noreferrer"
+              className="text-[#f0c987] transition hover:text-[#fffaf6]"
+            >
+              www.zentralab.ca
+            </a>
+            <a
+              href="mailto:hello@zentralab.ca"
+              className="text-white/55 transition hover:text-[#f0c987]"
+            >
+              hello@zentralab.ca
+            </a>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
