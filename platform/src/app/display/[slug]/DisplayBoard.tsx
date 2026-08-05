@@ -556,28 +556,15 @@ export function DisplayBoard({
         className="mt-auto border-t border-white/10 px-6 py-6"
         data-testid="display-zentralab-footer"
       >
-        <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
-          <div className="flex flex-col items-center gap-2 sm:items-start">
-            <p className="text-[10px] font-semibold tracking-[0.22em] text-white/45 uppercase">
+        <div className="flex flex-col items-center gap-2 text-center sm:flex-row sm:items-end sm:justify-between sm:text-left">
+          <div>
+            <p className="text-[10px] font-semibold tracking-[0.22em] text-[#c9a87c]/80 uppercase">
               Powered by
             </p>
-            <a
-              href="https://www.zentralab.ca"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center rounded-2xl bg-white px-4 py-2.5 shadow-[0_8px_28px_rgba(0,75,141,0.18)] transition hover:shadow-[0_10px_32px_rgba(0,168,158,0.22)]"
-              aria-label="ZentraLab"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/zentralab-logo.png"
-                alt="ZentraLab"
-                width={200}
-                height={48}
-                className="h-9 w-auto sm:h-10"
-              />
-            </a>
-            <p className="text-xs text-white/40">
+            <p className="mt-1 font-[family-name:var(--font-display)] text-xl tracking-wide text-[#fffaf6]">
+              ZentraLab
+            </p>
+            <p className="mt-0.5 text-xs text-white/45">
               © {new Date().getFullYear()} ZentraLab. All rights reserved.
             </p>
           </div>
@@ -586,13 +573,13 @@ export function DisplayBoard({
               href="https://www.zentralab.ca"
               target="_blank"
               rel="noreferrer"
-              className="font-medium text-[#5BB8FF] transition hover:text-[#fffaf6]"
+              className="text-[#f0c987] transition hover:text-[#fffaf6]"
             >
               www.zentralab.ca
             </a>
             <a
               href="mailto:hello@zentralab.ca"
-              className="text-[#2DD4BF] transition hover:text-[#00A89E]"
+              className="text-white/55 transition hover:text-[#f0c987]"
             >
               hello@zentralab.ca
             </a>
