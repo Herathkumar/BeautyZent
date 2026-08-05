@@ -561,8 +561,9 @@ export function DisplayBoard({
             <p className="text-[10px] font-semibold tracking-[0.22em] text-[#c9a87c]/80 uppercase">
               Powered by
             </p>
-            <p className="mt-1 font-[family-name:var(--font-display)] text-xl tracking-wide text-[#fffaf6]">
-              ZentraLab
+            <p className="mt-1 font-[family-name:var(--font-display)] text-xl tracking-wide">
+              <span className="text-[#5BA3E0]">Zentra</span>
+              <span className="text-[#2DD4BF]">Lab</span>
             </p>
             <p className="mt-0.5 text-xs text-white/45">
               © {new Date().getFullYear()} ZentraLab. All rights reserved.
