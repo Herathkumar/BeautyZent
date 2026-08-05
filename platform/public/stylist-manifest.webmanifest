@@ -1,6 +1,6 @@
 {
-  "name": "ZLab-Salon — Stylist App",
-  "short_name": "ZLab-Salon",
+  "name": "FHSalon — Stylist App",
+  "short_name": "FHSalon",
   "description": "Stylist phone app for today's bookings, check-in, and time off.",
   "start_url": "/stylist",
   "scope": "/stylist",

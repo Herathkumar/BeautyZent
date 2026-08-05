@@ -2,9 +2,9 @@ import { test, expect } from "@playwright/test";
 import { stylistLogin } from "./helpers";
 
 test.describe("Stylist phone portal", () => {
-  test("login lands on ZLab-Salon", async ({ page }) => {
+  test("login lands on FHSalon", async ({ page }) => {
     await stylistLogin(page);
-    await expect(page.getByText(/hi,|today|zlab-salon/i).first()).toBeVisible();
+    await expect(page.getByText(/hi,|today|fhsalon/i).first()).toBeVisible();
     await expect(page.getByTestId("stylist-home-photo")).toBeVisible();
     await expect(page.getByRole("link", { name: /add selfie for online booking|change booking photo/i })).toBeVisible();
     await expect(page.getByRole("link", { name: /^my jobs$/i })).toBeVisible();

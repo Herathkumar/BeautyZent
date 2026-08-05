@@ -11,24 +11,28 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="admin-theme min-h-screen">
-      <header className="admin-header sticky top-0 z-20">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-4">
-          <div>
-            <p className="text-[11px] font-semibold tracking-[0.2em] text-[#c9a87c] uppercase">
-              Manager App
-            </p>
-            <Link
-              href={showChrome ? "/manager" : "/manager/login"}
-              className="font-[family-name:var(--font-display)] text-2xl text-[#fffaf6]"
-            >
-              ZLab-Salon
-            </Link>
+      {showChrome ? (
+        <header className="admin-header sticky top-0 z-20">
+          <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-4">
+            <div>
+              <p className="text-[11px] font-semibold tracking-[0.2em] text-[#c9a87c] uppercase">
+                Manager App
+              </p>
+              <Link
+                href="/manager"
+                className="font-[family-name:var(--font-display)] text-2xl text-[#fffaf6]"
+              >
+                FHSalon
+              </Link>
+            </div>
+            <AdminHeaderNav />
           </div>
-          {showChrome ? <AdminHeaderNav /> : null}
-        </div>
-      </header>
+        </header>
+      ) : null}
       <div
-        className={`mx-auto max-w-5xl px-4 py-6 md:px-6 md:py-8 ${showChrome ? "pb-28 md:pb-8" : ""}`}
+        className={`mx-auto max-w-5xl px-4 ${
+          showChrome ? "py-6 pb-28 md:px-6 md:py-8 md:pb-8" : "py-8 md:px-6"
+        }`}
       >
         {children}
       </div>
