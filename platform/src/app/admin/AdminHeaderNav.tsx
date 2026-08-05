@@ -47,12 +47,6 @@ export function AdminHeaderNav() {
         Dashboard
       </Link>
       <Link
-        href="/manager/working"
-        className={pathname.startsWith("/manager/working") ? "is-active" : undefined}
-      >
-        Who&apos;s working
-      </Link>
-      <Link
         href="/manager/appointments"
         className={
           pathname.startsWith("/manager/appointments") ||

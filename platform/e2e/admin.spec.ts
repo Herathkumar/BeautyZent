@@ -30,6 +30,46 @@ test.describe("Manager portal", () => {
     await expect(page.getByText(/on floor|away|day off/i).first()).toBeVisible();
   });
 
+  test("who's working expands stylist job breakdown for selected day", async ({ page }) => {
+    await adminLogin(page);
+
+    const catalog = await page.request.get("/api/public/fhsalon/catalog");
+    const cat = await catalog.json();
+    const stylist = (cat.stylists || [])[0];
+    const service = (cat.services || []).find((s: { name: string }) =>
+      /^men.?s haircut/i.test(s.name)
+    );
+    expect(stylist?.id).toBeTruthy();
+    expect(service?.id).toBeTruthy();
+
+    const clientName = `FloorJob ${Date.now()}`;
+    const walk = await page.request.post("/api/admin/walk-in", {
+      data: {
+        clientName,
+        serviceId: service.id,
+        stylistId: stylist.id,
+      },
+    });
+    // If no open slot, still exercise empty/open breakdown UI
+    const seated = walk.ok();
+
+    await page.goto(`/manager/working?stylist=${stylist.id}`);
+    const row = page.locator(`[data-testid=working-roster-row][data-stylist-id="${stylist.id}"]`);
+    await expect(row).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("working-jobs-breakdown")).toBeVisible({ timeout: 15_000 });
+
+    if (seated) {
+      await expect(page.getByTestId("working-job-row").filter({ hasText: clientName })).toBeVisible({
+        timeout: 15_000,
+      });
+    } else {
+      await row.getByTestId("working-stylist-toggle").click();
+      await expect(page.getByTestId("working-jobs-breakdown")).toHaveCount(0);
+      await row.getByTestId("working-stylist-toggle").click();
+      await expect(page.getByTestId("working-jobs-breakdown")).toBeVisible();
+    }
+  });
+
   test("salon menu opens services products stylists", async ({ page }) => {
     await adminLogin(page);
     const headerNav = page.locator(".admin-header-nav");
