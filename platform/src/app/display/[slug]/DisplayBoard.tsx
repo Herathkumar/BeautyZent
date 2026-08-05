@@ -323,14 +323,15 @@ export function DisplayBoard({
             <div className="relative grid gap-6 p-6 md:grid-cols-[1.2fr_auto] md:items-end md:p-8">
               <div>
                 <p className="text-xs font-semibold tracking-[0.22em] text-[#f0c987] uppercase">
-                  Welcome to the floor
+                  Prefer a set time?
                 </p>
                 <h2 className="mt-2 font-[family-name:var(--font-display)] text-4xl leading-none md:text-5xl">
-                  {salon?.name || "Farzana Hair Salon"}
+                  Book online
                 </h2>
                 <p className="mt-3 max-w-xl text-base text-white/80 md:text-lg">
-                  Men&apos;s &amp; women&apos;s cuts · Walk-ins welcome when slots are open · Book
-                  ahead online for your favourite stylist
+                  Reserve your favourite stylist ahead of time at{" "}
+                  <span className="font-semibold text-[#f0c987]">www.fhsalon.ca</span>
+                  {" "}· Walk-ins welcome when a chair is open
                 </p>
                 {(salon?.phone || salon?.address) && (
                   <p className="mt-3 text-sm text-[#f0c987]/90">

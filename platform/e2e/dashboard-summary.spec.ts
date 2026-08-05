@@ -49,7 +49,7 @@ test.describe("Display waitlist placement", () => {
     await page.goto("/display/fhsalon");
     await page.getByRole("button", { name: /^today/i }).click();
 
-    const welcome = page.getByRole("heading", { name: /farzana hair salon/i }).first();
+    const welcome = page.getByRole("heading", { name: /^book online$/i });
     const waitlist = page.getByTestId("display-waitlist-section");
     await expect(welcome).toBeVisible();
     await expect(waitlist).toBeVisible();

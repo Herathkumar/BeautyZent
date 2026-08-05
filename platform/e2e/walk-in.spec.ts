@@ -110,7 +110,7 @@ test.describe("Walk-in appointments", () => {
       page.getByText(/seat now → pick stylist → check in → done with payment/i)
     ).toBeVisible();
 
-    const welcome = page.getByText(/welcome to the floor/i);
+    const welcome = page.getByRole("heading", { name: /^book online$/i });
     const waitSection = page.getByTestId("display-waitlist-section");
     const welcomeBox = await welcome.boundingBox();
     const waitBox = await waitSection.boundingBox();
