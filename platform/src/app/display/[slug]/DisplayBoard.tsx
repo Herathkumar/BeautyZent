@@ -292,18 +292,6 @@ export function DisplayBoard({ slug }: { slug: string }) {
 
       {tab === "today" && (
         <div className="px-6 py-6">
-          {/* In-store waitlist — walk-ins physically here until seated */}
-          <section className="mb-6 rounded-3xl border border-[#c9a87c]/30 bg-[#241c18]/80 p-4 md:p-5">
-            <WalkInPanel
-              mode="display"
-              slug={slug}
-              showForm={false}
-              showWaitlist
-              pollMs={15_000}
-              onCreated={load}
-            />
-          </section>
-
           {/* Promo band */}
           <section className="relative mb-6 overflow-hidden rounded-3xl border border-[#c9a87c]/35 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
             <div className="absolute inset-0">
@@ -348,6 +336,21 @@ export function DisplayBoard({ slug }: { slug: string }) {
             </div>
           </section>
 
+          {/* In-store waitlist — under welcome, until seated */}
+          <section
+            className="mb-6 rounded-3xl border border-[#c9a87c]/30 bg-[#241c18]/80 p-4 md:p-5"
+            data-testid="display-waitlist-section"
+          >
+            <WalkInPanel
+              mode="display"
+              slug={slug}
+              showForm={false}
+              showWaitlist
+              pollMs={15_000}
+              onCreated={load}
+            />
+          </section>
+
           <section className="mb-6 rounded-3xl border border-[#c9a87c]/30 bg-[#241c18]/80 p-4 md:p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -355,7 +358,7 @@ export function DisplayBoard({ slug }: { slug: string }) {
                   Walk-in desk
                 </h2>
                 <p className="text-sm text-white/65">
-                  Seat a guest now, or add them to the waitlist above.
+                  Seat a guest now, or add them to the waitlist.
                 </p>
               </div>
               <button

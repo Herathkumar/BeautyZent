@@ -1,11 +1,19 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { endOfDay, startOfDay } from "date-fns";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import {
+  addCalendarDays,
+  calendarDateInTz,
+  zonedStartOfDay,
+} from "@/lib/salon-time";
 import { DashboardFloorToday } from "./DashboardFloorToday";
 import { DashboardStoreEarnings } from "./DashboardStoreEarnings";
 import { PendingLeavePanel } from "./PendingLeavePanel";
+
+function toDate(d: { getTime: () => number }) {
+  return new Date(d.getTime());
+}
 
 export default async function AdminHome() {
   const session = await getSession();
@@ -13,14 +21,32 @@ export default async function AdminHome() {
   if (session.role === "STYLIST") redirect("/stylist");
 
   const salon = await prisma.salon.findUniqueOrThrow({ where: { id: session.salonId } });
-  const today = new Date();
-  const [bookingsToday, services, products, stylists, pendingLeaveCount] = await Promise.all([
-    prisma.appointment.count({
+  const timeZone = salon.timezone || "America/Toronto";
+  const todayYmd = calendarDateInTz(timeZone);
+  const todayStart = toDate(zonedStartOfDay(todayYmd, timeZone));
+  const tomorrowStart = toDate(
+    zonedStartOfDay(addCalendarDays(todayYmd, 1, timeZone), timeZone)
+  );
+
+  const [
+    bookingsBySource,
+    waitlistWaiting,
+    services,
+    products,
+    stylists,
+    pendingLeaveCount,
+  ] = await Promise.all([
+    prisma.appointment.groupBy({
+      by: ["source"],
       where: {
         salonId: session.salonId,
-        startsAt: { gte: startOfDay(today), lte: endOfDay(today) },
+        startsAt: { gte: todayStart, lt: tomorrowStart },
         status: { not: "CANCELLED" },
       },
+      _count: { _all: true },
+    }),
+    prisma.walkInWaitlist.count({
+      where: { salonId: session.salonId, status: "WAITING" },
     }),
     prisma.service.count({ where: { salonId: session.salonId, active: true } }),
     prisma.product.count({ where: { salonId: session.salonId, active: true } }),
@@ -33,6 +59,12 @@ export default async function AdminHome() {
       },
     }),
   ]);
+
+  const sourceCount = (source: string) =>
+    bookingsBySource.find((r) => r.source === source)?._count._all ?? 0;
+  const onlineToday = sourceCount("ONLINE");
+  const walkInToday = sourceCount("WALK_IN");
+  const bookingsTotal = bookingsBySource.reduce((n, r) => n + r._count._all, 0);
 
   return (
     <main>
@@ -58,8 +90,31 @@ export default async function AdminHome() {
       <DashboardFloorToday salonId={session.salonId} />
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Link
+          href="/manager/appointments"
+          className="admin-stat-card rounded-2xl p-5"
+          data-testid="dashboard-todays-bookings"
+        >
+          <p className="text-sm text-[#c9a87c]">Today&apos;s bookings</p>
+          <p className="mt-2 font-[family-name:var(--font-display)] text-3xl text-[#fffaf6]">
+            {bookingsTotal}
+          </p>
+          <ul className="mt-3 space-y-1 text-sm text-muted">
+            <li className="flex justify-between gap-2">
+              <span>Online</span>
+              <span className="text-[#fffaf6]">{onlineToday}</span>
+            </li>
+            <li className="flex justify-between gap-2">
+              <span>Walk-in</span>
+              <span className="text-[#fffaf6]">{walkInToday}</span>
+            </li>
+            <li className="flex justify-between gap-2">
+              <span>Waitlist</span>
+              <span className="text-[#f0c987]">{waitlistWaiting}</span>
+            </li>
+          </ul>
+        </Link>
         {[
-          { label: "Today's bookings", value: bookingsToday, href: "/manager/appointments" },
           { label: "Active services", value: services, href: "/manager/services" },
           { label: "Products", value: products, href: "/manager/products" },
           { label: "Stylists", value: stylists, href: "/manager/stylists" },

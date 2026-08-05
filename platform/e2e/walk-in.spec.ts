@@ -62,8 +62,16 @@ test.describe("Walk-in appointments", () => {
   }) => {
     await page.goto("/display/fhsalon");
     await expect(page.getByRole("button", { name: /^today/i })).toBeVisible();
+    await expect(page.getByTestId("display-waitlist-section")).toBeVisible();
     await expect(page.getByTestId("walk-in-waitlist")).toBeVisible();
     await expect(page.getByText(/seat now → check in → done with payment/i)).toBeVisible();
+
+    const welcome = page.getByText(/welcome to the floor/i);
+    const waitSection = page.getByTestId("display-waitlist-section");
+    const welcomeBox = await welcome.boundingBox();
+    const waitBox = await waitSection.boundingBox();
+    expect(welcomeBox && waitBox).toBeTruthy();
+    expect(waitBox!.y).toBeGreaterThan(welcomeBox!.y);
 
     await page.getByRole("button", { name: /^future/i }).click();
     await expect(page.getByTestId("walk-in-waitlist")).toHaveCount(0);

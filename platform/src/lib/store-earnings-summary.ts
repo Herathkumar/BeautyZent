@@ -115,5 +115,21 @@ export async function getDashboardStoreEarnings(salonId: string) {
     periodCost({ ...base, rangeStart: weekStart, rangeEnd: weekEnd }),
   ]);
 
-  return { todaySummary, weekSummary };
+  const weeklyProfitGoalCents = salon.weeklyProfitGoalCents ?? 200_000;
+  // Daily goal = weekly ÷ 6 working days (salon typically Mon–Sat)
+  const dailyProfitGoalCents = Math.max(1, Math.round(weeklyProfitGoalCents / 6));
+  const todayProfit = Math.max(0, todaySummary.profitCents);
+  const dailyProgress = Math.min(1, todayProfit / dailyProfitGoalCents);
+
+  return {
+    todaySummary,
+    weekSummary,
+    goal: {
+      weeklyProfitGoalCents,
+      dailyProfitGoalCents,
+      todayProfitCents: todayProfit,
+      dailyProgress,
+      remainingCents: Math.max(0, dailyProfitGoalCents - todayProfit),
+    },
+  };
 }

@@ -8,6 +8,7 @@ test.describe("Manager store earnings", () => {
     const card = page.getByTestId("dashboard-store-earnings");
     await expect(card).toBeVisible({ timeout: 15_000 });
     await expect(card.getByText(/store earnings/i)).toBeVisible();
+    await expect(card.getByTestId("dashboard-daily-goal-ring")).toBeVisible();
     await expect(card.getByText(/today.*profit/i)).toBeVisible();
     await expect(card.getByText(/this week.*profit/i)).toBeVisible();
     await card.click();
