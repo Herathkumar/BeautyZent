@@ -309,17 +309,37 @@ a {
   color: #f0c987 !important;
 }
 
+/* Viewport-locked shell: page content scrolls; bottom nav stays docked */
+.admin-theme.admin-app-shell,
+.stylist-theme.stylist-app-shell {
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.admin-app-main,
+.stylist-app-main {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
 .admin-theme .admin-bottom-nav {
-  position: fixed;
-  inset: auto 0 0;
+  position: relative;
+  flex-shrink: 0;
   z-index: 30;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
   gap: 0.25rem;
   padding: 0.55rem 0.75rem calc(0.55rem + env(safe-area-inset-bottom));
-  background: rgba(28, 23, 20, 0.94);
+  background: rgba(28, 23, 20, 0.98);
   border-top: 1px solid rgba(201, 168, 124, 0.3);
-  backdrop-filter: blur(12px);
 }
 
 /* Desktop uses the top nav; bottom bar is phone-only (also gated in AdminBottomNav JS) */
@@ -620,16 +640,15 @@ a {
 }
 
 .stylist-theme .stylist-bottom-nav {
-  position: fixed;
-  inset: auto 0 0;
+  position: relative;
+  flex-shrink: 0;
   z-index: 30;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
   gap: 0.25rem;
   padding: 0.55rem 0.75rem calc(0.55rem + env(safe-area-inset-bottom));
-  background: rgba(14, 22, 24, 0.94);
+  background: rgba(14, 22, 24, 0.98);
   border-top: 1px solid rgba(126, 196, 184, 0.32);
-  backdrop-filter: blur(12px);
 }
 
 .stylist-theme .stylist-bottom-nav a,

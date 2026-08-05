@@ -20,10 +20,21 @@ test.describe("Mobile viewport", () => {
 
   test("stylist portal bottom nav on phone", async ({ page }) => {
     await stylistLogin(page);
-    await expect(page.getByRole("link", { name: /^my jobs$/i })).toBeVisible();
-    await expect(page.getByRole("link", { name: /^schedule$/i })).toBeVisible();
-    await expect(page.getByRole("link", { name: /^earnings$/i })).toBeVisible();
-    await expect(page.getByRole("link", { name: /^profile$/i })).toBeVisible();
+    const bottom = page.locator(".stylist-bottom-nav");
+    await expect(bottom.getByRole("link", { name: /^my jobs$/i })).toBeVisible();
+    await expect(bottom.getByRole("link", { name: /^schedule$/i })).toBeVisible();
+    await expect(bottom.getByRole("link", { name: /^earnings$/i })).toBeVisible();
+    await expect(bottom.getByRole("link", { name: /^profile$/i })).toBeVisible();
+
+    await page.goto("/stylist/earnings");
+    const before = await bottom.boundingBox();
+    expect(before).toBeTruthy();
+    await page.locator(".stylist-app-main").evaluate((el) => {
+      el.scrollTop = el.scrollHeight;
+    });
+    const after = await bottom.boundingBox();
+    expect(after).toBeTruthy();
+    expect(Math.abs((after?.y ?? 0) - (before?.y ?? 0))).toBeLessThan(2);
   });
 
   test("admin portal bottom nav on phone", async ({ page }) => {
@@ -34,6 +45,19 @@ test.describe("Mobile viewport", () => {
     await expect(bottom.getByRole("button", { name: /^money$/i })).toBeVisible();
     await expect(bottom.getByRole("link", { name: /^profile$/i })).toBeVisible();
     await expect(page.locator(".admin-header-nav")).toBeHidden();
+
+    // Nav stays docked at the viewport bottom while content scrolls
+    await page.goto("/manager/earnings");
+    await expect(bottom).toBeVisible();
+    const before = await bottom.boundingBox();
+    expect(before).toBeTruthy();
+    await page.locator(".admin-app-main").evaluate((el) => {
+      el.scrollTop = el.scrollHeight;
+    });
+    const after = await bottom.boundingBox();
+    expect(after).toBeTruthy();
+    expect(Math.abs((after?.y ?? 0) - (before?.y ?? 0))).toBeLessThan(2);
+    expect((after?.y ?? 0) + (after?.height ?? 0)).toBeGreaterThan(800);
 
     await bottom.getByRole("button", { name: /^money$/i }).click();
     const sheet = page.getByRole("dialog", { name: /money menu/i });

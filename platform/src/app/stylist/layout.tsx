@@ -44,10 +44,14 @@ export default async function StylistLayout({ children }: { children: React.Reac
   }
 
   return (
-    <div className="stylist-theme min-h-screen">
+    <div
+      className={
+        showStylistChrome ? "stylist-theme stylist-app-shell" : "stylist-theme min-h-screen"
+      }
+    >
       <AppOpenSplash variant="stylist" />
       {showStylistChrome ? (
-        <header className="admin-header sticky top-0 z-20 px-4 py-3">
+        <header className="admin-header shrink-0 z-20 px-4 py-3">
           <div className="mx-auto flex max-w-lg items-center justify-between">
             <Link
               href="/stylist"
@@ -59,7 +63,11 @@ export default async function StylistLayout({ children }: { children: React.Reac
           </div>
         </header>
       ) : null}
-      <div className={`mx-auto max-w-lg px-4 ${showStylistChrome ? "pb-28 pt-4" : "py-8"}`}>
+      <div
+        className={`stylist-app-main mx-auto w-full max-w-lg px-4 ${
+          showStylistChrome ? "pt-4 pb-6" : "py-8"
+        }`}
+      >
         {children}
       </div>
       {showStylistChrome ? <StylistBottomNav /> : null}

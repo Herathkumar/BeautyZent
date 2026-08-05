@@ -39,10 +39,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const showChrome = isSalonStaff(session?.role);
 
   return (
-    <div className="admin-theme min-h-screen">
+    <div className={showChrome ? "admin-theme admin-app-shell" : "admin-theme min-h-screen"}>
       <AppOpenSplash variant="manager" />
       {showChrome ? (
-        <header className="admin-header sticky top-0 z-20">
+        <header className="admin-header shrink-0 z-20">
           {/* Mobile — same chrome pattern as Stylist App */}
           <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 md:hidden">
             <Link
@@ -71,8 +71,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </header>
       ) : null}
       <div
-        className={`mx-auto max-w-5xl px-4 ${
-          showChrome ? "pb-28 pt-4 md:px-6 md:py-8 md:pb-8" : "py-8 md:px-6"
+        className={`admin-app-main mx-auto w-full max-w-5xl px-4 ${
+          showChrome ? "pt-4 pb-6 md:px-6 md:py-8" : "py-8 md:px-6"
         }`}
       >
         {children}
