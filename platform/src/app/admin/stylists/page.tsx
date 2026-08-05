@@ -274,7 +274,7 @@ export default function StylistsAdminPage() {
       : "";
     if (
       !window.confirm(
-        `Remove ${stylist.name} from the salon?${loginNote}\n\nThey leave booking and the floor. Past appointments are kept.`
+        `Remove ${stylist.name} from the team list?${loginNote}\n\nThey disappear from this page and from booking. Past appointments are kept.`
       )
     ) {
       return;
@@ -291,7 +291,7 @@ export default function StylistsAdminPage() {
       return;
     }
     if (issued?.stylistId === stylist.id) clearIssued();
-    await load();
+    setStylists((prev) => prev.filter((s) => s.id !== stylist.id));
   }
 
   async function copyText(text: string) {

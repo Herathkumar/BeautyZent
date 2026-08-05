@@ -17,9 +17,9 @@ export async function GET() {
 
   const salon = await prisma.salon.findUnique({ where: { id: session.salonId } });
   const stylists = await prisma.stylist.findMany({
-    where: { salonId: session.salonId },
+    where: { salonId: session.salonId, removedAt: null },
     include: { user: { select: { id: true, email: true, role: true } } },
-    orderBy: { name: "asc" },
+    orderBy: [{ active: "desc" }, { name: "asc" }],
   });
 
   return NextResponse.json({
@@ -82,7 +82,11 @@ export async function POST(req: Request) {
     const active = Boolean(body.active);
     const updated = await prisma.stylist.update({
       where: { id: stylist.id },
-      data: { active },
+      data: {
+        active,
+        // Re-enable clears a mistaken archive only if they were still listed (removedAt null).
+        ...(active ? { removedAt: null } : {}),
+      },
     });
     return NextResponse.json({
       stylist: updated,
@@ -109,7 +113,7 @@ export async function POST(req: Request) {
     await prisma.$transaction(async (tx) => {
       await tx.stylist.update({
         where: { id: stylist.id },
-        data: { active: false },
+        data: { active: false, removedAt: new Date() },
       });
       if (stylist.user) {
         if (stylist.user.role === "STYLIST") {
@@ -125,7 +129,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       ok: true,
-      message: `${stylist.name} was removed from booking and the floor. Past appointments are kept.`,
+      message: `${stylist.name} was removed from the team list. Past appointments are kept.`,
     });
   }
 

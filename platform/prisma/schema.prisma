@@ -105,6 +105,8 @@ model Stylist {
   photoMime            String?
   photoUpdatedAt       DateTime?
   active               Boolean       @default(true)
+  /// When set, stylist is removed from the team list (kept for appointment history).
+  removedAt            DateTime?
   /// Google Calendar OAuth tokens (JSON). When set, bookings sync to phone calendar.
   googleRefreshToken   String?
   googleCalendarId     String?       @default("primary")
