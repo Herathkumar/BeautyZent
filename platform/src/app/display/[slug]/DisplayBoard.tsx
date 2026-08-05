@@ -331,7 +331,9 @@ export function DisplayBoard({
                 <p className="mt-3 max-w-xl text-base text-white/80 md:text-lg">
                   Reserve your favourite stylist ahead of time at{" "}
                   <span className="font-semibold text-[#f0c987]">www.fhsalon.ca</span>
-                  {" "}· Walk-ins welcome when a chair is open
+                </p>
+                <p className="mt-1.5 max-w-xl text-base text-white/80 md:text-lg">
+                  Walk-ins welcome when a chair is open
                 </p>
                 {(salon?.phone || salon?.address) && (
                   <p className="mt-3 text-sm text-[#f0c987]/90">
