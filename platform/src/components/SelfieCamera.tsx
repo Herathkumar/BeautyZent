@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 type Props = {
   open: boolean;
@@ -38,6 +39,11 @@ export function SelfieCamera({
   const inputId = fileInputId || `selfie-gallery-${reactId}`;
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -47,7 +53,7 @@ export function SelfieCamera({
     async function start() {
       try {
         if (!navigator.mediaDevices?.getUserMedia) {
-          setError("Camera not available on this device. Use Choose photo instead.");
+          setError("Camera not available on this device. Use Choose from photos.");
           return;
         }
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -81,6 +87,16 @@ export function SelfieCamera({
       streamRef.current?.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
       if (videoRef.current) videoRef.current.srcObject = null;
+    };
+  }, [open]);
+
+  // Prevent background scroll while the camera sheet is open
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
     };
   }, [open]);
 
@@ -171,31 +187,23 @@ export function SelfieCamera({
     }
   }
 
-  /** Always mounted so e2e + iPhone can pick a photo without remounting the input. */
-  const galleryInput = (
-    <input
-      ref={fileRef}
-      id={inputId}
-      type="file"
-      accept="image/*"
-      // No capture attribute — Photo Library on iPhone
-      data-testid={fileInputTestId}
-      className={
-        open
-          ? "absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
-          : "sr-only"
-      }
-      disabled={busy}
-      onChange={(e) => {
-        const file = e.target.files?.[0];
-        if (file) void handlePickedFile(file);
-        e.target.value = "";
-      }}
-    />
-  );
-
   if (!open) {
-    return galleryInput;
+    return (
+      <input
+        ref={fileRef}
+        id={inputId}
+        type="file"
+        accept="image/*"
+        data-testid={fileInputTestId}
+        className="sr-only"
+        disabled={busy}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) void handlePickedFile(file);
+          e.target.value = "";
+        }}
+      />
+    );
   }
 
   const captureBtn =
@@ -203,18 +211,20 @@ export function SelfieCamera({
       ? "bg-[#c9a87c] text-[#1c1714]"
       : "bg-[#7ec4b8] text-[#0e1618]";
   const ring = accent === "manager" ? "border-[#f0c987]" : "border-[#b5ebe0]";
+  const galleryBorder =
+    accent === "manager" ? "border-[#f0c987]/70" : "border-[#b5ebe0]/70";
 
   const diameterPct = `${CIRCLE.diameter * 100}%`;
   const topPct = `${CIRCLE.cy * 100}%`;
 
-  return (
+  const dialog = (
     <div
-      className="fixed inset-0 z-[90] flex flex-col bg-black"
+      className="fixed inset-0 z-[200] flex flex-col bg-black"
       role="dialog"
       aria-label="Take selfie"
       data-testid="selfie-camera"
     >
-      <div className="flex items-center justify-between px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
+      <div className="flex shrink-0 items-center justify-between px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
         <p className="text-sm font-semibold tracking-wide text-white/90">
           Fit your face in the circle
         </p>
@@ -229,7 +239,7 @@ export function SelfieCamera({
 
       <div
         ref={stageRef}
-        className="relative mx-auto w-full max-w-lg flex-1 overflow-hidden bg-black"
+        className="relative mx-auto min-h-0 w-full max-w-lg flex-1 overflow-hidden bg-black"
       >
         <video
           ref={videoRef}
@@ -254,8 +264,34 @@ export function SelfieCamera({
         </p>
       </div>
 
-      <div className="space-y-3 px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4">
+      <div className="shrink-0 space-y-3 px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4">
         {error ? <p className="text-center text-sm text-[#f5a8a8]">{error}</p> : null}
+
+        {/* Above Capture so it stays visible; full-screen portal covers bottom nav */}
+        <div
+          className={`relative w-full overflow-hidden rounded-full border-2 ${galleryBorder} ${
+            busy ? "pointer-events-none opacity-50" : ""
+          }`}
+        >
+          <span className="block py-3.5 text-center text-base font-semibold text-white">
+            Choose from photos
+          </span>
+          <input
+            ref={fileRef}
+            id={inputId}
+            type="file"
+            accept="image/*"
+            data-testid={fileInputTestId}
+            className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+            disabled={busy}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) void handlePickedFile(file);
+              e.target.value = "";
+            }}
+          />
+        </div>
+
         <button
           type="button"
           disabled={busy}
@@ -264,21 +300,11 @@ export function SelfieCamera({
         >
           {busy ? "Saving…" : "Capture"}
         </button>
-        {/*
-          Full-size opacity-0 file input over the control — more reliable on iPhone
-          than htmlFor + sr-only (clipped inputs often never open the library).
-        */}
-        <div
-          className={`relative w-full overflow-hidden rounded-full border border-white/30 ${
-            busy ? "pointer-events-none opacity-50" : ""
-          }`}
-        >
-          <span className="block py-3 text-center text-sm font-semibold text-white/90">
-            Choose photo instead
-          </span>
-          {galleryInput}
-        </div>
       </div>
     </div>
   );
+
+  // Must portal out of the overflow:hidden app shell or iPhone clips this under the nav
+  if (!mounted) return null;
+  return createPortal(dialog, document.body);
 }
