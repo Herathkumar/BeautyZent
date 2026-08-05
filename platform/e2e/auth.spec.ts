@@ -30,7 +30,7 @@ test.describe("Auth guards", () => {
 
   test("stylist can log out", async ({ page }) => {
     await stylistLogin(page);
-    await page.getByRole("link", { name: /^account$/i }).click();
+    await page.getByRole("link", { name: /^profile$/i }).click();
     await page.getByRole("button", { name: /^log out$/i }).click();
     await expect(page).toHaveURL(/\/stylist\/login/, { timeout: 15_000 });
   });

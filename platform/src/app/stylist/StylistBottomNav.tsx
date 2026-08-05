@@ -12,7 +12,7 @@ export function StylistBottomNav() {
     pathname.startsWith("/stylist/book");
   const onSchedule = pathname.startsWith("/stylist/schedule");
   const onEarnings = pathname.startsWith("/stylist/earnings");
-  const onAccount = pathname.startsWith("/stylist/account");
+  const onProfile = pathname.startsWith("/stylist/account");
   const [unreadPayouts, setUnreadPayouts] = useState(0);
 
   const refreshBadge = useCallback(async () => {
@@ -49,9 +49,9 @@ export function StylistBottomNav() {
           </span>
         ) : null}
       </Link>
-      <Link href="/stylist/account" className={onAccount ? "active" : undefined}>
+      <Link href="/stylist/account" className={onProfile ? "active" : undefined}>
         <span aria-hidden>✎</span>
-        Account
+        Profile
       </Link>
     </nav>
   );

@@ -234,7 +234,7 @@ export default function StylistBookPage() {
                   onClick={() => setStartsAt(slot)}
                   className={`rounded-full px-3 py-1.5 text-sm ${
                     startsAt === slot
-                      ? "bg-champagne font-semibold text-[#1c1714]"
+                      ? "bg-champagne font-semibold text-[#0e1618]"
                       : "border border-ink/20"
                   }`}
                 >

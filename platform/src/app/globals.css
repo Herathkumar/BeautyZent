@@ -50,9 +50,8 @@ a {
   color: #fffaf6 !important;
 }
 
-/* Admin + stylist phone app — aligned with salon floor display theme */
-.admin-theme,
-.stylist-theme {
+/* Manager app — warm champagne / cocoa */
+.admin-theme {
   --ink: #fffaf6;
   --ink-soft: #e8ddd0;
   --muted: #a89a8c;
@@ -77,22 +76,61 @@ a {
   color: #fffaf6;
 }
 
-.admin-theme .btn-solid,
-.stylist-theme .btn-solid {
+/* Stylist app — cool sea-glass teal (distinct from manager gold) */
+.stylist-theme {
+  --ink: #f4fbfa;
+  --ink-soft: #d7ebe7;
+  --muted: #8fa8a4;
+  --paper: #0e1618;
+  --champagne: #7ec4b8;
+  --cocoa: #b5ebe0;
+  --white: #f4fbfa;
+  --line: rgba(126, 196, 184, 0.28);
+  --color-ink: #f4fbfa;
+  --color-ink-soft: #d7ebe7;
+  --color-muted: #8fa8a4;
+  --color-paper: #0e1618;
+  --color-cream: #1a282c;
+  --color-champagne: #7ec4b8;
+  --color-cocoa: #b5ebe0;
+  --color-white: #f4fbfa;
+  min-height: 100vh;
+  background:
+    radial-gradient(900px 460px at 85% -8%, rgba(126, 196, 184, 0.22), transparent 55%),
+    radial-gradient(720px 380px at 0% 100%, rgba(56, 110, 120, 0.32), transparent 52%),
+    linear-gradient(180deg, #152226 0%, #0e1618 48%, #0a1114 100%);
+  color: #f4fbfa;
+}
+
+.admin-theme .btn-solid {
   background: #c9a87c;
   color: #1c1714 !important;
 }
 
-.admin-theme .btn-solid:hover,
-.stylist-theme .btn-solid:hover {
+.admin-theme .btn-solid:hover {
   background: #f0c987;
   color: #1c1714 !important;
 }
 
-.admin-theme header.admin-header,
-.stylist-theme header.admin-header {
+.stylist-theme .btn-solid {
+  background: #7ec4b8;
+  color: #0e1618 !important;
+}
+
+.stylist-theme .btn-solid:hover {
+  background: #b5ebe0;
+  color: #0e1618 !important;
+}
+
+.admin-theme header.admin-header {
   background: rgba(28, 23, 20, 0.88);
   border-bottom: 1px solid rgba(201, 168, 124, 0.28);
+  backdrop-filter: blur(14px);
+}
+
+.stylist-theme header.admin-header {
+  background: rgba(14, 22, 24, 0.9);
+  border-bottom: 1px solid rgba(126, 196, 184, 0.3);
   backdrop-filter: blur(14px);
 }
 
@@ -109,9 +147,12 @@ a {
 }
 
 .admin-theme .admin-nav a:hover,
-.admin-theme .admin-nav button:hover,
-.stylist-theme .admin-nav a:hover {
+.admin-theme .admin-nav button:hover {
   color: #f0c987;
+}
+
+.stylist-theme .admin-nav a:hover {
+  color: #b5ebe0;
 }
 
 .admin-theme .admin-nav a.is-active,
@@ -241,13 +282,18 @@ a {
 
 .admin-theme input,
 .admin-theme select,
-.admin-theme textarea,
-.stylist-theme input,
-.stylist-theme select,
-.stylist-theme textarea {
+.admin-theme textarea {
   background: #1c1714 !important;
   color: #fffaf6 !important;
   border-color: rgba(201, 168, 124, 0.35) !important;
+}
+
+.stylist-theme input,
+.stylist-theme select,
+.stylist-theme textarea {
+  background: #10181c !important;
+  color: #f4fbfa !important;
+  border-color: rgba(126, 196, 184, 0.35) !important;
 }
 
 .admin-theme input[type="date"],
@@ -281,36 +327,50 @@ a {
 
 .admin-theme input:focus,
 .admin-theme select:focus,
-.admin-theme textarea:focus,
-.stylist-theme input:focus,
-.stylist-theme select:focus,
-.stylist-theme textarea:focus {
+.admin-theme textarea:focus {
   outline: 2px solid rgba(240, 201, 135, 0.45);
   outline-offset: 1px;
 }
 
-.admin-theme option,
-.stylist-theme option {
+.stylist-theme input:focus,
+.stylist-theme select:focus,
+.stylist-theme textarea:focus {
+  outline: 2px solid rgba(126, 196, 184, 0.5);
+  outline-offset: 1px;
+}
+
+.admin-theme option {
   background: #1c1714;
   color: #fffaf6;
+}
+
+.stylist-theme option {
+  background: #10181c;
+  color: #f4fbfa;
 }
 
 .admin-theme .border-ink,
 .admin-theme .border-ink\/10,
 .admin-theme .border-ink\/15,
 .admin-theme .border-ink\/20,
-.admin-theme .border-ink\/30,
+.admin-theme .border-ink\/30 {
+  border-color: rgba(201, 168, 124, 0.28) !important;
+}
+
 .stylist-theme .border-ink,
 .stylist-theme .border-ink\/10,
 .stylist-theme .border-ink\/15,
 .stylist-theme .border-ink\/20,
 .stylist-theme .border-ink\/30 {
-  border-color: rgba(201, 168, 124, 0.28) !important;
+  border-color: rgba(126, 196, 184, 0.3) !important;
 }
 
-.admin-theme .divide-ink\/10 > :not([hidden]) ~ :not([hidden]),
-.stylist-theme .divide-ink\/10 > :not([hidden]) ~ :not([hidden]) {
+.admin-theme .divide-ink\/10 > :not([hidden]) ~ :not([hidden]) {
   border-color: rgba(201, 168, 124, 0.18);
+}
+
+.stylist-theme .divide-ink\/10 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgba(126, 196, 184, 0.18);
 }
 
 .admin-theme .text-red-700,
@@ -325,82 +385,126 @@ a {
   color: #9fe3b8 !important;
 }
 
-.admin-theme .bg-white,
-.stylist-theme .bg-white {
+.admin-theme .bg-white {
   background-color: #1c1714 !important;
 }
 
-.admin-theme .admin-stat-card,
-.stylist-theme .admin-stat-card {
+.stylist-theme .bg-white {
+  background-color: #10181c !important;
+}
+
+.admin-theme .admin-stat-card {
   border: 1px solid rgba(201, 168, 124, 0.3);
   background: linear-gradient(135deg, #3d2b22 0%, #2a211c 100%);
   transition: border-color 0.15s ease, transform 0.15s ease;
 }
 
-.admin-theme .admin-stat-card:hover,
-.stylist-theme .admin-stat-card:hover {
+.admin-theme .admin-stat-card:hover {
   border-color: rgba(240, 201, 135, 0.55);
   transform: translateY(-1px);
 }
 
-.admin-theme .admin-stat-card:nth-child(2),
-.stylist-theme .admin-stat-card:nth-child(2) {
+.admin-theme .admin-stat-card:nth-child(2) {
   background: linear-gradient(135deg, #3a2f4a 0%, #2a211c 100%);
 }
 
-.admin-theme .admin-stat-card:nth-child(3),
-.stylist-theme .admin-stat-card:nth-child(3) {
+.admin-theme .admin-stat-card:nth-child(3) {
   background: linear-gradient(135deg, #2a3f3a 0%, #2a211c 100%);
 }
 
-.admin-theme .admin-stat-card:nth-child(4),
-.stylist-theme .admin-stat-card:nth-child(4) {
+.admin-theme .admin-stat-card:nth-child(4) {
   background: linear-gradient(135deg, #4a3520 0%, #2a211c 100%);
 }
 
-.admin-theme .bg-cream,
-.stylist-theme .bg-cream {
+.stylist-theme .admin-stat-card {
+  border: 1px solid rgba(126, 196, 184, 0.32);
+  background: linear-gradient(135deg, #1f3a3a 0%, #1a282c 100%);
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.stylist-theme .admin-stat-card:hover {
+  border-color: rgba(181, 235, 224, 0.55);
+  transform: translateY(-1px);
+}
+
+.stylist-theme .admin-stat-card:nth-child(2) {
+  background: linear-gradient(135deg, #243848 0%, #1a282c 100%);
+}
+
+.stylist-theme .admin-stat-card:nth-child(3) {
+  background: linear-gradient(135deg, #1e3f36 0%, #1a282c 100%);
+}
+
+.stylist-theme .admin-stat-card:nth-child(4) {
+  background: linear-gradient(135deg, #2a4038 0%, #1a282c 100%);
+}
+
+.admin-theme .bg-cream {
   background-color: #2a211c !important;
   color: #fffaf6;
 }
 
+.stylist-theme .bg-cream {
+  background-color: #1a282c !important;
+  color: #f4fbfa;
+}
+
 .admin-theme h1,
 .admin-theme h2,
-.admin-theme h3,
-.stylist-theme h1,
-.stylist-theme h2,
-.stylist-theme h3 {
+.admin-theme h3 {
   color: #fffaf6 !important;
 }
 
-.admin-theme .text-muted,
-.stylist-theme .text-muted {
+.stylist-theme h1,
+.stylist-theme h2,
+.stylist-theme h3 {
+  color: #f4fbfa !important;
+}
+
+.admin-theme .text-muted {
   color: #d4c4b0 !important;
 }
 
+.stylist-theme .text-muted {
+  color: #a8c4bf !important;
+}
+
 .admin-theme .text-cocoa,
-.admin-theme .text-champagne,
-.stylist-theme .text-cocoa,
-.stylist-theme .text-champagne {
+.admin-theme .text-champagne {
   color: #f0c987 !important;
 }
 
+.stylist-theme .text-cocoa,
+.stylist-theme .text-champagne {
+  color: #b5ebe0 !important;
+}
+
 .admin-theme .font-medium,
-.admin-theme .font-semibold,
-.stylist-theme .font-medium,
-.stylist-theme .font-semibold {
+.admin-theme .font-semibold {
   color: #fffaf6;
 }
 
-.admin-theme a.rounded-full.border,
-.stylist-theme a.rounded-full.border {
+.stylist-theme .font-medium,
+.stylist-theme .font-semibold {
+  color: #f4fbfa;
+}
+
+.admin-theme a.rounded-full.border {
   color: #f0c987 !important;
   border-color: rgba(201, 168, 124, 0.45) !important;
 }
 
-.admin-theme a.rounded-full.border:hover,
-.stylist-theme a.rounded-full.border:hover {
+.admin-theme a.rounded-full.border:hover {
   background: rgba(201, 168, 124, 0.12);
+}
+
+.stylist-theme a.rounded-full.border {
+  color: #b5ebe0 !important;
+  border-color: rgba(126, 196, 184, 0.45) !important;
+}
+
+.stylist-theme a.rounded-full.border:hover {
+  background: rgba(126, 196, 184, 0.12);
 }
 
 .stylist-theme .stylist-bottom-nav {
@@ -411,8 +515,8 @@ a {
   grid-template-columns: 1fr 1fr 1fr 1fr;
   gap: 0.25rem;
   padding: 0.55rem 0.75rem calc(0.55rem + env(safe-area-inset-bottom));
-  background: rgba(28, 23, 20, 0.94);
-  border-top: 1px solid rgba(201, 168, 124, 0.3);
+  background: rgba(14, 22, 24, 0.94);
+  border-top: 1px solid rgba(126, 196, 184, 0.32);
   backdrop-filter: blur(12px);
 }
 
@@ -428,23 +532,19 @@ a {
   font-weight: 600;
   line-height: 1.15;
   text-align: center;
-  color: rgba(255, 250, 246, 0.55);
+  color: rgba(244, 251, 250, 0.55);
   background: transparent;
   border: 0;
+  position: relative;
 }
 
 .stylist-theme .stylist-bottom-nav a.active,
 .stylist-theme .stylist-bottom-nav button.active {
-  background: rgba(201, 168, 124, 0.18);
-  color: #f0c987;
+  background: rgba(126, 196, 184, 0.18);
+  color: #b5ebe0;
 }
 
-.stylist-theme .stylist-bottom-nav a,
-.stylist-theme .stylist-bottom-nav button {
-  position: relative;
-}
-
-/* Keep manager bottom nav in lockstep with stylist (shared look on iPhone) */
+/* Keep manager + stylist bottom nav interaction feel aligned on iPhone */
 .admin-theme .admin-bottom-nav,
 .stylist-theme .stylist-bottom-nav {
   -webkit-tap-highlight-color: transparent;
@@ -459,18 +559,23 @@ a {
   height: 1.1rem;
   padding: 0 0.25rem;
   border-radius: 999px;
-  background: #e8a04a;
-  color: #1c1714;
+  background: #7ec4b8;
+  color: #0e1618;
   font-size: 0.62rem;
   font-weight: 800;
   line-height: 1.1rem;
   text-align: center;
 }
 
-.earnings-hero,
-.stylist-theme .earnings-hero {
+.earnings-hero {
   background: linear-gradient(160deg, #3d2b22 0%, #241c18 55%, #1c1714 100%);
   border: 1px solid rgba(201, 168, 124, 0.35);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+}
+
+.stylist-theme .earnings-hero {
+  background: linear-gradient(160deg, #1f3a3a 0%, #152226 55%, #0e1618 100%);
+  border: 1px solid rgba(126, 196, 184, 0.35);
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
 }
 
@@ -495,8 +600,7 @@ a {
   transition: stroke-dashoffset 0.6s ease;
 }
 
-.earnings-week-nav,
-.stylist-theme .earnings-week-nav {
+.earnings-week-nav {
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 999px;
@@ -510,25 +614,35 @@ a {
   justify-content: center;
 }
 
+.stylist-theme .earnings-week-nav {
+  border: 1px solid rgba(126, 196, 184, 0.4);
+  background: rgba(126, 196, 184, 0.12);
+  color: #b5ebe0;
+}
+
 .earnings-week-nav:disabled,
 .stylist-theme .earnings-week-nav:disabled {
   opacity: 0.35;
 }
 
-.earnings-stat,
-.stylist-theme .earnings-stat {
+.earnings-stat {
   border: 1px solid rgba(201, 168, 124, 0.25);
   background: rgba(42, 33, 28, 0.9);
 }
 
+.stylist-theme .earnings-stat {
+  border: 1px solid rgba(126, 196, 184, 0.28);
+  background: rgba(26, 40, 44, 0.92);
+}
+
 .stylist-theme .earnings-bar {
-  background: rgba(201, 168, 124, 0.18);
+  background: rgba(126, 196, 184, 0.18);
   transition: height 0.35s ease;
 }
 
 .stylist-theme .earnings-bar.has-earn {
-  background: linear-gradient(180deg, #f0c987 0%, #c9a87c 100%);
-  box-shadow: 0 0 12px rgba(240, 201, 135, 0.25);
+  background: linear-gradient(180deg, #b5ebe0 0%, #7ec4b8 100%);
+  box-shadow: 0 0 12px rgba(126, 196, 184, 0.3);
 }
 
 .stylist-theme .stylist-tap {

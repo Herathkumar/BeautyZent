@@ -18,7 +18,7 @@ test.describe("Stylist profile photo", () => {
 
     // Stylist uploads selfie
     await stylistLogin(page);
-    await page.getByRole("link", { name: /^account$/i }).click();
+    await page.getByRole("link", { name: /^profile$/i }).click();
     await expect(page.getByRole("heading", { name: /profile photo/i })).toBeVisible();
     await expect(page.getByTestId("stylist-photo-preview")).toHaveAttribute(
       "src",

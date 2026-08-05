@@ -6,8 +6,8 @@
   "scope": "/stylist",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#1c1714",
-  "theme_color": "#1c1714",
+  "background_color": "#0e1618",
+  "theme_color": "#0e1618",
   "icons": [
     {
       "src": "/stylist-icon.svg",

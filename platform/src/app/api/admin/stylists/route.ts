@@ -266,7 +266,7 @@ export async function POST(req: Request) {
     credentials: {
       email: login.email,
       temporaryPassword: login.password,
-      note: "Share once with the stylist. They can change this on their phone under Account.",
+      note: "Share once with the stylist. They can change this on their phone under Profile.",
     },
   });
 }

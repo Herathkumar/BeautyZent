@@ -10,7 +10,7 @@ test.describe("Stylist phone portal", () => {
     await expect(page.getByRole("link", { name: /^my jobs$/i })).toBeVisible();
     await expect(page.getByRole("link", { name: /^schedule$/i })).toBeVisible();
     await expect(page.getByRole("link", { name: /^earnings$/i })).toBeVisible();
-    await expect(page.getByRole("link", { name: /^account$/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /^profile$/i })).toBeVisible();
   });
 
   test("schedule page loads", async ({ page }) => {
@@ -22,8 +22,8 @@ test.describe("Stylist phone portal", () => {
 
   test("account page loads for credential changes", async ({ page }) => {
     await stylistLogin(page);
-    await page.getByRole("link", { name: /^account$/i }).click();
-    await expect(page.getByRole("heading", { name: /^account$/i })).toBeVisible();
+    await page.getByRole("link", { name: /^profile$/i }).click();
+    await expect(page.getByRole("heading", { name: /^profile$/i })).toBeVisible();
     await expect(page.getByRole("heading", { name: /profile photo/i })).toBeVisible();
     await expect(page.getByTestId("stylist-photo-preview")).toBeVisible();
     await expect(page.getByLabel(/login email/i)).toBeVisible();

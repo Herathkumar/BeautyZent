@@ -45,7 +45,7 @@ export default function StylistStoreDisplayPage() {
         <div className="flex flex-wrap gap-2">
           <Link
             href="/stylist"
-            className="rounded-full border border-[#c9a87c]/45 px-4 py-2.5 text-sm text-[#f0c987]"
+            className="rounded-full border border-[#7ec4b8]/45 px-4 py-2.5 text-sm text-[#b5ebe0]"
           >
             Back to My Jobs
           </Link>

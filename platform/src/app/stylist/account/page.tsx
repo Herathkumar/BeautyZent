@@ -229,7 +229,7 @@ export default function StylistAccountPage() {
   return (
     <main className="space-y-6">
       <div>
-        <h1 className="font-[family-name:var(--font-display)] text-3xl">Account</h1>
+        <h1 className="font-[family-name:var(--font-display)] text-3xl">Profile</h1>
         <p className="mt-2 text-muted">
           Update your profile and photo for online booking, and manage login credentials.
         </p>
@@ -246,7 +246,7 @@ export default function StylistAccountPage() {
           </div>
           <button
             type="button"
-            className="shrink-0 rounded-full border border-[#c9a87c]/45 px-4 py-2 text-sm font-semibold text-[#f0c987] hover:bg-[#c9a87c]/10"
+            className="shrink-0 rounded-full border border-[#7ec4b8]/45 px-4 py-2 text-sm font-semibold text-[#b5ebe0] hover:bg-[#7ec4b8]/10"
             data-testid="stylist-logout"
             onClick={async () => {
               await fetch("/api/auth/logout", { method: "POST" });

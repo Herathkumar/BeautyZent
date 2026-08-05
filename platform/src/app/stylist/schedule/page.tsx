@@ -58,7 +58,7 @@ function statusLabel(status?: string) {
 function statusClass(status?: string) {
   switch (String(status || "").toUpperCase()) {
     case "PENDING":
-      return "text-[#f0c987]";
+      return "text-[#b5ebe0]";
     case "APPROVED":
       return "text-[#9fe3b8]";
     case "REJECTED":

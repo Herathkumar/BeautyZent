@@ -147,7 +147,7 @@ export default function StylistHomePage() {
       <article
         className={`rounded-2xl border p-4 ${
           emphasize
-            ? "border-[rgba(240,201,135,0.55)] bg-[linear-gradient(135deg,#3d2b22_0%,#2a211c_100%)]"
+            ? "border-[rgba(181, 235, 224,0.55)] bg-[linear-gradient(135deg,#3d2b22_0%,#1a282c_100%)]"
             : "border-ink/15 bg-cream"
         }`}
       >
@@ -164,7 +164,7 @@ export default function StylistHomePage() {
               {a.source === "WALK_IN" ? (
                 <span
                   data-testid="walk-in-badge"
-                  className="ml-2 align-middle rounded-full bg-[rgba(240,201,135,0.18)] px-2 py-0.5 text-[10px] font-bold tracking-wide text-[#f0c987] uppercase"
+                  className="ml-2 align-middle rounded-full bg-[rgba(181, 235, 224,0.18)] px-2 py-0.5 text-[10px] font-bold tracking-wide text-[#b5ebe0] uppercase"
                 >
                   Walk-in
                 </span>
@@ -172,7 +172,7 @@ export default function StylistHomePage() {
             </p>
             <p className="text-sm text-muted">{a.service.name}</p>
             {a.status === "COMPLETED" ? (
-              <p className="mt-2 text-base font-semibold text-[#f0c987]">
+              <p className="mt-2 text-base font-semibold text-[#b5ebe0]">
                 $
                 {centsToDollars(
                   a.chargedCents ?? a.service.priceCents ?? 0
@@ -192,10 +192,10 @@ export default function StylistHomePage() {
               a.status === "CHECKED_IN"
                 ? "bg-[rgba(159,227,184,0.18)] text-[#9fe3b8]"
                 : a.status === "COMPLETED"
-                  ? "bg-[rgba(201,168,124,0.15)] text-champagne"
+                  ? "bg-[rgba(126,196,184,0.15)] text-champagne"
                   : a.status === "CANCELLED" || a.status === "NO_SHOW"
                     ? "bg-[rgba(245,168,168,0.15)] text-[#f5a8a8]"
-                    : "bg-[rgba(240,201,135,0.12)] text-champagne"
+                    : "bg-[rgba(181, 235, 224,0.12)] text-champagne"
             }`}
           >
             {statusLabel(a.status)}
@@ -203,7 +203,7 @@ export default function StylistHomePage() {
         </div>
 
         {a.notes ? (
-          <p className="mt-3 rounded-xl border border-[rgba(240,201,135,0.25)] bg-[rgba(240,201,135,0.08)] px-3 py-2 text-sm text-champagne">
+          <p className="mt-3 rounded-xl border border-[rgba(181, 235, 224,0.25)] bg-[rgba(181, 235, 224,0.08)] px-3 py-2 text-sm text-champagne">
             <span className="font-semibold">Note · </span>
             {a.notes}
           </p>
@@ -318,7 +318,7 @@ export default function StylistHomePage() {
           <div className="flex flex-wrap gap-2">
             <Link
               href="/stylist/display"
-              className="rounded-full bg-champagne px-3 py-2 text-sm font-semibold text-[#1c1714]"
+              className="rounded-full bg-champagne px-3 py-2 text-sm font-semibold text-[#0e1618]"
               data-testid="stylist-store-display-link"
             >
               Store display

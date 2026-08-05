@@ -98,7 +98,7 @@ function CredentialsPanel({
         </button>
       </div>
       <p className="mt-3 text-xs text-[#a89a8c]">
-        Portal: {appUrl}/stylist/login — ask them to change the password under Account after login.
+        Portal: {appUrl}/stylist/login — ask them to change the password under Profile after login.
       </p>
     </div>
   );
@@ -322,7 +322,7 @@ export default function StylistsAdminPage() {
         </h1>
         <p className="mt-2 text-[#d4c4b0]">
           New stylists get a login like <code className="text-[#f0c987]">name@{emailDomain}</code> and a
-          temporary password. They can change it on their phone under Account.
+          temporary password. They can change it on their phone under Profile.
         </p>
       </div>
 
