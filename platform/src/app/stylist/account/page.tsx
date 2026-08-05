@@ -64,6 +64,7 @@ export default function StylistAccountPage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [bio, setBio] = useState("");
+  const [editingProfile, setEditingProfile] = useState(false);
   const [profileMsg, setProfileMsg] = useState("");
   const [profileError, setProfileError] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
@@ -195,6 +196,7 @@ export default function StylistAccountPage() {
     setPhone(data.user?.phone || "");
     setBio(data.user?.bio || "");
     setProfileMsg(data.message || "Profile updated.");
+    setEditingProfile(false);
   }
 
   async function onSave(e: React.FormEvent) {
@@ -226,167 +228,234 @@ export default function StylistAccountPage() {
     setConfirmPassword("");
   }
 
+  const displayName = name.trim() || "Your name";
+
   return (
     <main className="space-y-6">
-      <div>
-        <h1 className="font-[family-name:var(--font-display)] text-3xl">Profile</h1>
-        <p className="mt-2 text-muted">
-          Update your profile and photo for online booking, and manage login credentials.
-        </p>
-      </div>
-
-      <div className="rounded-2xl border border-ink/15 bg-cream p-4 text-sm text-muted">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p>
-              Signed in as{" "}
-              <span className="font-semibold text-champagne">{name || "Stylist"}</span>
-            </p>
-            <p className="mt-1 break-all font-mono text-champagne">{email}</p>
-          </div>
-          <button
-            type="button"
-            className="shrink-0 rounded-full border border-[#7ec4b8]/45 px-4 py-2 text-sm font-semibold text-[#b5ebe0] hover:bg-[#7ec4b8]/10"
-            data-testid="stylist-logout"
-            onClick={async () => {
-              await fetch("/api/auth/logout", { method: "POST" });
-              router.push("/stylist/login");
-              router.refresh();
-            }}
-          >
-            Log out
-          </button>
-        </div>
-      </div>
-
-      <section className="grid gap-4 rounded-2xl border border-ink/15 bg-cream p-4">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="font-[family-name:var(--font-display)] text-xl">Profile</h2>
-          <p className="mt-1 text-sm text-muted">
-            Your name, contact info, and photo. Clients see your name and bio when they book.
-            Update anytime — no password needed.
-          </p>
+          <h1 className="font-[family-name:var(--font-display)] text-3xl">Profile</h1>
+          <p className="mt-1 text-sm text-muted">How clients see you when they book.</p>
         </div>
+        <button
+          type="button"
+          className="shrink-0 rounded-full border border-[#7ec4b8]/45 px-4 py-2 text-sm font-semibold text-[#b5ebe0] hover:bg-[#7ec4b8]/10"
+          data-testid="stylist-logout"
+          onClick={async () => {
+            await fetch("/api/auth/logout", { method: "POST" });
+            router.push("/stylist/login");
+            router.refresh();
+          }}
+        >
+          Log out
+        </button>
+      </div>
 
-        <div className="flex items-center gap-4">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={photoUrl}
-            alt="Your profile photo"
-            width={96}
-            height={96}
-            data-testid="stylist-photo-preview"
-            className="h-24 w-24 rounded-full object-cover ring-2 ring-champagne/40"
-          />
-          <div className="grid gap-2 text-sm">
-            <p className="text-muted">{hasPhoto ? "Your selfie" : "Default avatar"}</p>
-            <label className="grid gap-1">
-              Gender (for avatar)
-              <select
-                value={gender}
-                disabled={photoBusy}
-                onChange={(e) => saveGender(e.target.value as Gender)}
-                className="stylist-tap rounded-2xl border border-ink/15 bg-white px-3 text-ink"
-                aria-label="Gender for avatar"
+      <section
+        className="overflow-hidden rounded-3xl border border-[#7ec4b8]/30"
+        data-testid="stylist-profile-card"
+        style={{
+          background:
+            "linear-gradient(165deg, rgba(126,196,184,0.16) 0%, rgba(26,40,44,0.95) 42%, #1a282c 100%)",
+        }}
+      >
+        <div className="px-5 pb-5 pt-7 sm:px-6">
+          <div className="flex flex-col items-center text-center">
+            <div className="relative">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={photoUrl}
+                alt={`${displayName} profile photo`}
+                width={112}
+                height={112}
+                data-testid="stylist-photo-preview"
+                className="h-28 w-28 rounded-full object-cover shadow-[0_12px_40px_rgba(0,0,0,0.35)] ring-4 ring-[#7ec4b8]/35"
+              />
+              <span
+                className="absolute bottom-1 right-1 rounded-full bg-[#0e1618] px-2 py-0.5 text-[10px] font-semibold tracking-wide text-[#b5ebe0] ring-1 ring-[#7ec4b8]/40"
+                aria-hidden
               >
-                <option value="FEMALE">Female</option>
-                <option value="MALE">Male</option>
-                <option value="UNSPECIFIED">Prefer not to say</option>
-              </select>
-            </label>
+                {hasPhoto ? "Photo" : "Avatar"}
+              </span>
+            </div>
+
+            <h2 className="mt-4 font-[family-name:var(--font-display)] text-3xl leading-tight text-[#f4fbfa]">
+              {displayName}
+            </h2>
+            <p className="mt-1 break-all text-sm text-[#a8c4bf]">{email || "—"}</p>
+            {phone.trim() ? (
+              <p className="mt-0.5 text-sm text-[#b5ebe0]/90">{phone.trim()}</p>
+            ) : null}
+
+            {bio.trim() && !editingProfile ? (
+              <p className="mt-4 max-w-sm text-sm leading-relaxed text-[#d7ebe7]/90">
+                “{bio.trim()}”
+              </p>
+            ) : null}
+
+            <div className="mt-5 flex w-full max-w-sm flex-col gap-2 sm:flex-row sm:justify-center">
+              <button
+                type="button"
+                className="stylist-tap btn-solid rounded-full px-5"
+                data-testid="stylist-edit-profile"
+                onClick={() => {
+                  setEditingProfile((v) => !v);
+                  setProfileError("");
+                  setProfileMsg("");
+                }}
+              >
+                {editingProfile ? "Close editor" : "Edit profile"}
+              </button>
+              <button
+                type="button"
+                disabled={photoBusy}
+                className="stylist-tap rounded-full border border-[#7ec4b8]/45 px-5 font-semibold text-[#b5ebe0] hover:bg-[#7ec4b8]/10"
+                onClick={() => fileRef.current?.click()}
+              >
+                {photoBusy ? "Saving…" : hasPhoto ? "Retake selfie" : "Take selfie"}
+              </button>
+            </div>
           </div>
-        </div>
 
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/*"
-          capture="user"
-          className="sr-only"
-          data-testid="stylist-selfie-input"
-          onChange={(e) => onPickPhoto(e.target.files?.[0] || null)}
-        />
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            capture="user"
+            className="sr-only"
+            data-testid="stylist-selfie-input"
+            onChange={(e) => onPickPhoto(e.target.files?.[0] || null)}
+          />
 
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            disabled={photoBusy}
-            className="stylist-tap btn-solid rounded-2xl px-4"
-            onClick={() => fileRef.current?.click()}
-          >
-            {photoBusy ? "Saving…" : hasPhoto ? "Retake selfie" : "Take selfie"}
-          </button>
-          {hasPhoto ? (
-            <button
-              type="button"
-              disabled={photoBusy}
-              className="stylist-tap rounded-2xl border border-ink/20 px-4"
-              onClick={removePhoto}
-            >
-              Use avatar instead
-            </button>
+          {(photoError || photoMessage || hasPhoto) && !editingProfile ? (
+            <div className="mt-4 space-y-2 text-center text-sm">
+              {hasPhoto ? (
+                <button
+                  type="button"
+                  disabled={photoBusy}
+                  className="text-[#a8c4bf] underline-offset-2 hover:text-[#b5ebe0] hover:underline"
+                  onClick={removePhoto}
+                >
+                  Use default avatar instead
+                </button>
+              ) : null}
+              {photoError ? <p className="text-[#f5a8a8]">{photoError}</p> : null}
+              {photoMessage ? <p className="text-[#b5ebe0]">{photoMessage}</p> : null}
+            </div>
           ) : null}
         </div>
-        {photoError ? <p className="text-sm text-[#f5a8a8]">{photoError}</p> : null}
-        {photoMessage ? <p className="text-sm text-champagne">{photoMessage}</p> : null}
 
-        <form onSubmit={onSaveProfile} className="grid gap-3 border-t border-ink/15 pt-4">
-          <label className="grid gap-1.5 text-sm">
-            Display name
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              className="stylist-tap rounded-2xl border border-ink/15 bg-white px-3 text-ink"
-            />
-          </label>
-          <label className="grid gap-1.5 text-sm">
-            Email
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="username"
-              className="stylist-tap rounded-2xl border border-ink/15 bg-white px-3 text-ink"
-            />
-          </label>
-          <label className="grid gap-1.5 text-sm">
-            Phone
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="Optional"
-              className="stylist-tap rounded-2xl border border-ink/15 bg-white px-3 text-ink"
-            />
-          </label>
-          <label className="grid gap-1.5 text-sm">
-            Short bio
-            <textarea
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              rows={3}
-              maxLength={280}
-              placeholder="Optional — shown when clients choose a stylist"
-              className="stylist-tap rounded-2xl border border-ink/15 bg-white px-3 py-2 text-ink"
-            />
-          </label>
-          {profileError ? <p className="text-sm text-[#f5a8a8]">{profileError}</p> : null}
-          {profileMsg ? <p className="text-sm text-champagne">{profileMsg}</p> : null}
-          <button
-            type="submit"
-            disabled={savingProfile}
-            className="stylist-tap btn-solid rounded-2xl"
+        {editingProfile ? (
+          <form
+            onSubmit={onSaveProfile}
+            className="grid gap-3 border-t border-[#7ec4b8]/20 bg-[#10181c]/55 px-5 py-5 sm:px-6"
+            data-testid="stylist-profile-editor"
           >
-            {savingProfile ? "Saving…" : "Save profile"}
-          </button>
-        </form>
+            <p className="text-xs font-semibold tracking-[0.16em] text-[#7ec4b8] uppercase">
+              Edit details
+            </p>
+
+            <div className="flex flex-wrap items-end gap-3">
+              <label className="grid min-w-[10rem] flex-1 gap-1.5 text-sm">
+                Gender (for avatar)
+                <select
+                  value={gender}
+                  disabled={photoBusy}
+                  onChange={(e) => saveGender(e.target.value as Gender)}
+                  className="stylist-tap rounded-2xl border border-ink/15 bg-white px-3 text-ink"
+                  aria-label="Gender for avatar"
+                >
+                  <option value="FEMALE">Female</option>
+                  <option value="MALE">Male</option>
+                  <option value="UNSPECIFIED">Prefer not to say</option>
+                </select>
+              </label>
+              {hasPhoto ? (
+                <button
+                  type="button"
+                  disabled={photoBusy}
+                  className="stylist-tap rounded-2xl border border-ink/20 px-4 text-sm"
+                  onClick={removePhoto}
+                >
+                  Use avatar instead
+                </button>
+              ) : null}
+            </div>
+            {photoError ? <p className="text-sm text-[#f5a8a8]">{photoError}</p> : null}
+            {photoMessage ? <p className="text-sm text-[#b5ebe0]">{photoMessage}</p> : null}
+
+            <label className="grid gap-1.5 text-sm">
+              Display name
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className="stylist-tap rounded-2xl border border-ink/15 bg-white px-3 text-ink"
+              />
+            </label>
+            <label className="grid gap-1.5 text-sm">
+              Email
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="username"
+                className="stylist-tap rounded-2xl border border-ink/15 bg-white px-3 text-ink"
+              />
+            </label>
+            <label className="grid gap-1.5 text-sm">
+              Phone
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="Optional"
+                className="stylist-tap rounded-2xl border border-ink/15 bg-white px-3 text-ink"
+              />
+            </label>
+            <label className="grid gap-1.5 text-sm">
+              Short bio
+              <textarea
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                rows={3}
+                maxLength={280}
+                placeholder="Optional — shown when clients choose a stylist"
+                className="stylist-tap rounded-2xl border border-ink/15 bg-white px-3 py-2 text-ink"
+              />
+            </label>
+            {profileError ? <p className="text-sm text-[#f5a8a8]">{profileError}</p> : null}
+            {profileMsg ? <p className="text-sm text-[#b5ebe0]">{profileMsg}</p> : null}
+            <div className="flex flex-wrap gap-2 pt-1">
+              <button
+                type="submit"
+                disabled={savingProfile}
+                className="stylist-tap btn-solid flex-1 rounded-full sm:flex-none sm:px-8"
+              >
+                {savingProfile ? "Saving…" : "Save profile"}
+              </button>
+              <button
+                type="button"
+                className="stylist-tap rounded-full border border-ink/20 px-5"
+                onClick={() => {
+                  setEditingProfile(false);
+                  setProfileError("");
+                  setProfileMsg("");
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        ) : null}
       </section>
 
-      <form onSubmit={onSave} className="grid gap-4 rounded-2xl border border-ink/15 bg-cream p-4">
-        <h2 className="font-[family-name:var(--font-display)] text-xl">Login</h2>
-        <p className="text-sm text-muted">Change your password. Email is updated under Profile.</p>
+      <form onSubmit={onSave} className="grid gap-4 rounded-3xl border border-[#7ec4b8]/25 bg-[#1a282c] p-5">
+        <div>
+          <h2 className="font-[family-name:var(--font-display)] text-xl">Login</h2>
+          <p className="mt-1 text-sm text-muted">Change your password. Email is updated under Edit profile.</p>
+        </div>
         <label className="grid gap-1.5 text-sm">
           Current password
           <input
@@ -421,9 +490,9 @@ export default function StylistAccountPage() {
         </label>
 
         {error ? <p className="text-sm text-[#f5a8a8]">{error}</p> : null}
-        {message ? <p className="text-sm text-champagne">{message}</p> : null}
+        {message ? <p className="text-sm text-[#b5ebe0]">{message}</p> : null}
 
-        <button type="submit" disabled={saving} className="stylist-tap btn-solid rounded-2xl">
+        <button type="submit" disabled={saving} className="stylist-tap btn-solid rounded-full">
           {saving ? "Saving…" : "Save login"}
         </button>
       </form>

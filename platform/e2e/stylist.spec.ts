@@ -24,9 +24,9 @@ test.describe("Stylist phone portal", () => {
     await stylistLogin(page);
     await page.getByRole("link", { name: /^profile$/i }).click();
     await expect(page.getByRole("heading", { name: /^profile$/i })).toBeVisible();
-    await expect(page.getByRole("heading", { name: /profile photo/i })).toBeVisible();
+    await expect(page.getByTestId("stylist-profile-card")).toBeVisible();
     await expect(page.getByTestId("stylist-photo-preview")).toBeVisible();
-    await expect(page.getByLabel(/login email/i)).toBeVisible();
+    await expect(page.getByTestId("stylist-edit-profile")).toBeVisible();
     await expect(page.getByLabel(/current password/i)).toBeVisible();
     await expect(page.getByRole("button", { name: /^log out$/i })).toBeVisible();
   });

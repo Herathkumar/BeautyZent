@@ -41,6 +41,7 @@ test.describe("Stylist account provisioning", () => {
 
     await page.getByRole("link", { name: /^profile$/i }).click();
     await expect(page.getByRole("heading", { name: /^profile$/i })).toBeVisible();
+    await page.getByTestId("stylist-edit-profile").click();
     await expect(page.getByLabel(/^email$/i).first()).toHaveValue(emailText.trim());
 
     await page.getByLabel(/current password/i).fill(tempPassword.trim());

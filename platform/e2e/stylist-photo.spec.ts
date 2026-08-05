@@ -19,7 +19,7 @@ test.describe("Stylist profile photo", () => {
     // Stylist uploads selfie
     await stylistLogin(page);
     await page.getByRole("link", { name: /^profile$/i }).click();
-    await expect(page.getByRole("heading", { name: /profile photo/i })).toBeVisible();
+    await expect(page.getByTestId("stylist-profile-card")).toBeVisible();
     await expect(page.getByTestId("stylist-photo-preview")).toHaveAttribute(
       "src",
       /avatars\/stylist-/
@@ -46,7 +46,7 @@ test.describe("Stylist profile photo", () => {
 
     // Cleanup: restore avatar so later runs start from defaults
     await page.goto("/stylist/account");
-    await page.getByRole("button", { name: /use avatar instead/i }).click();
+    await page.getByRole("button", { name: /use default avatar instead|use avatar instead/i }).click();
     await expect(page.getByText(/photo removed/i)).toBeVisible();
     await expect(page.getByTestId("stylist-photo-preview")).toHaveAttribute(
       "src",
