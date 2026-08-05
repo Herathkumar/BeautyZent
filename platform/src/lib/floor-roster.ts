@@ -12,6 +12,8 @@ type Interval = { start: Date; end: Date };
 export type FloorRosterEntry = {
   id: string;
   name: string;
+  phone: string | null;
+  email: string | null;
   status: "WORKING" | "PARTIAL" | "AWAY" | "OFF";
   summary: string;
   scheduled: { startLabel: string; endLabel: string } | null;
@@ -114,6 +116,7 @@ export async function getFloorRoster(opts: {
     prisma.stylist.findMany({
       where: { salonId: opts.salonId, active: true },
       include: {
+        user: { select: { email: true, phone: true } },
         weekHours: true,
         blocks: {
           where: {
@@ -242,6 +245,8 @@ export async function getFloorRoster(opts: {
     return {
       id: s.id,
       name: s.name,
+      phone: s.user?.phone?.trim() || null,
+      email: s.user?.email?.trim() || null,
       status,
       summary,
       scheduled: workValid

@@ -65,13 +65,15 @@ test.describe("Manager store earnings", () => {
     await filters.getByLabel(/filter activity type/i).selectOption("PAYOUT");
   });
 
-  test("manager can update store regular hours on Account", async ({ page }) => {
+  test("manager can update store regular hours on Pay & hours", async ({ page }) => {
     await adminLogin(page);
-    await page.goto("/manager/account");
+    await page.goto("/manager/pay");
     const form = page.getByTestId("store-hours-form");
     await expect(form).toBeVisible({ timeout: 15_000 });
     await form.getByLabel(/store open hour/i).selectOption("10");
     await form.getByLabel(/store close hour/i).selectOption("19");
+    await form.getByLabel(/sunday off/i).uncheck();
+    await form.getByLabel(/monday off/i).check();
     await form.getByRole("button", { name: /save store hours/i }).click();
     await expect(page.getByText(/store hours saved|new stylists/i)).toBeVisible({
       timeout: 10_000,
@@ -80,6 +82,8 @@ test.describe("Manager store earnings", () => {
     // Restore seed defaults
     await form.getByLabel(/store open hour/i).selectOption("9");
     await form.getByLabel(/store close hour/i).selectOption("18");
+    await form.getByLabel(/monday off/i).uncheck();
+    await form.getByLabel(/sunday off/i).check();
     await form.getByRole("button", { name: /save store hours/i }).click();
     await expect(page.getByText(/store hours saved|new stylists/i)).toBeVisible({
       timeout: 10_000,

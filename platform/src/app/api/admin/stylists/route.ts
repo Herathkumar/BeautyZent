@@ -168,7 +168,12 @@ export async function POST(req: Request) {
     domain,
   });
 
-  // Default Mon–Sat hours like seed
+  // Default week hours from store open/close + store off days
+  const closedDays = new Set(
+    Array.isArray(salon.closedDays) && salon.closedDays.length > 0
+      ? salon.closedDays
+      : [0]
+  );
   for (let dayOfWeek = 0; dayOfWeek <= 6; dayOfWeek++) {
     await prisma.stylistWeekHour.create({
       data: {
@@ -176,7 +181,7 @@ export async function POST(req: Request) {
         dayOfWeek,
         startHour: salon.openHour,
         endHour: salon.closeHour,
-        isOff: dayOfWeek === 0,
+        isOff: closedDays.has(dayOfWeek),
       },
     });
   }

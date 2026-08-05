@@ -52,6 +52,23 @@ function csvEscape(value: string | number) {
   return s;
 }
 
+function hourLabel(h: number) {
+  if (h === 0 || h === 24) return "12:00 AM";
+  if (h === 12) return "12:00 PM";
+  if (h < 12) return `${h}:00 AM`;
+  return `${h - 12}:00 PM`;
+}
+
+const WEEKDAYS = [
+  { day: 0, label: "Sunday" },
+  { day: 1, label: "Monday" },
+  { day: 2, label: "Tuesday" },
+  { day: 3, label: "Wednesday" },
+  { day: 4, label: "Thursday" },
+  { day: 5, label: "Friday" },
+  { day: 6, label: "Saturday" },
+] as const;
+
 function downloadPayCsv(reports: Report[], year: string, month: string) {
   const rows: string[] = [
     [
@@ -155,6 +172,12 @@ export default function AdminPayPage() {
   const [periodEnd, setPeriodEnd] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
+  const [openHour, setOpenHour] = useState(9);
+  const [closeHour, setCloseHour] = useState(18);
+  const [closedDays, setClosedDays] = useState<number[]>([0]);
+  const [hoursMsg, setHoursMsg] = useState("");
+  const [hoursError, setHoursError] = useState("");
+  const [savingHours, setSavingHours] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -177,6 +200,52 @@ export default function AdminPayPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    fetch("/api/admin/salon")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data?.salon) return;
+        setOpenHour(data.salon.openHour);
+        setCloseHour(data.salon.closeHour);
+        setClosedDays(
+          Array.isArray(data.salon.closedDays) && data.salon.closedDays.length > 0
+            ? data.salon.closedDays
+            : [0]
+        );
+      });
+  }, []);
+
+  function toggleClosedDay(day: number) {
+    setClosedDays((prev) => {
+      if (prev.includes(day)) return prev.filter((d) => d !== day);
+      return [...prev, day].sort((a, b) => a - b);
+    });
+  }
+
+  async function onSaveHours(e: React.FormEvent) {
+    e.preventDefault();
+    setHoursError("");
+    setHoursMsg("");
+    if (closedDays.length >= 7) {
+      setHoursError("Pick at least one open day.");
+      return;
+    }
+    setSavingHours(true);
+    const res = await fetch("/api/admin/salon", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ openHour, closeHour, closedDays }),
+    });
+    const data = await res.json();
+    setSavingHours(false);
+    if (!res.ok) {
+      setHoursError(data.error || "Could not save store hours");
+      return;
+    }
+    if (data.salon?.closedDays) setClosedDays(data.salon.closedDays);
+    setHoursMsg(data.message || "Store hours saved.");
+  }
 
   async function reviewLeave(
     stylistBlockStylistId: string,
@@ -243,6 +312,7 @@ export default function AdminPayPage() {
             Pay & hours
           </h1>
           <p className="mt-2 text-muted">
+            Set store defaults for new stylists, review leave, and calculate monthly pay.
             Hourly pay uses scheduled hours minus approved leave. Commission is on service
             charges; tips go 100% to the stylist. Voided jobs are excluded from commission and
             tips.
@@ -257,6 +327,96 @@ export default function AdminPayPage() {
           Download CSV
         </button>
       </div>
+
+      <form
+        onSubmit={onSaveHours}
+        className="grid gap-4 rounded-2xl border border-[#c9a87c]/30 bg-[#2a211c] p-5"
+        data-testid="store-hours-form"
+      >
+        <div>
+          <h2 className="font-[family-name:var(--font-display)] text-xl text-[#fffaf6]">
+            Store regular hours
+          </h2>
+          <p className="mt-1 text-sm text-[#d4c4b0]">
+            Default open/close and off days for new stylists. Existing stylist schedules stay as
+            set.
+          </p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="grid gap-1.5 text-sm text-[#d4c4b0]">
+            Opens
+            <select
+              value={openHour}
+              onChange={(e) => setOpenHour(Number(e.target.value))}
+              aria-label="Store open hour"
+              className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+            >
+              {Array.from({ length: 24 }, (_, h) => (
+                <option key={h} value={h}>
+                  {hourLabel(h)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="grid gap-1.5 text-sm text-[#d4c4b0]">
+            Closes
+            <select
+              value={closeHour}
+              onChange={(e) => setCloseHour(Number(e.target.value))}
+              aria-label="Store close hour"
+              className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+            >
+              {Array.from({ length: 24 }, (_, i) => {
+                const h = i + 1;
+                return (
+                  <option key={h} value={h}>
+                    {hourLabel(h)}
+                  </option>
+                );
+              })}
+            </select>
+          </label>
+        </div>
+        <fieldset>
+          <legend className="text-sm text-[#d4c4b0]">Store off days</legend>
+          <p className="mt-1 text-xs text-[#d4c4b0]/80">
+            Days the store is closed. New stylists inherit these as days off.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {WEEKDAYS.map(({ day, label }) => {
+              const checked = closedDays.includes(day);
+              return (
+                <label
+                  key={day}
+                  className={`cursor-pointer rounded-full border px-3 py-1.5 text-sm ${
+                    checked
+                      ? "border-[#c9a87c] bg-[#c9a87c]/15 text-[#f0c987]"
+                      : "border-[#c9a87c]/30 text-[#d4c4b0]"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    className="sr-only"
+                    checked={checked}
+                    onChange={() => toggleClosedDay(day)}
+                    aria-label={`${label} off`}
+                  />
+                  {label}
+                </label>
+              );
+            })}
+          </div>
+        </fieldset>
+        {hoursError ? <p className="text-sm text-[#f5a8a8]">{hoursError}</p> : null}
+        {hoursMsg ? <p className="text-sm text-[#9fe3b8]">{hoursMsg}</p> : null}
+        <button
+          type="submit"
+          disabled={savingHours}
+          className="btn-solid rounded-full px-5 py-3"
+        >
+          {savingHours ? "Saving…" : "Save store hours"}
+        </button>
+      </form>
 
       <div className="grid gap-3 rounded-2xl border border-[#c9a87c]/25 bg-[#2a211c] p-4 sm:grid-cols-3">
         <label className="grid gap-1 text-xs font-semibold tracking-wide text-[#c9a87c] uppercase">

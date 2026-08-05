@@ -37,6 +37,11 @@ export async function GET(
   const hours = DAYS.map((dayOfWeek) => {
     const existing = weekHours.find((h) => h.dayOfWeek === dayOfWeek);
     if (existing) return existing;
+    const closedDays = new Set(
+      Array.isArray(salon.closedDays) && salon.closedDays.length > 0
+        ? salon.closedDays
+        : [0]
+    );
     return {
       id: null,
       stylistId: id,
@@ -45,7 +50,7 @@ export async function GET(
       startMinute: 0,
       endHour: salon.closeHour,
       endMinute: 0,
-      isOff: dayOfWeek === 0,
+      isOff: closedDays.has(dayOfWeek),
     };
   });
 

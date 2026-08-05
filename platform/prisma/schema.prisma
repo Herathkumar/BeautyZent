@@ -18,6 +18,8 @@ model Salon {
   timezone     String   @default("America/Toronto")
   openHour     Int      @default(9)
   closeHour    Int      @default(18)
+  /// Days the store is closed by default (0=Sun … 6=Sat). Used for new stylist schedules.
+  closedDays   Int[]    @default([0])
   slotMinutes  Int      @default(30)
   /// Weekly store profit goal for manager Store Earnings ring (cents)
   weeklyProfitGoalCents Int? @default(200000)

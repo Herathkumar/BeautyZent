@@ -36,11 +36,14 @@ export async function DashboardFloorToday({ salonId }: { salonId: string }) {
       {onFloor.length > 0 ? (
         <ul className="mt-4 space-y-1" data-testid="dashboard-floor-list">
           {onFloor.map((s) => (
-            <li key={s.id}>
+            <li
+              key={s.id}
+              className="rounded-xl border border-transparent px-2 py-2 transition hover:border-[#c9a87c]/35 hover:bg-[#1c1714]/50"
+              data-testid="dashboard-floor-stylist"
+            >
               <Link
                 href={`/manager/working?stylist=${encodeURIComponent(s.id)}`}
-                className="block rounded-xl border border-transparent px-2 py-2 transition hover:border-[#c9a87c]/35 hover:bg-[#1c1714]/50"
-                data-testid="dashboard-floor-stylist"
+                className="block"
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <span className="font-semibold text-[#fffaf6]">{s.name}</span>
@@ -53,6 +56,28 @@ export async function DashboardFloorToday({ salonId }: { salonId: string }) {
                   <span className="ml-2 text-xs text-[#c9a87c]">View jobs</span>
                 </p>
               </Link>
+              {s.phone || s.email ? (
+                <p className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-[#d4c4b0]">
+                  {s.phone ? (
+                    <a
+                      href={`tel:${s.phone.replace(/[^\d+]/g, "")}`}
+                      className="hover:text-[#f0c987]"
+                      data-testid="dashboard-floor-phone"
+                    >
+                      {s.phone}
+                    </a>
+                  ) : null}
+                  {s.email ? (
+                    <a
+                      href={`mailto:${s.email}`}
+                      className="break-all hover:text-[#f0c987]"
+                      data-testid="dashboard-floor-email"
+                    >
+                      {s.email}
+                    </a>
+                  ) : null}
+                </p>
+              ) : null}
             </li>
           ))}
         </ul>

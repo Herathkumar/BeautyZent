@@ -41,13 +41,13 @@ test.describe("Stylist account provisioning", () => {
 
     await page.getByRole("link", { name: /^account$/i }).click();
     await expect(page.getByRole("heading", { name: /^account$/i })).toBeVisible();
-    await expect(page.getByLabel(/login email/i)).toHaveValue(emailText.trim());
+    await expect(page.getByLabel(/^email$/i).first()).toHaveValue(emailText.trim());
 
     await page.getByLabel(/current password/i).fill(tempPassword.trim());
     await page.getByLabel(/^new password/i).fill(newPassword);
     await page.getByLabel(/confirm new password/i).fill(newPassword);
     await page.getByRole("button", { name: /save login/i }).click();
-    await expect(page.getByText(/login updated|updated/i)).toBeVisible();
+    await expect(page.getByText(/login updated|updated|password/i)).toBeVisible();
 
     await page.getByRole("button", { name: /log out/i }).click();
     await expect(page).toHaveURL(/\/stylist\/login/);

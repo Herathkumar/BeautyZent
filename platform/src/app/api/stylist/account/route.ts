@@ -14,6 +14,28 @@ function cleanBio(value: unknown) {
   return { bio: bio || null };
 }
 
+async function validateEmail(opts: {
+  email: string;
+  salonId: string;
+  userId: string;
+}) {
+  const email = opts.email.toLowerCase().trim();
+  if (!email.includes("@")) {
+    return { error: "Enter a valid email" as const };
+  }
+  const taken = await prisma.user.findFirst({
+    where: {
+      salonId: opts.salonId,
+      email,
+      NOT: { id: opts.userId },
+    },
+  });
+  if (taken) {
+    return { error: "That email is already in use" as const };
+  }
+  return { email };
+}
+
 export async function GET() {
   const session = await getSession();
   if (!session || session.role !== "STYLIST") {
@@ -54,10 +76,12 @@ export async function PATCH(req: Request) {
   if (!user) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const wantsLoginChange =
-    (body.email != null && String(body.email).trim() !== user.email) ||
-    (body.newPassword != null && String(body.newPassword).length > 0);
+    body.newPassword != null && String(body.newPassword).length > 0;
   const wantsProfile =
-    body.name != null || body.phone !== undefined || body.bio !== undefined;
+    body.name != null ||
+    body.email != null ||
+    body.phone !== undefined ||
+    body.bio !== undefined;
 
   // Profile-only update — no password required
   if (wantsProfile && !wantsLoginChange && !body.currentPassword) {
@@ -69,11 +93,27 @@ export async function PATCH(req: Request) {
     if (bioResult && "error" in bioResult) {
       return NextResponse.json({ error: bioResult.error }, { status: 400 });
     }
+    let email: string | undefined;
+    if (body.email != null) {
+      const emailResult = await validateEmail({
+        email: String(body.email),
+        salonId: user.salonId,
+        userId: user.id,
+      });
+      if ("error" in emailResult) {
+        return NextResponse.json(
+          { error: emailResult.error },
+          { status: emailResult.error.includes("already") ? 409 : 400 }
+        );
+      }
+      email = emailResult.email;
+    }
 
     const updated = await prisma.user.update({
       where: { id: user.id },
       data: {
         ...(name !== undefined ? { name } : {}),
+        ...(email !== undefined ? { email } : {}),
         ...(body.phone !== undefined ? { phone: cleanPhone(body.phone) } : {}),
         ...(bioResult ? { bio: bioResult.bio } : {}),
       },

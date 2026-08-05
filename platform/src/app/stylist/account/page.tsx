@@ -182,7 +182,7 @@ export default function StylistAccountPage() {
     const res = await fetch("/api/stylist/account", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: name.trim(), phone, bio }),
+      body: JSON.stringify({ name: name.trim(), email: email.trim(), phone, bio }),
     });
     const data = await res.json();
     setSavingProfile(false);
@@ -191,6 +191,7 @@ export default function StylistAccountPage() {
       return;
     }
     if (data.user?.name) setName(data.user.name);
+    if (data.user?.email) setEmail(data.user.email);
     setPhone(data.user?.phone || "");
     setBio(data.user?.bio || "");
     setProfileMsg(data.message || "Profile updated.");
@@ -210,7 +211,6 @@ export default function StylistAccountPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         currentPassword,
-        email,
         newPassword: newPassword || undefined,
       }),
     });
@@ -224,7 +224,6 @@ export default function StylistAccountPage() {
     setCurrentPassword("");
     setNewPassword("");
     setConfirmPassword("");
-    if (data.user?.email) setEmail(data.user.email);
   }
 
   return (
@@ -342,6 +341,17 @@ export default function StylistAccountPage() {
             />
           </label>
           <label className="grid gap-1.5 text-sm">
+            Email
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="username"
+              className="stylist-tap rounded-2xl border border-ink/15 bg-white px-3 text-ink"
+            />
+          </label>
+          <label className="grid gap-1.5 text-sm">
             Phone
             <input
               type="tel"
@@ -376,17 +386,7 @@ export default function StylistAccountPage() {
 
       <form onSubmit={onSave} className="grid gap-4 rounded-2xl border border-ink/15 bg-cream p-4">
         <h2 className="font-[family-name:var(--font-display)] text-xl">Login</h2>
-        <label className="grid gap-1.5 text-sm">
-          Login email / username
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            autoComplete="username"
-            className="stylist-tap rounded-2xl border border-ink/15 bg-white px-3 text-ink"
-          />
-        </label>
+        <p className="text-sm text-muted">Change your password. Email is updated under Profile.</p>
         <label className="grid gap-1.5 text-sm">
           Current password
           <input
