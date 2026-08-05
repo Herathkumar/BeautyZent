@@ -6,7 +6,7 @@ test.describe("Manager portal", () => {
     await adminLogin(page);
     await expect(page.getByRole("link", { name: /^dashboard$/i }).first()).toBeVisible();
     await expect(page.getByRole("link", { name: /^bookings$/i }).first()).toBeVisible();
-    await expect(page.getByRole("button", { name: /salon/i }).first()).toBeVisible();
+    await expect(page.getByRole("button", { name: /money/i }).first()).toBeVisible();
     await expect(page.getByRole("link", { name: /^profile$/i }).first()).toBeVisible();
     await expect(page.getByRole("link", { name: /active services/i })).toBeVisible();
     const floor = page.getByTestId("dashboard-who-working");
@@ -70,19 +70,15 @@ test.describe("Manager portal", () => {
     }
   });
 
-  test("salon menu opens services products stylists payroll", async ({ page }) => {
+  test("money menu opens store earnings and payroll", async ({ page }) => {
     await adminLogin(page);
     const headerNav = page.locator(".admin-header-nav");
-    await headerNav.getByRole("button", { name: /salon/i }).click();
-    await expect(page.getByRole("menuitem", { name: /^services$/i })).toBeVisible();
-    await expect(page.getByRole("menuitem", { name: /^products$/i })).toBeVisible();
-    await expect(page.getByRole("menuitem", { name: /^stylists$/i })).toBeVisible();
+    await headerNav.getByRole("button", { name: /money/i }).click();
+    await expect(page.getByRole("menuitem", { name: /store earnings/i })).toBeVisible();
     await expect(page.getByRole("menuitem", { name: /^payroll$/i })).toBeVisible();
-    await expect(page.getByRole("menuitem", { name: /store earnings|who.?s working|walk-in/i })).toHaveCount(
-      0
-    );
-    await page.getByRole("menuitem", { name: /^services$/i }).click();
-    await expect(page).toHaveURL(/\/manager\/services/);
+    await expect(page.getByRole("menuitem", { name: /^services$|^products$|^stylists$/i })).toHaveCount(0);
+    await page.getByRole("menuitem", { name: /store earnings/i }).click();
+    await expect(page).toHaveURL(/\/manager\/earnings/);
   });
 
   test("services page lists items and sync control", async ({ page }) => {

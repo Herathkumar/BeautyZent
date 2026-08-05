@@ -14,9 +14,9 @@ test.describe("Manager payroll", () => {
     });
   });
 
-  test("salon menu includes payroll", async ({ page }) => {
+  test("money menu includes payroll", async ({ page }) => {
     await adminLogin(page);
-    await page.locator(".admin-header-nav").getByRole("button", { name: /salon/i }).click();
+    await page.locator(".admin-header-nav").getByRole("button", { name: /money/i }).click();
     await page.getByRole("menuitem", { name: /^payroll$/i }).click();
     await expect(page).toHaveURL(/\/manager\/pay/);
   });

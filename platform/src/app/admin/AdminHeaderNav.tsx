@@ -4,10 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-const SALON_LINKS = [
-  { href: "/manager/services", label: "Services" },
-  { href: "/manager/products", label: "Products" },
-  { href: "/manager/stylists", label: "Stylists" },
+const MONEY_LINKS = [
+  { href: "/manager/earnings", label: "Store Earnings" },
   { href: "/manager/pay", label: "Payroll" },
 ] as const;
 
@@ -16,7 +14,7 @@ export function AdminHeaderNav() {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
-  const onSalon = SALON_LINKS.some((l) => pathname.startsWith(l.href));
+  const onMoney = MONEY_LINKS.some((l) => pathname.startsWith(l.href));
 
   useEffect(() => {
     setOpen(false);
@@ -59,15 +57,15 @@ export function AdminHeaderNav() {
       <div className="relative" ref={rootRef}>
         <button
           type="button"
-          className={onSalon || open ? "is-active" : undefined}
+          className={onMoney || open ? "is-active" : undefined}
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
         >
-          Salon ▾
+          Money ▾
         </button>
         {open ? (
           <div className="admin-salon-dropdown" role="menu">
-            {SALON_LINKS.map((item) => (
+            {MONEY_LINKS.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
