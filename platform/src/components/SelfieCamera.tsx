@@ -200,7 +200,7 @@ export function SelfieCamera({
         onChange={(e) => {
           const file = e.target.files?.[0];
           if (file) {
-            void onCapture(file).then(() => onClose());
+            void Promise.resolve(onCapture(file)).then(() => onClose());
           }
           e.target.value = "";
         }}
