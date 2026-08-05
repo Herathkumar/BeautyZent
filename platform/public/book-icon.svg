@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="FHSalon Booking">
+  <rect width="512" height="512" fill="#1a1418"/>
+  <!-- Calendar body -->
+  <rect x="96" y="120" width="320" height="300" rx="36" fill="none" stroke="#e8b4a2" stroke-width="22"/>
+  <rect x="96" y="120" width="320" height="72" rx="36" fill="#e8b4a2"/>
+  <rect x="96" y="156" width="320" height="36" fill="#e8b4a2"/>
+  <!-- Binding rings -->
+  <rect x="168" y="92" width="28" height="56" rx="14" fill="#f2c4b0"/>
+  <rect x="316" y="92" width="28" height="56" rx="14" fill="#f2c4b0"/>
+  <!-- Selected day -->
+  <rect x="196" y="248" width="120" height="100" rx="22" fill="#f2c4b0"/>
+  <circle cx="256" cy="298" r="18" fill="#1a1418"/>
+  <!-- Side ticks -->
+  <rect x="140" y="248" width="36" height="36" rx="10" fill="#e8b4a2" opacity="0.55"/>
+  <rect x="336" y="248" width="36" height="36" rx="10" fill="#e8b4a2" opacity="0.55"/>
+  <rect x="140" y="308" width="36" height="36" rx="10" fill="#e8b4a2" opacity="0.35"/>
+  <rect x="336" y="308" width="36" height="36" rx="10" fill="#e8b4a2" opacity="0.35"/>
+</svg>
