@@ -1,6 +1,6 @@
 {
   "name": "FHSalon — Stylist App",
-  "short_name": "FHSalon",
+  "short_name": "FHSalon Stylist",
   "description": "Stylist phone app for today's bookings, check-in, and time off.",
   "start_url": "/stylist",
   "scope": "/stylist",
@@ -10,10 +10,22 @@
   "theme_color": "#0e1618",
   "icons": [
     {
+      "src": "/stylist-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/stylist-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
       "src": "/stylist-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }

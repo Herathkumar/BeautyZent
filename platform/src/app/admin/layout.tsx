@@ -9,10 +9,19 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "FHSalon — Manager App",
   description: "Dashboard, bookings, earnings, and team — phone-friendly manager portal.",
+  manifest: "/manager-manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    title: "FHSalon",
+    title: "FHSalon Manager",
     statusBarStyle: "black-translucent",
+  },
+  icons: {
+    icon: [
+      { url: "/manager-icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/manager-icon-512.png", sizes: "512x512", type: "image/png" },
+      { url: "/manager-icon.svg", type: "image/svg+xml" },
+    ],
+    apple: [{ url: "/manager-icon-180.png", sizes: "180x180", type: "image/png" }],
   },
 };
 

@@ -10,12 +10,16 @@ export const metadata: Metadata = {
   manifest: "/stylist-manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    title: "FHSalon",
+    title: "FHSalon Stylist",
     statusBarStyle: "black-translucent",
   },
   icons: {
-    icon: "/stylist-icon.svg",
-    apple: "/stylist-icon.svg",
+    icon: [
+      { url: "/stylist-icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/stylist-icon-512.png", sizes: "512x512", type: "image/png" },
+      { url: "/stylist-icon.svg", type: "image/svg+xml" },
+    ],
+    apple: [{ url: "/stylist-icon-180.png", sizes: "180x180", type: "image/png" }],
   },
 };
 

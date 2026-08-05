@@ -87,8 +87,9 @@ export default function StylistLoginPage() {
           </li>
         </ol>
         <p className="mt-3 text-xs">
-          Your salon manager creates your login and temporary password. Change it under Profile after
-          first sign-in.
+          Saves as <span className="text-ink-soft">FHSalon Stylist</span> with the teal stylist icon.
+          Your salon manager creates your login — change the password under Profile after first
+          sign-in.
         </p>
       </div>
 
