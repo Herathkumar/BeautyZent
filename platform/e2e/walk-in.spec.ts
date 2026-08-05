@@ -232,6 +232,63 @@ test.describe("Walk-in appointments", () => {
     ).toHaveCount(0, { timeout: 15_000 });
   });
 
+  test("stylist can book for a client from Floor board", async ({ page }) => {
+    await stylistLogin(page);
+    await page.goto("/stylist");
+    await page.getByTestId("stylist-book-for-client").click();
+    await expect(page).toHaveURL(/\/stylist\/book/);
+    await expect(page.getByTestId("stylist-book-page")).toBeVisible();
+
+    const clientName = `StyBook ${Date.now()}`;
+    await page.getByTestId("stylist-book-service").selectOption({ index: 1 });
+    await expect(page.getByTestId("stylist-book-stylist")).toBeVisible();
+    // Default is self; also confirm another stylist can be chosen for phone bookings
+    const stylistSelect = page.getByTestId("stylist-book-stylist");
+    const options = stylistSelect.locator("option");
+    const optionCount = await options.count();
+    expect(optionCount).toBeGreaterThan(1);
+    await expect(page.getByTestId("stylist-book-slots").getByRole("button").first()).toBeVisible({
+      timeout: 15_000,
+    });
+    await page.getByTestId("stylist-book-slots").getByRole("button").first().click();
+    await page.getByTestId("stylist-book-client-name").fill(clientName);
+    await page.getByTestId("stylist-book-client-phone").fill("4165550199");
+    await page.getByTestId("stylist-book-submit").click();
+    await expect(page.getByText(new RegExp(`booked\\s+${clientName}`, "i"))).toBeVisible({
+      timeout: 15_000,
+    });
+
+    await page.goto("/stylist");
+    await expect(page.getByText(clientName).first()).toBeVisible({ timeout: 15_000 });
+  });
+
+  test("stylist can book a client onto another stylist", async ({ page }) => {
+    await stylistLogin(page);
+    await page.goto("/stylist/book");
+    const clientName = `StyOther ${Date.now()}`;
+    await page.getByTestId("stylist-book-service").selectOption({ index: 1 });
+    const stylistSelect = page.getByTestId("stylist-book-stylist");
+    await expect(stylistSelect).toBeVisible({ timeout: 10_000 });
+    const other = stylistSelect.locator("option").filter({ hasNotText: /\(you\)/i }).nth(1);
+    const otherValue = await other.getAttribute("value");
+    expect(otherValue).toBeTruthy();
+    await stylistSelect.selectOption(otherValue!);
+    await expect(page.getByTestId("stylist-book-slots").getByRole("button").first()).toBeVisible({
+      timeout: 15_000,
+    });
+    await page.getByTestId("stylist-book-slots").getByRole("button").first().click();
+    await page.getByTestId("stylist-book-client-name").fill(clientName);
+    await page.getByTestId("stylist-book-client-phone").fill("4165550188");
+    await page.getByTestId("stylist-book-submit").click();
+    await expect(page.getByText(new RegExp(`booked\\s+${clientName}\\s+with`, "i"))).toBeVisible({
+      timeout: 15_000,
+    });
+    // Not on logged-in stylist's My Jobs — verify via manager appointments
+    await adminLogin(page);
+    await page.goto("/manager/appointments");
+    await expect(page.getByText(clientName).first()).toBeVisible({ timeout: 15_000 });
+  });
+
   test("stylist opens store display from My Jobs", async ({ page }) => {
     await stylistLogin(page);
     await page.goto("/stylist");

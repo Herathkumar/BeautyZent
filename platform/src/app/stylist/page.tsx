@@ -312,7 +312,7 @@ export default function StylistHomePage() {
               Floor board
             </h2>
             <p className="text-sm text-muted">
-              Open the store display, or seat a walk-in / waitlist guest here.
+              Store display, book a client ahead, or seat a walk-in / waitlist guest.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -322,6 +322,13 @@ export default function StylistHomePage() {
               data-testid="stylist-store-display-link"
             >
               Store display
+            </Link>
+            <Link
+              href="/stylist/book"
+              className="rounded-full border border-ink/20 px-3 py-2 text-sm font-semibold text-champagne"
+              data-testid="stylist-book-for-client"
+            >
+              Book for client
             </Link>
             <button
               type="button"
