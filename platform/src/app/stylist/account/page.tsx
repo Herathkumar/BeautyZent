@@ -360,12 +360,12 @@ export default function StylistAccountPage() {
                   <button
                     type="button"
                     disabled={photoBusy}
-                    className="stylist-tap w-full rounded-full border border-[#7ec4b8]/50 bg-[#10181c]/80 px-4 py-2.5 text-sm font-semibold text-[#b5ebe0] hover:bg-[#7ec4b8]/12 disabled:opacity-50"
+                    className="stylist-tap stylist-btn-secondary w-full rounded-full px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
                     onClick={removePhoto}
                   >
                     {photoBusy ? "Removing…" : "Remove photo"}
                   </button>
-                  <p className="text-xs text-[#a8c4bf]">
+                  <p className="text-xs text-muted">
                     Clears your selfie and shows the default avatar again
                   </p>
                 </div>

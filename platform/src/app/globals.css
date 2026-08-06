@@ -272,6 +272,12 @@ a {
   --color-champagne: #7ec4b8;
   --color-cocoa: #b5ebe0;
   --color-white: #f4fbfa;
+  --week-ring-track: rgba(126, 196, 184, 0.08);
+  --week-ring-working: #7ec4b8;
+  --week-ring-selected: #b5ebe0;
+  --week-ring-off: rgba(126, 196, 184, 0.18);
+  --week-ring-label-on: #0e1618;
+  --week-ring-label-off: rgba(244, 251, 250, 0.45);
   min-height: 100vh;
   background:
     radial-gradient(900px 460px at 85% -8%, rgba(126, 196, 184, 0.22), transparent 55%),
@@ -1537,6 +1543,34 @@ html.manager-shell--dark .admin-theme .shadow-\[0_16px_40px_rgba\(0\,0\,0\,0\.35
     linear-gradient(165deg, rgba(126, 196, 184, 0.16) 0%, rgba(26, 40, 44, 0.95) 42%, #1a282c 100%);
 }
 
+.stylist-theme .stylist-btn-secondary {
+  border: 1px solid rgba(126, 196, 184, 0.45);
+  background: rgba(126, 196, 184, 0.1);
+  color: #b5ebe0;
+}
+
+.stylist-theme .stylist-btn-secondary:hover {
+  background: rgba(126, 196, 184, 0.16);
+}
+
+.stylist-theme .stylist-panel {
+  border-color: rgba(126, 196, 184, 0.28);
+}
+
+.stylist-theme .stylist-panel--hours {
+  background: linear-gradient(180deg, rgba(16, 24, 28, 0.9) 0%, rgba(26, 40, 44, 0.98) 100%);
+}
+
+.stylist-theme .stylist-panel--away {
+  background:
+    linear-gradient(165deg, rgba(126, 196, 184, 0.14) 0%, rgba(26, 40, 44, 0.96) 50%, #1a282c 100%);
+}
+
+.stylist-theme .stylist-panel-inset {
+  border-color: rgba(126, 196, 184, 0.25);
+  background: rgba(16, 24, 28, 0.7);
+}
+
 html.stylist-shell--light .stylist-theme {
   --ink: #0e1618;
   --ink-soft: #1a2c30;
@@ -1549,11 +1583,17 @@ html.stylist-shell--light .stylist-theme {
   --color-ink: #0e1618;
   --color-ink-soft: #1a2c30;
   --color-muted: #5a726e;
-  --color-paper: #e8f4f1;
+  --color-paper: #f4fbfa;
   --color-cream: #f7fcfb;
   --color-champagne: #2a8f82;
   --color-cocoa: #1f7a6e;
   --color-white: #ffffff;
+  --week-ring-track: rgba(42, 143, 130, 0.12);
+  --week-ring-working: #3aa897;
+  --week-ring-selected: #1f7a6e;
+  --week-ring-off: rgba(42, 143, 130, 0.18);
+  --week-ring-label-on: #f4fbfa;
+  --week-ring-label-off: rgba(14, 22, 24, 0.4);
   background:
     radial-gradient(900px 460px at 85% -8%, rgba(42, 143, 130, 0.12), transparent 55%),
     radial-gradient(720px 380px at 0% 100%, rgba(56, 110, 120, 0.08), transparent 52%),
@@ -1710,6 +1750,33 @@ html.stylist-shell--light .stylist-theme .stylist-profile-card {
   border-color: rgba(42, 143, 130, 0.28);
 }
 
+html.stylist-shell--light .stylist-theme .stylist-btn-secondary {
+  border: 1px solid rgba(42, 143, 130, 0.35);
+  background: rgba(42, 143, 130, 0.08);
+  color: #1f7a6e;
+}
+
+html.stylist-shell--light .stylist-theme .stylist-btn-secondary:hover {
+  background: rgba(42, 143, 130, 0.14);
+}
+
+html.stylist-shell--light .stylist-theme .stylist-panel {
+  border-color: rgba(42, 143, 130, 0.22);
+}
+
+html.stylist-shell--light .stylist-theme .stylist-panel--hours,
+html.stylist-shell--light .stylist-theme .stylist-panel--away {
+  background:
+    radial-gradient(520px 200px at 50% 0%, rgba(42, 143, 130, 0.1), transparent 55%),
+    linear-gradient(180deg, #ffffff 0%, #f7fcfb 55%, #eef7f5 100%);
+  box-shadow: 0 12px 32px rgba(14, 22, 24, 0.06);
+}
+
+html.stylist-shell--light .stylist-theme .stylist-panel-inset {
+  border-color: rgba(42, 143, 130, 0.2);
+  background: rgba(42, 143, 130, 0.06);
+}
+
 html.stylist-shell--light .stylist-theme .earnings-hero {
   background: linear-gradient(160deg, #ffffff 0%, #f7fcfb 55%, #e8f4f1 100%);
   border: 1px solid rgba(42, 143, 130, 0.22);
@@ -1728,7 +1795,9 @@ html.stylist-shell--light .stylist-theme .earnings-stat {
 }
 
 /* Remap common dark Stylist arbitrary colors for light mode */
-html.stylist-shell--light .stylist-theme .text-\[\#f4fbfa\],
+html.stylist-shell--light .stylist-theme .text-\[\#f4fbfa\] {
+  color: #0e1618 !important;
+}
 html.stylist-shell--light .stylist-theme .text-\[\#b5ebe0\],
 html.stylist-shell--light .stylist-theme .text-\[\#7ec4b8\] {
   color: #1f7a6e !important;
@@ -1740,7 +1809,10 @@ html.stylist-shell--light .stylist-theme .text-\[\#a8c4bf\] {
 html.stylist-shell--light .stylist-theme .bg-\[\#0e1618\],
 html.stylist-shell--light .stylist-theme .bg-\[\#152226\],
 html.stylist-shell--light .stylist-theme .bg-\[\#1a282c\],
-html.stylist-shell--light .stylist-theme .bg-\[\#10181c\] {
+html.stylist-shell--light .stylist-theme .bg-\[\#10181c\],
+html.stylist-shell--light .stylist-theme .bg-\[\#10181c\]\/55,
+html.stylist-shell--light .stylist-theme .bg-\[\#10181c\]\/70,
+html.stylist-shell--light .stylist-theme .bg-\[\#10181c\]\/80 {
   background-color: #ffffff !important;
 }
 html.stylist-shell--light .stylist-theme .border-\[\#7ec4b8\],

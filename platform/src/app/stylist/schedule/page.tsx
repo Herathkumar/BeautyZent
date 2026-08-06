@@ -118,7 +118,14 @@ function WeekRing({
   return (
     <div className="relative mx-auto w-full max-w-[300px]" data-testid="schedule-week-ring">
       <svg viewBox={`0 0 ${size} ${size}`} className="h-auto w-full">
-        <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(126,196,184,0.08)" strokeWidth="30" />
+        <circle
+          cx={cx}
+          cy={cy}
+          r={r}
+          fill="none"
+          stroke="var(--week-ring-track)"
+          strokeWidth="30"
+        />
         {weekHours.map((row) => {
           const i = row.dayOfWeek;
           const start = -90 + i * (seg + gap) + gap / 2;
@@ -134,10 +141,10 @@ function WeekRing({
                 fill="none"
                 stroke={
                   selected
-                    ? "#b5ebe0"
+                    ? "var(--week-ring-selected)"
                     : working
-                      ? "#7ec4b8"
-                      : "rgba(126,196,184,0.18)"
+                      ? "var(--week-ring-working)"
+                      : "var(--week-ring-off)"
                 }
                 strokeWidth={selected ? 34 : 28}
                 strokeLinecap="round"
@@ -159,7 +166,11 @@ function WeekRing({
                 textAnchor="middle"
                 dominantBaseline="middle"
                 className="pointer-events-none select-none"
-                fill={selected || working ? "#0e1618" : "rgba(244,251,250,0.45)"}
+                fill={
+                  selected || working
+                    ? "var(--week-ring-label-on)"
+                    : "var(--week-ring-label-off)"
+                }
                 fontSize="11"
                 fontWeight="700"
               >
@@ -170,20 +181,20 @@ function WeekRing({
         })}
       </svg>
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-16 text-center">
-        <p className="text-[10px] font-semibold tracking-[0.18em] text-[#7ec4b8] uppercase">
+        <p className="text-[10px] font-semibold tracking-[0.18em] text-champagne uppercase">
           My week
         </p>
-        <p className="mt-1 font-[family-name:var(--font-display)] text-2xl text-[#f4fbfa]">
+        <p className="mt-1 font-[family-name:var(--font-display)] text-2xl text-ink">
           {DAY_FULL[selectedDay]}
         </p>
         {(() => {
           const row = weekHours.find((r) => r.dayOfWeek === selectedDay);
           if (!row) return null;
           if (row.isOff) {
-            return <p className="mt-1 text-sm text-[#a8c4bf]">Day off</p>;
+            return <p className="mt-1 text-sm text-muted">Day off</p>;
           }
           return (
-            <p className="mt-1 text-sm font-semibold text-[#b5ebe0]">
+            <p className="mt-1 text-sm font-semibold text-champagne">
               {String(row.startHour).padStart(2, "0")}:00 –{" "}
               {String(row.endHour).padStart(2, "0")}:00
             </p>
@@ -505,17 +516,13 @@ export default function StylistOwnSchedulePage() {
       {/* My Week ring */}
       <form
         onSubmit={saveHours}
-        className="space-y-4 rounded-3xl border border-[#7ec4b8]/28 p-4"
-        style={{
-          background:
-            "linear-gradient(180deg, rgba(16,24,28,0.9) 0%, rgba(26,40,44,0.98) 100%)",
-        }}
+        className="stylist-panel stylist-panel--hours space-y-4 rounded-3xl border p-4"
       >
         <div className="text-center">
-          <p className="text-xs font-semibold tracking-[0.18em] text-[#7ec4b8] uppercase">
+          <p className="text-xs font-semibold tracking-[0.18em] text-champagne uppercase">
             Regular hours
           </p>
-          <h2 className="font-[family-name:var(--font-display)] text-xl text-[#f4fbfa]">
+          <h2 className="font-[family-name:var(--font-display)] text-xl text-ink">
             Tap a day on the ring
           </h2>
         </div>
@@ -528,18 +535,18 @@ export default function StylistOwnSchedulePage() {
 
         {selectedRow ? (
           <div
-            className="grid gap-3 rounded-2xl border border-[#7ec4b8]/25 bg-[#10181c]/70 p-4"
+            className="stylist-panel-inset grid gap-3 rounded-2xl border p-4"
             data-testid="schedule-day-editor"
           >
             <div className="flex items-center justify-between gap-3">
-              <p className="font-semibold text-[#f4fbfa]">{DAY_FULL[selectedDay]}</p>
-              <div className="flex rounded-full border border-[#7ec4b8]/35 p-0.5">
+              <p className="font-semibold text-ink">{DAY_FULL[selectedDay]}</p>
+              <div className="flex rounded-full border border-[color:var(--line)] p-0.5">
                 <button
                   type="button"
                   className={`rounded-full px-3 py-1.5 text-xs font-bold ${
                     !selectedRow.isOff
-                      ? "bg-[#7ec4b8] text-[#0e1618]"
-                      : "text-[#a8c4bf]"
+                      ? "bg-[color:var(--champagne)] text-[color:var(--color-paper)]"
+                      : "text-muted"
                   }`}
                   onClick={() => updateDay(selectedDay, { isOff: false })}
                 >
@@ -549,8 +556,8 @@ export default function StylistOwnSchedulePage() {
                   type="button"
                   className={`rounded-full px-3 py-1.5 text-xs font-bold ${
                     selectedRow.isOff
-                      ? "bg-[#7ec4b8]/25 text-[#b5ebe0]"
-                      : "text-[#a8c4bf]"
+                      ? "bg-[color:var(--champagne)]/20 text-champagne"
+                      : "text-muted"
                   }`}
                   onClick={() => updateDay(selectedDay, { isOff: true })}
                 >
@@ -560,7 +567,7 @@ export default function StylistOwnSchedulePage() {
             </div>
 
             {selectedRow.isOff ? (
-              <p className="text-sm text-[#a8c4bf]">Clients won&apos;t see this day.</p>
+              <p className="text-sm text-muted">Clients won&apos;t see this day.</p>
             ) : (
               <div className="flex flex-wrap items-center gap-2 text-sm">
                 <select
@@ -605,10 +612,10 @@ export default function StylistOwnSchedulePage() {
               onClick={() => setSelectedDay(row.dayOfWeek)}
               className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
                 selectedDay === row.dayOfWeek
-                  ? "bg-[#b5ebe0] text-[#0e1618]"
+                  ? "bg-[color:var(--cocoa)] text-[color:var(--color-paper)]"
                   : row.isOff
-                    ? "bg-[#10181c] text-[#a8c4bf]"
-                    : "bg-[#7ec4b8]/20 text-[#b5ebe0]"
+                    ? "bg-[color:var(--color-cream)] text-muted"
+                    : "bg-[color:var(--champagne)]/15 text-champagne"
               }`}
             >
               {DAY_NAMES[row.dayOfWeek]}
@@ -621,13 +628,7 @@ export default function StylistOwnSchedulePage() {
         </button>
       </form>
       {/* Away calendar */}
-      <section
-        className="rounded-3xl border border-[#7ec4b8]/28 p-4"
-        style={{
-          background:
-            "linear-gradient(165deg, rgba(126,196,184,0.14) 0%, rgba(26,40,44,0.96) 50%, #1a282c 100%)",
-        }}
-      >
+      <section className="stylist-panel stylist-panel--away rounded-3xl border p-4">
         <div className="mb-3 flex items-center justify-between gap-2">
           <div>
             <p className="text-xs font-semibold tracking-[0.18em] text-[#7ec4b8] uppercase">
