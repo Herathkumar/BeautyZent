@@ -179,6 +179,16 @@ export function ClientMemberBar({
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
+            className="rounded-full border border-[rgba(232,180,162,0.4)] px-3 py-2 text-xs font-semibold text-champagne"
+            onClick={() => {
+              setThemeWelcome(false);
+              setThemeOpen(true);
+            }}
+          >
+            Appearance
+          </button>
+          <button
+            type="button"
             className="rounded-full border border-[rgba(232,180,162,0.4)] px-3 py-2 text-xs font-semibold text-[#f2c4b0]"
             onClick={() => {
               setMode("signin");
@@ -304,9 +314,17 @@ export function ClientMemberBar({
 
       <BookThemePicker
         open={themeOpen}
-        title="Booking is now available in light & dark mode!"
-        subtitle="You can change this now or anytime in Appearance."
-        confirmLabel="Got it"
+        title={
+          themeWelcome
+            ? "Booking is now available in light & dark mode!"
+            : "Choose your booking look"
+        }
+        subtitle={
+          themeWelcome
+            ? "You can change this now or anytime in Appearance."
+            : "Saved on this device — no account needed."
+        }
+        confirmLabel={themeWelcome ? "Got it" : "Save"}
         onClose={() => setThemeOpen(false)}
       />
     </div>
