@@ -31,7 +31,7 @@ function DailyGoalRing({
           cy={size / 2}
           r={r}
           fill="none"
-          stroke="rgba(125,97,84,0.18)"
+          stroke="var(--goal-ring-track)"
           strokeWidth={stroke}
         />
         <circle
@@ -40,7 +40,7 @@ function DailyGoalRing({
           cy={size / 2}
           r={r}
           fill="none"
-          stroke={onTrack ? "#2f7a4f" : "#7d6154"}
+          stroke={onTrack ? "var(--goal-ring-on-track)" : "var(--goal-ring-progress)"}
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={c}

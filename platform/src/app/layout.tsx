@@ -20,6 +20,13 @@ html.manager-shell,html.manager-shell body{
     linear-gradient(180deg,#f7f1ea 0%,#f3ebe3 48%,#ebe2d8 100%);
   color:#2b2521
 }
+html.manager-shell.manager-shell--dark,html.manager-shell.manager-shell--dark body{
+  background:radial-gradient(900px 420px at 90% -10%,rgba(240,201,135,.18),transparent 55%),
+    radial-gradient(700px 360px at 0% 100%,rgba(110,74,56,.38),transparent 50%),
+    linear-gradient(180deg,#241c18 0%,#1c1714 45%,#12100e 100%);
+  color:#fffaf6;
+  color-scheme:dark
+}
 `;
 
 const BOOT_SCRIPT = `
@@ -28,7 +35,16 @@ const BOOT_SCRIPT = `
     var p=location.pathname||"";
     var manager=/^\\/(manager|admin)(\\/|$)/.test(p);
     var dark=/^\\/(stylist|display|book|demo)(\\/|$)/.test(p);
-    if(manager) document.documentElement.classList.add("manager-shell");
+    if(manager){
+      document.documentElement.classList.add("manager-shell");
+      try{
+        if(localStorage.getItem("fhsalon-manager-theme")==="dark"){
+          document.documentElement.classList.add("manager-shell--dark");
+          var m=document.querySelector('meta[name="theme-color"]');
+          if(m) m.setAttribute("content","#1c1714");
+        }
+      }catch(e){}
+    }
     else if(!dark) document.documentElement.classList.add("paper-shell");
   }catch(e){}
 })();

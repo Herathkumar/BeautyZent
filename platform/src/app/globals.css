@@ -90,6 +90,27 @@ html.paper-shell body {
   border-top-color: #7d6154;
 }
 
+html.manager-shell--dark .app-splash--manager {
+  background:
+    radial-gradient(900px 420px at 90% -10%, rgba(240, 201, 135, 0.18), transparent 55%),
+    radial-gradient(700px 360px at 0% 100%, rgba(110, 74, 56, 0.35), transparent 50%),
+    linear-gradient(180deg, #241c18 0%, #1c1714 50%, #15110f 100%);
+  color: #fffaf6;
+}
+
+html.manager-shell--dark .app-splash--manager .app-splash-brand {
+  color: #fffaf6;
+}
+
+html.manager-shell--dark .app-splash--manager .app-splash-label {
+  color: rgba(240, 201, 135, 0.72);
+}
+
+html.manager-shell--dark .app-splash--manager .app-splash-spinner {
+  border-color: rgba(201, 168, 124, 0.22);
+  border-top-color: #f0c987;
+}
+
 .app-splash--stylist {
   background:
     radial-gradient(900px 460px at 85% -8%, rgba(126, 196, 184, 0.2), transparent 55%),
@@ -201,6 +222,9 @@ a {
   --color-champagne: #7d6154;
   --color-cocoa: #8c6f5a;
   --color-white: #ffffff;
+  --goal-ring-track: rgba(125, 97, 84, 0.18);
+  --goal-ring-progress: #7d6154;
+  --goal-ring-on-track: #2f7a4f;
   min-height: 100vh;
   background:
     radial-gradient(1000px 480px at 12% -8%, rgba(125, 97, 84, 0.1), transparent 55%),
@@ -1089,4 +1113,391 @@ a {
   border-color: transparent;
   color: #1c1714;
   font-weight: 700;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Manager dark theme — warm champagne / cocoa (keeps Stylist teal separate) */
+/* -------------------------------------------------------------------------- */
+
+html.manager-shell--dark .admin-theme {
+  --ink: #fffaf6;
+  --ink-soft: #e8ddd0;
+  --muted: #a89a8c;
+  --paper: #1c1714;
+  --champagne: #c9a87c;
+  --cocoa: #f0c987;
+  --white: #fffaf6;
+  --line: rgba(201, 168, 124, 0.28);
+  --color-ink: #fffaf6;
+  --color-ink-soft: #e8ddd0;
+  --color-muted: #a89a8c;
+  --color-paper: #1c1714;
+  --color-cream: #2a211c;
+  --color-champagne: #c9a87c;
+  --color-cocoa: #f0c987;
+  --color-white: #fffaf6;
+  --goal-ring-track: rgba(201, 168, 124, 0.22);
+  --goal-ring-progress: #c9a87c;
+  --goal-ring-on-track: #9fe3b8;
+  background:
+    radial-gradient(980px 460px at 92% -12%, rgba(240, 201, 135, 0.2), transparent 55%),
+    radial-gradient(760px 400px at 0% 100%, rgba(110, 74, 56, 0.42), transparent 52%),
+    linear-gradient(180deg, #261e19 0%, #1c1714 46%, #12100e 100%);
+  color: #fffaf6;
+  color-scheme: dark;
+}
+
+html.manager-shell--dark .admin-theme .btn-solid {
+  background: linear-gradient(180deg, #f0c987 0%, #c9a87c 100%);
+  color: #1c1714 !important;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+}
+
+html.manager-shell--dark .admin-theme .btn-solid:hover {
+  background: linear-gradient(180deg, #f6d6a0 0%, #d4b48a 100%);
+  color: #1c1714 !important;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.42);
+}
+
+html.manager-shell--dark .admin-theme header.admin-header {
+  background: rgba(22, 18, 16, 0.9);
+  border-bottom: 1px solid rgba(201, 168, 124, 0.28);
+  box-shadow: 0 1px 0 rgba(255, 250, 246, 0.04), 0 12px 28px rgba(0, 0, 0, 0.28);
+}
+
+html.manager-shell--dark .admin-theme .admin-nav a,
+html.manager-shell--dark .admin-theme .admin-nav button {
+  color: rgba(255, 250, 246, 0.68);
+}
+
+html.manager-shell--dark .admin-theme .admin-nav a:hover,
+html.manager-shell--dark .admin-theme .admin-nav button:hover {
+  color: #f0c987;
+  background: rgba(201, 168, 124, 0.1);
+}
+
+html.manager-shell--dark .admin-theme .admin-nav a.is-active,
+html.manager-shell--dark .admin-theme .admin-nav button.is-active {
+  color: #f0c987;
+  background: rgba(201, 168, 124, 0.16);
+}
+
+html.manager-shell--dark .admin-theme .admin-nav a.is-active::after,
+html.manager-shell--dark .admin-theme .admin-nav button.is-active::after {
+  background: #f0c987;
+}
+
+html.manager-shell--dark .admin-theme .admin-salon-dropdown {
+  background: #241c18;
+  border-color: rgba(201, 168, 124, 0.35);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+
+html.manager-shell--dark .admin-theme .admin-salon-dropdown a {
+  color: #fffaf6 !important;
+}
+
+html.manager-shell--dark .admin-theme .admin-salon-dropdown a:hover {
+  background: rgba(201, 168, 124, 0.16);
+  color: #f0c987 !important;
+}
+
+html.manager-shell--dark .admin-theme .admin-bottom-nav {
+  background: rgba(18, 15, 13, 0.96);
+  border-top: 1px solid rgba(201, 168, 124, 0.3);
+  box-shadow: 0 -10px 28px rgba(0, 0, 0, 0.35);
+}
+
+html.manager-shell--dark .admin-theme .admin-bottom-nav a,
+html.manager-shell--dark .admin-theme .admin-bottom-nav button {
+  color: rgba(255, 250, 246, 0.62);
+}
+
+html.manager-shell--dark .admin-theme .admin-bottom-nav a.active,
+html.manager-shell--dark .admin-theme .admin-bottom-nav button.active {
+  background: rgba(201, 168, 124, 0.18);
+  color: #f0c987;
+}
+
+html.manager-shell--dark .admin-theme .admin-salon-sheet-backdrop {
+  background: rgba(0, 0, 0, 0.62);
+}
+
+html.manager-shell--dark .admin-theme .admin-salon-sheet-panel {
+  background: #241c18;
+  border-color: rgba(201, 168, 124, 0.35);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+}
+
+html.manager-shell--dark .admin-theme .admin-salon-sheet-link {
+  border-color: rgba(201, 168, 124, 0.22);
+  background: rgba(201, 168, 124, 0.08);
+}
+
+html.manager-shell--dark .admin-theme .admin-salon-sheet-link:hover {
+  border-color: rgba(201, 168, 124, 0.45);
+  background: rgba(201, 168, 124, 0.14);
+}
+
+html.manager-shell--dark .admin-theme input,
+html.manager-shell--dark .admin-theme select,
+html.manager-shell--dark .admin-theme textarea {
+  background: #15110f !important;
+  color: #fffaf6 !important;
+  border-color: rgba(201, 168, 124, 0.35) !important;
+}
+
+html.manager-shell--dark .admin-theme input[type="date"],
+html.manager-shell--dark .admin-theme input[type="datetime-local"],
+html.manager-shell--dark .admin-theme .admin-date-input {
+  color-scheme: dark;
+  background: #15110f;
+  color: #fffaf6;
+}
+
+html.manager-shell--dark .admin-theme input::placeholder,
+html.manager-shell--dark .admin-theme textarea::placeholder {
+  color: rgba(168, 154, 140, 0.85);
+}
+
+html.manager-shell--dark .admin-theme input:focus,
+html.manager-shell--dark .admin-theme select:focus,
+html.manager-shell--dark .admin-theme textarea:focus {
+  border-color: rgba(240, 201, 135, 0.65) !important;
+  box-shadow: 0 0 0 3px rgba(201, 168, 124, 0.18);
+}
+
+html.manager-shell--dark .admin-theme option {
+  background: #1c1714;
+  color: #fffaf6;
+}
+
+html.manager-shell--dark .admin-theme .border-ink,
+html.manager-shell--dark .admin-theme .border-ink\/10,
+html.manager-shell--dark .admin-theme .border-ink\/15,
+html.manager-shell--dark .admin-theme .border-ink\/20,
+html.manager-shell--dark .admin-theme .border-ink\/30 {
+  border-color: rgba(201, 168, 124, 0.28) !important;
+}
+
+html.manager-shell--dark .admin-theme .divide-ink\/10 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgba(201, 168, 124, 0.18);
+}
+
+html.manager-shell--dark .admin-theme .bg-white {
+  background-color: #2a211c !important;
+}
+
+html.manager-shell--dark .admin-theme .bg-cream {
+  background-color: #241c18 !important;
+}
+
+html.manager-shell--dark .admin-theme h1,
+html.manager-shell--dark .admin-theme h2,
+html.manager-shell--dark .admin-theme h3 {
+  color: #fffaf6;
+}
+
+html.manager-shell--dark .admin-theme .text-muted {
+  color: #a89a8c !important;
+}
+
+html.manager-shell--dark .admin-theme .text-cocoa,
+html.manager-shell--dark .admin-theme .text-champagne {
+  color: #f0c987 !important;
+}
+
+html.manager-shell--dark .admin-theme .admin-stat-card {
+  border: 1px solid rgba(201, 168, 124, 0.28);
+  background: linear-gradient(160deg, #322821 0%, #241c18 55%, #1c1714 100%);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.32);
+}
+
+html.manager-shell--dark .admin-theme .admin-stat-card:hover {
+  border-color: rgba(240, 201, 135, 0.5);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.4);
+}
+
+html.manager-shell--dark .admin-theme .admin-stat-card.admin-hero-card {
+  border-color: rgba(240, 201, 135, 0.38);
+  background:
+    radial-gradient(560px 220px at 0% 0%, rgba(240, 201, 135, 0.16), transparent 55%),
+    linear-gradient(165deg, #3a2c24 0%, #2a211c 50%, #1c1714 100%);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.4);
+}
+
+html.manager-shell--dark .admin-theme .admin-stat-icon {
+  background: rgba(201, 168, 124, 0.16);
+  color: #f0c987;
+}
+
+html.manager-shell--dark .admin-theme .admin-text-link {
+  color: #f0c987 !important;
+  text-decoration-color: rgba(240, 201, 135, 0.4);
+}
+
+html.manager-shell--dark .admin-theme .admin-text-link:hover {
+  text-decoration-color: #f0c987;
+}
+
+html.manager-shell--dark .admin-theme .admin-pill {
+  border-color: rgba(201, 168, 124, 0.35);
+  background: rgba(201, 168, 124, 0.12);
+  color: #f0c987;
+}
+
+html.manager-shell--dark .admin-theme .manager-profile-card {
+  background:
+    linear-gradient(165deg, rgba(240, 201, 135, 0.14) 0%, rgba(42, 33, 28, 0.98) 42%, #241c18 100%);
+  border-color: rgba(201, 168, 124, 0.32);
+}
+
+html.manager-shell:not(.manager-shell--dark) .admin-theme .manager-profile-card {
+  background:
+    linear-gradient(165deg, rgba(125, 97, 84, 0.12) 0%, rgba(255, 252, 249, 0.98) 42%, #ffffff 100%);
+}
+
+html.manager-shell--dark .admin-theme .earnings-hero {
+  background: linear-gradient(160deg, #3a2c24 0%, #2a211c 55%, #1c1714 100%);
+  border: 1px solid rgba(201, 168, 124, 0.32);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+}
+
+html.manager-shell--dark .admin-theme .earnings-goal-progress {
+  stroke: #c9a87c;
+  filter: drop-shadow(0 0 6px rgba(240, 201, 135, 0.25));
+}
+
+html.manager-shell--dark .admin-theme .earnings-week-nav {
+  border: 1px solid rgba(201, 168, 124, 0.4);
+  background: rgba(201, 168, 124, 0.12);
+  color: #f0c987;
+}
+
+html.manager-shell--dark .admin-theme .earnings-stat {
+  border: 1px solid rgba(201, 168, 124, 0.28);
+  background: rgba(42, 33, 28, 0.95);
+}
+
+/* Remap cream-page arbitrary colors so dark mode covers existing Manager screens */
+html.manager-shell--dark .admin-theme .text-\[\#2b2521\],
+html.manager-shell--dark .admin-theme .text-\[\#3d342e\] {
+  color: #fffaf6 !important;
+}
+html.manager-shell--dark .admin-theme .text-\[\#7d6154\],
+html.manager-shell--dark .admin-theme .text-\[\#8c6f5a\] {
+  color: #c9a87c !important;
+}
+html.manager-shell--dark .admin-theme .text-\[\#6b5b52\],
+html.manager-shell--dark .admin-theme .text-\[\#5c4f47\],
+html.manager-shell--dark .admin-theme .text-\[\#8a7a70\] {
+  color: #a89a8c !important;
+}
+html.manager-shell--dark .admin-theme .text-\[\#c47a4a\],
+html.manager-shell--dark .admin-theme .text-\[\#8a5530\] {
+  color: #f0c987 !important;
+}
+html.manager-shell--dark .admin-theme .text-\[\#2f7a4f\] {
+  color: #9fe3b8 !important;
+}
+html.manager-shell--dark .admin-theme .text-\[\#b54a3c\] {
+  color: #f5a8a8 !important;
+}
+html.manager-shell--dark .admin-theme .bg-\[\#ffffff\],
+html.manager-shell--dark .admin-theme .bg-\[\#fffcf9\],
+html.manager-shell--dark .admin-theme .bg-\[\#faf6f1\],
+html.manager-shell--dark .admin-theme .bg-\[\#f7f1ea\] {
+  background-color: #2a211c !important;
+}
+html.manager-shell--dark .admin-theme .bg-\[\#f8efe6\],
+html.manager-shell--dark .admin-theme .bg-\[\#e7f3eb\],
+html.manager-shell--dark .admin-theme .bg-\[\#efeae4\] {
+  background-color: rgba(201, 168, 124, 0.12) !important;
+}
+html.manager-shell--dark .admin-theme .border-\[\#7d6154\],
+html.manager-shell--dark .admin-theme .border-\[\#7d6154\]\/10,
+html.manager-shell--dark .admin-theme .border-\[\#7d6154\]\/12,
+html.manager-shell--dark .admin-theme .border-\[\#7d6154\]\/15,
+html.manager-shell--dark .admin-theme .border-\[\#7d6154\]\/18,
+html.manager-shell--dark .admin-theme .border-\[\#7d6154\]\/20,
+html.manager-shell--dark .admin-theme .border-\[\#7d6154\]\/25,
+html.manager-shell--dark .admin-theme .border-\[\#7d6154\]\/28,
+html.manager-shell--dark .admin-theme .border-\[\#7d6154\]\/30,
+html.manager-shell--dark .admin-theme .border-\[\#7d6154\]\/35,
+html.manager-shell--dark .admin-theme .border-\[\#7d6154\]\/40,
+html.manager-shell--dark .admin-theme .border-\[\#7d6154\]\/45,
+html.manager-shell--dark .admin-theme .border-\[\#7d6154\]\/50 {
+  border-color: rgba(201, 168, 124, 0.35) !important;
+}
+html.manager-shell--dark .admin-theme .divide-\[\#7d6154\]\/12 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgba(201, 168, 124, 0.18);
+}
+html.manager-shell--dark .admin-theme .ring-\[\#7d6154\],
+html.manager-shell--dark .admin-theme .ring-\[\#7d6154\]\/25,
+html.manager-shell--dark .admin-theme .ring-\[\#7d6154\]\/40,
+html.manager-shell--dark .admin-theme .ring-\[\#7d6154\]\/55 {
+  --tw-ring-color: rgba(201, 168, 124, 0.45) !important;
+}
+html.manager-shell--dark .admin-theme .bg-\[\#7d6154\]\/10,
+html.manager-shell--dark .admin-theme .bg-\[\#7d6154\]\/12,
+html.manager-shell--dark .admin-theme .bg-\[\#7d6154\]\/20,
+html.manager-shell--dark .admin-theme .bg-\[rgba\(125\,97\,84\,0\.08\)\],
+html.manager-shell--dark .admin-theme .bg-\[rgba\(125\,97\,84\,0\.1\)\],
+html.manager-shell--dark .admin-theme .bg-\[rgba\(125\,97\,84\,0\.12\)\] {
+  background-color: rgba(201, 168, 124, 0.14) !important;
+}
+html.manager-shell--dark .admin-theme .bg-\[\#fffcf9\]\/80 {
+  background-color: rgba(42, 33, 28, 0.85) !important;
+}
+html.manager-shell--dark .admin-theme .text-\[\#7d6154\]\/40,
+html.manager-shell--dark .admin-theme .text-\[\#7d6154\]\/90 {
+  color: rgba(240, 201, 135, 0.75) !important;
+}
+html.manager-shell--dark .admin-theme .hover\:bg-\[\#faf6f1\]:hover,
+html.manager-shell--dark .admin-theme .hover\:bg-\[\#7d6154\]\/10:hover,
+html.manager-shell--dark .admin-theme .hover\:bg-\[\#7d6154\]\/12:hover,
+html.manager-shell--dark .admin-theme .hover\:bg-\[\#7d6154\]\/20:hover {
+  background-color: rgba(201, 168, 124, 0.12) !important;
+}
+
+/* Undo light remaps that force cream onto dark hex utilities */
+html.manager-shell--dark .admin-theme .text-\[\#fffaf6\],
+html.manager-shell--dark .admin-theme .text-\[\#FFFAf6\] {
+  color: #fffaf6 !important;
+}
+html.manager-shell--dark .admin-theme .text-\[\#f0c987\],
+html.manager-shell--dark .admin-theme .text-\[\#c9a87c\] {
+  color: #f0c987 !important;
+}
+html.manager-shell--dark .admin-theme .text-\[\#d4c4b0\],
+html.manager-shell--dark .admin-theme .text-\[\#a89a8c\],
+html.manager-shell--dark .admin-theme .text-\[\#e8ddd0\] {
+  color: #a89a8c !important;
+}
+html.manager-shell--dark .admin-theme .text-\[\#9fe3b8\] {
+  color: #9fe3b8 !important;
+}
+html.manager-shell--dark .admin-theme .bg-\[\#1c1714\],
+html.manager-shell--dark .admin-theme .bg-\[\#241c18\],
+html.manager-shell--dark .admin-theme .bg-\[\#15110f\] {
+  background-color: #1c1714 !important;
+}
+html.manager-shell--dark .admin-theme .bg-\[\#2a211c\],
+html.manager-shell--dark .admin-theme .bg-\[\#3d2b22\],
+html.manager-shell--dark .admin-theme .bg-\[\#3a2a22\] {
+  background-color: #2a211c !important;
+}
+html.manager-shell--dark .admin-theme .border-\[\#c9a87c\],
+html.manager-shell--dark .admin-theme .border-\[\#f0c987\] {
+  border-color: #c9a87c !important;
+}
+html.manager-shell--dark .admin-theme .ring-\[\#c9a87c\],
+html.manager-shell--dark .admin-theme .ring-\[\#f0c987\] {
+  --tw-ring-color: rgba(240, 201, 135, 0.5) !important;
+}
+html.manager-shell--dark .admin-theme .shadow-\[0_12px_40px_rgba\(0\,0\,0\,0\.25\)\],
+html.manager-shell--dark .admin-theme .shadow-\[0_12px_40px_rgba\(0\,0\,0\,0\.35\)\],
+html.manager-shell--dark .admin-theme .shadow-\[0_16px_40px_rgba\(0\,0\,0\,0\.35\)\] {
+  --tw-shadow: 0 12px 40px rgba(0, 0, 0, 0.4) !important;
+  box-shadow: var(--tw-shadow) !important;
 }

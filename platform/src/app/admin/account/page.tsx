@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { SelfieCamera } from "@/components/SelfieCamera";
 import { MANAGER_DEFAULT_AVATAR } from "@/lib/manager-photo";
+import { ManagerThemeToggle } from "../ManagerThemeToggle";
 
 async function loadImageElement(file: File): Promise<HTMLImageElement> {
   const url = URL.createObjectURL(file);
@@ -221,27 +222,28 @@ export default function AdminAccountPage() {
     <main className="mx-auto max-w-xl space-y-6">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="font-[family-name:var(--font-display)] text-3xl text-[#2b2521]">
+          <p className="text-xs font-semibold tracking-[0.2em] text-champagne uppercase">
+            Account
+          </p>
+          <h1 className="mt-1 font-[family-name:var(--font-display)] text-4xl leading-tight text-ink">
             Profile
           </h1>
-          <p className="mt-1 text-sm text-[#6b5b52]">Your salon manager identity and login.</p>
+          <p className="mt-1.5 text-sm text-muted">Your salon manager identity and login.</p>
         </div>
         <button
           type="button"
           onClick={logout}
-          className="shrink-0 rounded-full border border-[#7d6154]/45 px-4 py-2 text-sm font-semibold text-[#7d6154] hover:bg-[#7d6154]/10"
+          className="shrink-0 rounded-full border border-[color:var(--champagne)]/45 px-4 py-2 text-sm font-semibold text-champagne hover:bg-[color:var(--champagne)]/10"
         >
           Log out
         </button>
       </div>
 
+      <ManagerThemeToggle />
+
       <section
-        className="overflow-hidden rounded-3xl border border-[#7d6154]/30"
+        className="manager-profile-card overflow-hidden rounded-3xl border border-[color:var(--line)]"
         data-testid="manager-profile-card"
-        style={{
-          background:
-            "linear-gradient(165deg, rgba(125,97,84,0.12) 0%, rgba(255,252,249,0.98) 42%, #ffffff 100%)",
-        }}
       >
         <div className="px-5 pb-5 pt-7 sm:px-6">
           <div className="flex flex-col items-center text-center">

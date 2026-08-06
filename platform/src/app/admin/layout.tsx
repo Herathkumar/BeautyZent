@@ -4,6 +4,7 @@ import { AppOpenSplash } from "@/components/AppOpenSplash";
 import { getSession, isSalonStaff } from "@/lib/auth";
 import { AdminBottomNav } from "./AdminBottomNav";
 import { AdminHeaderNav } from "./AdminHeaderNav";
+import { ManagerThemeRoot } from "./ManagerThemeRoot";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +40,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const showChrome = isSalonStaff(session?.role);
 
   return (
-    <div className={showChrome ? "admin-theme admin-app-shell" : "admin-theme min-h-screen"}>
+    <ManagerThemeRoot showChrome={Boolean(showChrome)}>
       <AppOpenSplash variant="manager" />
       {showChrome ? (
         <header className="admin-header shrink-0 z-20">
@@ -58,14 +59,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           {/* Desktop */}
           <div className="mx-auto hidden max-w-5xl flex-wrap items-center justify-between gap-3 px-6 py-4 md:flex">
             <div>
-              <p className="text-[11px] font-semibold tracking-[0.2em] text-[#7d6154] uppercase">
+              <p className="text-[11px] font-semibold tracking-[0.2em] text-champagne uppercase">
                 Dundas, Ontario
               </p>
               <Link
                 href="/manager"
-                className="font-[family-name:var(--font-display)] text-2xl text-[#2b2521]"
+                className="font-[family-name:var(--font-display)] text-2xl text-ink"
               >
-                Farzana <span className="text-[#7d6154]">Hair Salon</span>
+                Farzana <span className="text-champagne">Hair Salon</span>
               </Link>
             </div>
             <AdminHeaderNav />
@@ -80,6 +81,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         {children}
       </div>
       {showChrome ? <AdminBottomNav /> : null}
-    </div>
+    </ManagerThemeRoot>
   );
 }
