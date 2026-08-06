@@ -2118,43 +2118,45 @@ html.stylist-shell--light .stylist-theme .ring-\[\#7ec4b8\] {
   --tw-ring-color: rgba(42, 143, 130, 0.45) !important;
 }
 
-/* Shared themed confirm dialog — cream panel on every shell */
+/* Shared confirm dialog — follows shell light/dark */
 .fh-confirm-dialog {
-  background: linear-gradient(165deg, #fffaf6 0%, #f7f1ea 55%, #f0e7dd 100%);
-  color: #2b2521;
-  border: 1px solid rgba(196, 122, 74, 0.28);
+  background: linear-gradient(165deg, #2a2126 0%, #1f181c 55%, #181216 100%);
+  color: #fffaf6;
+  border: 1px solid rgba(232, 180, 162, 0.35);
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.55);
 }
 
 .fh-confirm-title {
-  color: #2b2521;
+  color: #fffaf6;
 }
 
 .fh-confirm-message {
-  color: #5c4f47;
+  color: rgba(255, 250, 246, 0.72);
 }
 
 .fh-confirm-cancel {
-  border: 1px solid rgba(125, 97, 84, 0.35);
-  background: rgba(255, 255, 255, 0.65);
-  color: #5c4f47;
+  border: 1px solid rgba(232, 180, 162, 0.4);
+  background: rgba(255, 255, 255, 0.06);
+  color: #f2c4b0;
 }
 
 .fh-confirm-cancel:hover {
-  background: #fff;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .fh-confirm-ok {
-  background: linear-gradient(135deg, #d4895c 0%, #c47a4a 100%);
-  color: #fffaf6;
-  box-shadow: 0 8px 20px rgba(196, 122, 74, 0.28);
+  background: linear-gradient(135deg, #e8b4a2 0%, #d4895c 100%);
+  color: #1c1714;
+  box-shadow: 0 8px 20px rgba(232, 180, 162, 0.22);
 }
 
 .fh-confirm-ok:hover {
-  background: linear-gradient(135deg, #e0986c 0%, #d4895c 100%);
+  background: linear-gradient(135deg, #f2c4b0 0%, #e0986c 100%);
 }
 
 .fh-confirm-ok--danger {
   background: linear-gradient(135deg, #c45c5c 0%, #a84444 100%);
+  color: #fffaf6;
   box-shadow: 0 8px 20px rgba(168, 68, 68, 0.28);
 }
 
@@ -2162,10 +2164,59 @@ html.stylist-shell--light .stylist-theme .ring-\[\#7ec4b8\] {
   background: linear-gradient(135deg, #d46a6a 0%, #b85252 100%);
 }
 
-/* Dark manager / book / display: slightly richer panel */
-html.manager-shell--dark .fh-confirm-dialog,
-html.book-shell:not(.book-shell--light) .fh-confirm-dialog,
-html.stylist-shell:not(.stylist-shell--light) .fh-confirm-dialog {
-  border-color: rgba(240, 201, 135, 0.35);
-  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.55);
+/* Light shells — cream panel */
+html.paper-shell .fh-confirm-dialog,
+html.manager-shell:not(.manager-shell--dark) .fh-confirm-dialog,
+html.book-shell.book-shell--light .fh-confirm-dialog,
+html.stylist-shell.stylist-shell--light .fh-confirm-dialog {
+  background: linear-gradient(165deg, #fffaf6 0%, #f7f1ea 55%, #f0e7dd 100%);
+  color: #2b2521;
+  border: 1px solid rgba(196, 122, 74, 0.28);
+  box-shadow: 0 24px 80px rgba(43, 37, 33, 0.18);
+}
+
+html.paper-shell .fh-confirm-title,
+html.manager-shell:not(.manager-shell--dark) .fh-confirm-title,
+html.book-shell.book-shell--light .fh-confirm-title,
+html.stylist-shell.stylist-shell--light .fh-confirm-title {
+  color: #2b2521;
+}
+
+html.paper-shell .fh-confirm-message,
+html.manager-shell:not(.manager-shell--dark) .fh-confirm-message,
+html.book-shell.book-shell--light .fh-confirm-message,
+html.stylist-shell.stylist-shell--light .fh-confirm-message {
+  color: #5c4f47;
+}
+
+html.paper-shell .fh-confirm-cancel,
+html.manager-shell:not(.manager-shell--dark) .fh-confirm-cancel,
+html.book-shell.book-shell--light .fh-confirm-cancel,
+html.stylist-shell.stylist-shell--light .fh-confirm-cancel {
+  border: 1px solid rgba(125, 97, 84, 0.35);
+  background: rgba(255, 255, 255, 0.65);
+  color: #5c4f47;
+}
+
+html.paper-shell .fh-confirm-cancel:hover,
+html.manager-shell:not(.manager-shell--dark) .fh-confirm-cancel:hover,
+html.book-shell.book-shell--light .fh-confirm-cancel:hover,
+html.stylist-shell.stylist-shell--light .fh-confirm-cancel:hover {
+  background: #fff;
+}
+
+html.paper-shell .fh-confirm-ok,
+html.manager-shell:not(.manager-shell--dark) .fh-confirm-ok,
+html.book-shell.book-shell--light .fh-confirm-ok,
+html.stylist-shell.stylist-shell--light .fh-confirm-ok {
+  background: linear-gradient(135deg, #d4895c 0%, #c47a4a 100%);
+  color: #fffaf6;
+  box-shadow: 0 8px 20px rgba(196, 122, 74, 0.28);
+}
+
+html.paper-shell .fh-confirm-ok:hover,
+html.manager-shell:not(.manager-shell--dark) .fh-confirm-ok:hover,
+html.book-shell.book-shell--light .fh-confirm-ok:hover,
+html.stylist-shell.stylist-shell--light .fh-confirm-ok:hover {
+  background: linear-gradient(135deg, #e0986c 0%, #d4895c 100%);
 }
