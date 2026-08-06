@@ -67,17 +67,27 @@ export default async function AdminHome() {
   const bookingsTotal = bookingsBySource.reduce((n, r) => n + r._count._all, 0);
 
   return (
-    <main>
-      <p className="text-xs font-semibold tracking-[0.2em] text-[#7d6154] uppercase">
-        Dashboard
-      </p>
-      <h1 className="mt-2 font-[family-name:var(--font-display)] text-4xl text-[#2b2521]">
-        {salon.name}
-      </h1>
-      <p className="mt-2 text-muted">Welcome, {session.name}</p>
+    <main className="space-y-5">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold tracking-[0.2em] text-[#7d6154] uppercase">
+            Dashboard
+          </p>
+          <h1 className="mt-1 font-[family-name:var(--font-display)] text-4xl leading-tight text-[#2b2521]">
+            {salon.name}
+          </h1>
+          <p className="mt-1.5 text-sm text-muted">Welcome, {session.name}</p>
+        </div>
+        <Link
+          href="/manager/appointments"
+          className="btn-solid rounded-full px-5 py-2.5 text-sm font-semibold"
+        >
+          Open bookings
+        </Link>
+      </div>
 
       {pendingLeaveCount > 0 ? (
-        <p className="mt-3 rounded-xl border border-[#7d6154]/35 bg-[#f3ebe3] px-4 py-2 text-sm text-[#7d6154]">
+        <p className="rounded-xl border border-[#c47a4a]/35 bg-[#f8efe6] px-4 py-2.5 text-sm font-medium text-[#8a5530]">
           {pendingLeaveCount} leave request{pendingLeaveCount === 1 ? "" : "s"} awaiting your
           approval — review below.
         </p>
@@ -87,46 +97,60 @@ export default async function AdminHome() {
 
       <DashboardStoreEarnings salonId={session.salonId} />
 
-      <DashboardFloorToday salonId={session.salonId} />
-
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Link
           href="/manager/appointments"
-          className="admin-stat-card rounded-2xl p-5"
+          className="admin-stat-card rounded-2xl p-4"
           data-testid="dashboard-todays-bookings"
         >
-          <p className="text-sm text-[#7d6154]">Today&apos;s bookings</p>
-          <p className="mt-2 font-[family-name:var(--font-display)] text-3xl text-[#2b2521]">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs font-semibold tracking-[0.14em] text-[#7d6154] uppercase">
+              Today&apos;s bookings
+            </p>
+            <span className="admin-stat-icon" aria-hidden>
+              ◉
+            </span>
+          </div>
+          <p className="mt-2 font-[family-name:var(--font-display)] text-4xl leading-none text-[#2b2521]">
             {bookingsTotal}
           </p>
           <ul className="mt-3 space-y-1 text-sm text-muted">
             <li className="flex justify-between gap-2">
               <span>Online</span>
-              <span className="text-[#2b2521]">{onlineToday}</span>
+              <span className="font-semibold text-[#2b2521]">{onlineToday}</span>
             </li>
             <li className="flex justify-between gap-2">
               <span>Walk-in</span>
-              <span className="text-[#2b2521]">{walkInToday}</span>
+              <span className="font-semibold text-[#2b2521]">{walkInToday}</span>
             </li>
             <li className="flex justify-between gap-2">
               <span>Waitlist</span>
-              <span className="text-[#7d6154]">{waitlistWaiting}</span>
+              <span className="font-semibold text-[#c47a4a]">{waitlistWaiting}</span>
             </li>
           </ul>
         </Link>
         {[
-          { label: "Active services", value: services, href: "/manager/services" },
-          { label: "Products", value: products, href: "/manager/products" },
-          { label: "Stylists", value: stylists, href: "/manager/stylists" },
+          { label: "Active services", value: services, href: "/manager/services", icon: "✂" },
+          { label: "Products", value: products, href: "/manager/products", icon: "▣" },
+          { label: "Stylists", value: stylists, href: "/manager/stylists", icon: "◇" },
         ].map((card) => (
-          <Link key={card.label} href={card.href} className="admin-stat-card rounded-2xl p-5">
-            <p className="text-sm text-[#7d6154]">{card.label}</p>
-            <p className="mt-2 font-[family-name:var(--font-display)] text-3xl text-[#2b2521]">
+          <Link key={card.label} href={card.href} className="admin-stat-card rounded-2xl p-4">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-semibold tracking-[0.14em] text-[#7d6154] uppercase">
+                {card.label}
+              </p>
+              <span className="admin-stat-icon" aria-hidden>
+                {card.icon}
+              </span>
+            </div>
+            <p className="mt-3 font-[family-name:var(--font-display)] text-4xl leading-none text-[#2b2521]">
               {card.value}
             </p>
           </Link>
         ))}
       </div>
+
+      <DashboardFloorToday salonId={session.salonId} />
     </main>
   );
 }

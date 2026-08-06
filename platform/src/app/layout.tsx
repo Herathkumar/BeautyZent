@@ -16,8 +16,8 @@ html.paper-shell,html.paper-shell body{
   color:#1c1714
 }
 html.manager-shell,html.manager-shell body{
-  background:radial-gradient(1000px 480px at 12% -8%,rgba(125,97,84,.08),transparent 55%),
-    linear-gradient(180deg,#fdf8f3 0%,#f7f1ea 55%,#f3ebe3 100%);
+  background:radial-gradient(1000px 480px at 12% -8%,rgba(125,97,84,.1),transparent 55%),
+    linear-gradient(180deg,#f7f1ea 0%,#f3ebe3 48%,#ebe2d8 100%);
   color:#2b2521
 }
 `;

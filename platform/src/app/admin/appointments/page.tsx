@@ -38,11 +38,11 @@ function statusLabel(status: string) {
 function statusClass(status: string) {
   switch (status) {
     case "NO_SHOW":
-      return "text-[#f5a8a8]";
+      return "text-[#b54a3c]";
     case "COMPLETED":
-      return "text-[#9fe3b8]";
+      return "text-[#2f7a4f]";
     case "CANCELLED":
-      return "text-[#6b5b52]";
+      return "text-[#8a7a70]";
     case "CHECKED_IN":
       return "text-[#7d6154]";
     default:
@@ -130,36 +130,41 @@ export default function AppointmentsAdminPage() {
           : "Next 14 days";
 
   return (
-    <main className="space-y-6">
+    <main className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-[family-name:var(--font-display)] text-3xl">Bookings</h1>
-          <p className="text-muted">{rangeHint} across stylists.</p>
+          <p className="text-xs font-semibold tracking-[0.2em] text-[#7d6154] uppercase">
+            Schedule
+          </p>
+          <h1 className="mt-1 font-[family-name:var(--font-display)] text-4xl leading-tight text-[#2b2521]">
+            Bookings
+          </h1>
+          <p className="mt-1.5 text-sm text-muted">{rangeHint} across stylists.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Link
             href="/manager/display"
-            className="btn-solid rounded-full px-4 py-2.5 text-sm"
+            className="btn-solid rounded-full px-4 py-2.5 text-sm font-semibold"
             data-testid="bookings-store-display"
           >
             Store display
           </Link>
           <Link
             href="/manager/walk-in"
-            className="rounded-full border border-[#7d6154]/45 px-4 py-2.5 text-sm text-[#7d6154]"
+            className="rounded-full border border-[#7d6154]/35 bg-[rgba(125,97,84,0.08)] px-4 py-2.5 text-sm font-semibold text-[#7d6154]"
           >
             Add walk-in
           </Link>
           <Link
             href="/manager/book"
-            className="rounded-full border border-[#7d6154]/45 px-4 py-2.5 text-sm text-[#7d6154]"
+            className="rounded-full border border-[#7d6154]/35 bg-[rgba(125,97,84,0.08)] px-4 py-2.5 text-sm font-semibold text-[#7d6154]"
           >
             Book for client
           </Link>
         </div>
       </div>
 
-      <div className="grid gap-3 rounded-2xl border border-[#7d6154]/25 bg-[#ffffff] p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="admin-stat-card grid gap-3 rounded-2xl p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <label className="grid gap-1 text-xs font-semibold tracking-wide text-[#7d6154] uppercase">
           Stylist
           <select
@@ -270,26 +275,28 @@ export default function AppointmentsAdminPage() {
             setMonth("");
             setDay("");
           }}
-          className="rounded-full border border-[#7d6154]/40 px-3 py-1.5 text-sm text-[#7d6154]"
+          className="admin-pill px-3 py-1.5 text-sm"
         >
           Reset filters
         </button>
-        {message ? <p className="text-sm text-[#7d6154]">{message}</p> : null}
+        {message ? <p className="text-sm font-medium text-[#7d6154]">{message}</p> : null}
       </div>
 
-      <div className="divide-y divide-ink/10 rounded-2xl border border-ink/10 bg-cream">
+      <div className="overflow-hidden rounded-2xl border border-[#7d6154]/18 bg-white shadow-[0_10px_28px_rgba(43,37,33,0.06)]">
         {loading ? (
           <p className="px-4 py-8 text-muted">Loading bookings…</p>
         ) : null}
         {!loading && appointments.length === 0 ? (
           <p className="px-4 py-8 text-muted">No bookings match these filters.</p>
         ) : null}
-        {appointments.map((a) => {
+        {appointments.map((a, i) => {
           const open = a.status === "BOOKED" || a.status === "CHECKED_IN";
           return (
             <div
               key={a.id}
-              className="grid gap-2 px-4 py-3 sm:grid-cols-[180px_1fr_auto] sm:items-center"
+              className={`grid gap-2 border-b border-[#7d6154]/12 px-4 py-3 last:border-b-0 sm:grid-cols-[180px_1fr_auto] sm:items-center ${
+                i % 2 === 1 ? "bg-[#fffcf9]" : "bg-white"
+              }`}
             >
               <div>
                 <p className="font-medium">
@@ -338,7 +345,7 @@ export default function AppointmentsAdminPage() {
                     type="button"
                     disabled={busyId === a.id}
                     onClick={() => markNoShow(a.id)}
-                    className="rounded-full border border-[rgba(245,168,168,0.45)] px-3 py-1.5 text-xs font-semibold text-[#f5a8a8] hover:bg-[rgba(245,168,168,0.08)]"
+                    className="rounded-full border border-[#b54a3c]/40 px-3 py-1.5 text-xs font-semibold text-[#b54a3c] hover:bg-[#b54a3c]/08"
                   >
                     {busyId === a.id ? "Saving…" : "Mark no-show"}
                   </button>

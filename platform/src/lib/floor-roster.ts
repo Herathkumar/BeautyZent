@@ -12,6 +12,7 @@ type Interval = { start: Date; end: Date };
 export type FloorRosterEntry = {
   id: string;
   name: string;
+  color: string;
   phone: string | null;
   email: string | null;
   status: "WORKING" | "PARTIAL" | "AWAY" | "OFF";
@@ -245,6 +246,7 @@ export async function getFloorRoster(opts: {
     return {
       id: s.id,
       name: s.name,
+      color: s.color || "#7d6154",
       phone: s.user?.phone?.trim() || null,
       email: s.user?.email?.trim() || null,
       status,
