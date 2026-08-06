@@ -145,10 +145,8 @@ export default function StylistHomePage() {
     const active = ["BOOKED", "CHECKED_IN"].includes(a.status);
     return (
       <article
-        className={`rounded-2xl border p-4 ${
-          emphasize
-            ? "border-[rgba(181, 235, 224,0.55)] bg-[linear-gradient(135deg,#3d2b22_0%,#1a282c_100%)]"
-            : "border-ink/15 bg-cream"
+        className={`stylist-appt-card rounded-2xl border p-4 ${
+          emphasize ? "stylist-appt-card--focus" : ""
         }`}
       >
         <div className="flex items-start justify-between gap-3">
@@ -159,7 +157,7 @@ export default function StylistHomePage() {
                 – {formatTime(a.endsAt)}
               </span>
             </p>
-            <p className="mt-1 text-xl font-semibold">
+            <p className="mt-1 text-xl font-semibold text-ink">
               {a.client.name}
               {a.source === "WALK_IN" ? (
                 <span
@@ -235,7 +233,7 @@ export default function StylistHomePage() {
                 type="button"
                 disabled={busyId === a.id}
                 onClick={() => setStatus(a.id, "COMPLETED", a.service.priceCents || 0)}
-                className={`stylist-tap rounded-2xl border border-ink/20 ${
+                className={`stylist-tap rounded-2xl border border-ink/20 text-ink ${
                   a.status === "CHECKED_IN" ? "btn-solid col-span-2" : ""
                 }`}
               >
@@ -305,7 +303,7 @@ export default function StylistHomePage() {
         </div>
       </header>
 
-      <section className="space-y-3 rounded-2xl border border-ink/15 bg-cream p-4">
+      <section className="stylist-appt-card space-y-3 rounded-2xl border p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">
@@ -356,7 +354,7 @@ export default function StylistHomePage() {
       <section className="space-y-3">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">Today</h2>
         {today.length === 0 ? (
-          <div className="rounded-2xl border border-ink/15 bg-cream px-4 py-8 text-center text-muted">
+          <div className="stylist-appt-card rounded-2xl border px-4 py-8 text-center text-muted">
             Nothing on the book for today.
           </div>
         ) : (
@@ -371,7 +369,7 @@ export default function StylistHomePage() {
           <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">
             Coming up
           </h2>
-          <div className="divide-y divide-ink/10 overflow-hidden rounded-2xl border border-ink/15 bg-cream">
+          <div className="stylist-appt-card divide-y divide-ink/10 overflow-hidden rounded-2xl border">
             {upcoming.slice(0, 12).map((a) => (
               <div key={a.id} className="flex items-center justify-between gap-3 px-4 py-3">
                 <div className="min-w-0">

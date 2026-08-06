@@ -248,23 +248,23 @@ function AwayMonthStrip({
       <div className="mb-3 flex items-center justify-between gap-2">
         <button
           type="button"
-          className="rounded-full border border-[#7ec4b8]/35 px-3 py-1.5 text-sm text-[#b5ebe0]"
+          className="rounded-full border border-[color:var(--line)] px-3 py-1.5 text-sm text-champagne"
           aria-label="Previous month"
           onClick={() => onMonthChange(new Date(year, mon - 1, 1))}
         >
           ‹
         </button>
-        <p className="font-[family-name:var(--font-display)] text-lg text-[#f4fbfa]">{label}</p>
+        <p className="font-[family-name:var(--font-display)] text-lg text-ink">{label}</p>
         <button
           type="button"
-          className="rounded-full border border-[#7ec4b8]/35 px-3 py-1.5 text-sm text-[#b5ebe0]"
+          className="rounded-full border border-[color:var(--line)] px-3 py-1.5 text-sm text-champagne"
           aria-label="Next month"
           onClick={() => onMonthChange(new Date(year, mon + 1, 1))}
         >
           ›
         </button>
       </div>
-      <div className="mb-1 grid grid-cols-7 gap-1 text-center text-[10px] font-semibold tracking-wide text-[#7ec4b8] uppercase">
+      <div className="mb-1 grid grid-cols-7 gap-1 text-center text-[10px] font-semibold tracking-wide text-champagne uppercase">
         {DAY_NAMES.map((d) => (
           <span key={d}>{d}</span>
         ))}
@@ -284,11 +284,11 @@ function AwayMonthStrip({
               className={[
                 "relative aspect-square rounded-xl text-sm font-semibold transition",
                 selected
-                  ? "bg-[#7ec4b8] text-[#0e1618]"
+                  ? "bg-[color:var(--champagne)] text-[color:var(--color-paper)]"
                   : isAway
-                    ? "bg-[#7ec4b8]/20 text-[#b5ebe0] ring-1 ring-[#7ec4b8]/40"
-                    : "bg-[#10181c] text-[#f4fbfa] hover:bg-[#7ec4b8]/12",
-                isToday && !selected ? "ring-1 ring-[#b5ebe0]/50" : "",
+                    ? "bg-[color:var(--champagne)]/20 text-champagne ring-1 ring-[color:var(--champagne)]/40"
+                    : "bg-[color:var(--color-cream)] text-ink hover:bg-[color:var(--champagne)]/12",
+                isToday && !selected ? "ring-1 ring-[color:var(--champagne)]/50" : "",
               ].join(" ")}
             >
               {d.getDate()}
@@ -665,7 +665,7 @@ export default function StylistOwnSchedulePage() {
         {showAwayForm ? (
           <form
             onSubmit={saveLeave}
-            className="mt-4 grid gap-3 rounded-2xl border border-[#7ec4b8]/25 bg-[#10181c]/70 p-4"
+            className="stylist-panel-inset mt-4 grid gap-3 rounded-2xl border p-4"
           >
             {editingId ? (
               <p className="text-sm text-[#b5ebe0]">Editing — fix times and save.</p>

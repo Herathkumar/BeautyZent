@@ -177,18 +177,18 @@ export default function StylistEarningsPage() {
       </header>
 
       {data?.paySettings ? (
-        <section className="rounded-2xl border border-[#7ec4b8]/25 bg-[#1a282c] px-4 py-3">
-          <p className="text-[10px] font-semibold tracking-[0.18em] text-[#7ec4b8] uppercase">
+        <section className="stylist-appt-card rounded-2xl border px-4 py-3">
+          <p className="text-[10px] font-semibold tracking-[0.18em] text-champagne uppercase">
             Your pay plan
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
             {(data.paySettings.payType === "HOURLY" ||
               data.paySettings.payType === "BOTH") && (
-              <div className="rounded-xl border border-[#7ec4b8]/25 bg-[#10181c] px-3 py-2">
+              <div className="stylist-panel-inset rounded-xl border px-3 py-2">
                 <p className="text-[10px] font-semibold tracking-wide text-muted uppercase">
                   Hourly rate
                 </p>
-                <p className="mt-0.5 text-lg font-bold text-[#b5ebe0]">
+                <p className="mt-0.5 text-lg font-bold text-champagne">
                   {data.paySettings.hourlyRateCents > 0
                     ? `$${centsToDollars(data.paySettings.hourlyRateCents)}/hr`
                     : "Not set"}
@@ -198,22 +198,22 @@ export default function StylistEarningsPage() {
             {(data.paySettings.payType === "COMMISSION" ||
               data.paySettings.payType === "BOTH" ||
               !["HOURLY", "BOTH"].includes(data.paySettings.payType)) && (
-              <div className="rounded-xl border border-[#7ec4b8]/25 bg-[#10181c] px-3 py-2">
+              <div className="stylist-panel-inset rounded-xl border px-3 py-2">
                 <p className="text-[10px] font-semibold tracking-wide text-muted uppercase">
                   Commission
                 </p>
-                <p className="mt-0.5 text-lg font-bold text-[#b5ebe0]">
+                <p className="mt-0.5 text-lg font-bold text-champagne">
                   {data.paySettings.commissionBps > 0
                     ? `${(data.paySettings.commissionBps / 100).toFixed(0)}%`
                     : "Not set"}
                 </p>
               </div>
             )}
-            <div className="rounded-xl border border-[#7ec4b8]/25 bg-[#10181c] px-3 py-2">
+            <div className="stylist-panel-inset rounded-xl border px-3 py-2">
               <p className="text-[10px] font-semibold tracking-wide text-muted uppercase">
                 Tips
               </p>
-              <p className="mt-0.5 text-lg font-bold text-[#9fe3b8]">100%</p>
+              <p className="mt-0.5 text-lg font-bold text-champagne">100%</p>
             </div>
           </div>
         </section>

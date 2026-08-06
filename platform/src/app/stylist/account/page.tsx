@@ -377,7 +377,7 @@ export default function StylistAccountPage() {
         {editingProfile ? (
           <form
             onSubmit={onSaveProfile}
-            className="grid gap-3 border-t border-[#7ec4b8]/20 bg-[#10181c]/55 px-5 py-5 sm:px-6"
+            className="grid gap-3 border-t border-[color:var(--line)] bg-[color:var(--color-cream)]/80 px-5 py-5 sm:px-6"
             data-testid="stylist-profile-editor"
           >
             <p className="text-xs font-semibold tracking-[0.16em] text-[#7ec4b8] uppercase">
@@ -483,7 +483,7 @@ export default function StylistAccountPage() {
         ) : null}
       </section>
 
-      <form onSubmit={onSave} className="grid gap-4 rounded-3xl border border-[#7ec4b8]/25 bg-[#1a282c] p-5">
+      <form onSubmit={onSave} className="stylist-appt-card grid gap-4 rounded-3xl border p-5">
         <div>
           <h2 className="font-[family-name:var(--font-display)] text-xl">Login</h2>
           <p className="mt-1 text-sm text-muted">Change your password. Email is updated under Edit profile.</p>

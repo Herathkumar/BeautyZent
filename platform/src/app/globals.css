@@ -1543,6 +1543,17 @@ html.manager-shell--dark .admin-theme .shadow-\[0_16px_40px_rgba\(0\,0\,0\,0\.35
     linear-gradient(165deg, rgba(126, 196, 184, 0.16) 0%, rgba(26, 40, 44, 0.95) 42%, #1a282c 100%);
 }
 
+.stylist-theme .stylist-appt-card {
+  border-color: rgba(126, 196, 184, 0.22);
+  background: #1a282c;
+}
+
+.stylist-theme .stylist-appt-card--focus {
+  border-color: rgba(181, 235, 224, 0.55);
+  background: linear-gradient(135deg, #243848 0%, #1a282c 100%);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+}
+
 .stylist-theme .stylist-btn-secondary {
   border: 1px solid rgba(126, 196, 184, 0.45);
   background: rgba(126, 196, 184, 0.1);
@@ -1754,6 +1765,18 @@ html.stylist-shell--light .stylist-theme .stylist-profile-card {
   background:
     linear-gradient(165deg, rgba(42, 143, 130, 0.12) 0%, rgba(247, 252, 251, 0.98) 42%, #ffffff 100%);
   border-color: rgba(42, 143, 130, 0.28);
+}
+
+html.stylist-shell--light .stylist-theme .stylist-appt-card {
+  border-color: rgba(42, 143, 130, 0.2);
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(14, 22, 24, 0.05);
+}
+
+html.stylist-shell--light .stylist-theme .stylist-appt-card--focus {
+  border-color: rgba(42, 143, 130, 0.38);
+  background: linear-gradient(145deg, #ffffff 0%, #f0faf7 55%, #e8f4f1 100%);
+  box-shadow: 0 12px 28px rgba(14, 22, 24, 0.07);
 }
 
 html.stylist-shell--light .stylist-theme .stylist-btn-secondary {
