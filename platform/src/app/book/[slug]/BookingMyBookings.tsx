@@ -97,7 +97,7 @@ export function BookingMyBookings({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full border border-white/15 px-3 py-1.5 text-sm text-muted"
+            className="rounded-full border border-[color:var(--line)] px-3 py-1.5 text-sm text-muted"
           >
             Close
           </button>
@@ -114,9 +114,12 @@ export function BookingMyBookings({
             <p className="text-sm text-muted">No upcoming visits.</p>
           ) : (
             upcoming.map((r) => (
-              <div key={r.id} className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-                <p className="font-semibold text-white">{r.service.name}</p>
-                <p className="mt-1 text-sm text-[#f2c4b0]">
+              <div
+                key={r.id}
+                className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--color-cream)] px-4 py-3"
+              >
+                <p className="font-semibold text-ink">{r.service.name}</p>
+                <p className="mt-1 text-sm font-medium text-champagne">
                   {new Date(r.startsAt).toLocaleString("en-CA", {
                     weekday: "short",
                     month: "short",
@@ -135,7 +138,7 @@ export function BookingMyBookings({
                     type="button"
                     disabled={busyId === r.id}
                     onClick={() => cancel(r.id)}
-                    className="mt-3 rounded-full border border-[rgba(245,168,168,0.45)] px-3 py-1.5 text-xs font-semibold text-[#f5a8a8]"
+                    className="mt-3 rounded-full border border-[rgba(181,74,60,0.4)] px-3 py-1.5 text-xs font-semibold text-[#b54a3c]"
                   >
                     {busyId === r.id ? "Cancelling…" : "Cancel booking"}
                   </button>
@@ -151,8 +154,11 @@ export function BookingMyBookings({
               Past
             </h3>
             {past.slice(0, 8).map((r) => (
-              <div key={r.id} className="rounded-2xl border border-white/8 px-4 py-3 opacity-80">
-                <p className="text-sm font-semibold">{r.service.name}</p>
+              <div
+                key={r.id}
+                className="rounded-2xl border border-[color:var(--line)] px-4 py-3"
+              >
+                <p className="text-sm font-semibold text-ink">{r.service.name}</p>
                 <p className="text-xs text-muted">
                   {new Date(r.startsAt).toLocaleDateString("en-CA", {
                     month: "short",
