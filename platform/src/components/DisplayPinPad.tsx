@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Props = {
   slug: string;
@@ -12,15 +12,18 @@ export function DisplayPinPad({ slug, salonName, onUnlocked }: Props) {
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const busyRef = useRef(false);
 
   async function submit(nextPin: string) {
-    if (nextPin.length < 4) return;
+    if (nextPin.length < 4 || busyRef.current) return;
+    busyRef.current = true;
     setBusy(true);
     setError("");
     try {
       const res = await fetch(`/api/display/${slug}/unlock`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
         body: JSON.stringify({ pin: nextPin }),
       });
       const data = await res.json();
@@ -34,18 +37,29 @@ export function DisplayPinPad({ slug, salonName, onUnlocked }: Props) {
       setError("Could not unlock. Try again.");
       setPin("");
     } finally {
+      busyRef.current = false;
       setBusy(false);
     }
   }
 
+  useEffect(() => {
+    if (pin.length < 4) return;
+    // Debounce so 5–6 digit PINs can finish typing before we submit
+    const t = window.setTimeout(() => {
+      void submit(pin);
+    }, 420);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pin]);
+
   function press(digit: string) {
-    if (busy) return;
+    if (busyRef.current) return;
     setError("");
     setPin((prev) => (prev.length >= 6 ? prev : prev + digit));
   }
 
   function backspace() {
-    if (busy) return;
+    if (busyRef.current) return;
     setError("");
     setPin((p) => p.slice(0, -1));
   }

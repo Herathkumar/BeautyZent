@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import {
-  clearDisplayUnlockCookie,
+  attachDisplayUnlockCookie,
+  clearDisplayUnlockCookieOn,
   hasValidDisplayUnlock,
-  issueDisplayUnlockCookie,
   normalizeDisplayPin,
   sessionBypassesDisplayPin,
   verifyDisplayPin,
@@ -53,22 +53,19 @@ export async function POST(
   });
   if (!salon) return NextResponse.json({ error: "Salon not found" }, { status: 404 });
 
+  const unlockedBody = {
+    ok: true,
+    unlocked: true,
+    needsPin: false,
+    salon: { name: salon.name, slug: salon.slug },
+  };
+
   if (!salon.displayPinHash) {
-    return NextResponse.json({
-      ok: true,
-      unlocked: true,
-      needsPin: false,
-      salon: { name: salon.name, slug: salon.slug },
-    });
+    return NextResponse.json(unlockedBody);
   }
 
   if (await sessionBypassesDisplayPin(salon.id)) {
-    return NextResponse.json({
-      ok: true,
-      unlocked: true,
-      needsPin: false,
-      salon: { name: salon.name, slug: salon.slug },
-    });
+    return NextResponse.json(unlockedBody);
   }
 
   let body: Record<string, unknown> = {};
@@ -88,15 +85,12 @@ export async function POST(
     return NextResponse.json({ error: "Incorrect PIN." }, { status: 401 });
   }
 
-  await issueDisplayUnlockCookie({ id: salon.id, slug: salon.slug });
-
-  return NextResponse.json({
-    ok: true,
-    unlocked: true,
-    needsPin: false,
-    salon: { name: salon.name, slug: salon.slug },
+  const res = NextResponse.json({
+    ...unlockedBody,
     message: "Store display unlocked.",
   });
+  await attachDisplayUnlockCookie(res, { id: salon.id, slug: salon.slug });
+  return res;
 }
 
 /** Lock this browser/tablet again (clears unlock cookie). */
@@ -111,6 +105,7 @@ export async function DELETE(
   });
   if (!salon) return NextResponse.json({ error: "Salon not found" }, { status: 404 });
 
-  await clearDisplayUnlockCookie();
-  return NextResponse.json({ ok: true, unlocked: false, needsPin: true });
+  const res = NextResponse.json({ ok: true, unlocked: false, needsPin: true });
+  clearDisplayUnlockCookieOn(res);
+  return res;
 }

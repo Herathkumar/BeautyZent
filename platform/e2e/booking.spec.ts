@@ -50,6 +50,7 @@ test.describe("Client online booking flow", () => {
     await expect(page.getByRole("heading", { name: /your details/i })).toBeVisible();
     await page.getByLabel(/^name$/i).fill(clientName);
     await page.getByLabel(/^phone$/i).fill("9055550199");
+    await page.getByLabel(/^email/i).fill(`qa.book.${Date.now()}@example.com`);
     await page.getByLabel(/notes/i).fill("Playwright QA booking — safe to cancel");
     await page.getByRole("button", { name: /confirm reservation/i }).click();
 
@@ -57,7 +58,7 @@ test.describe("Client online booking flow", () => {
       timeout: 20_000,
     });
     await expect(page.getByRole("button", { name: /book another/i })).toBeVisible();
-    await expect(page.getByRole("link", { name: /visit our website/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /add to calendar/i })).toBeVisible();
   });
 
   test("new admin service appears with stylists (regression)", async ({ page }) => {

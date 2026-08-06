@@ -111,6 +111,7 @@ export async function bookOnline(
   opts: {
     clientName: string;
     phone?: string;
+    email?: string;
     notes?: string;
     servicePattern?: RegExp;
     stylistPattern?: RegExp;
@@ -129,10 +130,18 @@ export async function bookOnline(
   await expect(page.getByRole("heading", { name: /pick a time/i })).toBeVisible();
   const bookedDate = await pickFirstSlot(page, date);
   await expect(page.getByRole("heading", { name: /your details/i })).toBeVisible();
-  await page.getByLabel(/^name$/i).fill(opts.clientName);
-  await page.getByLabel(/^phone$/i).fill(opts.phone ?? "9055550100");
-  if (opts.notes) await page.getByLabel(/notes/i).fill(opts.notes);
-  await page.getByRole("button", { name: /confirm reservation/i }).click();
+  const form = page.locator("form").filter({
+    has: page.getByRole("heading", { name: /your details/i }),
+  });
+  await form.getByLabel(/^name$/i).fill(opts.clientName);
+  await form.getByLabel(/^phone$/i).fill(opts.phone ?? "9055550100");
+  // "Save my profile" is checked by default and requires email
+  await form
+    .getByLabel(/^email/i)
+    .fill(opts.email ?? `qa.guest.${Date.now()}@example.com`);
+  if (opts.notes) await form.getByLabel(/notes/i).fill(opts.notes);
+  await expect(form.getByLabel(/^name$/i)).toHaveValue(opts.clientName);
+  await form.getByRole("button", { name: /confirm reservation/i }).click();
   await expect(page.getByRole("heading", { name: /you.?re booked/i })).toBeVisible({
     timeout: 20_000,
   });

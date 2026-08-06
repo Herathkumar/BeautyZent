@@ -12,14 +12,13 @@ test.describe("Booking edges", () => {
     await expect(page.getByRole("heading", { name: /choose a service/i })).toBeVisible();
   });
 
-  test("visit website link is present after confirm", async ({ page }) => {
+  test("confirmation shows calendar and book-another actions", async ({ page }) => {
     await bookOnline(page, {
-      clientName: `WebLink ${Date.now()}`,
+      clientName: `Confirm ${Date.now()}`,
       date: nextOpenDate(),
     });
-    const link = page.getByRole("link", { name: /visit our website/i });
-    await expect(link).toBeVisible();
-    await expect(link).toHaveAttribute("href", /fhsalon\.ca/);
+    await expect(page.getByRole("link", { name: /add to calendar/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /book another/i })).toBeVisible();
   });
 
   test("selecting service shows step chips progress", async ({ page }) => {

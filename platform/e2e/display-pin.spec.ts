@@ -64,7 +64,11 @@ async function enterPinOnPad(page: Page, pin: string) {
   for (const digit of pin) {
     await pad.getByRole("button", { name: digit, exact: true }).click();
   }
-  await pad.getByRole("button", { name: /^unlock$/i }).click();
+  // Unlock button remains for 5-digit PINs / slower devices; ignore if auto-submit already unlocked
+  const unlock = pad.getByRole("button", { name: /^unlock$/i });
+  if (await unlock.isVisible().catch(() => false)) {
+    await unlock.click({ timeout: 3_000 }).catch(() => undefined);
+  }
 }
 
 test.describe("Store display PIN", () => {

@@ -193,7 +193,14 @@ export function BookingWizard({ slug }: { slug: string }) {
       setName(c.name || "");
       setPhone(c.phone || "");
       setEmail(c.email || "");
+      return;
     }
+    // Guest again — clear prefilled member details and member-only UI
+    setName("");
+    setPhone("");
+    setEmail("");
+    setShowBookings(false);
+    setSaveAsMember(true);
   }, []);
 
   useEffect(() => {

@@ -1,7 +1,15 @@
 import { NextResponse } from "next/server";
-import { addDays, endOfDay, startOfDay } from "date-fns";
 import { assertDisplayAccess } from "@/lib/display-pin";
 import { prisma } from "@/lib/prisma";
+import {
+  addCalendarDays,
+  calendarDateInTz,
+  zonedStartOfDay,
+} from "@/lib/salon-time";
+
+function toDate(d: { getTime: () => number }) {
+  return new Date(d.getTime());
+}
 
 export async function GET(
   req: Request,
@@ -16,6 +24,7 @@ export async function GET(
       name: true,
       phone: true,
       address: true,
+      timezone: true,
       displayPinHash: true,
     },
   });
@@ -26,14 +35,17 @@ export async function GET(
 
   const url = new URL(req.url);
   const days = Math.min(60, Math.max(1, Number(url.searchParams.get("days") || 14)));
-  const now = new Date();
-  const from = startOfDay(now);
-  const to = endOfDay(addDays(from, days - 1));
+  const timeZone = salon.timezone || "America/Toronto";
+  const todayYmd = calendarDateInTz(timeZone);
+  const from = toDate(zonedStartOfDay(todayYmd, timeZone));
+  const toExclusive = toDate(
+    zonedStartOfDay(addCalendarDays(todayYmd, days, timeZone), timeZone)
+  );
 
   const appointments = await prisma.appointment.findMany({
     where: {
       salonId: salon.id,
-      startsAt: { gte: from, lte: to },
+      startsAt: { gte: from, lt: toExclusive },
       status: { not: "CANCELLED" },
     },
     select: {
@@ -58,8 +70,16 @@ export async function GET(
       slug: salon.slug,
       phone: salon.phone,
       address: salon.address,
+      timezone: timeZone,
+      today: todayYmd,
     },
-    range: { from: from.toISOString(), to: to.toISOString(), days },
+    range: {
+      from: from.toISOString(),
+      to: toExclusive.toISOString(),
+      days,
+      today: todayYmd,
+      timezone: timeZone,
+    },
     appointments,
   });
 }

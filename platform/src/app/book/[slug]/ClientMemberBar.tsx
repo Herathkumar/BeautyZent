@@ -105,7 +105,17 @@ export function ClientMemberBar({
   async function logout() {
     await fetch(`/api/public/${slug}/auth/logout`, { method: "POST" });
     onClientChange(null);
+    setMode("closed");
+    setPurpose("signin");
+    setName("");
+    setPhone("");
+    setEmail("");
+    setCode("");
+    setDemoCode("");
     setMsg("");
+    setError("");
+    setThemeOpen(false);
+    setThemeWelcome(false);
   }
 
   if (client) {

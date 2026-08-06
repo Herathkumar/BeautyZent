@@ -25,26 +25,38 @@ type SalonInfo = {
   slug: string;
   phone?: string | null;
   address?: string | null;
+  timezone?: string | null;
+  today?: string | null;
 };
 
 type Tab = "today" | "future";
 
-function dayKey(iso: string) {
+/** Calendar YYYY-MM-DD in the salon timezone (falls back to local). */
+function dayKey(iso: string, timeZone?: string | null) {
+  if (timeZone) {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date(iso));
+  }
   const d = new Date(iso);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-function todayKey() {
-  return dayKey(new Date().toISOString());
+function todayKey(timeZone?: string | null, salonToday?: string | null) {
+  if (salonToday) return salonToday;
+  return dayKey(new Date().toISOString(), timeZone);
 }
 
-function dayLabel(key: string) {
+function dayLabel(key: string, timeZone?: string | null, salonToday?: string | null) {
   const [y, m, d] = key.split("-").map(Number);
   const date = new Date(y, m - 1, d);
-  const tKey = todayKey();
+  const tKey = todayKey(timeZone, salonToday);
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowKey = dayKey(tomorrow.toISOString());
+  const tomorrowKey = dayKey(tomorrow.toISOString(), timeZone);
 
   const formatted = date.toLocaleDateString("en-CA", {
     weekday: "long",
@@ -171,33 +183,39 @@ export function DisplayBoard({
 
   const checkUnlock = useCallback(async () => {
     try {
-      const res = await fetch(`/api/display/${slug}/unlock`);
+      const res = await fetch(`/api/display/${slug}/unlock`, {
+        credentials: "same-origin",
+      });
       const data = await res.json();
-      if (data.salon) setSalon(data.salon);
+      if (data.salon) setSalon((prev) => ({ ...(prev || { name: "", slug }), ...data.salon }));
       setPinSet(Boolean(data.pinSet));
       setNeedsPin(Boolean(data.needsPin));
+      return !data.needsPin;
     } catch {
       setNeedsPin(false);
       setPinSet(false);
+      return true;
     } finally {
       setUnlockChecked(true);
     }
   }, [slug]);
 
-  const load = useCallback(() => {
-    if (needsPin) return;
-    fetch(`/api/display/${slug}/today?days=${days}`)
-      .then(async (r) => {
-        const data = await r.json();
-        if (r.status === 401 && data.needsPin) {
-          setNeedsPin(true);
-          return;
-        }
-        setAppointments(data.appointments || []);
-        setSalon(data.salon || null);
-      })
-      .catch(() => undefined);
-  }, [slug, days, needsPin]);
+  const load = useCallback(async () => {
+    try {
+      const r = await fetch(`/api/display/${slug}/today?days=${days}`, {
+        credentials: "same-origin",
+      });
+      const data = await r.json();
+      if (r.status === 401 && data.needsPin) {
+        setNeedsPin(true);
+        return;
+      }
+      setAppointments(data.appointments || []);
+      if (data.salon) setSalon(data.salon);
+    } catch {
+      /* ignore transient poll errors */
+    }
+  }, [slug, days]);
 
   useEffect(() => {
     void checkUnlock();
@@ -205,8 +223,8 @@ export function DisplayBoard({
 
   useEffect(() => {
     if (!unlockChecked || needsPin) return;
-    load();
-    const poll = setInterval(load, 15000);
+    void load();
+    const poll = setInterval(() => void load(), 15000);
     const clock = setInterval(() => setNow(new Date()), 30000);
     return () => {
       clearInterval(poll);
@@ -214,21 +232,21 @@ export function DisplayBoard({
     };
   }, [load, unlockChecked, needsPin]);
 
-  const tKey = todayKey();
+  const tKey = todayKey(salon?.timezone, salon?.today);
   /** Floor list: open bookings only — hide completed / no-show / cancelled */
   const todayAppts = useMemo(
     () =>
       appointments.filter(
         (a) =>
-          dayKey(a.startsAt) === tKey &&
+          dayKey(a.startsAt, salon?.timezone) === tKey &&
           (a.status === "BOOKED" || a.status === "CHECKED_IN")
       ),
-    [appointments, tKey]
+    [appointments, tKey, salon?.timezone]
   );
   const futureGrouped = useMemo(() => {
     const map = new Map<string, Appt[]>();
     for (const a of appointments) {
-      const key = dayKey(a.startsAt);
+      const key = dayKey(a.startsAt, salon?.timezone);
       if (key === tKey) continue;
       if (a.status === "COMPLETED" || a.status === "NO_SHOW") continue;
       const list = map.get(key) || [];
@@ -236,7 +254,7 @@ export function DisplayBoard({
       map.set(key, list);
     }
     return Array.from(map.entries());
-  }, [appointments, tKey]);
+  }, [appointments, tKey, salon?.timezone]);
   const futureCount = useMemo(
     () => futureGrouped.reduce((n, [, list]) => n + list.length, 0),
     [futureGrouped]
@@ -258,11 +276,14 @@ export function DisplayBoard({
       setNeedsPin(true);
       return;
     }
-    load();
+    void load();
   }
 
   async function lockTablet() {
-    await fetch(`/api/display/${slug}/unlock`, { method: "DELETE" });
+    await fetch(`/api/display/${slug}/unlock`, {
+      method: "DELETE",
+      credentials: "same-origin",
+    });
     setAppointments([]);
     await checkUnlock();
   }
@@ -288,6 +309,7 @@ export function DisplayBoard({
         onUnlocked={() => {
           setNeedsPin(false);
           setUnlockChecked(true);
+          void load();
         }}
       />
     );
@@ -596,7 +618,7 @@ export function DisplayBoard({
           {futureGrouped.map(([key, list]) => (
             <section key={key} className="space-y-3">
               <h2 className="text-sm tracking-[0.16em] text-[#c9a87c] uppercase">
-                {dayLabel(key)}
+                {dayLabel(key, salon?.timezone, salon?.today)}
               </h2>
               <div className="grid gap-3">
                 {list.map((a) => (

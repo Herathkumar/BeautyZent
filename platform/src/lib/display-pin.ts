@@ -33,8 +33,18 @@ type UnlockPayload = {
   slug: string;
 };
 
-export async function issueDisplayUnlockCookie(salon: { id: string; slug: string }) {
-  const token = await new SignJWT({
+function unlockCookieOptions() {
+  return {
+    httpOnly: true,
+    sameSite: "lax" as const,
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 7,
+  };
+}
+
+export async function createDisplayUnlockToken(salon: { id: string; slug: string }) {
+  return new SignJWT({
     purpose: "display",
     salonId: salon.id,
     slug: salon.slug,
@@ -42,15 +52,30 @@ export async function issueDisplayUnlockCookie(salon: { id: string; slug: string
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime("7d")
     .sign(secret());
+}
 
-  const jar = await cookies();
-  jar.set(DISPLAY_UNLOCK_COOKIE, token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 7,
+/** Prefer attaching the cookie on the Route Handler response (reliable in Next.js). */
+export async function attachDisplayUnlockCookie(
+  res: NextResponse,
+  salon: { id: string; slug: string }
+) {
+  const token = await createDisplayUnlockToken(salon);
+  res.cookies.set(DISPLAY_UNLOCK_COOKIE, token, unlockCookieOptions());
+  return res;
+}
+
+export function clearDisplayUnlockCookieOn(res: NextResponse) {
+  res.cookies.set(DISPLAY_UNLOCK_COOKIE, "", {
+    ...unlockCookieOptions(),
+    maxAge: 0,
   });
+  return res;
+}
+
+export async function issueDisplayUnlockCookie(salon: { id: string; slug: string }) {
+  const token = await createDisplayUnlockToken(salon);
+  const jar = await cookies();
+  jar.set(DISPLAY_UNLOCK_COOKIE, token, unlockCookieOptions());
 }
 
 export async function clearDisplayUnlockCookie() {
