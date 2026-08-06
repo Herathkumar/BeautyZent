@@ -1816,10 +1816,11 @@ html.stylist-shell--light .stylist-theme .bg-\[\#0e1618\],
 html.stylist-shell--light .stylist-theme .bg-\[\#152226\],
 html.stylist-shell--light .stylist-theme .bg-\[\#1a282c\],
 html.stylist-shell--light .stylist-theme .bg-\[\#10181c\],
+html.stylist-shell--light .stylist-theme .bg-\[\#10181c\]\/50,
 html.stylist-shell--light .stylist-theme .bg-\[\#10181c\]\/55,
 html.stylist-shell--light .stylist-theme .bg-\[\#10181c\]\/70,
 html.stylist-shell--light .stylist-theme .bg-\[\#10181c\]\/80 {
-  background-color: #ffffff !important;
+  background-color: rgba(42, 143, 130, 0.06) !important;
 }
 html.stylist-shell--light .stylist-theme .border-\[\#7ec4b8\],
 html.stylist-shell--light .stylist-theme .border-\[\#7ec4b8\]\/25,

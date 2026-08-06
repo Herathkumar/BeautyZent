@@ -296,7 +296,7 @@ function AwayMonthStrip({
           );
         })}
       </div>
-      <p className="mt-3 text-center text-xs text-[#a8c4bf]">
+      <p className="mt-3 text-center text-xs text-muted">
         Tap a day, then another — or the same day — to mark yourself away
       </p>
     </div>
@@ -727,14 +727,14 @@ export default function StylistOwnSchedulePage() {
           </form>
         ) : null}
 
-        <div className="mt-4 divide-y divide-[#7ec4b8]/15 overflow-hidden rounded-2xl border border-[#7ec4b8]/20 bg-[#10181c]/50">
+        <div className="stylist-panel-inset mt-4 divide-y divide-[color:var(--line)] overflow-hidden rounded-2xl border">
           {blocks.length === 0 ? (
-            <p className="px-4 py-5 text-sm text-[#a8c4bf]">No time off marked yet.</p>
+            <p className="px-4 py-5 text-sm text-muted">No time off marked yet.</p>
           ) : null}
           {blocks.map((b) => (
             <div key={b.id} className="space-y-3 px-4 py-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-wide text-[#7ec4b8]">
+                <p className="text-xs font-bold uppercase tracking-wide text-champagne">
                   {reasonLabel(b.reason)}
                 </p>
                 <p className={`mt-1 text-sm font-semibold ${statusClass(b.status)}`}>
