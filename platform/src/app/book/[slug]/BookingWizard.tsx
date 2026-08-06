@@ -333,8 +333,8 @@ export function BookingWizard({ slug }: { slug: string }) {
       .replace(/\.\d{3}Z$/, "Z")}`;
 
     return (
-      <div className="space-y-4">
-        <div className="book-card rounded-3xl p-8 text-center shadow-[0_20px_60px_rgba(0,0,0,0.3)]">
+      <div className="space-y-5" data-testid="booking-confirmed">
+        <div className="book-card rounded-3xl p-7 text-center shadow-[0_20px_60px_rgba(0,0,0,0.3)] sm:p-8">
           <p className="text-xs font-semibold tracking-[0.22em] text-champagne uppercase">
             Confirmed
           </p>
@@ -360,39 +360,13 @@ export function BookingWizard({ slug }: { slug: string }) {
             before
           </p>
           {salon?.phone ? (
-            <p className="mt-6 text-sm text-muted">
+            <p className="mt-5 text-sm text-muted">
               Questions?{" "}
               <a className="font-semibold text-champagne" href={`tel:${salon.phone}`}>
                 Call {salon.phone}
               </a>
             </p>
           ) : null}
-
-          <div className="mt-8 grid gap-3 sm:grid-cols-2">
-            <a
-              href={calendarUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="btn-solid rounded-2xl px-5 py-3.5 text-sm font-semibold"
-            >
-              Add to calendar
-            </a>
-            <button
-              type="button"
-              className="rounded-2xl border border-[rgba(232,180,162,0.4)] px-5 py-3.5 text-sm font-semibold text-[#f2c4b0]"
-              onClick={() => {
-                setDone(null);
-                setJoinPrompt(false);
-                setServiceId("");
-                setStylistId("");
-                setStartsAt("");
-                setNotes("");
-                setError("");
-              }}
-            >
-              Book another
-            </button>
-          </div>
         </div>
 
         {joinPrompt && !client ? (
@@ -410,15 +384,94 @@ export function BookingWizard({ slug }: { slug: string }) {
           />
         ) : null}
 
-        {client ? (
-          <button
-            type="button"
-            onClick={() => setShowBookings(true)}
-            className="w-full rounded-2xl border border-[rgba(232,180,162,0.35)] px-4 py-3 text-sm font-semibold text-champagne"
-          >
-            View my bookings
-          </button>
-        ) : null}
+        <section className="book-card rounded-3xl p-5 sm:p-6" data-testid="booking-next-steps">
+          <p className="text-xs font-semibold tracking-[0.18em] text-champagne uppercase">
+            What&apos;s next
+          </p>
+          <h3 className="mt-1 font-[family-name:var(--font-display)] text-2xl">
+            {client ? `Welcome back, ${client.name.split(" ")[0]}` : "While you wait"}
+          </h3>
+          <p className="mt-1 text-sm text-muted">
+            {client
+              ? "Manage this visit, book again, or tweak how booking looks on this device."
+              : "Save the date, book someone else, or join so your details are ready next time."}
+          </p>
+
+          <div className="mt-5 grid gap-2.5 sm:grid-cols-2">
+            <a
+              href={calendarUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="btn-solid rounded-2xl px-4 py-3.5 text-center text-sm font-semibold"
+            >
+              Add to calendar
+            </a>
+            <button
+              type="button"
+              className="rounded-2xl border border-[rgba(232,180,162,0.4)] px-4 py-3.5 text-sm font-semibold text-champagne"
+              onClick={() => {
+                setDone(null);
+                setJoinPrompt(false);
+                setServiceId("");
+                setStylistId("");
+                setStartsAt("");
+                setNotes("");
+                setError("");
+              }}
+            >
+              Book another
+            </button>
+
+            {client ? (
+              <button
+                type="button"
+                onClick={() => setShowBookings(true)}
+                className="rounded-2xl border border-[rgba(232,180,162,0.4)] px-4 py-3.5 text-sm font-semibold text-champagne"
+              >
+                View my bookings
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setJoinPrompt(true);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                className="rounded-2xl border border-[rgba(232,180,162,0.4)] px-4 py-3.5 text-sm font-semibold text-champagne"
+              >
+                Join free — no password
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setThemeOpen(true)}
+              className="rounded-2xl border border-[rgba(232,180,162,0.4)] px-4 py-3.5 text-sm font-semibold text-champagne"
+            >
+              Appearance
+            </button>
+
+            {salon?.phone ? (
+              <a
+                href={`tel:${salon.phone}`}
+                className="rounded-2xl border border-[rgba(232,180,162,0.4)] px-4 py-3.5 text-center text-sm font-semibold text-champagne"
+              >
+                Call the salon
+              </a>
+            ) : null}
+
+            <a
+              href={
+                process.env.NEXT_PUBLIC_MARKETING_URL || "https://www.fhsalon.ca"
+              }
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-2xl border border-[rgba(232,180,162,0.4)] px-4 py-3.5 text-center text-sm font-semibold text-champagne sm:col-span-2"
+            >
+              Visit salon website
+            </a>
+          </div>
+        </section>
 
         <BookingMyBookings
           slug={slug}
@@ -428,9 +481,13 @@ export function BookingWizard({ slug }: { slug: string }) {
         />
         <BookThemePicker
           open={themeOpen}
-          title="Booking is now available in light & dark mode!"
-          subtitle="You can change this now or anytime in Appearance."
-          confirmLabel="Got it"
+          title={
+            client
+              ? "Choose your booking look"
+              : "Booking is available in light & dark mode!"
+          }
+          subtitle="Light, dark, or match your device — saved on this phone."
+          confirmLabel="Save"
           onClose={() => setThemeOpen(false)}
         />
       </div>

@@ -124,7 +124,7 @@ export default function ManagerStoreDisplayPage() {
               href={`/display/${slug}`}
               target="_blank"
               rel="noreferrer"
-              className="rounded-full border border-white/20 px-4 py-2.5 text-sm text-white/80"
+              className="rounded-full border border-[#7d6154]/45 bg-[#7d6154] px-4 py-2.5 text-sm font-semibold text-[#fffcf9]"
             >
               Open tablet view
             </Link>
@@ -212,16 +212,16 @@ export default function ManagerStoreDisplayPage() {
             ) : null}
           </div>
         </form>
-        {pinError ? <p className="mt-3 text-sm text-[#f5a8a8]">{pinError}</p> : null}
-        {pinMsg ? <p className="mt-3 text-sm text-[#9fe3b8]">{pinMsg}</p> : null}
+        {pinError ? <p className="mt-3 text-sm text-[#b54a4a]">{pinError}</p> : null}
+        {pinMsg ? <p className="mt-3 text-sm text-[#2f6b4f]">{pinMsg}</p> : null}
       </section>
 
-      {error ? <p className="text-sm text-[#f5a8a8]">{error}</p> : null}
+      {error ? <p className="text-sm text-[#b54a4a]">{error}</p> : null}
       {!slug && !error ? (
         <p className="text-sm text-muted">Loading store display…</p>
       ) : null}
       {slug ? (
-        <div className="relative left-1/2 w-screen max-w-[100vw] -translate-x-1/2 px-2 sm:px-4 md:px-6">
+        <div className="min-w-0">
           <DisplayBoard slug={slug} embedded />
         </div>
       ) : null}

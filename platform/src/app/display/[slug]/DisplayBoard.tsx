@@ -344,16 +344,20 @@ export function DisplayBoard({
 
   return (
     <div
-      className={`flex flex-col ${embedded ? "min-h-[70vh] overflow-hidden rounded-3xl border border-[#c9a87c]/25" : "min-h-screen"} bg-[#1c1714] text-[#fffaf6]`}
+      className={`flex flex-col ${
+        embedded
+          ? "min-w-0 rounded-3xl border border-[#c9a87c]/25"
+          : "min-h-screen"
+      } bg-[#1c1714] text-[#fffaf6]`}
       data-testid={embedded ? "manager-store-display-board" : "store-display-board"}
     >
-      <header className="border-b border-white/10 px-6 py-5">
+      <header className={`border-b border-white/10 ${embedded ? "px-4 py-4 sm:px-5" : "px-6 py-5"}`}>
         <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
-          <div>
+          <div className="min-w-0">
             <p className="text-xs tracking-[0.2em] text-[#c9a87c] uppercase">
               {embedded ? "Store display" : "Salon floor"}
             </p>
-            <h1 className="font-[family-name:var(--font-display)] text-4xl">
+            <h1 className="font-[family-name:var(--font-display)] text-3xl leading-tight sm:text-4xl">
               {salon?.name || "Bookings"}
             </h1>
           </div>
@@ -432,7 +436,7 @@ export function DisplayBoard({
       </header>
 
       {tab === "today" && (
-        <div className="px-6 py-6">
+        <div className={embedded ? "px-4 py-4 sm:px-5 sm:py-5" : "px-6 py-6"}>
           {/* Promo band */}
           <section className="relative mb-6 overflow-hidden rounded-3xl border border-[#c9a87c]/35 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
             <div className="absolute inset-0">
@@ -444,19 +448,19 @@ export function DisplayBoard({
               <div className="absolute inset-0 bg-gradient-to-r from-[#1c1714]/95 via-[#1c1714]/75 to-[#6e4a38]/45" />
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(240,201,135,0.35),transparent_45%)]" />
             </div>
-            <div className="relative grid gap-6 p-6 md:grid-cols-[1.2fr_auto] md:items-end md:p-8">
-              <div>
+            <div className="relative grid gap-5 p-5 sm:gap-6 sm:p-6 md:grid-cols-[minmax(0,1.2fr)_auto] md:items-end md:p-8">
+              <div className="min-w-0">
                 <p className="text-xs font-semibold tracking-[0.22em] text-[#f0c987] uppercase">
                   Prefer a set time?
                 </p>
-                <h2 className="mt-2 font-[family-name:var(--font-display)] text-4xl leading-none md:text-5xl">
+                <h2 className="mt-2 font-[family-name:var(--font-display)] text-3xl leading-none sm:text-4xl md:text-5xl">
                   Book online
                 </h2>
-                <p className="mt-3 max-w-xl text-base text-white/80 md:text-lg">
+                <p className="mt-3 max-w-xl text-sm text-white/80 sm:text-base md:text-lg">
                   Reserve your favourite stylist ahead of time at{" "}
                   <span className="font-semibold text-[#f0c987]">www.fhsalon.ca</span>
                 </p>
-                <p className="mt-1.5 max-w-xl text-base text-white/80 md:text-lg">
+                <p className="mt-1.5 max-w-xl text-sm text-white/80 sm:text-base md:text-lg">
                   Walk-ins welcome when a chair is open
                 </p>
                 {(salon?.phone || salon?.address) && (
@@ -468,7 +472,7 @@ export function DisplayBoard({
                 )}
               </div>
               <div
-                className="grid grid-cols-3 gap-3 md:min-w-[300px]"
+                className="grid min-w-0 grid-cols-3 gap-2 sm:gap-3 md:min-w-[280px]"
                 data-testid="display-floor-counts"
               >
                 <div className="rounded-2xl bg-[#f0c987] px-3 py-3 sm:px-4">
