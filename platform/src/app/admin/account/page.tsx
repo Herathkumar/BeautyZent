@@ -275,16 +275,16 @@ export default function AdminAccountPage() {
                   type="button"
                   disabled={photoBusy}
                   onClick={() => setCameraOpen(true)}
-                  className="rounded-full border border-[#7d6154]/50 bg-[#7d6154]/12 px-5 py-2 text-sm font-semibold text-[#7d6154] hover:bg-[#7d6154]/20 disabled:opacity-50"
+                  className="inline-flex h-10 items-center justify-center rounded-full border border-[#7d6154]/50 bg-[#7d6154]/12 px-5 text-sm font-semibold leading-none text-[#7d6154] hover:bg-[#7d6154]/20 disabled:opacity-50"
                 >
                   {photoBusy ? "Saving…" : hasPhoto ? "Update selfie" : "Take selfie"}
                 </button>
                 <label
-                  className={`relative overflow-hidden rounded-full border border-[#7d6154]/35 px-5 py-2 text-sm font-semibold text-[#6b5b52] hover:bg-[#7d6154]/10 ${
-                    photoBusy ? "pointer-events-none opacity-50" : "cursor-pointer"
+                  className={`relative inline-flex h-10 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-[#7d6154]/35 px-5 text-sm font-semibold leading-none text-[#6b5b52] hover:bg-[#7d6154]/10 ${
+                    photoBusy ? "pointer-events-none opacity-50" : ""
                   }`}
                 >
-                  Choose photo
+                  <span className="pointer-events-none">Choose photo</span>
                   <input
                     type="file"
                     accept="image/*"
