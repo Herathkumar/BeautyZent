@@ -2117,3 +2117,55 @@ html.stylist-shell--light .stylist-theme .ring-\[\#b5ebe0\],
 html.stylist-shell--light .stylist-theme .ring-\[\#7ec4b8\] {
   --tw-ring-color: rgba(42, 143, 130, 0.45) !important;
 }
+
+/* Shared themed confirm dialog — cream panel on every shell */
+.fh-confirm-dialog {
+  background: linear-gradient(165deg, #fffaf6 0%, #f7f1ea 55%, #f0e7dd 100%);
+  color: #2b2521;
+  border: 1px solid rgba(196, 122, 74, 0.28);
+}
+
+.fh-confirm-title {
+  color: #2b2521;
+}
+
+.fh-confirm-message {
+  color: #5c4f47;
+}
+
+.fh-confirm-cancel {
+  border: 1px solid rgba(125, 97, 84, 0.35);
+  background: rgba(255, 255, 255, 0.65);
+  color: #5c4f47;
+}
+
+.fh-confirm-cancel:hover {
+  background: #fff;
+}
+
+.fh-confirm-ok {
+  background: linear-gradient(135deg, #d4895c 0%, #c47a4a 100%);
+  color: #fffaf6;
+  box-shadow: 0 8px 20px rgba(196, 122, 74, 0.28);
+}
+
+.fh-confirm-ok:hover {
+  background: linear-gradient(135deg, #e0986c 0%, #d4895c 100%);
+}
+
+.fh-confirm-ok--danger {
+  background: linear-gradient(135deg, #c45c5c 0%, #a84444 100%);
+  box-shadow: 0 8px 20px rgba(168, 68, 68, 0.28);
+}
+
+.fh-confirm-ok--danger:hover {
+  background: linear-gradient(135deg, #d46a6a 0%, #b85252 100%);
+}
+
+/* Dark manager / book / display: slightly richer panel */
+html.manager-shell--dark .fh-confirm-dialog,
+html.book-shell:not(.book-shell--light) .fh-confirm-dialog,
+html.stylist-shell:not(.stylist-shell--light) .fh-confirm-dialog {
+  border-color: rgba(240, 201, 135, 0.35);
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.55);
+}

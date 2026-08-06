@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useConfirm } from "@/components/ConfirmDialog";
 import { centsToDollars } from "@/lib/pay";
 
 type Service = {
@@ -83,6 +84,7 @@ export function WalkInPanel({
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const confirm = useConfirm();
   const [seatingId, setSeatingId] = useState<string | null>(null);
   const [seatPickId, setSeatPickId] = useState("");
 
@@ -325,7 +327,14 @@ export function WalkInPanel({
   }
 
   async function cancelWaitlist(id: string) {
-    if (!window.confirm("Remove this guest from the waitlist?")) return;
+    const ok = await confirm({
+      title: "Remove from waitlist?",
+      message: "This guest will be removed from the waitlist.",
+      confirmLabel: "Remove",
+      cancelLabel: "Keep guest",
+      tone: "danger",
+    });
+    if (!ok) return;
     setBusy(true);
     const res = await fetch(waitlistBase, {
       method: seatMethod,

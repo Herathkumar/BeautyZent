@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useConfirm } from "@/components/ConfirmDialog";
 import { DisplayPinPad } from "@/components/DisplayPinPad";
 import { WalkInPanel } from "@/components/WalkInPanel";
 import { ZentraLabFooter } from "@/components/ZentraLabFooter";
@@ -84,6 +85,7 @@ function AppointmentActions({
   a: Appt;
   onStatus: (id: string, status: string, chargedCents?: number, tipCents?: number) => void;
 }) {
+  const confirm = useConfirm();
   if (["COMPLETED", "CANCELLED", "NO_SHOW"].includes(a.status)) return null;
   return (
     <div className="flex flex-wrap gap-2">
@@ -113,9 +115,15 @@ function AppointmentActions({
         <button
           type="button"
           onClick={() => {
-            if (window.confirm("Mark this booking as no-show?")) {
-              onStatus(a.id, "NO_SHOW");
-            }
+            void confirm({
+              title: "Mark as no-show?",
+              message: "This booking will be marked as a no-show.",
+              confirmLabel: "Mark no-show",
+              cancelLabel: "Keep booking",
+              tone: "danger",
+            }).then((ok) => {
+              if (ok) onStatus(a.id, "NO_SHOW");
+            });
           }}
           className="rounded-full border border-[#c9a87c]/50 px-3 py-2 text-sm text-[#f0c987]"
         >
@@ -124,7 +132,17 @@ function AppointmentActions({
       )}
       <button
         type="button"
-        onClick={() => onStatus(a.id, "CANCELLED")}
+        onClick={() => {
+          void confirm({
+            title: "Cancel booking?",
+            message: "This appointment will be cancelled.",
+            confirmLabel: "Cancel booking",
+            cancelLabel: "Keep it",
+            tone: "danger",
+          }).then((ok) => {
+            if (ok) onStatus(a.id, "CANCELLED");
+          });
+        }}
         className="rounded-full border border-red-300/40 px-3 py-2 text-sm text-red-200"
       >
         Cancel

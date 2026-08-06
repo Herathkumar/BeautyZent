@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useConfirm } from "@/components/ConfirmDialog";
 import { centsToDollars } from "@/lib/pay";
 
 type Job = {
@@ -171,6 +172,7 @@ export default function AdminPayPage() {
   const [periodStart, setPeriodStart] = useState("");
   const [periodEnd, setPeriodEnd] = useState("");
   const [message, setMessage] = useState("");
+  const confirm = useConfirm();
   const [loading, setLoading] = useState(true);
   const [openHour, setOpenHour] = useState(9);
   const [closeHour, setCloseHour] = useState(18);
@@ -278,7 +280,14 @@ export default function AdminPayPage() {
       setMessage("Nothing left to pay for this period.");
       return;
     }
-    if (!window.confirm(`Mark $${centsToDollars(amount)} paid to ${report.stylist.name}?`)) {
+    const ok = await confirm({
+      title: "Mark payout paid?",
+      message: `Mark $${centsToDollars(amount)} paid to ${report.stylist.name}?`,
+      confirmLabel: "Mark paid",
+      cancelLabel: "Cancel",
+      tone: "default",
+    });
+    if (!ok) {
       return;
     }
     const res = await fetch("/api/admin/pay", {

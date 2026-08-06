@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { adminLogin, bookOnline, bookableDateNearToday } from "./helpers";
+import { acceptConfirm, adminLogin, bookOnline, bookableDateNearToday } from "./helpers";
 
 test.describe("Admin bookings filters & no-show", () => {
   test("filter bar and mark no-show", async ({ page }) => {
@@ -27,8 +27,8 @@ test.describe("Admin bookings filters & no-show", () => {
     const row = page.locator(".divide-y > div").filter({ hasText: clientName }).first();
     await expect(row.getByRole("button", { name: /mark no-show/i })).toBeVisible();
 
-    page.once("dialog", (d) => d.accept());
     await row.getByRole("button", { name: /mark no-show/i }).click();
+    await acceptConfirm(page);
     await expect(row.getByText(/no show/i)).toBeVisible({ timeout: 10_000 });
 
     await statusFilter.selectOption("no_show");

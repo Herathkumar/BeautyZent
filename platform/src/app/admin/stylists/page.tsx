@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 type Stylist = {
   id: string;
@@ -118,6 +119,7 @@ export default function StylistsAdminPage() {
   const [saving, setSaving] = useState(false);
   const [resettingId, setResettingId] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const confirm = useConfirm();
   const [issued, setIssued] = useState<IssuedCredentials | null>(null);
   const [copied, setCopied] = useState(false);
   const issuedRef = useRef<HTMLDivElement>(null);
@@ -190,7 +192,14 @@ export default function StylistsAdminPage() {
   }
 
   async function resetPassword(stylistId: string, stylistName: string) {
-    if (!window.confirm(`Generate a new temporary password for ${stylistName}?`)) return;
+    const ok = await confirm({
+      title: "Reset password?",
+      message: `Generate a new temporary password for ${stylistName}?`,
+      confirmLabel: "Reset password",
+      cancelLabel: "Cancel",
+      tone: "danger",
+    });
+    if (!ok) return;
     setError("");
     setCopied(false);
     setResettingId(stylistId);
@@ -244,13 +253,16 @@ export default function StylistsAdminPage() {
   }
 
   async function setStylistActive(stylist: Stylist, active: boolean) {
-    if (
-      !active &&
-      !window.confirm(
-        `Disable ${stylist.name}?\n\nThey won't appear for online booking or on the floor until you enable them again.`
-      )
-    ) {
-      return;
+    if (!active) {
+      const ok = await confirm({
+        title: `Disable ${stylist.name}?`,
+        message:
+          "They won't appear for online booking or on the floor until you enable them again.",
+        confirmLabel: "Disable stylist",
+        cancelLabel: "Keep active",
+        tone: "danger",
+      });
+      if (!ok) return;
     }
     setError("");
     const res = await fetch("/api/admin/stylists", {
@@ -272,11 +284,14 @@ export default function StylistsAdminPage() {
         ? `\nTheir login (${stylist.loginEmail}) will be deleted.`
         : `\nManager login stays; stylist link is removed.`
       : "";
-    if (
-      !window.confirm(
-        `Remove ${stylist.name} from the team list?${loginNote}\n\nThey disappear from this page and from booking. Past appointments are kept.`
-      )
-    ) {
+    const ok = await confirm({
+      title: `Remove ${stylist.name}?`,
+      message: `Remove ${stylist.name} from the team list?${loginNote}\n\nThey disappear from this page and from booking. Past appointments are kept.`,
+      confirmLabel: "Remove stylist",
+      cancelLabel: "Keep stylist",
+      tone: "danger",
+    });
+    if (!ok) {
       return;
     }
     setError("");

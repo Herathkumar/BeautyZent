@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { WalkInPanel } from "@/components/WalkInPanel";
+import { useConfirm } from "@/components/ConfirmDialog";
 import { centsToDollars, promptCompleteAmounts } from "@/lib/pay";
 
 type Appt = {
@@ -70,6 +71,7 @@ export default function StylistHomePage() {
   const [appointments, setAppointments] = useState<Appt[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const confirm = useConfirm();
   const [walkInOpen, setWalkInOpen] = useState(false);
 
   const load = useCallback(async () => {
@@ -122,7 +124,16 @@ export default function StylistHomePage() {
   const nextOpen = today.find((a) => ["BOOKED", "CHECKED_IN"].includes(a.status));
 
   async function setStatus(id: string, status: string, defaultPriceCents = 0) {
-    if (status === "CANCELLED" && !window.confirm("Cancel this booking?")) return;
+    if (status === "CANCELLED") {
+      const ok = await confirm({
+        title: "Cancel booking?",
+        message: "This appointment will be cancelled.",
+        confirmLabel: "Cancel booking",
+        cancelLabel: "Keep it",
+        tone: "danger",
+      });
+      if (!ok) return;
+    }
     let chargedCents: number | undefined;
     let tipCents: number | undefined;
     if (status === "COMPLETED") {

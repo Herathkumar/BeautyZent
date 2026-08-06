@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useConfirm } from "@/components/ConfirmDialog";
 import { centsToDollars } from "@/lib/pay";
 
 type DayBar = {
@@ -409,6 +410,7 @@ export default function StoreEarningsPage() {
   const [msg, setMsg] = useState("");
   const [goalMsg, setGoalMsg] = useState("");
   const [busyId, setBusyId] = useState("");
+  const confirm = useConfirm();
   const [breakdown, setBreakdown] = useState<BreakdownView | null>(null);
   const [activityKind, setActivityKind] = useState<"ALL" | "JOB" | "PAYOUT" | "LEAVE">("ALL");
   const [activityStylist, setActivityStylist] = useState("ALL");
@@ -459,11 +461,15 @@ export default function StoreEarningsPage() {
   }
 
   async function toggleExclude(appointmentId: string, excluded: boolean) {
-    const ok = window.confirm(
-      excluded
+    const ok = await confirm({
+      title: excluded ? "Void this job?" : "Restore this job?",
+      message: excluded
         ? "Void this job from store totals and stylist commission/tips?"
-        : "Restore this job to store totals and stylist earnings?"
-    );
+        : "Restore this job to store totals and stylist earnings?",
+      confirmLabel: excluded ? "Void job" : "Restore job",
+      cancelLabel: "Cancel",
+      tone: "danger",
+    });
     if (!ok) return;
 
     setBusyId(appointmentId);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useConfirm } from "@/components/ConfirmDialog";
 import { CLIENT_CANCEL_HOURS } from "@/lib/client-booking";
 import { formatCad } from "@/lib/money";
 
@@ -29,6 +30,7 @@ export function BookingMyBookings({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
+  const confirm = useConfirm();
 
   useEffect(() => {
     if (!open) return;
@@ -45,7 +47,14 @@ export function BookingMyBookings({
   }, [open, slug]);
 
   async function cancel(id: string) {
-    if (!window.confirm("Cancel this booking?")) return;
+    const ok = await confirm({
+      title: "Cancel booking?",
+      message: "This appointment will be cancelled. You can book again anytime.",
+      confirmLabel: "Cancel booking",
+      cancelLabel: "Keep it",
+      tone: "danger",
+    });
+    if (!ok) return;
     setBusyId(id);
     setError("");
     try {

@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { adminLogin, todayDate } from "./helpers";
+import { acceptConfirm, adminLogin, todayDate } from "./helpers";
 
 test.describe("Manager store earnings", () => {
   test("dashboard shows today + this week store earnings", async ({ page }) => {
@@ -146,8 +146,8 @@ test.describe("Manager store earnings", () => {
     await expect(row).toBeVisible();
     await expect(row.getByText(/\$43\.00/)).toBeVisible();
 
-    page.once("dialog", (d) => d.accept());
     await row.getByRole("button", { name: /void \/ exclude/i }).click();
+    await acceptConfirm(page);
     await expect(page.getByText(/voided from store/i)).toBeVisible({ timeout: 10_000 });
     const voidedRow = page
       .getByTestId("store-earnings-activity")
@@ -156,8 +156,8 @@ test.describe("Manager store earnings", () => {
       .first();
     await expect(voidedRow.getByText(/job · voided/i)).toBeVisible();
 
-    page.once("dialog", (d) => d.accept());
     await voidedRow.getByRole("button", { name: /^restore$/i }).click();
+    await acceptConfirm(page);
     await expect(page.getByText(/restored to totals/i)).toBeVisible({ timeout: 10_000 });
     await expect(
       page

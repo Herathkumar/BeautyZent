@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { adminLogin, nextOpenDate, pickFirstSlot } from "./helpers";
+import { acceptConfirm, adminLogin, nextOpenDate, pickFirstSlot } from "./helpers";
 
 test.describe("Admin — book for client", () => {
   test("front desk can create a booking", async ({ page }) => {
@@ -98,9 +98,9 @@ test.describe("Admin — book for client", () => {
     await expect(createPanel).toBeVisible({ timeout: 20_000 });
     await createPanel.getByRole("button", { name: /^done$/i }).click();
 
-    page.once("dialog", (d) => d.accept());
     const card = page.locator("article").filter({ hasText: new RegExp(unique, "i") }).first();
     await card.getByRole("button", { name: /reset password/i }).click();
+    await acceptConfirm(page);
     const panel = card.getByTestId("issued-credentials");
     await expect(panel).toBeVisible({ timeout: 15_000 });
     await expect(panel.getByText(new RegExp(`new password for ${unique}`, "i"))).toBeVisible();

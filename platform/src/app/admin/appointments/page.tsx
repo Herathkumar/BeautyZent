@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useConfirm } from "@/components/ConfirmDialog";
 import { sourceLabel } from "@/lib/appointment-source";
 
 type Appt = {
@@ -58,6 +59,7 @@ export default function AppointmentsAdminPage() {
   const [stylists, setStylists] = useState<StylistOpt[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const confirm = useConfirm();
   const [message, setMessage] = useState("");
 
   const [stylistId, setStylistId] = useState("");
@@ -102,7 +104,14 @@ export default function AppointmentsAdminPage() {
   }, [load]);
 
   async function markNoShow(id: string) {
-    if (!window.confirm("Mark this booking as no-show?")) return;
+    const ok = await confirm({
+      title: "Mark as no-show?",
+      message: "This booking will be marked as a no-show.",
+      confirmLabel: "Mark no-show",
+      cancelLabel: "Keep booking",
+      tone: "danger",
+    });
+    if (!ok) return;
     setBusyId(id);
     const res = await fetch("/api/admin/appointments", {
       method: "PATCH",

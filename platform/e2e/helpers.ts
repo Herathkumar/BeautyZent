@@ -82,6 +82,14 @@ export async function adminLogin(page: Page) {
   await expect(page).toHaveURL(/\/manager(?!\/login)/, { timeout: 20_000 });
 }
 
+/** Accept the themed in-app confirm dialog (replaces native window.confirm). */
+export async function acceptConfirm(page: Page) {
+  const dialog = page.getByTestId("confirm-dialog");
+  await expect(dialog).toBeVisible({ timeout: 10_000 });
+  await dialog.getByTestId("confirm-dialog-ok").click();
+  await expect(dialog).toHaveCount(0);
+}
+
 export async function stylistLogin(page: Page) {
   await page.goto("/stylist/login");
   await page.getByLabel(/email/i).fill(DEMO.stylistEmail);

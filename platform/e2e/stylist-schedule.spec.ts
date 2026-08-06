@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { adminLogin, DEMO, stylistLogin, toLocalDateTimeInput } from "./helpers";
+import { acceptConfirm, adminLogin, DEMO, stylistLogin, toLocalDateTimeInput } from "./helpers";
 
 async function loginAsAisha(page: Page) {
   await page.goto("/stylist/login");
@@ -60,13 +60,13 @@ async function requestLeave(page: Page, note: string, daysAhead: number) {
 }
 
 async function removeLeaveByNote(page: Page, note: string) {
-  page.once("dialog", (d) => d.accept());
   await page
     .locator("div")
     .filter({ hasText: note })
     .getByRole("button", { name: /^remove$/i })
     .first()
     .click();
+  await acceptConfirm(page);
   await expect(page.getByText(note)).toHaveCount(0, { timeout: 10_000 });
 }
 
@@ -98,13 +98,13 @@ test.describe("Stylist — schedule & leave", () => {
     await expect(page.getByText(/E2E lunch break/i)).toBeVisible();
     await expect(page.getByText(/awaiting approval|approved/i).first()).toBeVisible();
 
-    page.once("dialog", (d) => d.accept());
     await page
       .locator("div.space-y-3, div")
       .filter({ hasText: "E2E lunch break" })
       .getByRole("button", { name: /^remove$/i })
       .first()
       .click();
+    await acceptConfirm(page);
 
     await expect(page.getByText(/E2E lunch break/i)).toHaveCount(0, { timeout: 10_000 });
   });

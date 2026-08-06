@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const DAY_FULL = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -322,6 +323,7 @@ export default function StylistOwnSchedulePage() {
   const [rangeStart, setRangeStart] = useState<string | null>(null);
   const [rangeEnd, setRangeEnd] = useState<string | null>(null);
   const [showAwayForm, setShowAwayForm] = useState(false);
+  const confirm = useConfirm();
 
   async function bootstrap() {
     const me = await fetch("/api/stylist/me");
@@ -491,7 +493,14 @@ export default function StylistOwnSchedulePage() {
   }
 
   async function removeBlock(blockId: string) {
-    if (!window.confirm("Remove this time off?")) return;
+    const ok = await confirm({
+      title: "Remove time off?",
+      message: "This time-off block will be removed and those hours open for booking again.",
+      confirmLabel: "Remove",
+      cancelLabel: "Keep it",
+      tone: "danger",
+    });
+    if (!ok) return;
     await fetch(`/api/admin/stylists/${stylistId}/blocks?blockId=${blockId}`, {
       method: "DELETE",
     });
