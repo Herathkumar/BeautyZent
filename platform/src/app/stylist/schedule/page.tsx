@@ -148,8 +148,11 @@ function WeekRing({
                 }
                 strokeWidth={selected ? 34 : 28}
                 strokeLinecap="round"
-                className="cursor-pointer transition-[stroke,stroke-width] duration-200"
-                onClick={() => onSelectDay(i)}
+                className="cursor-pointer outline-none transition-[stroke,stroke-width] duration-200 focus:outline-none focus-visible:opacity-95"
+                onClick={(e) => {
+                  onSelectDay(i);
+                  (e.currentTarget as SVGPathElement).blur();
+                }}
                 role="button"
                 tabIndex={0}
                 aria-label={`${DAY_FULL[i]}, ${working ? "working" : "day off"}`}

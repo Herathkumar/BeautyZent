@@ -1571,6 +1571,12 @@ html.manager-shell--dark .admin-theme .shadow-\[0_16px_40px_rgba\(0\,0\,0\,0\.35
   background: rgba(16, 24, 28, 0.7);
 }
 
+/* SVG day arcs show a boxy browser focus ring; selection stroke is enough. */
+.stylist-theme [data-testid="schedule-week-ring"] path:focus,
+.stylist-theme [data-testid="schedule-week-ring"] path:focus-visible {
+  outline: none;
+}
+
 html.stylist-shell--light .stylist-theme {
   --ink: #0e1618;
   --ink-soft: #1a2c30;
