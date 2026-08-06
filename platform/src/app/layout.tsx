@@ -41,6 +41,20 @@ html.stylist-shell.stylist-shell--light,html.stylist-shell.stylist-shell--light 
   color:#0e1618;
   color-scheme:light
 }
+html.book-shell,html.book-shell body{
+  background:radial-gradient(900px 480px at 85% -5%,rgba(232,180,162,.22),transparent 55%),
+    radial-gradient(700px 400px at 0% 90%,rgba(110,74,90,.28),transparent 50%),
+    linear-gradient(180deg,#241820 0%,#1a1418 50%,#120e12 100%);
+  color:#fffaf6;
+  color-scheme:dark
+}
+html.book-shell.book-shell--light,html.book-shell.book-shell--light body{
+  background:radial-gradient(900px 480px at 85% -5%,rgba(196,122,74,.12),transparent 55%),
+    radial-gradient(700px 400px at 0% 90%,rgba(125,97,84,.08),transparent 50%),
+    linear-gradient(180deg,#fdf8f3 0%,#f7f1ea 50%,#efe6dc 100%);
+  color:#2b2521;
+  color-scheme:light
+}
 `;
 
 const BOOT_SCRIPT = `
@@ -49,7 +63,8 @@ const BOOT_SCRIPT = `
     var p=location.pathname||"";
     var manager=/^\\/(manager|admin)(\\/|$)/.test(p);
     var stylist=/^\\/stylist(\\/|$)/.test(p);
-    var dark=/^\\/(display|book|demo)(\\/|$)/.test(p);
+    var book=/^\\/book(\\/|$)/.test(p);
+    var dark=/^\\/(display|demo)(\\/|$)/.test(p);
     if(manager){
       document.documentElement.classList.add("manager-shell");
       try{
@@ -67,6 +82,18 @@ const BOOT_SCRIPT = `
           document.documentElement.classList.add("stylist-shell--light");
           var sm=document.querySelector('meta[name="theme-color"]');
           if(sm) sm.setAttribute("content","#eef7f5");
+        }
+      }catch(e){}
+    }
+    else if(book){
+      document.documentElement.classList.add("book-shell");
+      try{
+        var bt=localStorage.getItem("fhsalon-book-theme")||"dark";
+        var light=bt==="light"||(bt==="system"&&window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches);
+        if(light){
+          document.documentElement.classList.add("book-shell--light");
+          var bm=document.querySelector('meta[name="theme-color"]');
+          if(bm) bm.setAttribute("content","#f7f1ea");
         }
       }catch(e){}
     }

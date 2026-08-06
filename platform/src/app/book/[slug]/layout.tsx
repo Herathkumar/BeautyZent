@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { AppOpenSplash } from "@/components/AppOpenSplash";
+import { BookThemeBoot } from "./BookThemePicker";
 
 type Props = {
   children: React.ReactNode;
@@ -37,9 +38,9 @@ export const viewport: Viewport = {
 
 export default function BookLayout({ children }: Props) {
   return (
-    <>
+    <BookThemeBoot>
       <AppOpenSplash variant="book" />
       {children}
-    </>
+    </BookThemeBoot>
   );
 }

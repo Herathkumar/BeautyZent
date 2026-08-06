@@ -1165,6 +1165,155 @@ a {
   box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.35);
 }
 
+/* Booking light theme — rose cream (member preference / device default) */
+html.book-shell--light .book-theme,
+.book-theme.book-theme--light {
+  --ink: #2b2521;
+  --ink-soft: #3d342e;
+  --muted: #6b5b52;
+  --paper: #f7f1ea;
+  --champagne: #c47a4a;
+  --cocoa: #8c6f5a;
+  --white: #ffffff;
+  --line: rgba(196, 122, 74, 0.28);
+  --color-ink: #2b2521;
+  --color-ink-soft: #3d342e;
+  --color-muted: #6b5b52;
+  --color-paper: #f7f1ea;
+  --color-cream: #fffcf9;
+  --color-champagne: #c47a4a;
+  --color-cocoa: #8c6f5a;
+  --color-white: #ffffff;
+  background:
+    radial-gradient(900px 480px at 85% -5%, rgba(196, 122, 74, 0.12), transparent 55%),
+    radial-gradient(700px 400px at 0% 90%, rgba(125, 97, 84, 0.08), transparent 50%),
+    linear-gradient(180deg, #fdf8f3 0%, #f7f1ea 50%, #efe6dc 100%);
+  color: #2b2521;
+  color-scheme: light;
+}
+
+html.book-shell--light .book-theme .btn-solid,
+.book-theme.book-theme--light .btn-solid {
+  background: linear-gradient(135deg, #d4895c 0%, #c47a4a 100%);
+  color: #fffaf6 !important;
+}
+
+html.book-shell--light .book-theme .btn-solid:hover,
+.book-theme.book-theme--light .btn-solid:hover {
+  background: linear-gradient(135deg, #e0986c 0%, #d4895c 100%);
+  color: #fffaf6 !important;
+}
+
+html.book-shell--light .book-theme input,
+html.book-shell--light .book-theme select,
+html.book-shell--light .book-theme textarea,
+.book-theme.book-theme--light input,
+.book-theme.book-theme--light select,
+.book-theme.book-theme--light textarea {
+  background: #ffffff !important;
+  color: #2b2521 !important;
+  border-color: rgba(196, 122, 74, 0.35) !important;
+}
+
+html.book-shell--light .book-theme input[type="date"],
+.book-theme.book-theme--light input[type="date"] {
+  color-scheme: light;
+}
+
+html.book-shell--light .book-theme input[type="date"]::-webkit-calendar-picker-indicator,
+.book-theme.book-theme--light input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: none;
+  opacity: 0.7;
+}
+
+html.book-shell--light .book-theme .text-muted,
+.book-theme.book-theme--light .text-muted {
+  color: #6b5b52 !important;
+}
+
+html.book-shell--light .book-theme .text-champagne,
+html.book-shell--light .book-theme .text-cocoa,
+.book-theme.book-theme--light .text-champagne,
+.book-theme.book-theme--light .text-cocoa {
+  color: #c47a4a !important;
+}
+
+html.book-shell--light .book-theme h1,
+html.book-shell--light .book-theme h2,
+html.book-shell--light .book-theme h3,
+.book-theme.book-theme--light h1,
+.book-theme.book-theme--light h2,
+.book-theme.book-theme--light h3 {
+  color: #2b2521 !important;
+}
+
+html.book-shell--light .book-theme .book-card,
+.book-theme.book-theme--light .book-card {
+  border: 1px solid rgba(196, 122, 74, 0.22);
+  background: linear-gradient(160deg, #ffffff 0%, #fffcf9 55%, #faf6f1 100%);
+  box-shadow: 0 10px 28px rgba(43, 37, 33, 0.06);
+}
+
+html.book-shell--light .book-theme .book-card.is-selected,
+.book-theme.book-theme--light .book-card.is-selected {
+  border-color: rgba(196, 122, 74, 0.55);
+  background: linear-gradient(135deg, #fff4ec 0%, #ffffff 55%, #f7f1ea 100%);
+  box-shadow: 0 12px 32px rgba(196, 122, 74, 0.14);
+}
+
+html.book-shell--light .book-theme .book-step,
+.book-theme.book-theme--light .book-step {
+  border-color: rgba(196, 122, 74, 0.28);
+  color: rgba(43, 37, 33, 0.45);
+}
+
+html.book-shell--light .book-theme .book-step.is-active,
+.book-theme.book-theme--light .book-step.is-active {
+  border-color: rgba(196, 122, 74, 0.5);
+  background: rgba(196, 122, 74, 0.12);
+  color: #c47a4a;
+}
+
+html.book-shell--light .book-theme .book-step.is-done,
+.book-theme.book-theme--light .book-step.is-done {
+  border-color: rgba(140, 111, 90, 0.35);
+  color: #8c6f5a;
+}
+
+html.book-shell--light .book-theme .book-slot,
+.book-theme.book-theme--light .book-slot {
+  border: 1px solid rgba(196, 122, 74, 0.28);
+  background: #ffffff;
+  color: #2b2521;
+}
+
+html.book-shell--light .book-theme .book-slot.is-selected,
+.book-theme.book-theme--light .book-slot.is-selected {
+  background: linear-gradient(135deg, #d4895c 0%, #c47a4a 100%);
+  border-color: transparent;
+  color: #fffaf6;
+  font-weight: 700;
+}
+
+html.book-shell--light .book-theme .book-sticky-summary,
+.book-theme.book-theme--light .book-sticky-summary {
+  border-top: 1px solid rgba(196, 122, 74, 0.22);
+  background: rgba(255, 252, 249, 0.94);
+  box-shadow: 0 -12px 40px rgba(43, 37, 33, 0.08);
+}
+
+html.book-shell--light .book-theme .book-sticky-summary .font-semibold,
+.book-theme.book-theme--light .book-sticky-summary .font-semibold {
+  color: #2b2521;
+}
+
+html.book-shell--light .app-splash--book {
+  background:
+    radial-gradient(900px 480px at 85% -5%, rgba(196, 122, 74, 0.14), transparent 55%),
+    linear-gradient(180deg, #fdf8f3 0%, #f7f1ea 50%, #efe6dc 100%);
+  color: #2b2521;
+}
+
 /* -------------------------------------------------------------------------- */
 /* Manager dark theme — warm champagne / cocoa (keeps Stylist teal separate) */
 /* -------------------------------------------------------------------------- */

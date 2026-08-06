@@ -5,6 +5,7 @@ import { ANY_STYLIST_ID, CLIENT_CANCEL_HOURS } from "@/lib/client-booking";
 import { formatCad } from "@/lib/money";
 import { calendarDateInTz } from "@/lib/salon-time";
 import { BookingMyBookings } from "./BookingMyBookings";
+import { BookThemePicker } from "./BookThemePicker";
 import { BookClient, ClientMemberBar } from "./ClientMemberBar";
 
 type Service = {
@@ -177,6 +178,7 @@ export function BookingWizard({ slug }: { slug: string }) {
   const [client, setClient] = useState<BookClient | null>(null);
   const [showBookings, setShowBookings] = useState(false);
   const [joinPrompt, setJoinPrompt] = useState(false);
+  const [themeOpen, setThemeOpen] = useState(false);
   const [done, setDone] = useState<{
     id: string;
     stylist: string;
@@ -395,6 +397,7 @@ export function BookingWizard({ slug }: { slug: string }) {
             onJoined={(c) => {
               onClientChange(c);
               setJoinPrompt(false);
+              setThemeOpen(true);
             }}
             onSkip={() => setJoinPrompt(false)}
           />
@@ -404,7 +407,7 @@ export function BookingWizard({ slug }: { slug: string }) {
           <button
             type="button"
             onClick={() => setShowBookings(true)}
-            className="w-full rounded-2xl border border-[rgba(232,180,162,0.35)] px-4 py-3 text-sm font-semibold text-[#f2c4b0]"
+            className="w-full rounded-2xl border border-[rgba(232,180,162,0.35)] px-4 py-3 text-sm font-semibold text-champagne"
           >
             View my bookings
           </button>
@@ -415,6 +418,13 @@ export function BookingWizard({ slug }: { slug: string }) {
           open={showBookings}
           onClose={() => setShowBookings(false)}
           timezone={salon?.timezone}
+        />
+        <BookThemePicker
+          open={themeOpen}
+          title="Booking is now available in light & dark mode!"
+          subtitle="You can change this now or anytime in Appearance."
+          confirmLabel="Got it"
+          onClose={() => setThemeOpen(false)}
         />
       </div>
     );
