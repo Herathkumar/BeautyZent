@@ -28,7 +28,7 @@ export default async function BookPage({
   return (
     <main className="book-theme flex min-h-screen flex-col">
       <div className="mx-auto w-full max-w-2xl flex-1 px-4 pb-8 pt-6 sm:px-6">
-        <section className="relative mb-5 overflow-hidden rounded-3xl border border-[rgba(232,180,162,0.35)] shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+        <section className="book-hero relative mb-5 overflow-hidden rounded-3xl border border-[rgba(232,180,162,0.35)] shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
           <div className="absolute inset-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -39,17 +39,17 @@ export default async function BookPage({
             <div className="absolute inset-0 bg-gradient-to-r from-[#1a1418]/96 via-[#1a1418]/88 to-[#6e4a52]/45" />
           </div>
           <div className="relative space-y-2 px-5 py-5 sm:px-7 sm:py-6">
-            <p className="text-xs font-semibold tracking-[0.22em] text-[#f2c4b0] uppercase">
+            <p className="book-hero-kicker text-xs font-semibold tracking-[0.22em] uppercase">
               Book your visit
             </p>
-            <h1 className="font-[family-name:var(--font-display)] text-3xl leading-none sm:text-4xl">
+            <h1 className="book-hero-title font-[family-name:var(--font-display)] text-3xl leading-none sm:text-4xl">
               {salon.name}
             </h1>
-            <p className="max-w-xl text-sm text-white/75 sm:text-base">
+            <p className="book-hero-copy max-w-xl text-sm sm:text-base">
               Guest or member — pick a service, stylist, and time. No app needed.
             </p>
             {(salon.phone || salon.address) && (
-              <p className="text-xs text-[#f2c4b0]/90 sm:text-sm">
+              <p className="book-hero-meta text-xs sm:text-sm">
                 {salon.phone}
                 {salon.phone && salon.address ? " · " : ""}
                 {salon.address}

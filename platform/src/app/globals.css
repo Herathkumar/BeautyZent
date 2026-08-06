@@ -1247,6 +1247,37 @@ html.book-shell--light .book-theme h3,
   color: #2b2521 !important;
 }
 
+/* Hero stays photo-dark in both themes — keep light type on the banner */
+.book-theme .book-hero-kicker,
+.book-theme .book-hero-meta {
+  color: #f2c4b0 !important;
+}
+
+.book-theme .book-hero-title {
+  color: #fffaf6 !important;
+}
+
+.book-theme .book-hero-copy {
+  color: rgba(255, 250, 246, 0.78) !important;
+}
+
+html.book-shell--light .book-theme .book-hero-title,
+.book-theme.book-theme--light .book-hero-title {
+  color: #fffaf6 !important;
+}
+
+html.book-shell--light .book-theme .book-hero-copy,
+.book-theme.book-theme--light .book-hero-copy {
+  color: rgba(255, 250, 246, 0.82) !important;
+}
+
+html.book-shell--light .book-theme .book-hero-kicker,
+html.book-shell--light .book-theme .book-hero-meta,
+.book-theme.book-theme--light .book-hero-kicker,
+.book-theme.book-theme--light .book-hero-meta {
+  color: #f2c4b0 !important;
+}
+
 html.book-shell--light .book-theme .book-card,
 .book-theme.book-theme--light .book-card {
   border: 1px solid rgba(196, 122, 74, 0.22);
