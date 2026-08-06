@@ -9,6 +9,40 @@ import {
   type ManagerTheme,
 } from "@/lib/manager-theme";
 
+function ThemeSwatch({ mode }: { mode: ManagerTheme }) {
+  if (mode === "light") {
+    return (
+      <span
+        className="relative block h-14 w-full overflow-hidden rounded-xl border border-[#7d6154]/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
+        style={{
+          background:
+            "linear-gradient(145deg, #fdf8f3 0%, #f3ebe3 55%, #ebe2d8 100%)",
+        }}
+        aria-hidden
+      >
+        <span className="absolute left-2.5 top-2.5 h-2 w-10 rounded-full bg-[#7d6154]/70" />
+        <span className="absolute bottom-2.5 left-2.5 right-2.5 h-5 rounded-lg bg-white shadow-sm ring-1 ring-[#7d6154]/15" />
+        <span className="absolute bottom-3.5 right-4 h-2 w-2 rounded-full bg-[#7d6154]" />
+      </span>
+    );
+  }
+
+  return (
+    <span
+      className="relative block h-14 w-full overflow-hidden rounded-xl border border-[#c9a87c]/35 shadow-[inset_0_1px_0_rgba(240,201,135,0.12)]"
+      style={{
+        background:
+          "radial-gradient(80px 40px at 90% 0%, rgba(240,201,135,0.28), transparent 60%), linear-gradient(145deg, #261e19 0%, #1c1714 55%, #12100e 100%)",
+      }}
+      aria-hidden
+    >
+      <span className="absolute left-2.5 top-2.5 h-2 w-10 rounded-full bg-[#f0c987]/85" />
+      <span className="absolute bottom-2.5 left-2.5 right-2.5 h-5 rounded-lg bg-[#2a211c] shadow-[0_4px_12px_rgba(0,0,0,0.35)] ring-1 ring-[#c9a87c]/25" />
+      <span className="absolute bottom-3.5 right-4 h-2 w-2 rounded-full bg-[#c9a87c]" />
+    </span>
+  );
+}
+
 export function ManagerThemeToggle() {
   const [theme, setTheme] = useState<ManagerTheme>("light");
 
@@ -45,7 +79,7 @@ export function ManagerThemeToggle() {
         Switch between cream light and champagne dark for the Manager app on this device.
       </p>
       <div
-        className="mt-4 grid grid-cols-2 gap-2 rounded-2xl border border-[color:var(--line)] bg-[color:var(--color-cream)] p-1.5"
+        className="mt-4 grid grid-cols-2 gap-2.5"
         role="group"
         aria-label="Manager theme"
       >
@@ -63,14 +97,15 @@ export function ManagerThemeToggle() {
               aria-pressed={active}
               data-testid={`manager-theme-${opt.id}`}
               onClick={() => setManagerTheme(opt.id)}
-              className={`rounded-xl px-3 py-3 text-left transition ${
+              className={`rounded-2xl border p-2.5 text-left transition ${
                 active
-                  ? "bg-[color:var(--color-white)] text-ink shadow-[0_8px_20px_rgba(0,0,0,0.12)] ring-1 ring-[color:var(--champagne)]"
-                  : "text-muted hover:text-ink"
+                  ? "border-[color:var(--champagne)] bg-[color:var(--color-cream)] shadow-[0_8px_20px_rgba(0,0,0,0.1)] ring-2 ring-[color:var(--champagne)]/35"
+                  : "border-[color:var(--line)] bg-transparent opacity-90 hover:opacity-100"
               }`}
             >
-              <span className="block text-sm font-semibold">{opt.label}</span>
-              <span className="mt-0.5 block text-xs opacity-80">{opt.hint}</span>
+              <ThemeSwatch mode={opt.id} />
+              <span className="mt-2.5 block text-sm font-semibold text-ink">{opt.label}</span>
+              <span className="mt-0.5 block text-xs text-muted">{opt.hint}</span>
             </button>
           );
         })}

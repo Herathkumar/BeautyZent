@@ -239,8 +239,6 @@ export default function AdminAccountPage() {
         </button>
       </div>
 
-      <ManagerThemeToggle />
-
       <section
         className="manager-profile-card overflow-hidden rounded-3xl border border-[color:var(--line)]"
         data-testid="manager-profile-card"
@@ -532,6 +530,8 @@ export default function AdminAccountPage() {
           {saving ? "Saving…" : "Update password"}
         </button>
       </form>
+
+      <ManagerThemeToggle />
     </main>
   );
 }
