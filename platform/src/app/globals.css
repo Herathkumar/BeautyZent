@@ -1142,6 +1142,29 @@ a {
   font-weight: 700;
 }
 
+.book-theme .book-step {
+  cursor: pointer;
+  background: transparent;
+}
+
+.book-theme .book-step:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.book-theme .book-sticky-summary {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  border-top: 1px solid rgba(232, 180, 162, 0.28);
+  background: rgba(18, 14, 18, 0.94);
+  backdrop-filter: blur(14px);
+  padding-bottom: env(safe-area-inset-bottom);
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.35);
+}
+
 /* -------------------------------------------------------------------------- */
 /* Manager dark theme — warm champagne / cocoa (keeps Stylist teal separate) */
 /* -------------------------------------------------------------------------- */

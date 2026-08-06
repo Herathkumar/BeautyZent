@@ -3,6 +3,13 @@ import { addMinutes } from "date-fns";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { syncAppointmentToGoogle } from "@/lib/calendar";
+import {
+  ANY_STYLIST_ID,
+  getClientSessionForSalon,
+  normalizeEmail,
+} from "@/lib/client-auth";
+import { getAvailableSlots } from "@/lib/slots";
+import { calendarDateInTz } from "@/lib/salon-time";
 
 const bodySchema = z.object({
   serviceId: z.string(),
@@ -12,6 +19,7 @@ const bodySchema = z.object({
   clientPhone: z.string().min(7),
   clientEmail: z.string().email().optional().or(z.literal("")),
   notes: z.string().optional(),
+  saveAsMember: z.boolean().optional(),
 });
 
 export async function POST(
@@ -35,11 +43,48 @@ export async function POST(
   const service = await prisma.service.findFirst({
     where: { id: data.serviceId, salonId: salon.id, active: true },
   });
+  if (!service) {
+    return NextResponse.json({ error: "Invalid service" }, { status: 400 });
+  }
+
+  let stylistId = data.stylistId;
+  if (stylistId === ANY_STYLIST_ID) {
+    const ymd = calendarDateInTz(salon.timezone || "America/Toronto", startsAt);
+    const links = await prisma.stylistService.findMany({
+      where: {
+        serviceId: service.id,
+        stylist: { salonId: salon.id, active: true },
+      },
+      select: { stylistId: true },
+    });
+    const startMs = startsAt.getTime();
+    let matched: string | null = null;
+    for (const link of links) {
+      const slots = await getAvailableSlots({
+        salonId: salon.id,
+        stylistId: link.stylistId,
+        serviceId: service.id,
+        date: ymd,
+      });
+      if (slots.some((s) => new Date(s).getTime() === startMs)) {
+        matched = link.stylistId;
+        break;
+      }
+    }
+    if (!matched) {
+      return NextResponse.json(
+        { error: "That time was just taken. Pick another slot." },
+        { status: 409 }
+      );
+    }
+    stylistId = matched;
+  }
+
   const stylist = await prisma.stylist.findFirst({
-    where: { id: data.stylistId, salonId: salon.id, active: true },
+    where: { id: stylistId, salonId: salon.id, active: true },
   });
-  if (!service || !stylist) {
-    return NextResponse.json({ error: "Invalid service or stylist" }, { status: 400 });
+  if (!stylist) {
+    return NextResponse.json({ error: "Invalid stylist" }, { status: 400 });
   }
 
   const link = await prisma.stylistService.findUnique({
@@ -61,25 +106,38 @@ export async function POST(
     },
   });
   if (conflict) {
-    return NextResponse.json({ error: "That time was just taken. Pick another slot." }, { status: 409 });
+    return NextResponse.json(
+      { error: "That time was just taken. Pick another slot." },
+      { status: 409 }
+    );
   }
 
-  let client = await prisma.client.findFirst({
-    where: {
-      salonId: salon.id,
-      OR: [
-        { phone: data.clientPhone },
-        ...(data.clientEmail ? [{ email: data.clientEmail }] : []),
-      ],
-    },
-  });
+  const session = await getClientSessionForSalon(salon.id);
+  const emailNorm = data.clientEmail ? normalizeEmail(data.clientEmail) : "";
+
+  let client = session
+    ? await prisma.client.findUnique({ where: { id: session.clientId } })
+    : null;
+
+  if (!client) {
+    client = await prisma.client.findFirst({
+      where: {
+        salonId: salon.id,
+        OR: [
+          { phone: data.clientPhone },
+          ...(emailNorm ? [{ email: emailNorm }] : []),
+        ],
+      },
+    });
+  }
+
   if (!client) {
     client = await prisma.client.create({
       data: {
         salonId: salon.id,
         name: data.clientName,
         phone: data.clientPhone,
-        email: data.clientEmail || null,
+        email: emailNorm || null,
       },
     });
   } else {
@@ -88,7 +146,11 @@ export async function POST(
       data: {
         name: data.clientName,
         phone: data.clientPhone,
-        email: data.clientEmail || client.email,
+        email: emailNorm || client.email,
+        preferredStylistId:
+          data.stylistId === ANY_STYLIST_ID
+            ? client.preferredStylistId
+            : stylist.id,
       },
     });
   }
@@ -119,7 +181,10 @@ export async function POST(
       service: appointment.service.name,
       stylist: appointment.stylist.name,
       client: appointment.client.name,
+      priceCents: appointment.service.priceCents,
     },
     calendarSync: sync,
+    suggestJoin: Boolean(emailNorm) && !client.memberAt && !session,
+    saveAsMember: Boolean(data.saveAsMember),
   });
 }
