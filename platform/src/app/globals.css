@@ -1156,13 +1156,105 @@ a {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 0;
+  /* Sits directly on top of the app tab bar. */
+  bottom: var(--book-nav-h, 0px);
   z-index: 40;
   border-top: 1px solid rgba(232, 180, 162, 0.28);
   background: rgba(18, 14, 18, 0.94);
   backdrop-filter: blur(14px);
-  padding-bottom: env(safe-area-inset-bottom);
   box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.35);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Booking app tab bar — makes the client booking PWA feel like a native app   */
+/* -------------------------------------------------------------------------- */
+
+.book-theme {
+  --book-nav-h: calc(64px + env(safe-area-inset-bottom));
+}
+
+.book-bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 45;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  align-items: stretch;
+  height: var(--book-nav-h);
+  padding-bottom: env(safe-area-inset-bottom);
+  border-top: 1px solid rgba(232, 180, 162, 0.22);
+  background: rgba(14, 11, 14, 0.96);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 -10px 34px rgba(0, 0, 0, 0.4);
+}
+
+.book-bottom-nav__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 6px 4px;
+  background: transparent;
+  color: rgba(255, 250, 246, 0.55);
+  transition:
+    color 0.18s ease,
+    transform 0.18s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.book-bottom-nav__item:active {
+  transform: scale(0.94);
+}
+
+.book-bottom-nav__item.is-active {
+  color: #f0c9b4;
+}
+
+.book-bottom-nav__icon {
+  position: relative;
+  display: inline-flex;
+}
+
+.book-bottom-nav__label {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.book-bottom-nav__badge {
+  position: absolute;
+  top: -5px;
+  right: -8px;
+  min-width: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #e8b4a2 0%, #c9a87c 100%);
+  color: #1c1714;
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
+html.book-shell--light .book-bottom-nav,
+.book-theme--light .book-bottom-nav {
+  border-top: 1px solid rgba(196, 122, 74, 0.2);
+  background: rgba(255, 252, 249, 0.96);
+  box-shadow: 0 -10px 34px rgba(43, 37, 33, 0.08);
+}
+
+html.book-shell--light .book-bottom-nav__item,
+.book-theme--light .book-bottom-nav__item {
+  color: #8a7668;
+}
+
+html.book-shell--light .book-bottom-nav__item.is-active,
+.book-theme--light .book-bottom-nav__item.is-active {
+  color: #b0603a;
 }
 
 /* Booking light theme — rose cream (member preference / device default) */

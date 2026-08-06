@@ -5,6 +5,7 @@ import {
   canCancelOnline,
   getClientSessionForSalon,
 } from "@/lib/client-auth";
+import { MAX_PHOTOS_PER_APPOINTMENT, lookPhotoUrl } from "@/lib/look-photos";
 
 export async function GET(
   _req: Request,
@@ -27,6 +28,10 @@ export async function GET(
     include: {
       service: { select: { name: true, durationMin: true, priceCents: true } },
       stylist: { select: { id: true, name: true } },
+      lookPhotos: {
+        orderBy: { createdAt: "asc" },
+        select: { id: true, caption: true, createdAt: true },
+      },
     },
   });
 
@@ -40,11 +45,22 @@ export async function GET(
     stylist: a.stylist,
     canCancel:
       ["BOOKED", "CHECKED_IN"].includes(a.status) && canCancelOnline(a.startsAt, now),
+    // Photos belong to visits that actually happened.
+    canAddPhotos:
+      a.startsAt.getTime() <= now.getTime() &&
+      !["CANCELLED", "NO_SHOW"].includes(a.status),
+    photos: a.lookPhotos.map((p) => ({
+      id: p.id,
+      caption: p.caption,
+      createdAt: p.createdAt,
+      url: lookPhotoUrl(slug, p.id),
+    })),
   }));
 
   return NextResponse.json({
     appointments,
     cancelPolicyHours: CLIENT_CANCEL_HOURS,
+    maxPhotosPerVisit: MAX_PHOTOS_PER_APPOINTMENT,
     timezone: salon.timezone,
   });
 }

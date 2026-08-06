@@ -46,7 +46,8 @@ export default async function BookPage({
               {salon.name}
             </h1>
             <p className="book-hero-copy max-w-xl text-sm sm:text-base">
-              Guest or member — pick a service, stylist, and time. No app needed.
+              Guest or member — pick a service, stylist, and time. Members keep a
+              photo look book of every visit.
             </p>
             {(salon.phone || salon.address) && (
               <p className="book-hero-meta text-xs sm:text-sm">
@@ -61,7 +62,7 @@ export default async function BookPage({
         <BookingWizard slug={slug} />
       </div>
 
-      <div className="mx-auto w-full max-w-2xl px-4 sm:px-6">
+      <div className="mx-auto w-full max-w-2xl px-4 pb-[calc(var(--book-nav-h)+0.5rem)] sm:px-6">
         <ZentraLabFooter compact />
       </div>
     </main>

@@ -18,11 +18,14 @@ export function ClientMemberBar({
   client,
   onClientChange,
   onOpenBookings,
+  openSignInSignal = 0,
 }: {
   slug: string;
   client: BookClient | null;
   onClientChange: (c: BookClient | null) => void;
   onOpenBookings: () => void;
+  /** Bump to pop the sign-in form open from the app tab bar. */
+  openSignInSignal?: number;
 }) {
   const [mode, setMode] = useState<Mode>("closed");
   const [purpose, setPurpose] = useState<"signin" | "join">("signin");
@@ -43,6 +46,14 @@ export function ClientMemberBar({
       .then((d) => onClientChange(d.client || null))
       .catch(() => onClientChange(null));
   }, [slug, onClientChange]);
+
+  useEffect(() => {
+    if (!openSignInSignal) return;
+    setMode("signin");
+    setPurpose("signin");
+    setError("");
+    setMsg("");
+  }, [openSignInSignal]);
 
   async function requestCode(nextPurpose: "signin" | "join") {
     setBusy(true);
@@ -226,6 +237,11 @@ export function ClientMemberBar({
 
       {mode === "signin" || mode === "join" ? (
         <div className="mt-4 grid gap-3 border-t border-white/10 pt-4 sm:grid-cols-2">
+          <p className="text-sm text-muted sm:col-span-2">
+            {mode === "join"
+              ? "Join to save your details and keep a photo look book of every visit."
+              : "Sign in to see your visits and your look book."}
+          </p>
           {mode === "join" ? (
             <>
               <label className="grid gap-1 text-xs text-muted">

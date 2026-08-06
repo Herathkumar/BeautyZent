@@ -90,6 +90,35 @@ export async function acceptConfirm(page: Page) {
   await expect(dialog).toHaveCount(0);
 }
 
+/** Join the booking app as a member via the demo OTP code shown on screen. */
+export async function joinAsMember(
+  page: Page,
+  opts: { name: string; phone: string; email: string }
+) {
+  await page.goto(`/book/${DEMO.slug}`);
+  await page.getByRole("button", { name: /^join free$/i }).click();
+  await page.getByLabel(/^name$/i).fill(opts.name);
+  await page.getByLabel(/^phone$/i).fill(opts.phone);
+  await page.getByLabel(/^email$/i).fill(opts.email);
+  await page.getByRole("button", { name: /email me a code/i }).click();
+
+  const demoCode = page.locator("text=/Demo code:/i");
+  await expect(demoCode).toBeVisible({ timeout: 20_000 });
+  const codeText = await demoCode.innerText();
+  const code = (codeText.match(/\b(\d{6})\b/) || [])[1];
+  expect(code, "Expected demo OTP code on screen").toBeTruthy();
+
+  await page.getByLabel(/6-digit code/i).fill(code!);
+  await page.getByRole("button", { name: /^join & continue$/i }).click();
+  await expect(page.getByText(/^member$/i).first()).toBeVisible({ timeout: 15_000 });
+
+  // Post-join appearance welcome — dismiss if shown
+  const gotIt = page.getByRole("button", { name: /^got it$/i });
+  if (await gotIt.isVisible({ timeout: 3_000 }).catch(() => false)) {
+    await gotIt.click();
+  }
+}
+
 export async function stylistLogin(page: Page) {
   await page.goto("/stylist/login");
   await page.getByLabel(/email/i).fill(DEMO.stylistEmail);

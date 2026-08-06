@@ -1,41 +1,19 @@
-import { test, expect, type Page } from "@playwright/test";
-import { bookOnline, bookableDateNearToday, DEMO, nextOpenDate, todayDate } from "./helpers";
-
-async function joinAsMember(
-  page: Page,
-  opts: { name: string; phone: string; email: string }
-) {
-  await page.goto(`/book/${DEMO.slug}`);
-  await page.getByRole("button", { name: /^join free$/i }).click();
-  await page.getByLabel(/^name$/i).fill(opts.name);
-  await page.getByLabel(/^phone$/i).fill(opts.phone);
-  await page.getByLabel(/^email$/i).fill(opts.email);
-  await page.getByRole("button", { name: /email me a code/i }).click();
-
-  const demoCode = page.locator("text=/Demo code:/i");
-  await expect(demoCode).toBeVisible({ timeout: 20_000 });
-  const codeText = await demoCode.innerText();
-  const code = (codeText.match(/\b(\d{6})\b/) || [])[1];
-  expect(code, "Expected demo OTP code on screen").toBeTruthy();
-
-  await page.getByLabel(/6-digit code/i).fill(code!);
-  await page.getByRole("button", { name: /^join & continue$/i }).click();
-  await expect(page.getByText(/^member$/i)).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByText(opts.name)).toBeVisible();
-
-  // Post-join appearance welcome — dismiss if shown
-  const gotIt = page.getByRole("button", { name: /^got it$/i });
-  if (await gotIt.isVisible({ timeout: 3_000 }).catch(() => false)) {
-    await gotIt.click();
-  }
-}
+import { test, expect } from "@playwright/test";
+import {
+  bookOnline,
+  bookableDateNearToday,
+  DEMO,
+  joinAsMember,
+  nextOpenDate,
+  todayDate,
+} from "./helpers";
 
 test.describe("Booking member auth", () => {
   test("guest can open Appearance and save theme without signing in", async ({
     page,
   }) => {
     await page.goto(`/book/${DEMO.slug}`);
-    await page.getByRole("button", { name: /^appearance$/i }).click();
+    await page.getByTestId("book-nav-appearance").click();
     await expect(page.getByRole("dialog")).toBeVisible();
     await page.getByRole("button", { name: /^light$/i }).click();
     await page.getByRole("button", { name: /^save$/i }).click();
@@ -57,6 +35,7 @@ test.describe("Booking member auth", () => {
       phone: "9055550188",
       email,
     });
+    await expect(page.getByText(name).first()).toBeVisible();
 
     // Advance to details so fields are visible
     await page

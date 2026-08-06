@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ANY_STYLIST_ID, CLIENT_CANCEL_HOURS } from "@/lib/client-booking";
 import { formatCad } from "@/lib/money";
 import { calendarDateInTz } from "@/lib/salon-time";
-import { BookingMyBookings } from "./BookingMyBookings";
+import { BookBottomNav, BookTabKey } from "./BookBottomNav";
+import { BookingMyBookings, MemberTab } from "./BookingMyBookings";
 import { BookThemePicker } from "./BookThemePicker";
 import { BookClient, ClientMemberBar } from "./ClientMemberBar";
 
@@ -177,8 +178,11 @@ export function BookingWizard({ slug }: { slug: string }) {
   const [error, setError] = useState("");
   const [client, setClient] = useState<BookClient | null>(null);
   const [showBookings, setShowBookings] = useState(false);
+  const [memberTab, setMemberTab] = useState<MemberTab>("visits");
+  const [signInSignal, setSignInSignal] = useState(0);
   const [joinPrompt, setJoinPrompt] = useState(false);
   const [themeOpen, setThemeOpen] = useState(false);
+  const [counts, setCounts] = useState({ upcoming: 0, photos: 0 });
   const [done, setDone] = useState<{
     id: string;
     stylist: string;
@@ -187,20 +191,26 @@ export function BookingWizard({ slug }: { slug: string }) {
     priceCents?: number;
   } | null>(null);
 
+  const wasMember = useRef(false);
   const onClientChange = useCallback((c: BookClient | null) => {
     setClient(c);
     if (c) {
+      wasMember.current = true;
       setName(c.name || "");
       setPhone(c.phone || "");
       setEmail(c.email || "");
       return;
     }
-    // Guest again — clear prefilled member details and member-only UI
+    // The initial session check also reports null; only a real sign-out should
+    // wipe what a guest has already typed.
+    if (!wasMember.current) return;
+    wasMember.current = false;
     setName("");
     setPhone("");
     setEmail("");
     setShowBookings(false);
     setSaveAsMember(true);
+    setCounts({ upcoming: 0, photos: 0 });
   }, []);
 
   useEffect(() => {
@@ -243,6 +253,33 @@ export function BookingWizard({ slug }: { slug: string }) {
       .then((data) => setSlots(data.slots || []))
       .catch(() => setSlots([]));
   }, [slug, serviceId, stylistId, date]);
+
+  // Tab-bar badges: upcoming visits and saved look-book photos.
+  useEffect(() => {
+    if (!client) return;
+    let cancelled = false;
+    fetch(`/api/public/${slug}/my-bookings`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (cancelled || !d?.appointments) return;
+        const now = Date.now();
+        setCounts({
+          upcoming: d.appointments.filter(
+            (a: { status: string; startsAt: string }) =>
+              ["BOOKED", "CHECKED_IN"].includes(a.status) &&
+              new Date(a.startsAt).getTime() >= now - 60_000
+          ).length,
+          photos: d.appointments.reduce(
+            (sum: number, a: { photos?: unknown[] }) => sum + (a.photos?.length || 0),
+            0
+          ),
+        });
+      })
+      .catch(() => null);
+    return () => {
+      cancelled = true;
+    };
+  }, [slug, client, showBookings, done]);
 
   useEffect(() => {
     if (!client?.preferredStylistId || stylistId || !serviceId) return;
@@ -315,6 +352,69 @@ export function BookingWizard({ slug }: { slug: string }) {
     if (slots[0]) setStartsAt(slots[0]);
   }
 
+  function openMemberTab(tab: MemberTab) {
+    if (!client) {
+      // Guests get the sign-in form on the member bar instead of an empty sheet.
+      setShowBookings(false);
+      setSignInSignal((n) => n + 1);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    setMemberTab(tab);
+    setShowBookings(true);
+  }
+
+  function selectTab(key: BookTabKey) {
+    if (key === "book") {
+      setShowBookings(false);
+      setThemeOpen(false);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    if (key === "appearance") {
+      setShowBookings(false);
+      setThemeOpen(true);
+      return;
+    }
+    openMemberTab(key === "lookbook" ? "lookbook" : "visits");
+  }
+
+  const activeTab: BookTabKey = themeOpen
+    ? "appearance"
+    : showBookings
+      ? memberTab === "lookbook"
+        ? "lookbook"
+        : "visits"
+      : "book";
+
+  const appChrome = (
+    <>
+      <BookingMyBookings
+        slug={slug}
+        open={showBookings}
+        initialTab={memberTab}
+        onClose={() => setShowBookings(false)}
+        timezone={salon?.timezone}
+      />
+      <BookThemePicker
+        open={themeOpen}
+        title={
+          client
+            ? "Choose your booking look"
+            : "Booking is available in light & dark mode!"
+        }
+        subtitle="Light, dark, or match your device — saved on this phone."
+        confirmLabel="Save"
+        onClose={() => setThemeOpen(false)}
+      />
+      <BookBottomNav
+        active={activeTab}
+        badge={{ visits: counts.upcoming, lookbook: counts.photos }}
+        onSelect={selectTab}
+      />
+    </>
+  );
+
   if (loading) {
     return <p className="py-12 text-center text-muted">Loading booking…</p>;
   }
@@ -333,7 +433,7 @@ export function BookingWizard({ slug }: { slug: string }) {
       .replace(/\.\d{3}Z$/, "Z")}`;
 
     return (
-      <div className="space-y-5" data-testid="booking-confirmed">
+      <div className="space-y-5 pb-24" data-testid="booking-confirmed">
         <div className="book-card rounded-3xl p-7 text-center shadow-[0_20px_60px_rgba(0,0,0,0.3)] sm:p-8">
           <p className="text-xs font-semibold tracking-[0.22em] text-champagne uppercase">
             Confirmed
@@ -423,13 +523,22 @@ export function BookingWizard({ slug }: { slug: string }) {
             </button>
 
             {client ? (
-              <button
-                type="button"
-                onClick={() => setShowBookings(true)}
-                className="rounded-2xl border border-[rgba(232,180,162,0.4)] px-4 py-3.5 text-sm font-semibold text-champagne"
-              >
-                View my bookings
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => openMemberTab("visits")}
+                  className="rounded-2xl border border-[rgba(232,180,162,0.4)] px-4 py-3.5 text-sm font-semibold text-champagne"
+                >
+                  View my bookings
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openMemberTab("lookbook")}
+                  className="rounded-2xl border border-[rgba(232,180,162,0.4)] px-4 py-3.5 text-sm font-semibold text-champagne"
+                >
+                  My look book
+                </button>
+              </>
             ) : (
               <button
                 type="button"
@@ -473,23 +582,7 @@ export function BookingWizard({ slug }: { slug: string }) {
           </div>
         </section>
 
-        <BookingMyBookings
-          slug={slug}
-          open={showBookings}
-          onClose={() => setShowBookings(false)}
-          timezone={salon?.timezone}
-        />
-        <BookThemePicker
-          open={themeOpen}
-          title={
-            client
-              ? "Choose your booking look"
-              : "Booking is available in light & dark mode!"
-          }
-          subtitle="Light, dark, or match your device — saved on this phone."
-          confirmLabel="Save"
-          onClose={() => setThemeOpen(false)}
-        />
+        {appChrome}
       </div>
     );
   }
@@ -500,10 +593,11 @@ export function BookingWizard({ slug }: { slug: string }) {
         slug={slug}
         client={client}
         onClientChange={onClientChange}
-        onOpenBookings={() => setShowBookings(true)}
+        onOpenBookings={() => openMemberTab("visits")}
+        openSignInSignal={signInSignal}
       />
 
-      <form onSubmit={submit} className="space-y-8 pb-28">
+      <form onSubmit={submit} className="space-y-8 pb-52">
         <div className="flex flex-wrap gap-2">
           {STEPS.map((label, i) => {
             const reachable = i === 0 || (i === 1 && serviceId) || (i === 2 && stylistId) || (i === 3 && startsAt) || i < activeStep;
@@ -831,12 +925,7 @@ export function BookingWizard({ slug }: { slug: string }) {
         )}
       </form>
 
-      <BookingMyBookings
-        slug={slug}
-        open={showBookings}
-        onClose={() => setShowBookings(false)}
-        timezone={salon?.timezone}
-      />
+      {appChrome}
     </>
   );
 }
