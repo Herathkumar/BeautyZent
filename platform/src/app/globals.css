@@ -1295,6 +1295,11 @@ html.manager-shell--dark .admin-theme .bg-cream {
 html.manager-shell--dark .admin-theme h1,
 html.manager-shell--dark .admin-theme h2,
 html.manager-shell--dark .admin-theme h3 {
+  color: #fffaf6 !important;
+}
+
+html.manager-shell--dark .admin-theme .font-medium,
+html.manager-shell--dark .admin-theme .font-semibold {
   color: #fffaf6;
 }
 
