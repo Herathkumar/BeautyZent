@@ -4,6 +4,7 @@ import { AppOpenSplash } from "@/components/AppOpenSplash";
 import { canAccessStylistPortal, getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { StylistBottomNav } from "./StylistBottomNav";
+import { StylistThemeRoot } from "./StylistThemeRoot";
 
 export const metadata: Metadata = {
   title: "FHSalon — Stylist App",
@@ -44,11 +45,7 @@ export default async function StylistLayout({ children }: { children: React.Reac
   }
 
   return (
-    <div
-      className={
-        showStylistChrome ? "stylist-theme stylist-app-shell" : "stylist-theme min-h-screen"
-      }
-    >
+    <StylistThemeRoot showChrome={showStylistChrome}>
       <AppOpenSplash variant="stylist" />
       {showStylistChrome ? (
         <header className="admin-header shrink-0 z-20 px-4 py-3">
@@ -71,6 +68,6 @@ export default async function StylistLayout({ children }: { children: React.Reac
         {children}
       </div>
       {showStylistChrome ? <StylistBottomNav /> : null}
-    </div>
+    </StylistThemeRoot>
   );
 }

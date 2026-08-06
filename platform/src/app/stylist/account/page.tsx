@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SelfieCamera } from "@/components/SelfieCamera";
+import { StylistThemeToggle } from "../StylistThemeToggle";
 
 type Gender = "FEMALE" | "MALE" | "UNSPECIFIED";
 
@@ -252,12 +253,8 @@ export default function StylistAccountPage() {
       </div>
 
       <section
-        className="overflow-hidden rounded-3xl border border-[#7ec4b8]/30"
+        className="stylist-profile-card overflow-hidden rounded-3xl border border-[#7ec4b8]/30"
         data-testid="stylist-profile-card"
-        style={{
-          background:
-            "linear-gradient(165deg, rgba(126,196,184,0.16) 0%, rgba(26,40,44,0.95) 42%, #1a282c 100%)",
-        }}
       >
         <div className="px-5 pb-5 pt-7 sm:px-6">
           <div className="flex flex-col items-center text-center">
@@ -531,6 +528,8 @@ export default function StylistAccountPage() {
           {saving ? "Saving…" : "Save login"}
         </button>
       </form>
+
+      <StylistThemeToggle />
     </main>
   );
 }

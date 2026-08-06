@@ -27,6 +27,20 @@ html.manager-shell.manager-shell--dark,html.manager-shell.manager-shell--dark bo
   color:#fffaf6;
   color-scheme:dark
 }
+html.stylist-shell,html.stylist-shell body{
+  background:radial-gradient(900px 460px at 85% -8%,rgba(126,196,184,.22),transparent 55%),
+    radial-gradient(720px 380px at 0% 100%,rgba(56,110,120,.32),transparent 52%),
+    linear-gradient(180deg,#152226 0%,#0e1618 48%,#0a1114 100%);
+  color:#f4fbfa;
+  color-scheme:dark
+}
+html.stylist-shell.stylist-shell--light,html.stylist-shell.stylist-shell--light body{
+  background:radial-gradient(900px 460px at 85% -8%,rgba(42,143,130,.12),transparent 55%),
+    radial-gradient(720px 380px at 0% 100%,rgba(56,110,120,.08),transparent 52%),
+    linear-gradient(180deg,#f4fbfa 0%,#e8f4f1 48%,#dceee9 100%);
+  color:#0e1618;
+  color-scheme:light
+}
 `;
 
 const BOOT_SCRIPT = `
@@ -34,7 +48,8 @@ const BOOT_SCRIPT = `
   try{
     var p=location.pathname||"";
     var manager=/^\\/(manager|admin)(\\/|$)/.test(p);
-    var dark=/^\\/(stylist|display|book|demo)(\\/|$)/.test(p);
+    var stylist=/^\\/stylist(\\/|$)/.test(p);
+    var dark=/^\\/(display|book|demo)(\\/|$)/.test(p);
     if(manager){
       document.documentElement.classList.add("manager-shell");
       try{
@@ -42,6 +57,16 @@ const BOOT_SCRIPT = `
           document.documentElement.classList.add("manager-shell--dark");
           var m=document.querySelector('meta[name="theme-color"]');
           if(m) m.setAttribute("content","#1c1714");
+        }
+      }catch(e){}
+    }
+    else if(stylist){
+      document.documentElement.classList.add("stylist-shell");
+      try{
+        if(localStorage.getItem("fhsalon-stylist-theme")==="light"){
+          document.documentElement.classList.add("stylist-shell--light");
+          var sm=document.querySelector('meta[name="theme-color"]');
+          if(sm) sm.setAttribute("content","#eef7f5");
         }
       }catch(e){}
     }
