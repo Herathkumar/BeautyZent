@@ -747,7 +747,7 @@ export function BookingWizard({ slug }: { slug: string }) {
                   disabled={submitting}
                   className="btn-solid shrink-0 rounded-full px-5 py-3 text-sm font-semibold disabled:opacity-60"
                 >
-                  {submitting ? "Booking…" : "Confirm"}
+                  {submitting ? "Booking…" : "Confirm reservation"}
                 </button>
               ) : (
                 <span className="text-xs text-muted">Keep going →</span>
