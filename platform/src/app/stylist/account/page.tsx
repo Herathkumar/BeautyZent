@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SelfieCamera } from "@/components/SelfieCamera";
+import { FacebookIcon, InstagramIcon } from "@/components/SocialBrandIcons";
+import { facebookUrl, instagramUrl } from "@/lib/social-links";
 import { StylistThemeToggle } from "../StylistThemeToggle";
 
 type Gender = "FEMALE" | "MALE" | "UNSPECIFIED";
@@ -341,9 +343,29 @@ export default function StylistAccountPage() {
             ) : null}
 
             {!editingProfile && (instagram.trim() || facebook.trim()) ? (
-              <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-xs font-semibold text-[#b5ebe0]">
-                {instagram.trim() ? <span>IG · {instagram.trim()}</span> : null}
-                {facebook.trim() ? <span>FB · {facebook.trim()}</span> : null}
+              <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+                {instagram.trim() ? (
+                  <a
+                    href={instagramUrl(instagram) || "#"}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-[#7ec4b8]/40 bg-[#7ec4b8]/10 px-3 py-1.5 text-xs font-semibold text-[#b5ebe0]"
+                  >
+                    <InstagramIcon className="h-3.5 w-3.5 shrink-0" />
+                    {instagram.trim()}
+                  </a>
+                ) : null}
+                {facebook.trim() ? (
+                  <a
+                    href={facebookUrl(facebook) || "#"}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-[#7ec4b8]/40 bg-[#7ec4b8]/10 px-3 py-1.5 text-xs font-semibold text-[#b5ebe0]"
+                  >
+                    <FacebookIcon className="h-3.5 w-3.5 shrink-0" />
+                    {facebook.trim()}
+                  </a>
+                ) : null}
               </div>
             ) : null}
 
@@ -478,7 +500,10 @@ export default function StylistAccountPage() {
               />
             </label>
             <label className="grid gap-1.5 text-sm">
-              Instagram
+              <span className="inline-flex items-center gap-1.5">
+                <InstagramIcon className="h-4 w-4 text-[#b5ebe0]" />
+                Instagram
+              </span>
               <input
                 value={instagram}
                 onChange={(e) => setInstagram(e.target.value)}
@@ -488,7 +513,10 @@ export default function StylistAccountPage() {
               />
             </label>
             <label className="grid gap-1.5 text-sm">
-              Facebook
+              <span className="inline-flex items-center gap-1.5">
+                <FacebookIcon className="h-4 w-4 text-[#b5ebe0]" />
+                Facebook
+              </span>
               <input
                 value={facebook}
                 onChange={(e) => setFacebook(e.target.value)}

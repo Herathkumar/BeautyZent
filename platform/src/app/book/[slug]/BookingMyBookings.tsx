@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { CLIENT_CANCEL_HOURS } from "@/lib/client-booking";
 import { formatCad } from "@/lib/money";
+import { FacebookIcon, InstagramIcon } from "@/components/SocialBrandIcons";
 import { facebookUrl, instagramUrl } from "@/lib/social-links";
 import { LookPhoto, LookPhotoStrip, LookPhotoViewer } from "./LookPhotos";
 import { StylePreviewPanel, StylePrefDraft } from "./StylePreviewPanel";
@@ -176,8 +177,9 @@ function StylistProfileCard({
                 href={ig}
                 target="_blank"
                 rel="noreferrer"
-                className="rounded-2xl border border-[color:var(--line)] px-4 py-3 text-sm font-semibold text-champagne"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[color:var(--line)] px-4 py-3 text-sm font-semibold text-champagne"
               >
+                <InstagramIcon className="h-5 w-5 shrink-0" />
                 Instagram
               </a>
             ) : null}
@@ -186,8 +188,9 @@ function StylistProfileCard({
                 href={fb}
                 target="_blank"
                 rel="noreferrer"
-                className="rounded-2xl border border-[color:var(--line)] px-4 py-3 text-sm font-semibold text-champagne"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[color:var(--line)] px-4 py-3 text-sm font-semibold text-champagne"
               >
+                <FacebookIcon className="h-5 w-5 shrink-0" />
                 Facebook
               </a>
             ) : null}
