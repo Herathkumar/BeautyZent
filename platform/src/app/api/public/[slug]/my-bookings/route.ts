@@ -6,6 +6,7 @@ import {
   getClientSessionForSalon,
 } from "@/lib/client-auth";
 import { MAX_PHOTOS_PER_APPOINTMENT, lookPhotoUrl } from "@/lib/look-photos";
+import { stylistPhotoUrl } from "@/lib/stylist-photo";
 
 export async function GET(
   _req: Request,
@@ -27,7 +28,15 @@ export async function GET(
     take: 40,
     include: {
       service: { select: { name: true, durationMin: true, priceCents: true } },
-      stylist: { select: { id: true, name: true } },
+      stylist: {
+        select: {
+          id: true,
+          name: true,
+          gender: true,
+          photoUpdatedAt: true,
+          photoMime: true,
+        },
+      },
       lookPhotos: {
         orderBy: { createdAt: "asc" },
         select: { id: true, caption: true, createdAt: true },
@@ -42,7 +51,16 @@ export async function GET(
     status: a.status,
     notes: a.notes,
     service: a.service,
-    stylist: a.stylist,
+    stylist: {
+      id: a.stylist.id,
+      name: a.stylist.name,
+      photoUrl: stylistPhotoUrl({
+        id: a.stylist.id,
+        gender: a.stylist.gender,
+        photoUpdatedAt: a.stylist.photoUpdatedAt,
+        hasPhoto: Boolean(a.stylist.photoMime && a.stylist.photoUpdatedAt),
+      }),
+    },
     canCancel:
       ["BOOKED", "CHECKED_IN"].includes(a.status) && canCancelOnline(a.startsAt, now),
     // Photos belong to visits that actually happened.

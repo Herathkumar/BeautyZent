@@ -139,38 +139,78 @@ export function LookPhotoStrip({
   );
 }
 
-/** Full-screen photo viewer with caption editing and delete. */
+/** Full-screen look-book viewer — swipe / arrows between photos in one visit. */
 export function LookPhotoViewer({
   slug,
-  photo,
+  photos,
+  photoId,
   appointmentId,
   visitLabel,
   onClose,
+  onPhotoIdChange,
   onDeleted,
   onCaptionSaved,
 }: {
   slug: string;
-  photo: LookPhoto | null;
+  photos: LookPhoto[];
+  photoId: string | null;
   appointmentId: string | null;
   visitLabel: string;
   onClose: () => void;
+  onPhotoIdChange: (photoId: string) => void;
   onDeleted: (photoId: string) => void;
   onCaptionSaved: (photoId: string, caption: string) => void;
 }) {
   const confirm = useConfirm();
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
   const [caption, setCaption] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
+  const index = Math.max(
+    0,
+    photos.findIndex((p) => p.id === photoId)
+  );
+  const photo = photos[index] ?? null;
+
   useEffect(() => {
     setCaption(photo?.caption || "");
     setError("");
-  }, [photo]);
+  }, [photo?.id, photo?.caption]);
 
-  if (!photo || !appointmentId) return null;
+  // Jump the carousel to the active photo when it changes externally.
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el || index < 0) return;
+    const slide = el.children[index] as HTMLElement | undefined;
+    if (slide) {
+      el.scrollTo({ left: slide.offsetLeft, behavior: "auto" });
+    }
+  }, [photoId, photos.length, index]);
+
+  if (!photo || !appointmentId || photos.length === 0) return null;
+
+  function go(delta: number) {
+    const next = index + delta;
+    if (next < 0 || next >= photos.length) return;
+    onPhotoIdChange(photos[next].id);
+    const el = scrollerRef.current;
+    const slide = el?.children[next] as HTMLElement | undefined;
+    if (el && slide) {
+      el.scrollTo({ left: slide.offsetLeft, behavior: "smooth" });
+    }
+  }
+
+  function onScroll() {
+    const el = scrollerRef.current;
+    if (!el || !photos.length) return;
+    const i = Math.round(el.scrollLeft / Math.max(el.clientWidth, 1));
+    const clamped = Math.max(0, Math.min(photos.length - 1, i));
+    const id = photos[clamped]?.id;
+    if (id && id !== photoId) onPhotoIdChange(id);
+  }
 
   async function remove() {
-    if (!photo || !appointmentId) return;
     const ok = await confirm({
       title: "Delete this photo?",
       message: "It will be removed from your look book.",
@@ -187,8 +227,13 @@ export function LookPhotoViewer({
       );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Delete failed");
+      const remaining = photos.filter((p) => p.id !== photo.id);
       onDeleted(photo.id);
-      onClose();
+      if (remaining.length === 0) {
+        onClose();
+      } else {
+        onPhotoIdChange(remaining[Math.min(index, remaining.length - 1)].id);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Delete failed");
     } finally {
@@ -204,9 +249,16 @@ export function LookPhotoViewer({
       data-testid="look-photo-viewer"
     >
       <div className="flex items-center justify-between gap-3">
-        <p className="min-w-0 truncate text-sm font-semibold text-[#f3eafc]">
-          {visitLabel}
-        </p>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-[#f3eafc]">
+            {visitLabel}
+          </p>
+          {photos.length > 1 ? (
+            <p className="text-xs text-[#c9b4e8]">
+              {index + 1} / {photos.length} · swipe to browse
+            </p>
+          ) : null}
+        </div>
         <button
           type="button"
           onClick={onClose}
@@ -226,14 +278,67 @@ export function LookPhotoViewer({
         </button>
       </div>
 
-      <div className="mt-3 flex min-h-0 flex-1 items-center justify-center">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={photo.url}
-          alt={photo.caption || "Visit photo"}
-          className="max-h-full max-w-full rounded-2xl object-contain"
-        />
+      <div className="relative mt-3 min-h-0 flex-1">
+        <div
+          ref={scrollerRef}
+          onScroll={onScroll}
+          className="flex h-full snap-x snap-mandatory overflow-x-auto scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          data-testid="look-photo-carousel"
+        >
+          {photos.map((p) => (
+            <div
+              key={p.id}
+              className="flex h-full w-full shrink-0 snap-center items-center justify-center px-1"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={p.url}
+                alt={p.caption || "Visit photo"}
+                className="max-h-full max-w-full rounded-2xl object-contain"
+                draggable={false}
+              />
+            </div>
+          ))}
+        </div>
+
+        {photos.length > 1 ? (
+          <>
+            <button
+              type="button"
+              aria-label="Previous photo"
+              disabled={index === 0}
+              onClick={() => go(-1)}
+              className="absolute top-1/2 left-1 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-[#c9b4e8] text-lg font-bold text-[#17121f] shadow-lg disabled:opacity-30"
+            >
+              ‹
+            </button>
+            <button
+              type="button"
+              aria-label="Next photo"
+              disabled={index >= photos.length - 1}
+              onClick={() => go(1)}
+              className="absolute top-1/2 right-1 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-[#c9b4e8] text-lg font-bold text-[#17121f] shadow-lg disabled:opacity-30"
+            >
+              ›
+            </button>
+          </>
+        ) : null}
       </div>
+
+      {photos.length > 1 ? (
+        <div className="mt-2 flex justify-center gap-1.5" aria-hidden>
+          {photos.map((p, i) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => onPhotoIdChange(p.id)}
+              className={`h-1.5 rounded-full transition-all ${
+                i === index ? "w-5 bg-[#c9b4e8]" : "w-1.5 bg-white/30"
+              }`}
+            />
+          ))}
+        </div>
+      ) : null}
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <input

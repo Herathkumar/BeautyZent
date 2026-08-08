@@ -15,13 +15,26 @@ type Row = {
   canAddPhotos: boolean;
   photos: LookPhoto[];
   service: { name: string; durationMin: number; priceCents: number };
-  stylist: { id: string; name: string };
+  stylist: { id: string; name: string; photoUrl: string };
 };
 
 export type MemberTab = "visits" | "lookbook";
 
 function statusLabel(status: string) {
   return status.replace("_", " ").toLowerCase();
+}
+
+function StylistThumb({ name, photoUrl }: { name: string; photoUrl: string }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={photoUrl}
+      alt={name}
+      width={52}
+      height={52}
+      className="h-[52px] w-[52px] shrink-0 rounded-full object-cover ring-2 ring-[rgba(201,180,232,0.45)]"
+    />
+  );
 }
 
 export function BookingMyBookings({
@@ -218,13 +231,21 @@ export function BookingMyBookings({
                       key={r.id}
                       className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--color-cream)] px-4 py-3"
                     >
-                      <p className="font-semibold text-ink">{r.service.name}</p>
-                      <p className="mt-1 text-sm font-medium text-champagne">
-                        {dateLine(r, true)} · {r.stylist.name}
-                      </p>
-                      <p className="mt-1 text-xs text-muted">
-                        {formatCad(r.service.priceCents)} · {statusLabel(r.status)}
-                      </p>
+                      <div className="flex items-start gap-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-ink">{r.service.name}</p>
+                          <p className="mt-1 text-sm font-medium text-champagne">
+                            {dateLine(r, true)} · {r.stylist.name}
+                          </p>
+                          <p className="mt-1 text-xs text-muted">
+                            {formatCad(r.service.priceCents)} · {statusLabel(r.status)}
+                          </p>
+                        </div>
+                        <StylistThumb
+                          name={r.stylist.name}
+                          photoUrl={r.stylist.photoUrl}
+                        />
+                      </div>
                       {r.canCancel ? (
                         <button
                           type="button"
@@ -250,13 +271,21 @@ export function BookingMyBookings({
                       key={r.id}
                       className="rounded-2xl border border-[color:var(--line)] px-4 py-3"
                     >
-                      <p className="text-sm font-semibold text-ink">
-                        {r.service.name}
-                      </p>
-                      <p className="text-xs text-muted">
-                        {dateLine(r, false)} · {r.stylist.name} ·{" "}
-                        {statusLabel(r.status)}
-                      </p>
+                      <div className="flex items-start gap-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-ink">
+                            {r.service.name}
+                          </p>
+                          <p className="text-xs text-muted">
+                            {dateLine(r, false)} · {r.stylist.name} ·{" "}
+                            {statusLabel(r.status)}
+                          </p>
+                        </div>
+                        <StylistThumb
+                          name={r.stylist.name}
+                          photoUrl={r.stylist.photoUrl}
+                        />
+                      </div>
                       {r.canAddPhotos || r.photos.length > 0 ? (
                         <LookPhotoStrip
                           slug={slug}
@@ -292,12 +321,20 @@ export function BookingMyBookings({
                       key={r.id}
                       className="rounded-2xl border border-[color:var(--line)] px-4 py-3"
                     >
-                      <p className="text-sm font-semibold text-ink">
-                        {r.service.name}
-                      </p>
-                      <p className="text-xs text-muted">
-                        {dateLine(r, false)} · {r.stylist.name}
-                      </p>
+                      <div className="flex items-start gap-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-ink">
+                            {r.service.name}
+                          </p>
+                          <p className="text-xs text-muted">
+                            {dateLine(r, false)} · {r.stylist.name}
+                          </p>
+                        </div>
+                        <StylistThumb
+                          name={r.stylist.name}
+                          photoUrl={r.stylist.photoUrl}
+                        />
+                      </div>
                       <LookPhotoStrip
                         slug={slug}
                         appointmentId={r.id}
@@ -323,7 +360,8 @@ export function BookingMyBookings({
 
       <LookPhotoViewer
         slug={slug}
-        photo={viewingPhoto}
+        photos={viewingRow?.photos ?? []}
+        photoId={viewingPhoto?.id ?? null}
         appointmentId={viewingRow?.id ?? null}
         visitLabel={
           viewingRow
@@ -331,6 +369,10 @@ export function BookingMyBookings({
             : ""
         }
         onClose={() => setViewing(null)}
+        onPhotoIdChange={(photoId) => {
+          if (!viewing) return;
+          setViewing({ rowId: viewing.rowId, photoId });
+        }}
         onDeleted={(photoId) => {
           if (!viewingRow) return;
           setPhotos(
