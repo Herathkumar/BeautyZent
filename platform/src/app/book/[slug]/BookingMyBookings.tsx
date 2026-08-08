@@ -375,7 +375,9 @@ export function BookingMyBookings({
                           <p className="text-xs text-muted">
                             Preferred look
                             {r.stylePref.prompt ? ` · ${r.stylePref.prompt}` : ""}
-                            <span className="mt-0.5 block text-[#e0d0f5]">Tap to view</span>
+                            <span className="mt-0.5 block font-semibold text-champagne">
+                              Tap to view
+                            </span>
                           </p>
                         </button>
                       ) : null}
@@ -414,7 +416,7 @@ export function BookingMyBookings({
                                 setStyleEditId(null);
                                 setStyleDraft(null);
                               }}
-                              className="rounded-full border border-[rgba(201,180,232,0.4)] px-4 py-2 text-xs font-semibold text-[#e0d0f5]"
+                              className="rounded-full border border-[color:var(--line)] px-4 py-2 text-xs font-semibold text-champagne"
                             >
                               Cancel
                             </button>
@@ -424,7 +426,7 @@ export function BookingMyBookings({
                         <button
                           type="button"
                           onClick={() => openStyleEdit(r)}
-                          className="mt-3 mr-2 rounded-full border border-[rgba(201,180,232,0.4)] px-3 py-1.5 text-xs font-semibold text-[#e0d0f5]"
+                          className="mt-3 mr-2 rounded-full border border-[color:var(--line)] bg-[color:var(--color-cream)] px-3 py-1.5 text-xs font-semibold text-champagne"
                         >
                           {r.stylePref ? "Update style preview" : "Add style preview"}
                         </button>
