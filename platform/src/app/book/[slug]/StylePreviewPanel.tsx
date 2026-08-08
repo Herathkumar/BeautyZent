@@ -194,14 +194,14 @@ export function StylePreviewPanel({ slug, isMember, value, onChange }: Props) {
         <button
           type="button"
           onClick={() => setCameraOpen(true)}
-          className="rounded-full border border-[rgba(201,180,232,0.4)] px-3 py-1.5 text-xs font-semibold text-[#e0d0f5]"
+          className="rounded-full border border-[color:var(--line)] bg-[color:var(--color-cream)] px-3 py-1.5 text-xs font-semibold text-champagne"
         >
           Camera / gallery
         </button>
         <button
           type="button"
           onClick={() => fileRef.current?.click()}
-          className="rounded-full border border-[rgba(201,180,232,0.4)] px-3 py-1.5 text-xs font-semibold text-[#e0d0f5]"
+          className="rounded-full border border-[color:var(--line)] bg-[color:var(--color-cream)] px-3 py-1.5 text-xs font-semibold text-champagne"
         >
           Upload photo
         </button>
@@ -213,7 +213,7 @@ export function StylePreviewPanel({ slug, isMember, value, onChange }: Props) {
               onChange(null);
               setError("");
             }}
-            className="rounded-full border border-[rgba(245,168,168,0.35)] px-3 py-1.5 text-xs font-semibold text-[#f5a8a8]"
+            className="rounded-full border border-[rgba(181,74,60,0.4)] px-3 py-1.5 text-xs font-semibold text-[#b54a3c]"
           >
             Remove
           </button>
@@ -262,12 +262,12 @@ export function StylePreviewPanel({ slug, isMember, value, onChange }: Props) {
           className="mx-auto max-h-64 w-full max-w-xs rounded-2xl object-cover ring-2 ring-[rgba(201,180,232,0.4)]"
         />
       ) : (
-        <div className="rounded-2xl border border-dashed border-[rgba(201,180,232,0.35)] px-4 py-8 text-center text-sm text-muted">
+        <div className="rounded-2xl border border-dashed border-[color:var(--line)] px-4 py-8 text-center text-sm text-muted">
           No photo yet — add one to try styles.
         </div>
       )}
 
-      <div className="space-y-2 border-t border-[rgba(201,180,232,0.2)] pt-3">
+      <div className="space-y-2 border-t border-[color:var(--line)] pt-3">
         <p className="text-xs font-semibold tracking-wide text-champagne uppercase">
           Try with AI {aiConfigured ? "(free)" : "(setup needed)"}
         </p>
@@ -282,8 +282,8 @@ export function StylePreviewPanel({ slug, isMember, value, onChange }: Props) {
               }}
               className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
                 presetId === p.id && !customPrompt.trim()
-                  ? "bg-[#e0d0f5] text-[#17121f]"
-                  : "border border-[rgba(201,180,232,0.35)] text-[#e0d0f5]"
+                  ? "btn-solid"
+                  : "border border-[color:var(--line)] bg-[color:var(--color-cream)] text-champagne"
               }`}
             >
               {p.label}
@@ -299,12 +299,15 @@ export function StylePreviewPanel({ slug, isMember, value, onChange }: Props) {
         />
         <button
           type="button"
-          disabled={busy || !preview}
+          disabled={busy}
           onClick={() => void runAi()}
-          className="btn-solid w-full rounded-2xl px-4 py-3 text-sm font-semibold disabled:opacity-60"
+          className="btn-solid w-full rounded-2xl px-4 py-3 text-sm font-semibold disabled:opacity-70"
         >
           {busy ? "Working…" : "Generate style preview"}
         </button>
+        {!preview ? (
+          <p className="text-xs text-muted">Add a photo above, then generate a style.</p>
+        ) : null}
         {remaining !== null ? (
           <p className="text-xs text-muted">{remaining} free AI tries left today</p>
         ) : null}
@@ -315,9 +318,9 @@ export function StylePreviewPanel({ slug, isMember, value, onChange }: Props) {
         ) : null}
       </div>
 
-      {error ? <p className="text-sm text-[#f5a8a8]">{error}</p> : null}
+      {error ? <p className="text-sm text-[#b54a3c]">{error}</p> : null}
       {value ? (
-        <p className="text-xs text-[#e0d0f5]">
+        <p className="text-xs font-medium text-champagne">
           Saved for this booking
           {value.source === "AI"
             ? " · AI preview"

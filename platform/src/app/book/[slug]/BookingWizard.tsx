@@ -681,7 +681,16 @@ export function BookingWizard({ slug }: { slug: string }) {
         openSignInMode={signInMode}
       />
 
-      <form onSubmit={submit} className="space-y-8 pb-52">
+      <div className="mt-4">
+        <StylePreviewPanel
+          slug={slug}
+          isMember={Boolean(client)}
+          value={stylePref}
+          onChange={setStylePref}
+        />
+      </div>
+
+      <form onSubmit={submit} className="mt-6 space-y-8 pb-52">
         <div className="flex flex-wrap gap-2">
           {STEPS.map((label, i) => {
             const reachable =
@@ -994,12 +1003,6 @@ export function BookingWizard({ slug }: { slug: string }) {
                 </label>
               ) : null}
             </div>
-            <StylePreviewPanel
-              slug={slug}
-              isMember={Boolean(client)}
-              value={stylePref}
-              onChange={setStylePref}
-            />
           </section>
         ) : null}
 
