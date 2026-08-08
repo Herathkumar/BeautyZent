@@ -7,6 +7,15 @@ import { formatCad } from "@/lib/money";
 import { LookPhoto, LookPhotoStrip, LookPhotoViewer } from "./LookPhotos";
 import { StylePreviewPanel, StylePrefDraft } from "./StylePreviewPanel";
 
+type StylistInfo = {
+  id: string;
+  name: string;
+  photoUrl: string;
+  bio?: string | null;
+  phone?: string | null;
+  email?: string | null;
+};
+
 type Row = {
   id: string;
   startsAt: string;
@@ -16,7 +25,7 @@ type Row = {
   canAddPhotos: boolean;
   photos: LookPhoto[];
   service: { name: string; durationMin: number; priceCents: number };
-  stylist: { id: string; name: string; photoUrl: string };
+  stylist: StylistInfo;
   stylePref?: {
     id: string;
     source: string;
@@ -31,20 +40,135 @@ function statusLabel(status: string) {
   return status.replace("_", " ").toLowerCase();
 }
 
-function StylistThumb({ name, photoUrl }: { name: string; photoUrl: string }) {
+function phoneHref(phone: string) {
+  return `tel:${phone.replace(/[^\d+]/g, "")}`;
+}
+
+function StylistThumb({
+  stylist,
+  onOpen,
+}: {
+  stylist: StylistInfo;
+  onOpen: () => void;
+}) {
   return (
-    <div className="flex w-[64px] shrink-0 flex-col items-center gap-1">
+    <button
+      type="button"
+      onClick={onOpen}
+      className="flex w-[64px] shrink-0 flex-col items-center gap-1 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(201,180,232,0.7)]"
+      aria-label={`View ${stylist.name} profile`}
+    >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={photoUrl}
+        src={stylist.photoUrl}
         alt=""
         width={52}
         height={52}
         className="h-[52px] w-[52px] rounded-full object-cover ring-2 ring-[rgba(201,180,232,0.45)]"
       />
       <p className="w-full truncate text-center text-[10px] font-medium leading-tight text-muted">
-        {name}
+        {stylist.name}
       </p>
+    </button>
+  );
+}
+
+function StylistProfileCard({
+  stylist,
+  onClose,
+}: {
+  stylist: StylistInfo;
+  onClose: () => void;
+}) {
+  const phone = stylist.phone?.trim() || "";
+  const email = stylist.email?.trim() || "";
+  const bio = stylist.bio?.trim() || "";
+
+  return (
+    <div
+      className="fixed inset-0 z-[95] flex items-end justify-center bg-black/55 p-4 sm:items-center"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${stylist.name} profile`}
+      onClick={onClose}
+    >
+      <div
+        className="book-card w-full max-w-sm overflow-hidden rounded-3xl shadow-[0_24px_60px_rgba(0,0,0,0.35)]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex justify-end px-4 pt-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full border border-[color:var(--line)] px-3 py-1.5 text-xs font-semibold text-champagne"
+          >
+            Close
+          </button>
+        </div>
+        <div className="flex flex-col items-center px-6 pb-6 pt-1 text-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={stylist.photoUrl}
+            alt={`${stylist.name} photo`}
+            width={112}
+            height={112}
+            className="h-28 w-28 rounded-full object-cover shadow-[0_12px_40px_rgba(0,0,0,0.25)] ring-[5px] ring-[rgba(201,180,232,0.55)]"
+          />
+          <h3 className="mt-4 font-[family-name:var(--font-display)] text-3xl leading-tight text-ink">
+            {stylist.name}
+          </h3>
+          <p className="mt-1 text-xs font-semibold tracking-[0.16em] text-champagne uppercase">
+            Your stylist
+          </p>
+
+          {email ? (
+            <a
+              href={`mailto:${email}`}
+              className="mt-3 break-all text-sm font-medium text-champagne underline-offset-2 hover:underline"
+            >
+              {email}
+            </a>
+          ) : (
+            <p className="mt-3 text-sm text-muted">Email not shared</p>
+          )}
+
+          {phone ? (
+            <a
+              href={phoneHref(phone)}
+              className="mt-1 text-sm font-semibold text-ink"
+            >
+              {phone}
+            </a>
+          ) : (
+            <p className="mt-1 text-sm text-muted">Phone not shared</p>
+          )}
+
+          {bio ? (
+            <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted">
+              “{bio}”
+            </p>
+          ) : null}
+
+          <div className="mt-5 grid w-full gap-2">
+            {phone ? (
+              <a
+                href={phoneHref(phone)}
+                className="btn-solid rounded-2xl px-4 py-3 text-sm font-semibold"
+              >
+                Call {stylist.name.split(" ")[0]}
+              </a>
+            ) : null}
+            {email ? (
+              <a
+                href={`mailto:${email}`}
+                className="rounded-2xl border border-[color:var(--line)] px-4 py-3 text-sm font-semibold text-champagne"
+              >
+                Email stylist
+              </a>
+            ) : null}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -74,6 +198,7 @@ export function BookingMyBookings({
   const [styleDraft, setStyleDraft] = useState<StylePrefDraft | null>(null);
   const [styleBusy, setStyleBusy] = useState(false);
   const [styleViewer, setStyleViewer] = useState<string | null>(null);
+  const [stylistCard, setStylistCard] = useState<StylistInfo | null>(null);
   const confirm = useConfirm();
 
   useEffect(() => {
@@ -356,8 +481,8 @@ export function BookingMyBookings({
                           </p>
                         </div>
                         <StylistThumb
-                          name={r.stylist.name}
-                          photoUrl={r.stylist.photoUrl}
+                          stylist={r.stylist}
+                          onOpen={() => setStylistCard(r.stylist)}
                         />
                       </div>
                       {r.stylePref?.url && styleEditId !== r.id ? (
@@ -467,8 +592,8 @@ export function BookingMyBookings({
                           </p>
                         </div>
                         <StylistThumb
-                          name={r.stylist.name}
-                          photoUrl={r.stylist.photoUrl}
+                          stylist={r.stylist}
+                          onOpen={() => setStylistCard(r.stylist)}
                         />
                       </div>
                       {r.canAddPhotos || r.photos.length > 0 ? (
@@ -516,8 +641,8 @@ export function BookingMyBookings({
                           </p>
                         </div>
                         <StylistThumb
-                          name={r.stylist.name}
-                          photoUrl={r.stylist.photoUrl}
+                          stylist={r.stylist}
+                          onOpen={() => setStylistCard(r.stylist)}
                         />
                       </div>
                       <LookPhotoStrip
@@ -575,6 +700,13 @@ export function BookingMyBookings({
           );
         }}
       />
+
+      {stylistCard ? (
+        <StylistProfileCard
+          stylist={stylistCard}
+          onClose={() => setStylistCard(null)}
+        />
+      ) : null}
 
       {styleViewer ? (
         <div
