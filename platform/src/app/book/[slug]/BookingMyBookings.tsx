@@ -175,7 +175,7 @@ export function BookingMyBookings({
               data-testid="member-tab-visits"
               className={`flex-1 rounded-full px-3 py-2 text-sm font-semibold transition ${
                 tab === "visits"
-                  ? "bg-[rgba(232,180,162,0.16)] text-champagne"
+                  ? "bg-[rgba(201,180,232,0.16)] text-champagne"
                   : "text-muted"
               }`}
             >
@@ -187,7 +187,7 @@ export function BookingMyBookings({
               data-testid="member-tab-lookbook"
               className={`flex-1 rounded-full px-3 py-2 text-sm font-semibold transition ${
                 tab === "lookbook"
-                  ? "bg-[rgba(232,180,162,0.16)] text-champagne"
+                  ? "bg-[rgba(201,180,232,0.16)] text-champagne"
                   : "text-muted"
               }`}
             >

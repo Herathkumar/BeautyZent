@@ -1,12 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-label="Client avatar">
   <defs>
     <linearGradient id="clientBg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#3a2c33"/>
-      <stop offset="100%" stop-color="#221a1f"/>
+      <stop offset="0%" stop-color="#35264a"/>
+      <stop offset="100%" stop-color="#1f1830"/>
     </linearGradient>
-    <linearGradient id="clientRose" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#f2c4b0"/>
-      <stop offset="100%" stop-color="#c9a87c"/>
+    <linearGradient id="clientLilac" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#e0d0f5"/>
+      <stop offset="100%" stop-color="#9b7ec4"/>
     </linearGradient>
     <clipPath id="clientDisc">
       <circle cx="80" cy="80" r="80"/>
@@ -14,7 +14,7 @@
   </defs>
   <g clip-path="url(#clientDisc)">
     <rect width="160" height="160" fill="url(#clientBg)"/>
-    <circle cx="80" cy="66" r="26" fill="url(#clientRose)"/>
-    <circle cx="80" cy="158" r="52" fill="url(#clientRose)"/>
+    <circle cx="80" cy="66" r="26" fill="url(#clientLilac)"/>
+    <circle cx="80" cy="158" r="52" fill="url(#clientLilac)"/>
   </g>
 </svg>

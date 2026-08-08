@@ -43,17 +43,17 @@ html.stylist-shell.stylist-shell--light,html.stylist-shell.stylist-shell--light 
   color-scheme:light
 }
 html.book-shell,html.book-shell body{
-  background:radial-gradient(900px 480px at 85% -5%,rgba(232,180,162,.22),transparent 55%),
-    radial-gradient(700px 400px at 0% 90%,rgba(110,74,90,.28),transparent 50%),
-    linear-gradient(180deg,#241820 0%,#1a1418 50%,#120e12 100%);
-  color:#fffaf6;
+  background:radial-gradient(900px 480px at 85% -5%,rgba(201,180,232,.22),transparent 55%),
+    radial-gradient(700px 400px at 0% 90%,rgba(88,56,130,.32),transparent 50%),
+    linear-gradient(180deg,#22182e 0%,#17121f 50%,#100c16 100%);
+  color:#f8f4fc;
   color-scheme:dark
 }
 html.book-shell.book-shell--light,html.book-shell.book-shell--light body{
-  background:radial-gradient(900px 480px at 85% -5%,rgba(196,122,74,.12),transparent 55%),
-    radial-gradient(700px 400px at 0% 90%,rgba(125,97,84,.08),transparent 50%),
-    linear-gradient(180deg,#fdf8f3 0%,#f7f1ea 50%,#efe6dc 100%);
-  color:#2b2521;
+  background:radial-gradient(900px 480px at 85% -5%,rgba(155,126,196,.14),transparent 55%),
+    radial-gradient(700px 400px at 0% 90%,rgba(122,90,168,.08),transparent 50%),
+    linear-gradient(180deg,#fcfaff 0%,#f7f3fb 50%,#efe8f7 100%);
+  color:#2a2434;
   color-scheme:light
 }
 `;
@@ -91,10 +91,12 @@ const BOOT_SCRIPT = `
       try{
         var bt=localStorage.getItem("fhsalon-book-theme")||"dark";
         var light=bt==="light"||(bt==="system"&&window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches);
+        var bm=document.querySelector('meta[name="theme-color"]');
         if(light){
           document.documentElement.classList.add("book-shell--light");
-          var bm=document.querySelector('meta[name="theme-color"]');
-          if(bm) bm.setAttribute("content","#f7f1ea");
+          if(bm) bm.setAttribute("content","#f7f3fb");
+        }else if(bm){
+          bm.setAttribute("content","#17121f");
         }
       }catch(e){}
     }

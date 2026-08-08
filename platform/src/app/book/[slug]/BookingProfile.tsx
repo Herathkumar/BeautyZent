@@ -204,7 +204,7 @@ export function BookingProfile({
                     onClick={() => setCameraOpen(true)}
                     aria-label={hasPhoto ? "Update selfie" : "Take selfie"}
                     data-testid="client-photo-button"
-                    className="relative rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f2c4b0]"
+                    className="relative rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e0d0f5]"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
@@ -213,9 +213,9 @@ export function BookingProfile({
                       width={112}
                       height={112}
                       data-testid="client-photo-preview"
-                      className="h-28 w-28 rounded-full object-cover shadow-[0_12px_40px_rgba(0,0,0,0.35)] ring-[5px] ring-[#e8b4a2]/50"
+                      className="h-28 w-28 rounded-full object-cover shadow-[0_12px_40px_rgba(0,0,0,0.35)] ring-[5px] ring-[#c9b4e8]/50"
                     />
-                    <span className="absolute right-1 bottom-1 rounded-full bg-[#1a1418] px-2 py-0.5 text-[10px] font-semibold tracking-wide text-[#f2c4b0] ring-1 ring-[#e8b4a2]/40">
+                    <span className="absolute right-1 bottom-1 rounded-full bg-[#17121f] px-2 py-0.5 text-[10px] font-semibold tracking-wide text-[#e0d0f5] ring-1 ring-[#c9b4e8]/40">
                       {photoBusy ? "…" : hasPhoto ? "Update" : "Selfie"}
                     </span>
                   </button>
@@ -229,12 +229,12 @@ export function BookingProfile({
                         type="button"
                         disabled={photoBusy}
                         onClick={() => setCameraOpen(true)}
-                        className="inline-flex h-10 items-center justify-center rounded-full border border-[rgba(232,180,162,0.5)] bg-[rgba(232,180,162,0.12)] px-5 text-sm font-semibold text-champagne disabled:opacity-50"
+                        className="inline-flex h-10 items-center justify-center rounded-full border border-[rgba(201,180,232,0.5)] bg-[rgba(201,180,232,0.12)] px-5 text-sm font-semibold text-champagne disabled:opacity-50"
                       >
                         {photoBusy ? "Saving…" : hasPhoto ? "Update selfie" : "Take selfie"}
                       </button>
                       <label
-                        className={`relative inline-flex h-10 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-[rgba(232,180,162,0.35)] px-5 text-sm font-semibold text-muted ${
+                        className={`relative inline-flex h-10 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-[rgba(201,180,232,0.35)] px-5 text-sm font-semibold text-muted ${
                           photoBusy ? "pointer-events-none opacity-50" : ""
                         }`}
                       >
@@ -377,7 +377,7 @@ export function BookingProfile({
                   alt=""
                   width={96}
                   height={96}
-                  className="mx-auto h-24 w-24 rounded-full ring-[5px] ring-[#e8b4a2]/40"
+                  className="mx-auto h-24 w-24 rounded-full ring-[5px] ring-[#c9b4e8]/40"
                 />
                 <h3 className="mt-4 font-[family-name:var(--font-display)] text-2xl">
                   You&apos;re browsing as a guest
@@ -403,7 +403,7 @@ export function BookingProfile({
                       onClose();
                       onSignInRequest();
                     }}
-                    className="rounded-2xl border border-[rgba(232,180,162,0.4)] px-4 py-3 text-sm font-semibold text-champagne"
+                    className="rounded-2xl border border-[color:var(--line)] px-4 py-3 text-sm font-semibold text-champagne"
                   >
                     Sign in
                   </button>

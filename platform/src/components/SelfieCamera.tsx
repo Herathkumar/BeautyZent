@@ -210,19 +210,19 @@ export function SelfieCamera({
     accent === "manager"
       ? "bg-[#c9a87c] text-[#1c1714]"
       : accent === "book"
-        ? "bg-[#e8b4a2] text-[#1a1418]"
+        ? "bg-[#c9b4e8] text-[#17121f]"
         : "bg-[#7ec4b8] text-[#0e1618]";
   const ring =
     accent === "manager"
       ? "border-[#f0c987]"
       : accent === "book"
-        ? "border-[#f2c4b0]"
+        ? "border-[#e0d0f5]"
         : "border-[#b5ebe0]";
   const galleryBorder =
     accent === "manager"
       ? "border-[#f0c987]/70"
       : accent === "book"
-        ? "border-[#f2c4b0]/70"
+        ? "border-[#e0d0f5]/70"
         : "border-[#b5ebe0]/70";
 
   const diameterPct = `${CIRCLE.diameter * 100}%`;

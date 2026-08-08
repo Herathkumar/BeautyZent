@@ -112,7 +112,7 @@ export function LookPhotoStrip({
             disabled={busy}
             onClick={() => inputRef.current?.click()}
             data-testid="look-photo-add"
-            className={`${size} flex flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-[rgba(232,180,162,0.5)] text-champagne disabled:opacity-60`}
+            className={`${size} flex flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-[rgba(201,180,232,0.5)] text-champagne disabled:opacity-60`}
           >
             <span aria-hidden className="text-lg leading-none">
               {busy ? "…" : "+"}
@@ -198,18 +198,30 @@ export function LookPhotoViewer({
 
   return (
     <div
-      className="fixed inset-0 z-[70] flex flex-col bg-black/85 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+      className="look-photo-viewer fixed inset-0 z-[70] flex flex-col bg-[#120e1a]/92 p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]"
       role="dialog"
       aria-label="Visit photo"
       data-testid="look-photo-viewer"
     >
-      <div className="flex items-center justify-between gap-3 text-white">
-        <p className="min-w-0 truncate text-sm font-semibold">{visitLabel}</p>
+      <div className="flex items-center justify-between gap-3">
+        <p className="min-w-0 truncate text-sm font-semibold text-[#f3eafc]">
+          {visitLabel}
+        </p>
         <button
           type="button"
           onClick={onClose}
-          className="rounded-full border border-white/25 px-3 py-1.5 text-sm"
+          aria-label="Close photo"
+          data-testid="look-photo-close"
+          className="look-photo-viewer__close inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#c9b4e8] px-4 py-2.5 text-sm font-bold text-[#17121f] shadow-[0_8px_24px_rgba(201,180,232,0.45)]"
         >
+          <svg viewBox="0 0 20 20" fill="none" aria-hidden className="h-4 w-4">
+            <path
+              d="M5 5l10 10M15 5L5 15"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+            />
+          </svg>
           Close
         </button>
       </div>

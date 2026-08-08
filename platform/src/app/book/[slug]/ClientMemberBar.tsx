@@ -139,14 +139,14 @@ export function ClientMemberBar({
           <button
             type="button"
             onClick={onOpenBookings}
-            className="rounded-full border border-[rgba(232,180,162,0.4)] px-3 py-2 text-xs font-semibold text-champagne"
+            className="rounded-full border border-[rgba(201,180,232,0.4)] px-3 py-2 text-xs font-semibold text-champagne"
           >
             My bookings
           </button>
           <button
             type="button"
             onClick={onOpenProfile}
-            className="rounded-full border border-[rgba(232,180,162,0.4)] px-3 py-2 text-xs font-semibold text-champagne"
+            className="rounded-full border border-[rgba(201,180,232,0.4)] px-3 py-2 text-xs font-semibold text-champagne"
           >
             Profile
           </button>
@@ -176,14 +176,14 @@ export function ClientMemberBar({
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            className="rounded-full border border-[rgba(232,180,162,0.4)] px-3 py-2 text-xs font-semibold text-champagne"
+            className="rounded-full border border-[rgba(201,180,232,0.4)] px-3 py-2 text-xs font-semibold text-champagne"
             onClick={onOpenProfile}
           >
             Appearance
           </button>
           <button
             type="button"
-            className="rounded-full border border-[rgba(232,180,162,0.4)] px-3 py-2 text-xs font-semibold text-[#f2c4b0]"
+            className="rounded-full border border-[rgba(201,180,232,0.4)] px-3 py-2 text-xs font-semibold text-[#e0d0f5]"
             onClick={() => {
               setMode("signin");
               setPurpose("signin");
@@ -273,7 +273,7 @@ export function ClientMemberBar({
         <div className="mt-4 grid gap-3 border-t border-white/10 pt-4">
           <p className="text-sm text-muted">{msg}</p>
           {demoCode ? (
-            <p className="rounded-xl border border-[rgba(232,180,162,0.35)] bg-[rgba(232,180,162,0.1)] px-3 py-2 text-sm text-[#f2c4b0]">
+            <p className="rounded-xl border border-[rgba(201,180,232,0.35)] bg-[rgba(201,180,232,0.1)] px-3 py-2 text-sm text-[#e0d0f5]">
               Demo code: <span className="font-bold tracking-widest">{demoCode}</span>
             </p>
           ) : null}

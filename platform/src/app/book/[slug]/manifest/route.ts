@@ -14,8 +14,8 @@ export async function GET(
     scope: `/book/${slug}`,
     display: "standalone",
     orientation: "any",
-    background_color: "#1a1418",
-    theme_color: "#1a1418",
+    background_color: "#17121f",
+    theme_color: "#17121f",
     icons: [
       {
         src: "/book-icon-192.png",

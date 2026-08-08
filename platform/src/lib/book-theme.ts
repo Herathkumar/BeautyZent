@@ -3,8 +3,8 @@ export type BookThemeResolved = BookThemePreference;
 
 export const BOOK_THEME_KEY = "fhsalon-book-theme";
 export const BOOK_THEME_EVENT = "fhsalon-book-theme-change";
-export const BOOK_THEME_LIGHT = "#f7f1ea";
-export const BOOK_THEME_DARK = "#1a1418";
+export const BOOK_THEME_LIGHT = "#f7f3fb";
+export const BOOK_THEME_DARK = "#17121f";
 
 export function isBookThemePreference(value: unknown): value is BookThemePreference {
   return value === "light" || value === "dark";

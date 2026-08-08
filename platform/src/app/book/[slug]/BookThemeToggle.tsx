@@ -14,31 +14,31 @@ function ThemeSwatch({ mode }: { mode: BookThemePreference }) {
   if (mode === "light") {
     return (
       <span
-        className="relative block h-14 w-full overflow-hidden rounded-xl border border-[#c47a4a]/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]"
+        className="relative block h-14 w-full overflow-hidden rounded-xl border border-[#6b4ea8]/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]"
         style={{
-          background: "linear-gradient(145deg, #fffaf6 0%, #f7f1ea 55%, #efe6dc 100%)",
+          background: "linear-gradient(145deg, #fcfaff 0%, #f7f3fb 55%, #efe8f7 100%)",
         }}
         aria-hidden
       >
-        <span className="absolute left-2.5 top-2.5 h-2 w-10 rounded-full bg-[#c47a4a]/75" />
-        <span className="absolute bottom-2.5 left-2.5 right-2.5 h-5 rounded-lg bg-white shadow-sm ring-1 ring-[#c47a4a]/15" />
-        <span className="absolute bottom-3.5 right-4 h-2 w-2 rounded-full bg-[#c47a4a]" />
+        <span className="absolute left-2.5 top-2.5 h-2 w-10 rounded-full bg-[#6b4ea8]/75" />
+        <span className="absolute bottom-2.5 left-2.5 right-2.5 h-5 rounded-lg bg-white shadow-sm ring-1 ring-[#6b4ea8]/15" />
+        <span className="absolute bottom-3.5 right-4 h-2 w-2 rounded-full bg-[#6b4ea8]" />
       </span>
     );
   }
 
   return (
     <span
-      className="relative block h-14 w-full overflow-hidden rounded-xl border border-[#e8b4a2]/35 shadow-[inset_0_1px_0_rgba(242,196,176,0.12)]"
+      className="relative block h-14 w-full overflow-hidden rounded-xl border border-[#c9b4e8]/35 shadow-[inset_0_1px_0_rgba(224,208,245,0.12)]"
       style={{
         background:
-          "radial-gradient(80px 40px at 90% 0%, rgba(232,180,162,0.28), transparent 60%), linear-gradient(145deg, #2a2126 0%, #1a1418 55%, #140f13 100%)",
+          "radial-gradient(80px 40px at 90% 0%, rgba(201,180,232,0.28), transparent 60%), linear-gradient(145deg, #2a2038 0%, #17121f 55%, #100c16 100%)",
       }}
       aria-hidden
     >
-      <span className="absolute left-2.5 top-2.5 h-2 w-10 rounded-full bg-[#f2c4b0]/90" />
-      <span className="absolute bottom-2.5 left-2.5 right-2.5 h-5 rounded-lg bg-[#3a2830] shadow-[0_4px_12px_rgba(0,0,0,0.35)] ring-1 ring-[#e8b4a2]/30" />
-      <span className="absolute bottom-3.5 right-4 h-2 w-2 rounded-full bg-[#e8b4a2]" />
+      <span className="absolute left-2.5 top-2.5 h-2 w-10 rounded-full bg-[#e0d0f5]/90" />
+      <span className="absolute bottom-2.5 left-2.5 right-2.5 h-5 rounded-lg bg-[#35264a] shadow-[0_4px_12px_rgba(0,0,0,0.35)] ring-1 ring-[#c9b4e8]/30" />
+      <span className="absolute bottom-3.5 right-4 h-2 w-2 rounded-full bg-[#c9b4e8]" />
     </span>
   );
 }
@@ -77,13 +77,13 @@ export function BookThemeToggle() {
         Theme
       </h2>
       <p className="mt-1 text-sm text-muted">
-        Switch between rose cream light and salon dark on this device.
+        Switch between lilac mist light and plum dark on this device.
       </p>
       <div className="mt-4 grid grid-cols-2 gap-2.5" role="group" aria-label="App theme">
         {(
           [
-            { id: "light", label: "Light", hint: "Rose cream" },
-            { id: "dark", label: "Dark", hint: "Salon night" },
+            { id: "light", label: "Light", hint: "Lilac mist" },
+            { id: "dark", label: "Dark", hint: "Plum night" },
           ] as const
         ).map((opt) => {
           const active = theme === opt.id;

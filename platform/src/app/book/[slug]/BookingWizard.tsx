@@ -130,7 +130,7 @@ function PostBookJoin({
       ) : (
         <div className="mt-4 grid gap-3">
           {demoCode ? (
-            <p className="rounded-xl border border-[rgba(232,180,162,0.35)] bg-[rgba(232,180,162,0.1)] px-3 py-2 text-sm text-[#f2c4b0]">
+            <p className="rounded-xl border border-[rgba(201,180,232,0.35)] bg-[rgba(201,180,232,0.1)] px-3 py-2 text-sm text-[#e0d0f5]">
               Demo code: <span className="font-bold tracking-widest">{demoCode}</span>
             </p>
           ) : (
@@ -451,7 +451,7 @@ export function BookingWizard({ slug }: { slug: string }) {
           <p className="mx-auto mt-4 max-w-md text-lg text-muted">
             {done.service} with {done.stylist}
             <br />
-            <span className="mt-2 inline-block text-[#f2c4b0]">
+            <span className="mt-2 inline-block text-[#e0d0f5]">
               {new Date(done.startsAt).toLocaleString("en-CA", {
                 weekday: "long",
                 month: "long",
@@ -515,7 +515,7 @@ export function BookingWizard({ slug }: { slug: string }) {
             </a>
             <button
               type="button"
-              className="rounded-2xl border border-[rgba(232,180,162,0.4)] px-4 py-3.5 text-sm font-semibold text-champagne"
+              className="rounded-2xl border border-[rgba(201,180,232,0.4)] px-4 py-3.5 text-sm font-semibold text-champagne"
               onClick={() => {
                 setDone(null);
                 setJoinPrompt(false);
@@ -534,14 +534,14 @@ export function BookingWizard({ slug }: { slug: string }) {
                 <button
                   type="button"
                   onClick={() => openMemberTab("visits")}
-                  className="rounded-2xl border border-[rgba(232,180,162,0.4)] px-4 py-3.5 text-sm font-semibold text-champagne"
+                  className="rounded-2xl border border-[rgba(201,180,232,0.4)] px-4 py-3.5 text-sm font-semibold text-champagne"
                 >
                   View my bookings
                 </button>
                 <button
                   type="button"
                   onClick={() => openMemberTab("lookbook")}
-                  className="rounded-2xl border border-[rgba(232,180,162,0.4)] px-4 py-3.5 text-sm font-semibold text-champagne"
+                  className="rounded-2xl border border-[rgba(201,180,232,0.4)] px-4 py-3.5 text-sm font-semibold text-champagne"
                 >
                   My look book
                 </button>
@@ -553,7 +553,7 @@ export function BookingWizard({ slug }: { slug: string }) {
                   setJoinPrompt(true);
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
-                className="rounded-2xl border border-[rgba(232,180,162,0.4)] px-4 py-3.5 text-sm font-semibold text-champagne"
+                className="rounded-2xl border border-[rgba(201,180,232,0.4)] px-4 py-3.5 text-sm font-semibold text-champagne"
               >
                 Join free — no password
               </button>
@@ -562,7 +562,7 @@ export function BookingWizard({ slug }: { slug: string }) {
             <button
               type="button"
               onClick={() => setProfileOpen(true)}
-              className="rounded-2xl border border-[rgba(232,180,162,0.4)] px-4 py-3.5 text-sm font-semibold text-champagne"
+              className="rounded-2xl border border-[rgba(201,180,232,0.4)] px-4 py-3.5 text-sm font-semibold text-champagne"
             >
               Profile &amp; appearance
             </button>
@@ -570,7 +570,7 @@ export function BookingWizard({ slug }: { slug: string }) {
             {salon?.phone ? (
               <a
                 href={`tel:${salon.phone}`}
-                className="rounded-2xl border border-[rgba(232,180,162,0.4)] px-4 py-3.5 text-center text-sm font-semibold text-champagne"
+                className="rounded-2xl border border-[rgba(201,180,232,0.4)] px-4 py-3.5 text-center text-sm font-semibold text-champagne"
               >
                 Call the salon
               </a>
@@ -582,7 +582,7 @@ export function BookingWizard({ slug }: { slug: string }) {
               }
               target="_blank"
               rel="noreferrer"
-              className="rounded-2xl border border-[rgba(232,180,162,0.4)] px-4 py-3.5 text-center text-sm font-semibold text-champagne sm:col-span-2"
+              className="rounded-2xl border border-[rgba(201,180,232,0.4)] px-4 py-3.5 text-center text-sm font-semibold text-champagne sm:col-span-2"
             >
               Visit salon website
             </a>
@@ -725,12 +725,12 @@ export function BookingWizard({ slug }: { slug: string }) {
                         alt={`${s.name} photo`}
                         width={56}
                         height={56}
-                        className="h-14 w-14 shrink-0 rounded-full object-cover ring-2 ring-[#f2c4b0]/35"
+                        className="h-14 w-14 shrink-0 rounded-full object-cover ring-2 ring-[#e0d0f5]/35"
                       />
                       <div className="min-w-0">
                         <p className="flex items-center gap-2 font-semibold">
                           <span
-                            className="inline-block h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-[#f2c4b0]/50"
+                            className="inline-block h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-[#e0d0f5]/50"
                             style={{ background: s.color }}
                             aria-hidden
                           />
@@ -781,7 +781,7 @@ export function BookingWizard({ slug }: { slug: string }) {
               <button
                 type="button"
                 onClick={pickNextSlot}
-                className="rounded-full border border-[rgba(232,180,162,0.4)] px-4 py-2 text-xs font-semibold text-[#f2c4b0]"
+                className="rounded-full border border-[rgba(201,180,232,0.4)] px-4 py-2 text-xs font-semibold text-[#e0d0f5]"
               >
                 Next available ·{" "}
                 {new Date(slots[0]).toLocaleTimeString("en-CA", {
@@ -819,7 +819,7 @@ export function BookingWizard({ slug }: { slug: string }) {
           <section className="space-y-3">
             <h2 className="font-[family-name:var(--font-display)] text-2xl">Your details</h2>
             {client ? (
-              <p className="text-sm text-[#f2c4b0]">
+              <p className="text-sm text-[#e0d0f5]">
                 Signed in as {client.name} — details filled for you.
               </p>
             ) : (
@@ -915,7 +915,7 @@ export function BookingWizard({ slug }: { slug: string }) {
                     .join(" · ")}
                 </p>
                 {selectedService ? (
-                  <p className="text-xs text-[#f2c4b0]">{formatCad(selectedService.priceCents)}</p>
+                  <p className="text-xs text-[#e0d0f5]">{formatCad(selectedService.priceCents)}</p>
                 ) : null}
               </div>
               {startsAt ? (
