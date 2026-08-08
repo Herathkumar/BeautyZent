@@ -11,16 +11,21 @@ import {
 import { getAvailableSlots } from "@/lib/slots";
 import { calendarDateInTz } from "@/lib/salon-time";
 
-const bodySchema = z.object({
-  serviceId: z.string(),
-  stylistId: z.string(),
-  startsAt: z.string(),
-  clientName: z.string().min(2),
-  clientPhone: z.string().min(7),
-  clientEmail: z.string().email().optional().or(z.literal("")),
-  notes: z.string().optional(),
-  saveAsMember: z.boolean().optional(),
-});
+const bodySchema = z
+  .object({
+    serviceId: z.string().optional(),
+    serviceIds: z.array(z.string()).min(1).optional(),
+    stylistId: z.string(),
+    startsAt: z.string(),
+    clientName: z.string().min(2),
+    clientPhone: z.string().min(7),
+    clientEmail: z.string().email().optional().or(z.literal("")),
+    notes: z.string().optional(),
+    saveAsMember: z.boolean().optional(),
+  })
+  .refine((d) => (d.serviceIds && d.serviceIds.length > 0) || d.serviceId, {
+    message: "serviceId or serviceIds required",
+  });
 
 export async function POST(
   req: Request,
@@ -35,39 +40,60 @@ export async function POST(
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
   const data = parsed.data;
+  const serviceIds = [
+    ...new Set(
+      (data.serviceIds?.length ? data.serviceIds : data.serviceId ? [data.serviceId] : []).filter(
+        Boolean
+      )
+    ),
+  ];
   const startsAt = new Date(data.startsAt);
   if (Number.isNaN(startsAt.getTime())) {
     return NextResponse.json({ error: "Invalid start time" }, { status: 400 });
   }
 
-  const service = await prisma.service.findFirst({
-    where: { id: data.serviceId, salonId: salon.id, active: true },
+  const services = await prisma.service.findMany({
+    where: { id: { in: serviceIds }, salonId: salon.id, active: true },
   });
-  if (!service) {
+  if (services.length !== serviceIds.length) {
     return NextResponse.json({ error: "Invalid service" }, { status: 400 });
   }
+  const byId = new Map(services.map((s) => [s.id, s]));
+  const ordered = serviceIds.map((id) => byId.get(id)!);
+  const totalDuration = ordered.reduce((sum, s) => sum + s.durationMin, 0);
+  const totalPrice = ordered.reduce((sum, s) => sum + s.priceCents, 0);
 
   let stylistId = data.stylistId;
   if (stylistId === ANY_STYLIST_ID) {
     const ymd = calendarDateInTz(salon.timezone || "America/Toronto", startsAt);
     const links = await prisma.stylistService.findMany({
       where: {
-        serviceId: service.id,
+        serviceId: { in: serviceIds },
         stylist: { salonId: salon.id, active: true },
       },
-      select: { stylistId: true },
+      select: { stylistId: true, serviceId: true },
     });
+    const byStylist = new Map<string, Set<string>>();
+    for (const link of links) {
+      const set = byStylist.get(link.stylistId) || new Set();
+      set.add(link.serviceId);
+      byStylist.set(link.stylistId, set);
+    }
+    const eligible = [...byStylist.entries()]
+      .filter(([, set]) => serviceIds.every((id) => set.has(id)))
+      .map(([id]) => id);
+
     const startMs = startsAt.getTime();
     let matched: string | null = null;
-    for (const link of links) {
+    for (const sid of eligible) {
       const slots = await getAvailableSlots({
         salonId: salon.id,
-        stylistId: link.stylistId,
-        serviceId: service.id,
+        stylistId: sid,
+        serviceIds,
         date: ymd,
       });
       if (slots.some((s) => new Date(s).getTime() === startMs)) {
-        matched = link.stylistId;
+        matched = sid;
         break;
       }
     }
@@ -87,21 +113,26 @@ export async function POST(
     return NextResponse.json({ error: "Invalid stylist" }, { status: 400 });
   }
 
-  const link = await prisma.stylistService.findUnique({
-    where: {
-      stylistId_serviceId: { stylistId: stylist.id, serviceId: service.id },
-    },
-  });
-  if (!link) {
-    return NextResponse.json({ error: "Stylist does not offer this service" }, { status: 400 });
+  for (const service of ordered) {
+    const link = await prisma.stylistService.findUnique({
+      where: {
+        stylistId_serviceId: { stylistId: stylist.id, serviceId: service.id },
+      },
+    });
+    if (!link) {
+      return NextResponse.json(
+        { error: "Stylist does not offer all selected services" },
+        { status: 400 }
+      );
+    }
   }
 
-  const endsAt = addMinutes(startsAt, service.durationMin);
+  const visitEnd = addMinutes(startsAt, totalDuration);
   const conflict = await prisma.appointment.findFirst({
     where: {
       stylistId: stylist.id,
       status: { notIn: ["CANCELLED", "NO_SHOW"] },
-      startsAt: { lt: endsAt },
+      startsAt: { lt: visitEnd },
       endsAt: { gt: startsAt },
     },
   });
@@ -155,35 +186,53 @@ export async function POST(
     });
   }
 
-  const appointment = await prisma.appointment.create({
-    data: {
-      salonId: salon.id,
-      stylistId: stylist.id,
-      serviceId: service.id,
-      clientId: client.id,
-      startsAt,
-      endsAt,
-      status: "BOOKED",
-      source: "ONLINE",
-      notes: data.notes || null,
-    },
-    include: { service: true, stylist: true, client: true },
-  });
+  const bookingGroupId = ordered.length > 1 ? crypto.randomUUID() : null;
+  let cursor = startsAt;
+  const created = [];
+  for (const service of ordered) {
+    const endsAt = addMinutes(cursor, service.durationMin);
+    const appointment = await prisma.appointment.create({
+      data: {
+        salonId: salon.id,
+        stylistId: stylist.id,
+        serviceId: service.id,
+        clientId: client.id,
+        startsAt: cursor,
+        endsAt,
+        status: "BOOKED",
+        source: "ONLINE",
+        bookingGroupId,
+        notes: data.notes || null,
+      },
+      include: { service: true, stylist: true, client: true },
+    });
+    created.push(appointment);
+    cursor = endsAt;
+  }
 
-  const sync = await syncAppointmentToGoogle(appointment.id);
+  const head = created[0]!;
+  await Promise.all(created.map((a) => syncAppointmentToGoogle(a.id).catch(() => null)));
 
   return NextResponse.json({
     appointment: {
-      id: appointment.id,
-      startsAt: appointment.startsAt,
-      endsAt: appointment.endsAt,
-      status: appointment.status,
-      service: appointment.service.name,
-      stylist: appointment.stylist.name,
-      client: appointment.client.name,
-      priceCents: appointment.service.priceCents,
+      id: head.id,
+      bookingGroupId,
+      startsAt: head.startsAt,
+      endsAt: created[created.length - 1]!.endsAt,
+      status: head.status,
+      service: ordered.map((s) => s.name).join(" + "),
+      services: ordered.map((s) => ({
+        id: s.id,
+        name: s.name,
+        durationMin: s.durationMin,
+        priceCents: s.priceCents,
+      })),
+      stylist: head.stylist.name,
+      client: head.client.name,
+      priceCents: totalPrice,
+      durationMin: totalDuration,
     },
-    calendarSync: sync,
+    calendarSync: null,
     suggestJoin: Boolean(emailNorm) && !client.memberAt && !session,
     saveAsMember: Boolean(data.saveAsMember),
   });

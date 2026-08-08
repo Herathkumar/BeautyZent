@@ -3,6 +3,15 @@ import { prisma } from "@/lib/prisma";
 import { ANY_STYLIST_ID } from "@/lib/client-auth";
 import { getAvailableSlots } from "@/lib/slots";
 
+function parseServiceIds(url: URL) {
+  const multi = url.searchParams.get("serviceIds");
+  if (multi) {
+    return [...new Set(multi.split(",").map((s) => s.trim()).filter(Boolean))];
+  }
+  const one = url.searchParams.get("serviceId");
+  return one ? [one] : [];
+}
+
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ slug: string }> }
@@ -10,11 +19,11 @@ export async function GET(
   const { slug } = await params;
   const url = new URL(req.url);
   const stylistId = url.searchParams.get("stylistId");
-  const serviceId = url.searchParams.get("serviceId");
+  const serviceIds = parseServiceIds(url);
   const date = url.searchParams.get("date");
-  if (!stylistId || !serviceId || !date) {
+  if (!stylistId || serviceIds.length === 0 || !date) {
     return NextResponse.json(
-      { error: "stylistId, serviceId, date required" },
+      { error: "stylistId, serviceId(s), date required" },
       { status: 400 }
     );
   }
@@ -29,21 +38,31 @@ export async function GET(
   if (stylistId === ANY_STYLIST_ID) {
     const links = await prisma.stylistService.findMany({
       where: {
-        serviceId,
+        serviceId: { in: serviceIds },
         stylist: { salonId: salon.id, active: true },
       },
-      select: { stylistId: true },
+      select: { stylistId: true, serviceId: true },
     });
-    const byStart = new Map<string, string>();
+    const byStylist = new Map<string, Set<string>>();
     for (const link of links) {
+      const set = byStylist.get(link.stylistId) || new Set();
+      set.add(link.serviceId);
+      byStylist.set(link.stylistId, set);
+    }
+    const eligible = [...byStylist.entries()]
+      .filter(([, set]) => serviceIds.every((id) => set.has(id)))
+      .map(([id]) => id);
+
+    const byStart = new Map<string, string>();
+    for (const sid of eligible) {
       const slots = await getAvailableSlots({
         salonId: salon.id,
-        stylistId: link.stylistId,
-        serviceId,
+        stylistId: sid,
+        serviceIds,
         date,
       });
       for (const start of slots) {
-        if (!byStart.has(start)) byStart.set(start, link.stylistId);
+        if (!byStart.has(start)) byStart.set(start, sid);
       }
     }
     const entries = [...byStart.entries()].sort((a, b) => a[0].localeCompare(b[0]));
@@ -58,7 +77,7 @@ export async function GET(
   const slots = await getAvailableSlots({
     salonId: salon.id,
     stylistId,
-    serviceId,
+    serviceIds,
     date,
   });
 

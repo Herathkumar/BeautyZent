@@ -38,11 +38,22 @@ export async function POST(
     );
   }
 
-  await prisma.appointment.update({
-    where: { id: appt.id },
+  const siblings = appt.bookingGroupId
+    ? await prisma.appointment.findMany({
+        where: {
+          salonId: salon.id,
+          clientId: session.clientId,
+          bookingGroupId: appt.bookingGroupId,
+          status: { in: ["BOOKED", "CHECKED_IN"] },
+        },
+      })
+    : [appt];
+
+  await prisma.appointment.updateMany({
+    where: { id: { in: siblings.map((s) => s.id) } },
     data: { status: "CANCELLED" },
   });
-  await syncAppointmentToGoogle(appt.id).catch(() => null);
+  await Promise.all(siblings.map((s) => syncAppointmentToGoogle(s.id).catch(() => null)));
 
   return NextResponse.json({ ok: true });
 }

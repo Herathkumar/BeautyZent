@@ -273,6 +273,8 @@ model Appointment {
   endsAt           DateTime
   status           String   @default("BOOKED") // BOOKED | CHECKED_IN | COMPLETED | CANCELLED | NO_SHOW
   source           String   @default("ONLINE") // ONLINE | WALK_IN | PHONE | ADMIN
+  /// Shared id when one online booking includes multiple back-to-back services.
+  bookingGroupId   String?
   notes            String?
   /// Amount actually charged for the service when completed (cents).
   chargedCents     Int?
@@ -299,6 +301,7 @@ model Appointment {
   @@index([salonId, startsAt])
   @@index([stylistId, startsAt])
   @@index([stylistId, status, startsAt])
+  @@index([bookingGroupId])
 }
 
 /// Client-uploaded "look book" photo of a finished visit (member style journal).

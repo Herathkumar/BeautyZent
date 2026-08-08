@@ -38,6 +38,14 @@ type Salon = {
 
 const STEPS = ["Service", "Stylist", "Time", "Details"] as const;
 
+const CATEGORY_ORDER = ["WOMEN", "MEN"] as const;
+
+function categoryLabel(category: string) {
+  if (category === "WOMEN") return "Women";
+  if (category === "MEN") return "Men";
+  return "Other";
+}
+
 function PostBookJoin({
   slug,
   name,
@@ -162,7 +170,7 @@ export function BookingWizard({ slug }: { slug: string }) {
   const [salon, setSalon] = useState<Salon | null>(null);
   const [services, setServices] = useState<Service[]>([]);
   const [stylists, setStylists] = useState<Stylist[]>([]);
-  const [serviceId, setServiceId] = useState("");
+  const [serviceIds, setServiceIds] = useState<string[]>([]);
   const [stylistId, setStylistId] = useState("");
   const [minDate, setMinDate] = useState(() => calendarDateInTz("America/Toronto"));
   const [date, setDate] = useState(() => calendarDateInTz("America/Toronto"));
@@ -190,6 +198,7 @@ export function BookingWizard({ slug }: { slug: string }) {
     service: string;
     startsAt: string;
     priceCents?: number;
+    durationMin?: number;
   } | null>(null);
 
   const wasMember = useRef(false);
@@ -233,27 +242,57 @@ export function BookingWizard({ slug }: { slug: string }) {
   }, [slug]);
 
   const filteredStylists = useMemo(() => {
-    if (!serviceId) return stylists;
-    return stylists.filter((s) => s.serviceIds.includes(serviceId));
-  }, [stylists, serviceId]);
+    if (serviceIds.length === 0) return stylists;
+    return stylists.filter((s) => serviceIds.every((id) => s.serviceIds.includes(id)));
+  }, [stylists, serviceIds]);
 
-  const selectedService = services.find((s) => s.id === serviceId) || null;
+  const selectedServices = useMemo(
+    () =>
+      serviceIds
+        .map((id) => services.find((s) => s.id === id))
+        .filter((s): s is Service => Boolean(s)),
+    [serviceIds, services]
+  );
+  const selectedTotalMin = selectedServices.reduce((sum, s) => sum + s.durationMin, 0);
+  const selectedTotalCents = selectedServices.reduce((sum, s) => sum + s.priceCents, 0);
+  const selectedServiceLabel = selectedServices.map((s) => s.name).join(" + ");
+
+  const serviceGroups = useMemo(() => {
+    const byCat = new Map<string, Service[]>();
+    for (const s of services) {
+      const key = CATEGORY_ORDER.includes(s.category as (typeof CATEGORY_ORDER)[number])
+        ? s.category
+        : "OTHER";
+      const list = byCat.get(key) || [];
+      list.push(s);
+      byCat.set(key, list);
+    }
+    const order = [...CATEGORY_ORDER, "OTHER"];
+    return order
+      .filter((key) => (byCat.get(key) || []).length > 0)
+      .map((key) => ({ key, label: categoryLabel(key), items: byCat.get(key)! }));
+  }, [services]);
+
   const selectedStylist =
     stylistId === ANY_STYLIST_ID
       ? null
       : stylists.find((s) => s.id === stylistId) || null;
 
   useEffect(() => {
-    if (!serviceId || !stylistId || !date) {
+    if (serviceIds.length === 0 || !stylistId || !date) {
       setSlots([]);
       return;
     }
-    const q = new URLSearchParams({ serviceId, stylistId, date });
+    const q = new URLSearchParams({
+      serviceIds: serviceIds.join(","),
+      stylistId,
+      date,
+    });
     fetch(`/api/public/${slug}/slots?${q}`)
       .then((r) => r.json())
       .then((data) => setSlots(data.slots || []))
       .catch(() => setSlots([]));
-  }, [slug, serviceId, stylistId, date]);
+  }, [slug, serviceIds, stylistId, date]);
 
   // Tab-bar badges: upcoming visits and saved look-book photos.
   useEffect(() => {
@@ -283,22 +322,35 @@ export function BookingWizard({ slug }: { slug: string }) {
   }, [slug, client, showBookings, done]);
 
   useEffect(() => {
-    if (!client?.preferredStylistId || stylistId || !serviceId) return;
+    if (!client?.preferredStylistId || stylistId || serviceIds.length === 0) return;
     const pref = filteredStylists.find((s) => s.id === client.preferredStylistId);
     if (pref) setStylistId(pref.id);
-  }, [client, filteredStylists, serviceId, stylistId]);
+  }, [client, filteredStylists, serviceIds, stylistId]);
 
-  const activeStep = !serviceId
-    ? 0
-    : !stylistId
-      ? 1
-      : !startsAt
-        ? 2
-        : 3;
+  // Drop stylist if they no longer cover every selected service.
+  useEffect(() => {
+    if (!stylistId || stylistId === ANY_STYLIST_ID || serviceIds.length === 0) return;
+    if (!filteredStylists.some((s) => s.id === stylistId)) {
+      setStylistId("");
+      setStartsAt("");
+    }
+  }, [filteredStylists, serviceIds, stylistId]);
+
+  const activeStep =
+    serviceIds.length === 0 ? 0 : !stylistId ? 1 : !startsAt ? 2 : 3;
+
+  function toggleService(id: string) {
+    setServiceIds((prev) => {
+      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
+      return next;
+    });
+    setStylistId("");
+    setStartsAt("");
+  }
 
   function goToStep(i: number) {
     if (i <= 0) {
-      setServiceId("");
+      setServiceIds([]);
       setStylistId("");
       setStartsAt("");
       return;
@@ -322,7 +374,7 @@ export function BookingWizard({ slug }: { slug: string }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          serviceId,
+          serviceIds,
           stylistId,
           startsAt,
           clientName: name,
@@ -340,6 +392,7 @@ export function BookingWizard({ slug }: { slug: string }) {
         service: data.appointment.service,
         startsAt: data.appointment.startsAt,
         priceCents: data.appointment.priceCents,
+        durationMin: data.appointment.durationMin,
       });
       setJoinPrompt(Boolean(data.suggestJoin && saveAsMember && email));
     } catch (err) {
@@ -433,7 +486,7 @@ export function BookingWizard({ slug }: { slug: string }) {
       .toISOString()
       .replace(/[-:]/g, "")
       .replace(/\.\d{3}Z$/, "Z")}/${new Date(
-      new Date(done.startsAt).getTime() + (selectedService?.durationMin || 30) * 60000
+      new Date(done.startsAt).getTime() + (done.durationMin || selectedTotalMin || 30) * 60000
     )
       .toISOString()
       .replace(/[-:]/g, "")
@@ -609,7 +662,12 @@ export function BookingWizard({ slug }: { slug: string }) {
       <form onSubmit={submit} className="space-y-8 pb-52">
         <div className="flex flex-wrap gap-2">
           {STEPS.map((label, i) => {
-            const reachable = i === 0 || (i === 1 && serviceId) || (i === 2 && stylistId) || (i === 3 && startsAt) || i < activeStep;
+            const reachable =
+              i === 0 ||
+              (i === 1 && serviceIds.length > 0) ||
+              (i === 2 && stylistId) ||
+              (i === 3 && startsAt) ||
+              i < activeStep;
             return (
               <button
                 key={label}
@@ -629,53 +687,82 @@ export function BookingWizard({ slug }: { slug: string }) {
           })}
         </div>
 
-        <section className="space-y-3">
-          <h2 className="font-[family-name:var(--font-display)] text-2xl">Choose a service</h2>
-          <div className="grid gap-3">
-            {services.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => {
-                  setServiceId(s.id);
-                  setStylistId("");
-                  setStartsAt("");
-                }}
-                className={`book-card rounded-2xl px-4 py-4 text-left ${
-                  serviceId === s.id ? "is-selected" : ""
-                }`}
-              >
-                <div className="flex items-baseline justify-between gap-3">
-                  <span className="text-lg font-semibold">{s.name}</span>
-                  <span className="text-sm text-champagne">{formatCad(s.priceCents)}</span>
-                </div>
-                <p className="mt-1 text-sm text-muted">
-                  {s.durationMin} min ·{" "}
-                  {s.category === "WOMEN" ? "Women" : s.category === "MEN" ? "Men" : "Service"}
-                </p>
-                {s.description ? (
-                  <p className="mt-2 text-sm text-white/65">{s.description}</p>
-                ) : null}
-              </button>
-            ))}
+        <section className="space-y-4">
+          <div>
+            <h2 className="font-[family-name:var(--font-display)] text-2xl">Choose services</h2>
+            <p className="mt-1 text-sm text-muted">
+              Tap one or more — duration and price add up for a single visit.
+            </p>
           </div>
+          {serviceGroups.map((group) => (
+            <div key={group.key} className="space-y-2">
+              <h3 className="text-xs font-semibold tracking-[0.18em] text-champagne uppercase">
+                {group.label}
+              </h3>
+              <div className="grid gap-3">
+                {group.items.map((s) => {
+                  const selected = serviceIds.includes(s.id);
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => toggleService(s.id)}
+                      aria-pressed={selected}
+                      className={`book-card rounded-2xl px-4 py-4 text-left ${
+                        selected ? "is-selected" : ""
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-baseline justify-between gap-3">
+                            <span className="text-lg font-semibold">{s.name}</span>
+                            <span className="shrink-0 text-sm text-champagne">
+                              {formatCad(s.priceCents)}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-sm text-muted">{s.durationMin} min</p>
+                          {s.description ? (
+                            <p className="mt-2 text-sm text-white/65">{s.description}</p>
+                          ) : null}
+                        </div>
+                        <span
+                          className={`mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border text-xs ${
+                            selected
+                              ? "border-[#e0d0f5] bg-[#e0d0f5] text-[#17121f]"
+                              : "border-[rgba(201,180,232,0.45)] text-transparent"
+                          }`}
+                          aria-hidden
+                        >
+                          ✓
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+          {serviceIds.length > 0 ? (
+            <p className="text-sm text-[#e0d0f5]">
+              {serviceIds.length} selected · {selectedTotalMin} min ·{" "}
+              {formatCad(selectedTotalCents)}
+            </p>
+          ) : null}
         </section>
 
-        {serviceId ? (
+        {serviceIds.length > 0 ? (
           <section className="space-y-3">
             <div className="flex flex-wrap items-end justify-between gap-2">
               <h2 className="font-[family-name:var(--font-display)] text-2xl">
                 Choose your stylist
               </h2>
-              {selectedService ? (
-                <button
-                  type="button"
-                  className="text-xs font-semibold text-champagne underline-offset-2 hover:underline"
-                  onClick={() => goToStep(0)}
-                >
-                  Change service
-                </button>
-              ) : null}
+              <button
+                type="button"
+                className="text-xs font-semibold text-champagne underline-offset-2 hover:underline"
+                onClick={() => goToStep(0)}
+              >
+                Change services
+              </button>
             </div>
             {filteredStylists.length === 0 ? (
               <div className="book-card rounded-2xl px-4 py-5 text-sm text-muted">
@@ -890,13 +977,16 @@ export function BookingWizard({ slug }: { slug: string }) {
 
         {error ? <p className="text-sm text-[#f5a8a8]">{error}</p> : null}
 
-        {(selectedService || selectedStylist || stylistId === ANY_STYLIST_ID || startsAt) && (
+        {(selectedServices.length > 0 ||
+          selectedStylist ||
+          stylistId === ANY_STYLIST_ID ||
+          startsAt) && (
           <div className="book-sticky-summary">
             <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-3 px-4 py-3">
               <div className="min-w-0 text-sm">
                 <p className="truncate font-semibold text-white">
                   {[
-                    selectedService?.name,
+                    selectedServiceLabel || null,
                     stylistId === ANY_STYLIST_ID
                       ? "Any stylist"
                       : selectedStylist?.name,
@@ -914,8 +1004,10 @@ export function BookingWizard({ slug }: { slug: string }) {
                     .filter(Boolean)
                     .join(" · ")}
                 </p>
-                {selectedService ? (
-                  <p className="text-xs text-[#e0d0f5]">{formatCad(selectedService.priceCents)}</p>
+                {selectedServices.length > 0 ? (
+                  <p className="text-xs text-[#e0d0f5]">
+                    {selectedTotalMin} min · {formatCad(selectedTotalCents)}
+                  </p>
                 ) : null}
               </div>
               {startsAt ? (

@@ -26,14 +26,19 @@ function statusLabel(status: string) {
 
 function StylistThumb({ name, photoUrl }: { name: string; photoUrl: string }) {
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={photoUrl}
-      alt={name}
-      width={52}
-      height={52}
-      className="h-[52px] w-[52px] shrink-0 rounded-full object-cover ring-2 ring-[rgba(201,180,232,0.45)]"
-    />
+    <div className="flex w-[64px] shrink-0 flex-col items-center gap-1">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={photoUrl}
+        alt=""
+        width={52}
+        height={52}
+        className="h-[52px] w-[52px] rounded-full object-cover ring-2 ring-[rgba(201,180,232,0.45)]"
+      />
+      <p className="w-full truncate text-center text-[10px] font-medium leading-tight text-muted">
+        {name}
+      </p>
+    </div>
   );
 }
 
@@ -235,7 +240,7 @@ export function BookingMyBookings({
                         <div className="min-w-0 flex-1">
                           <p className="font-semibold text-ink">{r.service.name}</p>
                           <p className="mt-1 text-sm font-medium text-champagne">
-                            {dateLine(r, true)} · {r.stylist.name}
+                            {dateLine(r, true)}
                           </p>
                           <p className="mt-1 text-xs text-muted">
                             {formatCad(r.service.priceCents)} · {statusLabel(r.status)}
@@ -277,8 +282,7 @@ export function BookingMyBookings({
                             {r.service.name}
                           </p>
                           <p className="text-xs text-muted">
-                            {dateLine(r, false)} · {r.stylist.name} ·{" "}
-                            {statusLabel(r.status)}
+                            {dateLine(r, false)} · {statusLabel(r.status)}
                           </p>
                         </div>
                         <StylistThumb
@@ -327,7 +331,7 @@ export function BookingMyBookings({
                             {r.service.name}
                           </p>
                           <p className="text-xs text-muted">
-                            {dateLine(r, false)} · {r.stylist.name}
+                            {dateLine(r, false)}
                           </p>
                         </div>
                         <StylistThumb

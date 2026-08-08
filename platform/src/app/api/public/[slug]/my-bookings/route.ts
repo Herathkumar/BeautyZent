@@ -24,8 +24,8 @@ export async function GET(
   const now = new Date();
   const rows = await prisma.appointment.findMany({
     where: { salonId: salon.id, clientId: session.clientId },
-    orderBy: { startsAt: "desc" },
-    take: 40,
+    orderBy: { startsAt: "asc" },
+    take: 80,
     include: {
       service: { select: { name: true, durationMin: true, priceCents: true } },
       stylist: {
@@ -44,36 +44,67 @@ export async function GET(
     },
   });
 
-  const appointments = rows.map((a) => ({
-    id: a.id,
-    startsAt: a.startsAt,
-    endsAt: a.endsAt,
-    status: a.status,
-    notes: a.notes,
-    service: a.service,
-    stylist: {
-      id: a.stylist.id,
-      name: a.stylist.name,
-      photoUrl: stylistPhotoUrl({
-        id: a.stylist.id,
-        gender: a.stylist.gender,
-        photoUpdatedAt: a.stylist.photoUpdatedAt,
-        hasPhoto: Boolean(a.stylist.photoMime && a.stylist.photoUpdatedAt),
-      }),
-    },
-    canCancel:
-      ["BOOKED", "CHECKED_IN"].includes(a.status) && canCancelOnline(a.startsAt, now),
-    // Photos belong to visits that actually happened.
-    canAddPhotos:
-      a.startsAt.getTime() <= now.getTime() &&
-      !["CANCELLED", "NO_SHOW"].includes(a.status),
-    photos: a.lookPhotos.map((p) => ({
-      id: p.id,
-      caption: p.caption,
-      createdAt: p.createdAt,
-      url: lookPhotoUrl(slug, p.id),
-    })),
-  }));
+  type Row = (typeof rows)[number];
+  const groups = new Map<string, Row[]>();
+  for (const a of rows) {
+    const key = a.bookingGroupId || a.id;
+    const list = groups.get(key) || [];
+    list.push(a);
+    groups.set(key, list);
+  }
+
+  const appointments = [...groups.values()]
+    .map((group) => {
+      group.sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
+      const head = group[0]!;
+      const tail = group[group.length - 1]!;
+      const photos = group.flatMap((a) => a.lookPhotos);
+      const durationMin = group.reduce((sum, a) => sum + a.service.durationMin, 0);
+      const priceCents = group.reduce((sum, a) => sum + a.service.priceCents, 0);
+      const status = group.some((a) => a.status === "BOOKED")
+        ? "BOOKED"
+        : group.some((a) => a.status === "CHECKED_IN")
+          ? "CHECKED_IN"
+          : head.status;
+
+      return {
+        id: head.id,
+        bookingGroupId: head.bookingGroupId,
+        startsAt: head.startsAt,
+        endsAt: tail.endsAt,
+        status,
+        notes: head.notes,
+        service: {
+          name: group.map((a) => a.service.name).join(" + "),
+          durationMin,
+          priceCents,
+        },
+        stylist: {
+          id: head.stylist.id,
+          name: head.stylist.name,
+          photoUrl: stylistPhotoUrl({
+            id: head.stylist.id,
+            gender: head.stylist.gender,
+            photoUpdatedAt: head.stylist.photoUpdatedAt,
+            hasPhoto: Boolean(head.stylist.photoMime && head.stylist.photoUpdatedAt),
+          }),
+        },
+        canCancel:
+          ["BOOKED", "CHECKED_IN"].includes(status) &&
+          canCancelOnline(head.startsAt, now),
+        canAddPhotos:
+          head.startsAt.getTime() <= now.getTime() &&
+          !["CANCELLED", "NO_SHOW"].includes(status),
+        photos: photos.map((p) => ({
+          id: p.id,
+          caption: p.caption,
+          createdAt: p.createdAt,
+          url: lookPhotoUrl(slug, p.id),
+        })),
+      };
+    })
+    .sort((a, b) => b.startsAt.getTime() - a.startsAt.getTime())
+    .slice(0, 40);
 
   return NextResponse.json({
     appointments,
