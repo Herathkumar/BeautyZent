@@ -105,6 +105,10 @@ model Stylist {
   salonId              String
   name                 String
   bio                  String?
+  /// Public Instagram handle or profile URL shown to booking clients.
+  instagram            String?
+  /// Public Facebook handle/page or profile URL shown to booking clients.
+  facebook             String?
   color                String        @default("#6e4a38")
   gender               StylistGender @default(UNSPECIFIED)
   /// JPEG/PNG bytes for booking + portal selfie (kept small via client resize).

@@ -34,6 +34,8 @@ export async function GET(
           id: true,
           name: true,
           bio: true,
+          instagram: true,
+          facebook: true,
           gender: true,
           photoUpdatedAt: true,
           photoMime: true,
@@ -92,6 +94,8 @@ export async function GET(
           bio: head.stylist.bio || head.stylist.user?.bio || null,
           phone: head.stylist.user?.phone || null,
           email: head.stylist.user?.email || null,
+          instagram: head.stylist.instagram || null,
+          facebook: head.stylist.facebook || null,
           photoUrl: stylistPhotoUrl({
             id: head.stylist.id,
             gender: head.stylist.gender,

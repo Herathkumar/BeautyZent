@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { getStylistSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { cleanSocialHandle } from "@/lib/social-links";
 
 function cleanPhone(value: unknown) {
   const phone = String(value ?? "").trim();
@@ -50,7 +51,9 @@ export async function GET() {
       phone: true,
       bio: true,
       stylistId: true,
-      stylist: { select: { name: true, bio: true } },
+      stylist: {
+        select: { name: true, bio: true, instagram: true, facebook: true },
+      },
     },
   });
   if (!user) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -61,6 +64,8 @@ export async function GET() {
       name: user.stylist?.name || user.name,
       phone: user.phone,
       bio: user.bio ?? user.stylist?.bio ?? null,
+      instagram: user.stylist?.instagram ?? null,
+      facebook: user.stylist?.facebook ?? null,
     },
   });
 }
@@ -81,7 +86,9 @@ export async function PATCH(req: Request) {
     body.name != null ||
     body.email != null ||
     body.phone !== undefined ||
-    body.bio !== undefined;
+    body.bio !== undefined ||
+    body.instagram !== undefined ||
+    body.facebook !== undefined;
 
   // Profile-only update — no password required
   if (wantsProfile && !wantsLoginChange && !body.currentPassword) {
@@ -93,6 +100,10 @@ export async function PATCH(req: Request) {
     if (bioResult && "error" in bioResult) {
       return NextResponse.json({ error: bioResult.error }, { status: 400 });
     }
+    const instagram =
+      body.instagram !== undefined ? cleanSocialHandle(body.instagram) : undefined;
+    const facebook =
+      body.facebook !== undefined ? cleanSocialHandle(body.facebook) : undefined;
     let email: string | undefined;
     if (body.email != null) {
       const emailResult = await validateEmail({
@@ -120,19 +131,43 @@ export async function PATCH(req: Request) {
       select: { id: true, email: true, name: true, phone: true, bio: true, stylistId: true },
     });
 
-    if (user.stylistId && (name !== undefined || bioResult)) {
-      await prisma.stylist.update({
+    let stylistSocial = {
+      instagram: null as string | null,
+      facebook: null as string | null,
+    };
+    if (
+      user.stylistId &&
+      (name !== undefined ||
+        bioResult ||
+        instagram !== undefined ||
+        facebook !== undefined)
+    ) {
+      const stylist = await prisma.stylist.update({
         where: { id: user.stylistId },
         data: {
           ...(name !== undefined ? { name } : {}),
           ...(bioResult ? { bio: bioResult.bio } : {}),
+          ...(instagram !== undefined ? { instagram } : {}),
+          ...(facebook !== undefined ? { facebook } : {}),
         },
+        select: { instagram: true, facebook: true },
       });
+      stylistSocial = stylist;
+    } else if (user.stylistId) {
+      const stylist = await prisma.stylist.findUnique({
+        where: { id: user.stylistId },
+        select: { instagram: true, facebook: true },
+      });
+      if (stylist) stylistSocial = stylist;
     }
 
     return NextResponse.json({
       ok: true,
-      user: updated,
+      user: {
+        ...updated,
+        instagram: stylistSocial.instagram,
+        facebook: stylistSocial.facebook,
+      },
       message: "Profile updated.",
     });
   }

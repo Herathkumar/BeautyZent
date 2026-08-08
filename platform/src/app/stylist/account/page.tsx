@@ -66,6 +66,8 @@ export default function StylistAccountPage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [bio, setBio] = useState("");
+  const [instagram, setInstagram] = useState("");
+  const [facebook, setFacebook] = useState("");
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileMsg, setProfileMsg] = useState("");
   const [profileError, setProfileError] = useState("");
@@ -100,6 +102,8 @@ export default function StylistAccountPage() {
         setName(data.user.name || "");
         setPhone(data.user.phone || "");
         setBio(data.user.bio || "");
+        setInstagram(data.user.instagram || "");
+        setFacebook(data.user.facebook || "");
       });
 
     fetch("/api/stylist/photo")
@@ -184,7 +188,14 @@ export default function StylistAccountPage() {
     const res = await fetch("/api/stylist/account", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: name.trim(), email: email.trim(), phone, bio }),
+      body: JSON.stringify({
+        name: name.trim(),
+        email: email.trim(),
+        phone,
+        bio,
+        instagram,
+        facebook,
+      }),
     });
     const data = await res.json();
     setSavingProfile(false);
@@ -196,6 +207,8 @@ export default function StylistAccountPage() {
     if (data.user?.email) setEmail(data.user.email);
     setPhone(data.user?.phone || "");
     setBio(data.user?.bio || "");
+    setInstagram(data.user?.instagram || "");
+    setFacebook(data.user?.facebook || "");
     setProfileMsg(data.message || "Profile updated.");
     setEditingProfile(false);
   }
@@ -325,6 +338,13 @@ export default function StylistAccountPage() {
               <p className="mt-4 max-w-sm text-sm leading-relaxed text-[#d7ebe7]/90">
                 “{bio.trim()}”
               </p>
+            ) : null}
+
+            {!editingProfile && (instagram.trim() || facebook.trim()) ? (
+              <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-xs font-semibold text-[#b5ebe0]">
+                {instagram.trim() ? <span>IG · {instagram.trim()}</span> : null}
+                {facebook.trim() ? <span>FB · {facebook.trim()}</span> : null}
+              </div>
             ) : null}
 
             <div className="mt-5 flex w-full max-w-sm justify-center">
@@ -457,6 +477,29 @@ export default function StylistAccountPage() {
                 className="stylist-tap rounded-2xl border border-ink/15 bg-white px-3 py-2 text-ink"
               />
             </label>
+            <label className="grid gap-1.5 text-sm">
+              Instagram
+              <input
+                value={instagram}
+                onChange={(e) => setInstagram(e.target.value)}
+                placeholder="@handle or profile URL"
+                maxLength={80}
+                className="stylist-tap rounded-2xl border border-ink/15 bg-white px-3 text-ink"
+              />
+            </label>
+            <label className="grid gap-1.5 text-sm">
+              Facebook
+              <input
+                value={facebook}
+                onChange={(e) => setFacebook(e.target.value)}
+                placeholder="Page name, @handle, or profile URL"
+                maxLength={80}
+                className="stylist-tap rounded-2xl border border-ink/15 bg-white px-3 text-ink"
+              />
+            </label>
+            <p className="text-xs text-muted">
+              Clients can open these from your profile on their bookings.
+            </p>
             {profileError ? <p className="text-sm text-[#f5a8a8]">{profileError}</p> : null}
             {profileMsg ? <p className="text-sm text-[#b5ebe0]">{profileMsg}</p> : null}
             <div className="flex flex-wrap gap-2 pt-1">

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { CLIENT_CANCEL_HOURS } from "@/lib/client-booking";
 import { formatCad } from "@/lib/money";
+import { facebookUrl, instagramUrl } from "@/lib/social-links";
 import { LookPhoto, LookPhotoStrip, LookPhotoViewer } from "./LookPhotos";
 import { StylePreviewPanel, StylePrefDraft } from "./StylePreviewPanel";
 
@@ -14,6 +15,8 @@ type StylistInfo = {
   bio?: string | null;
   phone?: string | null;
   email?: string | null;
+  instagram?: string | null;
+  facebook?: string | null;
 };
 
 type Row = {
@@ -83,6 +86,8 @@ function StylistProfileCard({
   const phone = stylist.phone?.trim() || "";
   const email = stylist.email?.trim() || "";
   const bio = stylist.bio?.trim() || "";
+  const ig = instagramUrl(stylist.instagram);
+  const fb = facebookUrl(stylist.facebook);
 
   return (
     <div
@@ -164,6 +169,26 @@ function StylistProfileCard({
                 className="rounded-2xl border border-[color:var(--line)] px-4 py-3 text-sm font-semibold text-champagne"
               >
                 Email stylist
+              </a>
+            ) : null}
+            {ig ? (
+              <a
+                href={ig}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-2xl border border-[color:var(--line)] px-4 py-3 text-sm font-semibold text-champagne"
+              >
+                Instagram
+              </a>
+            ) : null}
+            {fb ? (
+              <a
+                href={fb}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-2xl border border-[color:var(--line)] px-4 py-3 text-sm font-semibold text-champagne"
+              >
+                Facebook
               </a>
             ) : null}
           </div>
