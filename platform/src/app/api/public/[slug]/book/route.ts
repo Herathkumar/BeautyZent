@@ -10,6 +10,14 @@ import {
 } from "@/lib/client-auth";
 import { getAvailableSlots } from "@/lib/slots";
 import { calendarDateInTz } from "@/lib/salon-time";
+import { decodeStylePhoto, normalizeStylePrompt } from "@/lib/style-prefs";
+
+const stylePrefSchema = z.object({
+  imageBase64: z.string().min(20),
+  mimeType: z.string().optional(),
+  source: z.enum(["UPLOAD", "LOOKBOOK", "AI"]).optional(),
+  prompt: z.string().optional(),
+});
 
 const bodySchema = z
   .object({
@@ -22,6 +30,7 @@ const bodySchema = z
     clientEmail: z.string().email().optional().or(z.literal("")),
     notes: z.string().optional(),
     saveAsMember: z.boolean().optional(),
+    stylePref: stylePrefSchema.optional().nullable(),
   })
   .refine((d) => (d.serviceIds && d.serviceIds.length > 0) || d.serviceId, {
     message: "serviceId or serviceIds required",
@@ -211,6 +220,27 @@ export async function POST(
   }
 
   const head = created[0]!;
+
+  let stylePrefId: string | null = null;
+  if (data.stylePref?.imageBase64) {
+    const decoded = decodeStylePhoto(data.stylePref.imageBase64, data.stylePref.mimeType);
+    if (decoded.ok) {
+      const pref = await prisma.appointmentStylePref.create({
+        data: {
+          salonId: salon.id,
+          appointmentId: head.id,
+          clientId: client.id,
+          photoData: decoded.photo.bytes,
+          photoMime: decoded.photo.mime,
+          source: data.stylePref.source || "UPLOAD",
+          prompt: normalizeStylePrompt(data.stylePref.prompt),
+        },
+        select: { id: true },
+      });
+      stylePrefId = pref.id;
+    }
+  }
+
   await Promise.all(created.map((a) => syncAppointmentToGoogle(a.id).catch(() => null)));
 
   return NextResponse.json({
@@ -231,6 +261,7 @@ export async function POST(
       client: head.client.name,
       priceCents: totalPrice,
       durationMin: totalDuration,
+      stylePrefId,
     },
     calendarSync: null,
     suggestJoin: Boolean(emailNorm) && !client.memberAt && !session,

@@ -16,6 +16,12 @@ type Row = {
   photos: LookPhoto[];
   service: { name: string; durationMin: number; priceCents: number };
   stylist: { id: string; name: string; photoUrl: string };
+  stylePref?: {
+    id: string;
+    source: string;
+    prompt: string | null;
+    url: string;
+  } | null;
 };
 
 export type MemberTab = "visits" | "lookbook";
@@ -251,6 +257,20 @@ export function BookingMyBookings({
                           photoUrl={r.stylist.photoUrl}
                         />
                       </div>
+                      {r.stylePref?.url ? (
+                        <div className="mt-3 flex items-center gap-2">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={r.stylePref.url}
+                            alt="Preferred look"
+                            className="h-12 w-12 rounded-lg object-cover ring-1 ring-[rgba(201,180,232,0.45)]"
+                          />
+                          <p className="text-xs text-muted">
+                            Preferred look
+                            {r.stylePref.prompt ? ` · ${r.stylePref.prompt}` : ""}
+                          </p>
+                        </div>
+                      ) : null}
                       {r.canCancel ? (
                         <button
                           type="button"

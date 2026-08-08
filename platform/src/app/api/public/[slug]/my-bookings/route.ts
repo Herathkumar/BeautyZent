@@ -6,6 +6,7 @@ import {
   getClientSessionForSalon,
 } from "@/lib/client-auth";
 import { MAX_PHOTOS_PER_APPOINTMENT, lookPhotoUrl } from "@/lib/look-photos";
+import { stylePrefPublicUrl } from "@/lib/style-prefs";
 import { stylistPhotoUrl } from "@/lib/stylist-photo";
 
 export async function GET(
@@ -41,6 +42,9 @@ export async function GET(
         orderBy: { createdAt: "asc" },
         select: { id: true, caption: true, createdAt: true },
       },
+      stylePref: {
+        select: { id: true, source: true, prompt: true },
+      },
     },
   });
 
@@ -61,6 +65,7 @@ export async function GET(
       const photos = group.flatMap((a) => a.lookPhotos);
       const durationMin = group.reduce((sum, a) => sum + a.service.durationMin, 0);
       const priceCents = group.reduce((sum, a) => sum + a.service.priceCents, 0);
+      const stylePref = group.find((a) => a.stylePref)?.stylePref || null;
       const status = group.some((a) => a.status === "BOOKED")
         ? "BOOKED"
         : group.some((a) => a.status === "CHECKED_IN")
@@ -101,6 +106,14 @@ export async function GET(
           createdAt: p.createdAt,
           url: lookPhotoUrl(slug, p.id),
         })),
+        stylePref: stylePref
+          ? {
+              id: stylePref.id,
+              source: stylePref.source,
+              prompt: stylePref.prompt,
+              url: stylePrefPublicUrl(slug, stylePref.id),
+            }
+          : null,
       };
     })
     .sort((a, b) => b.startsAt.getTime() - a.startsAt.getTime())

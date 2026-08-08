@@ -17,6 +17,12 @@ type Appt = {
   tipCents?: number | null;
   client: { name: string; phone: string | null };
   service: { name: string; priceCents?: number; durationMin?: number };
+  stylePref?: {
+    id: string;
+    source: string;
+    prompt: string | null;
+    url: string;
+  } | null;
 };
 
 function statusLabel(status: string) {
@@ -210,6 +216,28 @@ export default function StylistHomePage() {
             {statusLabel(a.status)}
           </span>
         </div>
+
+        {a.stylePref?.url ? (
+          <div className="mt-3 flex gap-3 rounded-xl border border-[rgba(181,235,224,0.25)] bg-[rgba(181,235,224,0.08)] p-2.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={a.stylePref.url}
+              alt="Client preferred look"
+              className="h-20 w-20 shrink-0 rounded-lg object-cover"
+            />
+            <div className="min-w-0 text-sm">
+              <p className="font-semibold text-champagne">Client preferred look</p>
+              <p className="mt-0.5 text-xs text-muted">
+                {a.stylePref.source === "AI"
+                  ? "AI style preview"
+                  : a.stylePref.source === "LOOKBOOK"
+                    ? "From their look book"
+                    : "Uploaded photo"}
+                {a.stylePref.prompt ? ` · ${a.stylePref.prompt}` : ""}
+              </p>
+            </div>
+          </div>
+        ) : null}
 
         {a.notes ? (
           <p className="mt-3 rounded-xl border border-[rgba(181, 235, 224,0.25)] bg-[rgba(181, 235, 224,0.08)] px-3 py-2 text-sm text-champagne">

@@ -24,11 +24,26 @@ export async function GET(req: Request) {
     include: {
       client: true,
       service: true,
+      stylePref: {
+        select: { id: true, source: true, prompt: true },
+      },
     },
     orderBy: { startsAt: "asc" },
   });
 
-  return NextResponse.json({ appointments });
+  return NextResponse.json({
+    appointments: appointments.map((a) => ({
+      ...a,
+      stylePref: a.stylePref
+        ? {
+            id: a.stylePref.id,
+            source: a.stylePref.source,
+            prompt: a.stylePref.prompt,
+            url: `/api/stylist/style-prefs/${a.id}`,
+          }
+        : null,
+    })),
+  });
 }
 
 export async function PATCH(req: Request) {

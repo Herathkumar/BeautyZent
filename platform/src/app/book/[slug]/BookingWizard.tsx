@@ -8,6 +8,7 @@ import { BookBottomNav, BookTabKey } from "./BookBottomNav";
 import { BookingMyBookings, MemberTab } from "./BookingMyBookings";
 import { BookingProfile } from "./BookingProfile";
 import { BookClient, ClientMemberBar } from "./ClientMemberBar";
+import { StylePreviewPanel, StylePrefDraft } from "./StylePreviewPanel";
 
 type Service = {
   id: string;
@@ -180,6 +181,7 @@ export function BookingWizard({ slug }: { slug: string }) {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
+  const [stylePref, setStylePref] = useState<StylePrefDraft | null>(null);
   const [saveAsMember, setSaveAsMember] = useState(true);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -382,6 +384,14 @@ export function BookingWizard({ slug }: { slug: string }) {
           clientEmail: email,
           notes,
           saveAsMember: !client && saveAsMember,
+          stylePref: stylePref
+            ? {
+                imageBase64: stylePref.imageBase64,
+                mimeType: stylePref.mimeType,
+                source: stylePref.source,
+                prompt: stylePref.prompt || undefined,
+              }
+            : null,
         }),
       });
       const data = await res.json();
@@ -515,6 +525,17 @@ export function BookingWizard({ slug }: { slug: string }) {
               })}
             </span>
           </p>
+          {stylePref?.imageBase64 ? (
+            <div className="mx-auto mt-5 max-w-[200px]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={stylePref.imageBase64}
+                alt="Preferred look shared with stylist"
+                className="rounded-2xl object-cover ring-2 ring-[rgba(201,180,232,0.45)]"
+              />
+              <p className="mt-2 text-xs text-muted">Preferred look sent to your stylist</p>
+            </div>
+          ) : null}
           <p className="mt-3 text-xs text-muted">
             Ref · {done.id.slice(-8).toUpperCase()} · Free cancel until {CLIENT_CANCEL_HOURS}h
             before
@@ -576,6 +597,7 @@ export function BookingWizard({ slug }: { slug: string }) {
                 setStylistId("");
                 setStartsAt("");
                 setNotes("");
+                setStylePref(null);
                 setError("");
               }}
             >
@@ -972,6 +994,12 @@ export function BookingWizard({ slug }: { slug: string }) {
                 </label>
               ) : null}
             </div>
+            <StylePreviewPanel
+              slug={slug}
+              isMember={Boolean(client)}
+              value={stylePref}
+              onChange={setStylePref}
+            />
           </section>
         ) : null}
 
