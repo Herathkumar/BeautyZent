@@ -7,8 +7,8 @@ type Props = {
   open: boolean;
   onClose: () => void;
   onCapture: (file: File) => void | Promise<void>;
-  /** Accent for capture button — stylist teal or manager gold */
-  accent?: "stylist" | "manager";
+  /** Accent for capture button — stylist teal, manager gold, or client rose */
+  accent?: "stylist" | "manager" | "book";
   fileInputTestId?: string;
   /** Stable id for label[htmlFor] from the profile page (no colon characters). */
   fileInputId?: string;
@@ -209,10 +209,21 @@ export function SelfieCamera({
   const captureBtn =
     accent === "manager"
       ? "bg-[#c9a87c] text-[#1c1714]"
-      : "bg-[#7ec4b8] text-[#0e1618]";
-  const ring = accent === "manager" ? "border-[#f0c987]" : "border-[#b5ebe0]";
+      : accent === "book"
+        ? "bg-[#e8b4a2] text-[#1a1418]"
+        : "bg-[#7ec4b8] text-[#0e1618]";
+  const ring =
+    accent === "manager"
+      ? "border-[#f0c987]"
+      : accent === "book"
+        ? "border-[#f2c4b0]"
+        : "border-[#b5ebe0]";
   const galleryBorder =
-    accent === "manager" ? "border-[#f0c987]/70" : "border-[#b5ebe0]/70";
+    accent === "manager"
+      ? "border-[#f0c987]/70"
+      : accent === "book"
+        ? "border-[#f2c4b0]/70"
+        : "border-[#b5ebe0]/70";
 
   const diameterPct = `${CIRCLE.diameter * 100}%`;
   const topPct = `${CIRCLE.cy * 100}%`;

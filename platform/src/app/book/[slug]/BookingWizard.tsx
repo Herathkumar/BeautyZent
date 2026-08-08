@@ -6,7 +6,7 @@ import { formatCad } from "@/lib/money";
 import { calendarDateInTz } from "@/lib/salon-time";
 import { BookBottomNav, BookTabKey } from "./BookBottomNav";
 import { BookingMyBookings, MemberTab } from "./BookingMyBookings";
-import { BookThemePicker } from "./BookThemePicker";
+import { BookingProfile } from "./BookingProfile";
 import { BookClient, ClientMemberBar } from "./ClientMemberBar";
 
 type Service = {
@@ -180,8 +180,9 @@ export function BookingWizard({ slug }: { slug: string }) {
   const [showBookings, setShowBookings] = useState(false);
   const [memberTab, setMemberTab] = useState<MemberTab>("visits");
   const [signInSignal, setSignInSignal] = useState(0);
+  const [signInMode, setSignInMode] = useState<"signin" | "join">("signin");
   const [joinPrompt, setJoinPrompt] = useState(false);
-  const [themeOpen, setThemeOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [counts, setCounts] = useState({ upcoming: 0, photos: 0 });
   const [done, setDone] = useState<{
     id: string;
@@ -352,14 +353,21 @@ export function BookingWizard({ slug }: { slug: string }) {
     if (slots[0]) setStartsAt(slots[0]);
   }
 
+  /** Ask the member bar to pop open its sign-in (or join) form for a guest. */
+  function requestMemberForm(mode: "signin" | "join") {
+    setShowBookings(false);
+    setProfileOpen(false);
+    setSignInMode(mode);
+    setSignInSignal((n) => n + 1);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   function openMemberTab(tab: MemberTab) {
     if (!client) {
-      // Guests get the sign-in form on the member bar instead of an empty sheet.
-      setShowBookings(false);
-      setSignInSignal((n) => n + 1);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      requestMemberForm("signin");
       return;
     }
+    setProfileOpen(false);
     setMemberTab(tab);
     setShowBookings(true);
   }
@@ -367,20 +375,21 @@ export function BookingWizard({ slug }: { slug: string }) {
   function selectTab(key: BookTabKey) {
     if (key === "book") {
       setShowBookings(false);
-      setThemeOpen(false);
+      setProfileOpen(false);
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
-    if (key === "appearance") {
+    if (key === "profile") {
+      // Guests still get Profile — it holds Appearance and the join prompt.
       setShowBookings(false);
-      setThemeOpen(true);
+      setProfileOpen(true);
       return;
     }
     openMemberTab(key === "lookbook" ? "lookbook" : "visits");
   }
 
-  const activeTab: BookTabKey = themeOpen
-    ? "appearance"
+  const activeTab: BookTabKey = profileOpen
+    ? "profile"
     : showBookings
       ? memberTab === "lookbook"
         ? "lookbook"
@@ -396,16 +405,14 @@ export function BookingWizard({ slug }: { slug: string }) {
         onClose={() => setShowBookings(false)}
         timezone={salon?.timezone}
       />
-      <BookThemePicker
-        open={themeOpen}
-        title={
-          client
-            ? "Choose your booking look"
-            : "Booking is available in light & dark mode!"
-        }
-        subtitle="Light, dark, or match your device — saved on this phone."
-        confirmLabel="Save"
-        onClose={() => setThemeOpen(false)}
+      <BookingProfile
+        slug={slug}
+        open={profileOpen}
+        client={client}
+        onClose={() => setProfileOpen(false)}
+        onClientChange={onClientChange}
+        onSignInRequest={() => requestMemberForm("signin")}
+        onJoinRequest={() => requestMemberForm("join")}
       />
       <BookBottomNav
         active={activeTab}
@@ -478,7 +485,7 @@ export function BookingWizard({ slug }: { slug: string }) {
             onJoined={(c) => {
               onClientChange(c);
               setJoinPrompt(false);
-              setThemeOpen(true);
+              setProfileOpen(true);
             }}
             onSkip={() => setJoinPrompt(false)}
           />
@@ -554,10 +561,10 @@ export function BookingWizard({ slug }: { slug: string }) {
 
             <button
               type="button"
-              onClick={() => setThemeOpen(true)}
+              onClick={() => setProfileOpen(true)}
               className="rounded-2xl border border-[rgba(232,180,162,0.4)] px-4 py-3.5 text-sm font-semibold text-champagne"
             >
-              Appearance
+              Profile &amp; appearance
             </button>
 
             {salon?.phone ? (
@@ -594,7 +601,9 @@ export function BookingWizard({ slug }: { slug: string }) {
         client={client}
         onClientChange={onClientChange}
         onOpenBookings={() => openMemberTab("visits")}
+        onOpenProfile={() => setProfileOpen(true)}
         openSignInSignal={signInSignal}
+        openSignInMode={signInMode}
       />
 
       <form onSubmit={submit} className="space-y-8 pb-52">

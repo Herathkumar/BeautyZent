@@ -6,9 +6,10 @@ export async function GET(
 ) {
   const { slug } = await params;
   const manifest = {
-    name: "FHSalon — Online Booking",
-    short_name: "FHSalon Booking",
-    description: "Book a salon visit online — pick a service, stylist, and time.",
+    name: "FHS Client App",
+    short_name: "FHS Client",
+    description:
+      "Book your salon visit, manage appointments, and keep a photo look book of every visit.",
     start_url: `/book/${slug}`,
     scope: `/book/${slug}`,
     display: "standalone",

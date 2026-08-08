@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { AppOpenSplash } from "@/components/AppOpenSplash";
-import { BookThemeBoot } from "./BookThemePicker";
+import { BookThemeBoot } from "./BookThemeToggle";
 
 type Props = {
   children: React.ReactNode;
@@ -10,12 +10,13 @@ type Props = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   return {
-    title: "FHSalon — Online Booking",
-    description: "Book a salon visit online — pick a service, stylist, and time.",
+    title: "FHS Client",
+    description:
+      "Book your salon visit, manage appointments, and keep a photo look book of every visit.",
     manifest: `/book/${slug}/manifest`,
     appleWebApp: {
       capable: true,
-      title: "FHSalon Booking",
+      title: "FHS Client",
       statusBarStyle: "black-translucent",
     },
     icons: {

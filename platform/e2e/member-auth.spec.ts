@@ -9,20 +9,28 @@ import {
 } from "./helpers";
 
 test.describe("Booking member auth", () => {
-  test("guest can open Appearance and save theme without signing in", async ({
-    page,
-  }) => {
+  test("guest can switch theme from Profile without signing in", async ({ page }) => {
     await page.goto(`/book/${DEMO.slug}`);
-    await page.getByTestId("book-nav-appearance").click();
-    await expect(page.getByRole("dialog")).toBeVisible();
-    await page.getByRole("button", { name: /^light$/i }).click();
-    await page.getByRole("button", { name: /^save$/i }).click();
-    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await page.getByTestId("book-nav-profile").click();
 
-    const pref = await page.evaluate(() =>
-      window.localStorage.getItem("fhsalon-book-theme")
-    );
-    expect(pref).toBe("light");
+    const profile = page.getByTestId("book-profile");
+    await expect(profile).toBeVisible();
+    await expect(profile.getByText(/browsing as a guest/i)).toBeVisible();
+
+    await profile.getByTestId("book-theme-light").click();
+    await expect
+      .poll(() =>
+        page.evaluate(() => window.localStorage.getItem("fhsalon-book-theme"))
+      )
+      .toBe("light");
+    await expect(page.locator("html")).toHaveClass(/book-shell--light/);
+
+    await profile.getByTestId("book-theme-dark").click();
+    await expect
+      .poll(() =>
+        page.evaluate(() => window.localStorage.getItem("fhsalon-book-theme"))
+      )
+      .toBe("dark");
   });
 
   test("sign out clears Your details fields", async ({ page }) => {

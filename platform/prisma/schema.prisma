@@ -229,6 +229,10 @@ model Client {
   notes              String?
   /// When set, this client is a salon member (email OTP verified).
   memberAt           DateTime?
+  /// Member selfie for the FHS Client app profile (JPEG/PNG, resized in browser).
+  photoData          Bytes?
+  photoMime          String?
+  photoUpdatedAt     DateTime?
   preferredStylistId String?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt

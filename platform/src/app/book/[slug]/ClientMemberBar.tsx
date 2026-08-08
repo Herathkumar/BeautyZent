@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BookThemePicker } from "./BookThemePicker";
 
 export type BookClient = {
   id: string;
@@ -18,14 +17,18 @@ export function ClientMemberBar({
   client,
   onClientChange,
   onOpenBookings,
+  onOpenProfile,
   openSignInSignal = 0,
+  openSignInMode = "signin",
 }: {
   slug: string;
   client: BookClient | null;
   onClientChange: (c: BookClient | null) => void;
   onOpenBookings: () => void;
-  /** Bump to pop the sign-in form open from the app tab bar. */
+  onOpenProfile: () => void;
+  /** Bump to pop the sign-in / join form open from the app tab bar. */
   openSignInSignal?: number;
+  openSignInMode?: "signin" | "join";
 }) {
   const [mode, setMode] = useState<Mode>("closed");
   const [purpose, setPurpose] = useState<"signin" | "join">("signin");
@@ -37,8 +40,6 @@ export function ClientMemberBar({
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [error, setError] = useState("");
-  const [themeOpen, setThemeOpen] = useState(false);
-  const [themeWelcome, setThemeWelcome] = useState(false);
 
   useEffect(() => {
     fetch(`/api/public/${slug}/auth/me`)
@@ -49,11 +50,11 @@ export function ClientMemberBar({
 
   useEffect(() => {
     if (!openSignInSignal) return;
-    setMode("signin");
-    setPurpose("signin");
+    setMode(openSignInMode);
+    setPurpose(openSignInMode);
     setError("");
     setMsg("");
-  }, [openSignInSignal]);
+  }, [openSignInSignal, openSignInMode]);
 
   async function requestCode(nextPurpose: "signin" | "join") {
     setBusy(true);
@@ -99,13 +100,10 @@ export function ClientMemberBar({
       setCode("");
       setMsg(
         purpose === "join"
-          ? "Welcome — pick how booking should look."
+          ? "Welcome — finish setting up your profile."
           : "Welcome back — your details are ready."
       );
-      if (purpose === "join") {
-        setThemeWelcome(true);
-        setThemeOpen(true);
-      }
+      if (purpose === "join") onOpenProfile();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not verify");
     } finally {
@@ -125,64 +123,42 @@ export function ClientMemberBar({
     setDemoCode("");
     setMsg("");
     setError("");
-    setThemeOpen(false);
-    setThemeWelcome(false);
   }
 
   if (client) {
     return (
-      <>
-        <div className="book-card mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl px-4 py-3">
-          <div className="min-w-0">
-            <p className="text-xs font-semibold tracking-[0.16em] text-champagne uppercase">
-              Member
-            </p>
-            <p className="truncate font-semibold text-ink">{client.name}</p>
-            <p className="truncate text-xs text-muted">{client.email}</p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={onOpenBookings}
-              className="rounded-full border border-[rgba(232,180,162,0.4)] px-3 py-2 text-xs font-semibold text-champagne"
-            >
-              My bookings
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setThemeWelcome(false);
-                setThemeOpen(true);
-              }}
-              className="rounded-full border border-[rgba(232,180,162,0.4)] px-3 py-2 text-xs font-semibold text-champagne"
-            >
-              Appearance
-            </button>
-            <button
-              type="button"
-              onClick={logout}
-              className="rounded-full border border-white/15 px-3 py-2 text-xs font-semibold text-muted"
-            >
-              Sign out
-            </button>
-          </div>
+      <div className="book-card mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl px-4 py-3">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold tracking-[0.16em] text-champagne uppercase">
+            Member
+          </p>
+          <p className="truncate font-semibold text-ink">{client.name}</p>
+          <p className="truncate text-xs text-muted">{client.email}</p>
         </div>
-        <BookThemePicker
-          open={themeOpen}
-          title={
-            themeWelcome
-              ? "Booking is now available in light & dark mode!"
-              : "Choose your booking look"
-          }
-          subtitle={
-            themeWelcome
-              ? "You can change this now or anytime in Appearance."
-              : "Light, dark, or match your device."
-          }
-          confirmLabel={themeWelcome ? "Got it" : "Save"}
-          onClose={() => setThemeOpen(false)}
-        />
-      </>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={onOpenBookings}
+            className="rounded-full border border-[rgba(232,180,162,0.4)] px-3 py-2 text-xs font-semibold text-champagne"
+          >
+            My bookings
+          </button>
+          <button
+            type="button"
+            onClick={onOpenProfile}
+            className="rounded-full border border-[rgba(232,180,162,0.4)] px-3 py-2 text-xs font-semibold text-champagne"
+          >
+            Profile
+          </button>
+          <button
+            type="button"
+            onClick={logout}
+            className="rounded-full border border-white/15 px-3 py-2 text-xs font-semibold text-muted"
+          >
+            Sign out
+          </button>
+        </div>
+      </div>
     );
   }
 
@@ -201,10 +177,7 @@ export function ClientMemberBar({
           <button
             type="button"
             className="rounded-full border border-[rgba(232,180,162,0.4)] px-3 py-2 text-xs font-semibold text-champagne"
-            onClick={() => {
-              setThemeWelcome(false);
-              setThemeOpen(true);
-            }}
+            onClick={onOpenProfile}
           >
             Appearance
           </button>
@@ -337,22 +310,6 @@ export function ClientMemberBar({
 
       {error ? <p className="mt-3 text-sm text-[#f5a8a8]">{error}</p> : null}
       {msg && mode === "closed" ? <p className="mt-3 text-sm text-champagne">{msg}</p> : null}
-
-      <BookThemePicker
-        open={themeOpen}
-        title={
-          themeWelcome
-            ? "Booking is now available in light & dark mode!"
-            : "Choose your booking look"
-        }
-        subtitle={
-          themeWelcome
-            ? "You can change this now or anytime in Appearance."
-            : "Saved on this device — no account needed."
-        }
-        confirmLabel={themeWelcome ? "Got it" : "Save"}
-        onClose={() => setThemeOpen(false)}
-      />
     </div>
   );
 }
