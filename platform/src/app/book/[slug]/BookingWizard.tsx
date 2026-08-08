@@ -572,7 +572,7 @@ export function BookingWizard({ slug }: { slug: string }) {
               onClick={() => {
                 setDone(null);
                 setJoinPrompt(false);
-                setServiceId("");
+                setServiceIds([]);
                 setStylistId("");
                 setStartsAt("");
                 setNotes("");
