@@ -5,6 +5,7 @@ import { useConfirm } from "@/components/ConfirmDialog";
 import { CLIENT_CANCEL_HOURS } from "@/lib/client-booking";
 import { formatCad } from "@/lib/money";
 import { LookPhoto, LookPhotoStrip, LookPhotoViewer } from "./LookPhotos";
+import { StylePreviewPanel, StylePrefDraft } from "./StylePreviewPanel";
 
 type Row = {
   id: string;
@@ -69,6 +70,10 @@ export function BookingMyBookings({
   const [viewing, setViewing] = useState<{ rowId: string; photoId: string } | null>(
     null
   );
+  const [styleEditId, setStyleEditId] = useState<string | null>(null);
+  const [styleDraft, setStyleDraft] = useState<StylePrefDraft | null>(null);
+  const [styleBusy, setStyleBusy] = useState(false);
+  const [styleViewer, setStyleViewer] = useState<string | null>(null);
   const confirm = useConfirm();
 
   useEffect(() => {
@@ -91,6 +96,104 @@ export function BookingMyBookings({
 
   function setPhotos(rowId: string, photos: LookPhoto[]) {
     setRows((prev) => prev.map((r) => (r.id === rowId ? { ...r, photos } : r)));
+  }
+
+  function openStyleEdit(r: Row) {
+    setStyleEditId(r.id);
+    setStyleDraft(
+      r.stylePref?.url
+        ? {
+            imageBase64: r.stylePref.url,
+            mimeType: "image/jpeg",
+            source: (r.stylePref.source as StylePrefDraft["source"]) || "UPLOAD",
+            prompt: r.stylePref.prompt,
+          }
+        : null
+    );
+    setError("");
+  }
+
+  async function saveStylePref(appointmentId: string) {
+    if (!styleDraft?.imageBase64) {
+      setError("Add a style photo before saving.");
+      return;
+    }
+    // Existing saved pref may be a URL — re-fetch bytes as data URL if needed.
+    let imageBase64 = styleDraft.imageBase64;
+    if (imageBase64.startsWith("/")) {
+      setStyleBusy(true);
+      try {
+        const res = await fetch(imageBase64);
+        const blob = await res.blob();
+        imageBase64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result || ""));
+          reader.onerror = () => reject(new Error("Could not read photo"));
+          reader.readAsDataURL(blob);
+        });
+      } catch {
+        setError("Could not load the current style photo. Pick a new one.");
+        setStyleBusy(false);
+        return;
+      }
+    }
+
+    setStyleBusy(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/public/${slug}/my-bookings/${appointmentId}/style-pref`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          imageBase64,
+          mimeType: styleDraft.mimeType,
+          source: styleDraft.source,
+          prompt: styleDraft.prompt || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not save style preview");
+      setRows((prev) =>
+        prev.map((r) =>
+          r.id === appointmentId ? { ...r, stylePref: data.stylePref } : r
+        )
+      );
+      setStyleEditId(null);
+      setStyleDraft(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not save style preview");
+    } finally {
+      setStyleBusy(false);
+    }
+  }
+
+  async function removeStylePref(appointmentId: string) {
+    const ok = await confirm({
+      title: "Remove style preview?",
+      message: "Your stylist will no longer see a preferred look for this visit.",
+      confirmLabel: "Remove",
+      cancelLabel: "Keep it",
+      tone: "danger",
+    });
+    if (!ok) return;
+    setStyleBusy(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/public/${slug}/my-bookings/${appointmentId}/style-pref`, {
+        method: "DELETE",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Could not remove");
+      setRows((prev) =>
+        prev.map((r) => (r.id === appointmentId ? { ...r, stylePref: null } : r))
+      );
+      setStyleEditId(null);
+      setStyleDraft(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not remove");
+    } finally {
+      setStyleBusy(false);
+    }
   }
 
   async function cancel(id: string) {
@@ -257,8 +360,12 @@ export function BookingMyBookings({
                           photoUrl={r.stylist.photoUrl}
                         />
                       </div>
-                      {r.stylePref?.url ? (
-                        <div className="mt-3 flex items-center gap-2">
+                      {r.stylePref?.url && styleEditId !== r.id ? (
+                        <button
+                          type="button"
+                          onClick={() => setStyleViewer(r.stylePref!.url)}
+                          className="mt-3 flex w-full items-center gap-2 text-left"
+                        >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={r.stylePref.url}
@@ -268,9 +375,61 @@ export function BookingMyBookings({
                           <p className="text-xs text-muted">
                             Preferred look
                             {r.stylePref.prompt ? ` · ${r.stylePref.prompt}` : ""}
+                            <span className="mt-0.5 block text-[#e0d0f5]">Tap to view</span>
                           </p>
-                        </div>
+                        </button>
                       ) : null}
+
+                      {styleEditId === r.id ? (
+                        <div className="mt-3 space-y-2">
+                          <StylePreviewPanel
+                            slug={slug}
+                            isMember
+                            value={styleDraft}
+                            onChange={setStyleDraft}
+                          />
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              disabled={styleBusy || !styleDraft}
+                              onClick={() => void saveStylePref(r.id)}
+                              className="btn-solid rounded-full px-4 py-2 text-xs font-semibold disabled:opacity-60"
+                            >
+                              {styleBusy ? "Saving…" : "Save to booking"}
+                            </button>
+                            {r.stylePref ? (
+                              <button
+                                type="button"
+                                disabled={styleBusy}
+                                onClick={() => void removeStylePref(r.id)}
+                                className="rounded-full border border-[rgba(245,168,168,0.4)] px-4 py-2 text-xs font-semibold text-[#f5a8a8]"
+                              >
+                                Remove
+                              </button>
+                            ) : null}
+                            <button
+                              type="button"
+                              disabled={styleBusy}
+                              onClick={() => {
+                                setStyleEditId(null);
+                                setStyleDraft(null);
+                              }}
+                              className="rounded-full border border-[rgba(201,180,232,0.4)] px-4 py-2 text-xs font-semibold text-[#e0d0f5]"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => openStyleEdit(r)}
+                          className="mt-3 mr-2 rounded-full border border-[rgba(201,180,232,0.4)] px-3 py-1.5 text-xs font-semibold text-[#e0d0f5]"
+                        >
+                          {r.stylePref ? "Update style preview" : "Add style preview"}
+                        </button>
+                      )}
+
                       {r.canCancel ? (
                         <button
                           type="button"
@@ -414,6 +573,37 @@ export function BookingMyBookings({
           );
         }}
       />
+
+      {styleViewer ? (
+        <div
+          className="fixed inset-0 z-[90] flex flex-col bg-black/92"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Preferred look"
+        >
+          <div className="flex justify-end px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
+            <button
+              type="button"
+              onClick={() => setStyleViewer(null)}
+              className="rounded-full bg-[#e0d0f5] px-4 py-2 text-sm font-semibold text-[#17121f]"
+            >
+              Close
+            </button>
+          </div>
+          <button
+            type="button"
+            className="flex min-h-0 flex-1 items-center justify-center px-3 pb-[max(1rem,env(safe-area-inset-bottom))]"
+            onClick={() => setStyleViewer(null)}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={styleViewer}
+              alt="Preferred look"
+              className="max-h-full max-w-full object-contain"
+            />
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

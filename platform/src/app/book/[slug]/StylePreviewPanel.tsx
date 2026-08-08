@@ -52,6 +52,42 @@ export function StylePreviewPanel({ slug, isMember, value, onChange }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- load once per slug
   }, [slug]);
 
+  // If parent passes an existing saved photo URL, mirror it as the working base.
+  useEffect(() => {
+    if (!value?.imageBase64) return;
+    if (value.imageBase64.startsWith("data:")) {
+      setBasePhoto(value.imageBase64);
+      return;
+    }
+    if (!value.imageBase64.startsWith("/")) return;
+    let cancelled = false;
+    fetch(value.imageBase64)
+      .then((r) => r.blob())
+      .then(
+        (blob) =>
+          new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result || ""));
+            reader.onerror = () => reject(new Error("read failed"));
+            reader.readAsDataURL(blob);
+          })
+      )
+      .then((dataUrl) => {
+        if (cancelled || !dataUrl) return;
+        setBasePhoto(dataUrl);
+        onChange({
+          ...value,
+          imageBase64: dataUrl,
+          mimeType: "image/jpeg",
+        });
+      })
+      .catch(() => null);
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- hydrate once when URL is provided
+  }, [value?.imageBase64]);
+
   useEffect(() => {
     if (!isMember) {
       setLookPhotos([]);

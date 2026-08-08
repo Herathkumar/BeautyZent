@@ -31,18 +31,54 @@ export async function GET(req: Request) {
     orderBy: { startsAt: "asc" },
   });
 
+  // Preferred look is stored on the group head; attach it to every sibling row.
+  const groupIds = [
+    ...new Set(
+      appointments
+        .filter((a) => a.bookingGroupId && !a.stylePref)
+        .map((a) => a.bookingGroupId!)
+    ),
+  ];
+  const groupPref = new Map<
+    string,
+    { id: string; source: string; prompt: string | null }
+  >();
+  if (groupIds.length > 0) {
+    const heads = await prisma.appointment.findMany({
+      where: {
+        stylistId: session.stylistId,
+        bookingGroupId: { in: groupIds },
+      },
+      orderBy: { startsAt: "asc" },
+      select: {
+        bookingGroupId: true,
+        stylePref: { select: { id: true, source: true, prompt: true } },
+      },
+    });
+    for (const h of heads) {
+      if (!h.bookingGroupId || !h.stylePref || groupPref.has(h.bookingGroupId)) continue;
+      groupPref.set(h.bookingGroupId, h.stylePref);
+    }
+  }
+
   return NextResponse.json({
-    appointments: appointments.map((a) => ({
-      ...a,
-      stylePref: a.stylePref
-        ? {
-            id: a.stylePref.id,
-            source: a.stylePref.source,
-            prompt: a.stylePref.prompt,
-            url: `/api/stylist/style-prefs/${a.id}`,
-          }
-        : null,
-    })),
+    appointments: appointments.map((a) => {
+      const pref =
+        a.stylePref ||
+        (a.bookingGroupId ? groupPref.get(a.bookingGroupId) : null) ||
+        null;
+      return {
+        ...a,
+        stylePref: pref
+          ? {
+              id: pref.id,
+              source: pref.source,
+              prompt: pref.prompt,
+              url: `/api/stylist/style-prefs/${a.id}`,
+            }
+          : null,
+      };
+    }),
   });
 }
 

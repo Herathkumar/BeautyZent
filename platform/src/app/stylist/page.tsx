@@ -79,6 +79,10 @@ export default function StylistHomePage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const confirm = useConfirm();
   const [walkInOpen, setWalkInOpen] = useState(false);
+  const [styleViewer, setStyleViewer] = useState<{
+    url: string;
+    label: string;
+  } | null>(null);
 
   const load = useCallback(async () => {
     const me = await fetch("/api/stylist/me");
@@ -218,7 +222,16 @@ export default function StylistHomePage() {
         </div>
 
         {a.stylePref?.url ? (
-          <div className="mt-3 flex gap-3 rounded-xl border border-[rgba(181,235,224,0.25)] bg-[rgba(181,235,224,0.08)] p-2.5">
+          <button
+            type="button"
+            onClick={() =>
+              setStyleViewer({
+                url: a.stylePref!.url,
+                label: `${a.client.name} · preferred look`,
+              })
+            }
+            className="mt-3 flex w-full gap-3 rounded-xl border border-[rgba(181,235,224,0.25)] bg-[rgba(181,235,224,0.08)] p-2.5 text-left"
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={a.stylePref.url}
@@ -235,8 +248,9 @@ export default function StylistHomePage() {
                     : "Uploaded photo"}
                 {a.stylePref.prompt ? ` · ${a.stylePref.prompt}` : ""}
               </p>
+              <p className="mt-1 text-xs font-semibold text-[#b5ebe0]">Tap to enlarge</p>
             </div>
-          </div>
+          </button>
         ) : null}
 
         {a.notes ? (
@@ -411,21 +425,49 @@ export default function StylistHomePage() {
           <div className="stylist-appt-card divide-y divide-ink/10 overflow-hidden rounded-2xl border">
             {upcoming.slice(0, 12).map((a) => (
               <div key={a.id} className="flex items-center justify-between gap-3 px-4 py-3">
-                <div className="min-w-0">
-                  <p className="truncate font-semibold">{a.client.name}</p>
-                  <p className="text-sm text-muted">
-                    {new Date(a.startsAt).toLocaleString("en-CA", {
-                      weekday: "short",
-                      month: "short",
-                      day: "numeric",
-                      hour: "numeric",
-                      minute: "2-digit",
-                    })}{" "}
-                    · {a.service.name}
-                  </p>
-                  {a.notes ? (
-                    <p className="truncate text-xs text-champagne">Note: {a.notes}</p>
+                <div className="flex min-w-0 items-center gap-3">
+                  {a.stylePref?.url ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setStyleViewer({
+                          url: a.stylePref!.url,
+                          label: `${a.client.name} · preferred look`,
+                        })
+                      }
+                      className="shrink-0"
+                      title="View preferred look"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={a.stylePref.url}
+                        alt=""
+                        className="h-12 w-12 rounded-lg object-cover ring-1 ring-[rgba(181,235,224,0.35)]"
+                      />
+                    </button>
                   ) : null}
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold">{a.client.name}</p>
+                    <p className="text-sm text-muted">
+                      {new Date(a.startsAt).toLocaleString("en-CA", {
+                        weekday: "short",
+                        month: "short",
+                        day: "numeric",
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })}{" "}
+                      · {a.service.name}
+                    </p>
+                    {a.notes ? (
+                      <p className="truncate text-xs text-champagne">Note: {a.notes}</p>
+                    ) : null}
+                    {a.stylePref ? (
+                      <p className="truncate text-xs text-[#b5ebe0]">
+                        Preferred look
+                        {a.stylePref.prompt ? ` · ${a.stylePref.prompt}` : ""}
+                      </p>
+                    ) : null}
+                  </div>
                 </div>
                 {a.client.phone ? (
                   <a
@@ -439,6 +481,40 @@ export default function StylistHomePage() {
             ))}
           </div>
         </section>
+      ) : null}
+
+      {styleViewer ? (
+        <div
+          className="fixed inset-0 z-[80] flex flex-col bg-black/92"
+          role="dialog"
+          aria-modal="true"
+          aria-label={styleViewer.label}
+        >
+          <div className="flex items-center justify-between gap-3 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-2">
+            <p className="min-w-0 truncate text-sm font-semibold text-white">
+              {styleViewer.label}
+            </p>
+            <button
+              type="button"
+              onClick={() => setStyleViewer(null)}
+              className="shrink-0 rounded-full bg-[#b5ebe0] px-4 py-2 text-sm font-semibold text-[#0e1618]"
+            >
+              Close
+            </button>
+          </div>
+          <button
+            type="button"
+            className="flex min-h-0 flex-1 items-center justify-center px-3 pb-[max(1rem,env(safe-area-inset-bottom))]"
+            onClick={() => setStyleViewer(null)}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={styleViewer.url}
+              alt={styleViewer.label}
+              className="max-h-full max-w-full object-contain"
+            />
+          </button>
+        </div>
       ) : null}
 
       <p className="pb-2 text-center text-xs text-muted">
