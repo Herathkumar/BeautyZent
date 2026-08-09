@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -10,12 +11,21 @@ import {
 import { DashboardFloorToday } from "./DashboardFloorToday";
 import { DashboardStoreEarnings } from "./DashboardStoreEarnings";
 import { PendingLeavePanel } from "./PendingLeavePanel";
+import { AppSplash } from "@/components/AppSplash";
 
 function toDate(d: { getTime: () => number }) {
   return new Date(d.getTime());
 }
 
-export default async function AdminHome() {
+function DashboardFallback() {
+  return (
+    <div className="app-splash-host">
+      <AppSplash variant="manager" />
+    </div>
+  );
+}
+
+async function DashboardBody() {
   const session = await getSession();
   if (!session) redirect("/manager/login");
   if (session.role === "STYLIST") redirect("/stylist");
@@ -161,5 +171,13 @@ export default async function AdminHome() {
 
       <DashboardFloorToday salonId={session.salonId} />
     </main>
+  );
+}
+
+export default function AdminHome() {
+  return (
+    <Suspense fallback={<DashboardFallback />}>
+      <DashboardBody />
+    </Suspense>
   );
 }

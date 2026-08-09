@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ConfirmProvider } from "@/components/ConfirmDialog";
+import { RegisterServiceWorker } from "@/components/RegisterServiceWorker";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -160,7 +161,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
       </head>
       <body className="antialiased">
-        <ConfirmProvider>{children}</ConfirmProvider>
+        <ConfirmProvider>
+          <RegisterServiceWorker />
+          {children}
+        </ConfirmProvider>
       </body>
     </html>
   );

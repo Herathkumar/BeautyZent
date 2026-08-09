@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en" class="manager-shell">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#f7f1ea" />
+    <title>FHSalon Manager</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        min-height: 100dvh;
+        background: linear-gradient(180deg, #fdf8f3 0%, #f7f1ea 50%, #f3ebe3 100%);
+        color: #2b2521;
+        font-family: Georgia, "Times New Roman", serif;
+      }
+      .wrap {
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+        padding: 2rem;
+        text-align: center;
+      }
+      .brand {
+        margin: 0;
+        font-size: 1.75rem;
+        letter-spacing: 0.02em;
+      }
+      .label {
+        margin: 0.5rem 0 1rem;
+        font: 600 0.75rem system-ui, sans-serif;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        opacity: 0.72;
+      }
+      .spin {
+        width: 1.5rem;
+        height: 1.5rem;
+        margin: 0 auto;
+        border: 2px solid rgba(125, 97, 84, 0.25);
+        border-top-color: #7d6154;
+        border-radius: 50%;
+        animation: spin 0.75s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap" role="status">
+      <div>
+        <p class="brand">FHSalon</p>
+        <p class="label">Manager</p>
+        <div class="spin" aria-hidden="true"></div>
+      </div>
+    </div>
+    <script>
+      (function () {
+        if (location.pathname.indexOf("/shells/") === 0) {
+          location.replace("/manager");
+          return;
+        }
+        // Fallback document for a real app URL — retry once the network/cache is ready.
+        setTimeout(function () {
+          location.reload();
+        }, 1200);
+      })();
+    </script>
+  </body>
+</html>

@@ -6,8 +6,6 @@ import { AdminBottomNav } from "./AdminBottomNav";
 import { AdminHeaderNav } from "./AdminHeaderNav";
 import { ManagerThemeRoot } from "./ManagerThemeRoot";
 
-export const dynamic = "force-dynamic";
-
 export const metadata: Metadata = {
   title: "FHSalon — Manager",
   description: "Dashboard, bookings, earnings, and team for Farzana Hair Salon.",
