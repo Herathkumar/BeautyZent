@@ -247,13 +247,17 @@ function ServiceMenuColumn({
 
       <div className="relative min-h-0 flex-1 overflow-hidden">
         <div
-          className="flex h-full transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
-          style={{ transform: `translateX(-${page * 100}%)` }}
+          className="flex h-full transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform"
+          style={{
+            width: `${pageCount * 100}%`,
+            transform: `translate3d(-${(page * 100) / pageCount}%, 0, 0)`,
+          }}
         >
           {pages.map((pageItems, pageIndex) => (
             <ul
               key={`${label}-page-${pageIndex}`}
-              className="flex h-full w-full shrink-0 flex-col justify-evenly"
+              className="flex h-full min-w-0 shrink-0 flex-col justify-evenly overflow-hidden px-0.5"
+              style={{ width: `${100 / pageCount}%` }}
               aria-hidden={pageIndex !== page}
             >
               {Array.from({ length: MENU_PAGE_SIZE }).map((_, slot) => {
@@ -404,8 +408,11 @@ function ProductMenuBoard({ items }: { items: MenuProduct[] }) {
       </div>
       <div className="relative min-h-0 flex-1 overflow-hidden rounded-3xl border border-[#c9a87c]/20 bg-[#1c1714]/55 px-3 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-md sm:px-4 sm:py-4">
         <div
-          className="flex h-full transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
-          style={{ transform: `translateX(-${page * 100}%)` }}
+          className="flex h-full transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform"
+          style={{
+            width: `${pageCount * 100}%`,
+            transform: `translate3d(-${(page * 100) / pageCount}%, 0, 0)`,
+          }}
         >
           {pages.map((pageItems, pageIndex) => {
             const left = pageItems.slice(0, 5);
@@ -413,15 +420,16 @@ function ProductMenuBoard({ items }: { items: MenuProduct[] }) {
             return (
               <div
                 key={`products-page-${pageIndex}`}
-                className="grid h-full w-full shrink-0 gap-4 lg:grid-cols-2 lg:gap-6"
+                className="grid h-full min-w-0 shrink-0 gap-4 overflow-hidden px-0.5 lg:grid-cols-2 lg:gap-6"
+                style={{ width: `${100 / pageCount}%` }}
                 aria-hidden={pageIndex !== page}
               >
-                <ul className="flex h-full flex-col justify-evenly">
+                <ul className="flex h-full min-w-0 flex-col justify-evenly overflow-hidden">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <ProductMenuRow key={`L-${pageIndex}-${i}`} item={left[i]} />
                   ))}
                 </ul>
-                <ul className="flex h-full flex-col justify-evenly">
+                <ul className="flex h-full min-w-0 flex-col justify-evenly overflow-hidden">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <ProductMenuRow key={`R-${pageIndex}-${i}`} item={right[i]} />
                   ))}
