@@ -16,14 +16,27 @@ export async function GET(req: Request) {
   const from = startOfDay(new Date());
   const to = endOfDay(addDays(from, days - 1));
 
+  // Never include client/service with `true` — those models have Bytes image columns
+  // that make this payload huge and My Jobs feel stuck on "Loading your day…".
   const appointments = await prisma.appointment.findMany({
     where: {
       stylistId: session.stylistId,
       startsAt: { gte: from, lte: to },
     },
-    include: {
-      client: true,
-      service: true,
+    select: {
+      id: true,
+      startsAt: true,
+      endsAt: true,
+      status: true,
+      source: true,
+      notes: true,
+      chargedCents: true,
+      tipCents: true,
+      bookingGroupId: true,
+      client: { select: { name: true, phone: true } },
+      service: {
+        select: { name: true, priceCents: true, durationMin: true },
+      },
       stylePref: {
         select: { id: true, source: true, prompt: true },
       },

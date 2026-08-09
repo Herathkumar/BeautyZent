@@ -9,9 +9,19 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Select only fields needed for the shell — avoid loading photoData Bytes.
   const stylist = await prisma.stylist.findUnique({
     where: { id: session.stylistId },
-    include: { salon: { select: { name: true, slug: true, phone: true } } },
+    select: {
+      id: true,
+      name: true,
+      bio: true,
+      color: true,
+      gender: true,
+      photoMime: true,
+      photoUpdatedAt: true,
+      salon: { select: { name: true, slug: true, phone: true } },
+    },
   });
   if (!stylist) return NextResponse.json({ error: "Not found" }, { status: 404 });
 

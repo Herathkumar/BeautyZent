@@ -85,19 +85,19 @@ export default function StylistHomePage() {
   } | null>(null);
 
   const load = useCallback(async () => {
-    const me = await fetch("/api/stylist/me");
-    if (me.status === 401) {
+    const [me, res] = await Promise.all([
+      fetch("/api/stylist/me"),
+      fetch("/api/stylist/appointments?days=14"),
+    ]);
+    if (me.status === 401 || res.status === 401) {
       window.location.href = "/stylist/login";
       return;
     }
-    const meData = await me.json();
+    const [meData, data] = await Promise.all([me.json(), res.json()]);
     setName(meData.stylist?.name || meData.user?.name || "");
     setStylistId(meData.stylist?.id || "");
     if (meData.stylist?.photoUrl) setPhotoUrl(meData.stylist.photoUrl);
     setHasPhoto(Boolean(meData.stylist?.hasPhoto));
-
-    const res = await fetch("/api/stylist/appointments?days=14");
-    const data = await res.json();
     setAppointments(data.appointments || []);
     setLoading(false);
   }, []);
