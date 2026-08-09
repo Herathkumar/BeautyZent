@@ -81,7 +81,7 @@ export default async function AdminHome() {
         <div className="flex flex-wrap gap-2">
           <Link
             href="/manager/display"
-            className="rounded-full border border-[#7d6154]/35 bg-[rgba(125,97,84,0.08)] px-5 py-2.5 text-sm font-semibold text-[#7d6154]"
+            className="rounded-full border border-[#7d6154]/45 px-5 py-2.5 text-sm font-semibold text-[#7d6154]"
             data-testid="dashboard-store-display"
           >
             Salon display

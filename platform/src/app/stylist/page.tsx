@@ -369,14 +369,14 @@ export default function StylistHomePage() {
           <div className="flex flex-wrap gap-2">
             <Link
               href="/stylist/display"
-              className="rounded-full bg-champagne px-3 py-2 text-sm font-semibold text-[#0e1618]"
+              className="stylist-btn-primary rounded-full px-3 py-2 text-sm"
               data-testid="stylist-store-display-link"
             >
               Salon display
             </Link>
             <Link
               href="/stylist/book"
-              className="rounded-full border border-ink/20 px-3 py-2 text-sm font-semibold text-champagne"
+              className="stylist-btn-secondary rounded-full px-3 py-2 text-sm"
               data-testid="stylist-book-for-client"
             >
               Book for client
@@ -384,7 +384,7 @@ export default function StylistHomePage() {
             <button
               type="button"
               onClick={() => setWalkInOpen((v) => !v)}
-              className="rounded-full border border-ink/20 px-3 py-2 text-sm font-semibold text-champagne"
+              className="stylist-btn-secondary rounded-full px-3 py-2 text-sm"
               data-testid="stylist-walk-in-toggle"
             >
               {walkInOpen ? "Hide form" : "Add walk-in"}

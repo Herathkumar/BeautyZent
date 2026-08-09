@@ -1535,6 +1535,17 @@ html.manager-shell--dark .admin-theme .btn-solid:hover {
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.42);
 }
 
+/* Solid filled links that aren't .btn-solid still need dark labels on gold/brown fills */
+html.manager-shell--dark .admin-theme a.rounded-full.bg-\[\#7d6154\],
+html.manager-shell--dark .admin-theme a.btn-solid {
+  color: #1c1714 !important;
+}
+
+html.manager-shell--dark .admin-theme a.rounded-full.border {
+  color: #f0c987 !important;
+  border-color: rgba(201, 168, 124, 0.45) !important;
+}
+
 html.manager-shell--dark .admin-theme header.admin-header {
   background: rgba(22, 18, 16, 0.9);
   border-bottom: 1px solid rgba(201, 168, 124, 0.28);
@@ -1727,6 +1738,16 @@ html.manager-shell--dark .admin-theme .admin-pill {
   color: #f0c987;
 }
 
+html.manager-shell--dark .admin-theme .admin-pill.font-semibold,
+html.manager-shell--dark .admin-theme button.admin-pill {
+  color: #f0c987 !important;
+}
+
+/* Don't let theme .font-semibold bleach labels on filled CTAs */
+html.manager-shell--dark .admin-theme .btn-solid.font-semibold {
+  color: #1c1714 !important;
+}
+
 html.manager-shell--dark .admin-theme .manager-profile-card {
   background:
     linear-gradient(165deg, rgba(240, 201, 135, 0.14) 0%, rgba(42, 33, 28, 0.98) 42%, #241c18 100%);
@@ -1903,14 +1924,28 @@ html.manager-shell--dark .admin-theme .shadow-\[0_16px_40px_rgba\(0\,0\,0\,0\.35
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
 }
 
+.stylist-theme .stylist-btn-primary {
+  border: 1px solid transparent;
+  background: #b5ebe0;
+  color: #0e1618 !important;
+  font-weight: 600;
+}
+
+.stylist-theme .stylist-btn-primary:hover {
+  background: #c8f2ea;
+  color: #0e1618 !important;
+}
+
 .stylist-theme .stylist-btn-secondary {
   border: 1px solid rgba(126, 196, 184, 0.45);
   background: rgba(126, 196, 184, 0.1);
-  color: #b5ebe0;
+  color: #b5ebe0 !important;
+  font-weight: 600;
 }
 
 .stylist-theme .stylist-btn-secondary:hover {
   background: rgba(126, 196, 184, 0.16);
+  color: #b5ebe0 !important;
 }
 
 .stylist-theme .stylist-panel {
