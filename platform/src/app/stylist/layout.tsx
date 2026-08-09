@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { AppOpenSplash } from "@/components/AppOpenSplash";
 import { canAccessStylistPortal, getSession } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { StylistBottomNav } from "./StylistBottomNav";
 import { StylistThemeRoot } from "./StylistThemeRoot";
 
@@ -35,14 +34,9 @@ export const viewport: Viewport = {
 
 export default async function StylistLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
-  let showStylistChrome = canAccessStylistPortal(session);
-  if (showStylistChrome && session?.stylistId) {
-    const active = await prisma.stylist.findFirst({
-      where: { id: session.stylistId, active: true },
-      select: { id: true },
-    });
-    showStylistChrome = Boolean(active);
-  }
+  // Trust JWT for chrome — avoids a Prisma round-trip on every navigation.
+  // Deactivated accounts still fail on API calls and login.
+  const showStylistChrome = canAccessStylistPortal(session);
 
   return (
     <StylistThemeRoot showChrome={showStylistChrome}>

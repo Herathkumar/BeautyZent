@@ -366,21 +366,22 @@ export default function StylistHomePage() {
               Salon display, book a client ahead, or seat a walk-in / waitlist guest.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Link
+          <div className="relative z-10 flex flex-wrap gap-2">
+            {/* Hard navigations — iOS home-screen PWAs often stall on Next soft routes. */}
+            <a
               href="/stylist/display"
-              className="stylist-btn-primary rounded-full px-3 py-2 text-sm"
+              className="stylist-btn-primary inline-flex rounded-full px-3 py-2 text-sm"
               data-testid="stylist-store-display-link"
             >
               Salon display
-            </Link>
-            <Link
+            </a>
+            <a
               href="/stylist/book"
-              className="stylist-btn-secondary rounded-full px-3 py-2 text-sm"
+              className="stylist-btn-secondary inline-flex rounded-full px-3 py-2 text-sm"
               data-testid="stylist-book-for-client"
             >
               Book for client
-            </Link>
+            </a>
             <button
               type="button"
               onClick={() => setWalkInOpen((v) => !v)}

@@ -66,10 +66,12 @@ const BOOT_SCRIPT = `
     var stylist=/^\\/stylist(\\/|$)/.test(p);
     var book=/^\\/book(\\/|$)/.test(p);
     var dark=/^\\/(display|demo)(\\/|$)/.test(p);
+    var darkManager=false;
     if(manager){
       document.documentElement.classList.add("manager-shell");
       try{
         if(localStorage.getItem("fhsalon-manager-theme")==="dark"){
+          darkManager=true;
           document.documentElement.classList.add("manager-shell--dark");
           var m=document.querySelector('meta[name="theme-color"]');
           if(m) m.setAttribute("content","#1c1714");
@@ -106,6 +108,31 @@ const BOOT_SCRIPT = `
       }catch(e){}
     }
     else if(!dark) document.documentElement.classList.add("paper-shell");
+
+    /* Immediate paint while the server shell loads (covers kill→reopen white gap). */
+    if(manager||stylist){
+      var skip=false;
+      try{ skip=sessionStorage.getItem("fhsalon-open-splash:"+(manager?"manager":"stylist"))==="1"; }catch(e){}
+      if(!skip){
+        var bg=manager
+          ?(darkManager
+            ?"linear-gradient(180deg,#241c18 0%,#1c1714 50%,#15110f 100%)"
+            :"linear-gradient(180deg,#fdf8f3 0%,#f7f1ea 50%,#f3ebe3 100%)")
+          :"linear-gradient(180deg,#152226 0%,#0e1618 48%,#0a1114 100%)";
+        var fg=manager&&!darkManager?"#2b2521":"#fffaf6";
+        var label=manager?"Manager":"Stylist App";
+        var el=document.createElement("div");
+        el.id="fhsalon-boot-splash";
+        el.setAttribute("role","status");
+        el.style.cssText="position:fixed;inset:0;z-index:9999;display:grid;place-items:center;padding:2rem;background:"+bg+";color:"+fg+";font-family:Outfit,system-ui,sans-serif";
+        el.innerHTML='<div style="text-align:center"><p style="margin:0;font-family:Fraunces,Georgia,serif;font-size:1.75rem;letter-spacing:.02em">FHSalon</p><p style="margin:.5rem 0 1rem;font-size:.8rem;letter-spacing:.18em;text-transform:uppercase;opacity:.72">'+label+'</p><div style="width:1.5rem;height:1.5rem;margin:0 auto;border:2px solid rgba(127,127,127,.25);border-top-color:currentColor;border-radius:50%;animation:fhsalon-boot-spin .75s linear infinite"></div></div>';
+        var css=document.createElement("style");
+        css.textContent="@keyframes fhsalon-boot-spin{to{transform:rotate(360deg)}}";
+        document.documentElement.appendChild(css);
+        document.documentElement.appendChild(el);
+        setTimeout(function(){ var n=document.getElementById("fhsalon-boot-splash"); if(n) n.remove(); },4500);
+      }
+    }
   }catch(e){}
 })();
 `;

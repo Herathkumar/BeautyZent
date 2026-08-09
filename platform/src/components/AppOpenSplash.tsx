@@ -1,22 +1,41 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { AppSplash } from "./AppSplash";
 
 type Variant = "manager" | "stylist" | "display" | "book";
 
+function clearBootSplash() {
+  try {
+    document.getElementById("fhsalon-boot-splash")?.remove();
+  } catch {
+    /* ignore */
+  }
+}
+
 /**
  * Shows once when the app is opened (per tab session).
- * Not tied to Next.js loading.tsx, so in-app menu navigation stays clean.
+ * Cold start paint is covered by #fhsalon-boot-splash in root layout.
  */
 export function AppOpenSplash({ variant }: { variant: Variant }) {
   const [visible, setVisible] = useState(false);
   const [leaving, setLeaving] = useState(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const key = `fhsalon-open-splash:${variant}`;
+    let already = false;
     try {
-      if (sessionStorage.getItem(key)) return;
+      already = sessionStorage.getItem(key) === "1";
+    } catch {
+      /* private mode */
+    }
+
+    if (already) {
+      clearBootSplash();
+      return;
+    }
+
+    try {
       sessionStorage.setItem(key, "1");
     } catch {
       /* private mode — still show once for this mount */
@@ -25,15 +44,21 @@ export function AppOpenSplash({ variant }: { variant: Variant }) {
     setVisible(true);
 
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const holdMs = reduceMotion ? 80 : 420;
+    const holdMs = reduceMotion ? 80 : 480;
     const fadeMs = reduceMotion ? 0 : 220;
+    let fadeTimer = 0;
 
     const hold = window.setTimeout(() => {
+      clearBootSplash();
       setLeaving(true);
-      window.setTimeout(() => setVisible(false), fadeMs);
+      fadeTimer = window.setTimeout(() => setVisible(false), fadeMs);
     }, holdMs);
 
-    return () => window.clearTimeout(hold);
+    return () => {
+      window.clearTimeout(hold);
+      window.clearTimeout(fadeTimer);
+      clearBootSplash();
+    };
   }, [variant]);
 
   if (!visible) return null;
