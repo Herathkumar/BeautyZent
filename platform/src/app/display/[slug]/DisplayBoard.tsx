@@ -199,9 +199,27 @@ function StylistLine({ a }: { a: Appt }) {
   );
 }
 
-const MENU_PAGE_SIZE = 5;
 const MENU_SLIDE_MS = 7000;
-const PRODUCT_PAGE_SIZE = 10;
+/** Desktop (lg+): 5 services / column. Phone: 3 — Women+Men stack and only ~3 rows fit. */
+const MENU_PAGE_SIZE_DESKTOP = 5;
+const MENU_PAGE_SIZE_MOBILE = 3;
+/** Desktop: 10 (5+5 columns). Phone: 5 in one column (two columns were stacking and clipping). */
+const PRODUCT_PAGE_SIZE_DESKTOP = 10;
+const PRODUCT_PAGE_SIZE_MOBILE = 5;
+
+function useIsLgUp() {
+  const [isLg, setIsLg] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const sync = () => setIsLg(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
+  return isLg;
+}
 
 function ServiceMenuColumn({
   label,
@@ -210,12 +228,14 @@ function ServiceMenuColumn({
   label: string;
   items: MenuService[];
 }) {
-  const pageCount = Math.max(1, Math.ceil(items.length / MENU_PAGE_SIZE));
+  const isLg = useIsLgUp();
+  const pageSize = isLg ? MENU_PAGE_SIZE_DESKTOP : MENU_PAGE_SIZE_MOBILE;
+  const pageCount = Math.max(1, Math.ceil(items.length / pageSize));
   const [page, setPage] = useState(0);
 
   useEffect(() => {
     setPage(0);
-  }, [items.length, label]);
+  }, [items.length, label, pageSize]);
 
   useEffect(() => {
     if (pageCount <= 1) return;
@@ -227,11 +247,11 @@ function ServiceMenuColumn({
 
   const pages = useMemo(() => {
     const chunks: MenuService[][] = [];
-    for (let i = 0; i < items.length; i += MENU_PAGE_SIZE) {
-      chunks.push(items.slice(i, i + MENU_PAGE_SIZE));
+    for (let i = 0; i < items.length; i += pageSize) {
+      chunks.push(items.slice(i, i + pageSize));
     }
     return chunks.length ? chunks : [[]];
-  }, [items]);
+  }, [items, pageSize]);
 
   return (
     <section className="flex min-h-0 min-w-0 flex-col rounded-3xl border border-[#c9a87c]/20 bg-[#1c1714]/55 px-3 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-md sm:px-4 sm:py-4">
@@ -253,7 +273,7 @@ function ServiceMenuColumn({
             style={{ transform: `translate3d(${(pageIndex - page) * 100}%, 0, 0)` }}
             aria-hidden={pageIndex !== page}
           >
-            {Array.from({ length: MENU_PAGE_SIZE }).map((_, slot) => {
+            {Array.from({ length: pageSize }).map((_, slot) => {
               const s = pageItems[slot];
               if (!s) {
                 return <li key={`empty-${slot}`} className="h-[4.25rem] sm:h-[4.75rem]" aria-hidden />;
@@ -367,12 +387,15 @@ function ProductMenuRow({ item }: { item: MenuProduct | undefined }) {
 }
 
 function ProductMenuBoard({ items }: { items: MenuProduct[] }) {
-  const pageCount = Math.max(1, Math.ceil(items.length / PRODUCT_PAGE_SIZE));
+  const isLg = useIsLgUp();
+  const pageSize = isLg ? PRODUCT_PAGE_SIZE_DESKTOP : PRODUCT_PAGE_SIZE_MOBILE;
+  const colSize = isLg ? 5 : pageSize;
+  const pageCount = Math.max(1, Math.ceil(items.length / pageSize));
   const [page, setPage] = useState(0);
 
   useEffect(() => {
     setPage(0);
-  }, [items.length]);
+  }, [items.length, pageSize]);
 
   useEffect(() => {
     if (pageCount <= 1) return;
@@ -384,11 +407,11 @@ function ProductMenuBoard({ items }: { items: MenuProduct[] }) {
 
   const pages = useMemo(() => {
     const chunks: MenuProduct[][] = [];
-    for (let i = 0; i < items.length; i += PRODUCT_PAGE_SIZE) {
-      chunks.push(items.slice(i, i + PRODUCT_PAGE_SIZE));
+    for (let i = 0; i < items.length; i += pageSize) {
+      chunks.push(items.slice(i, i + pageSize));
     }
     return chunks.length ? chunks : [[]];
-  }, [items]);
+  }, [items, pageSize]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -399,28 +422,31 @@ function ProductMenuBoard({ items }: { items: MenuProduct[] }) {
         </p>
       </div>
       <div className="relative min-h-0 flex-1 overflow-hidden rounded-3xl border border-[#c9a87c]/20 bg-[#1c1714]/55 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-md">
-        {/* Each page is viewport-sized (absolute inset-0); % translate is of the slide itself. */}
         <div className="absolute inset-0 overflow-hidden">
           {pages.map((pageItems, pageIndex) => {
-            const left = pageItems.slice(0, 5);
-            const right = pageItems.slice(5, 10);
+            const left = pageItems.slice(0, colSize);
+            const right = isLg ? pageItems.slice(colSize, colSize * 2) : [];
             return (
               <div
                 key={`products-page-${pageIndex}`}
-                className="absolute inset-0 grid grid-cols-1 gap-4 overflow-hidden px-3 py-3 transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] sm:px-4 sm:py-4 lg:grid-cols-2 lg:gap-6"
+                className={`absolute inset-0 grid overflow-hidden px-3 py-3 transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] sm:px-4 sm:py-4 ${
+                  isLg ? "grid-cols-2 gap-6" : "grid-cols-1"
+                }`}
                 style={{ transform: `translate3d(${(pageIndex - page) * 100}%, 0, 0)` }}
                 aria-hidden={pageIndex !== page}
               >
                 <ul className="flex h-full min-w-0 flex-col justify-evenly overflow-hidden">
-                  {Array.from({ length: 5 }).map((_, i) => (
+                  {Array.from({ length: colSize }).map((_, i) => (
                     <ProductMenuRow key={`L-${pageIndex}-${i}`} item={left[i]} />
                   ))}
                 </ul>
-                <ul className="flex h-full min-w-0 flex-col justify-evenly overflow-hidden">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <ProductMenuRow key={`R-${pageIndex}-${i}`} item={right[i]} />
-                  ))}
-                </ul>
+                {isLg ? (
+                  <ul className="flex h-full min-w-0 flex-col justify-evenly overflow-hidden">
+                    {Array.from({ length: colSize }).map((_, i) => (
+                      <ProductMenuRow key={`R-${pageIndex}-${i}`} item={right[i]} />
+                    ))}
+                  </ul>
+                ) : null}
               </div>
             );
           })}
