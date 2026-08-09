@@ -363,21 +363,13 @@ export default function StylistHomePage() {
               Floor board
             </h2>
             <p className="text-sm text-muted">
-              Salon display, book a client ahead, or seat a walk-in / waitlist guest.
+              Book a client ahead, or seat a walk-in / waitlist guest.
             </p>
           </div>
           <div className="relative z-10 flex flex-wrap gap-2">
-            {/* Hard navigations — iOS home-screen PWAs often stall on Next soft routes. */}
-            <a
-              href="/stylist/display"
-              className="stylist-btn-primary inline-flex rounded-full px-3 py-2 text-sm"
-              data-testid="stylist-store-display-link"
-            >
-              Salon display
-            </a>
             <a
               href="/stylist/book"
-              className="stylist-btn-secondary inline-flex rounded-full px-3 py-2 text-sm"
+              className="stylist-btn-primary inline-flex rounded-full px-3 py-2 text-sm"
               data-testid="stylist-book-for-client"
             >
               Book for client

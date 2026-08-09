@@ -26,9 +26,7 @@ test.describe("Walk-in appointments", () => {
     await expect(page.getByTestId("walk-in-badge").first()).toBeVisible();
   });
 
-  test("manager opens store display from bookings and can seat waitlist", async ({
-    page,
-  }) => {
+  test("manager can seat waitlist from public salon display", async ({ page }) => {
     await adminLogin(page);
 
     const catalog = await page.request.get("/api/public/fhsalon/catalog");
@@ -44,9 +42,8 @@ test.describe("Walk-in appointments", () => {
     });
     expect(add.ok()).toBeTruthy();
 
-    await page.goto("/manager/display");
-    await expect(page.getByTestId("manager-store-display")).toBeVisible();
-    await expect(page.getByTestId("manager-store-display-board")).toBeVisible({
+    await page.goto("/display/fhsalon");
+    await expect(page.getByTestId("store-display-board")).toBeVisible({
       timeout: 15_000,
     });
     await expect(page.getByTestId("display-waitlist-section")).toBeVisible();
@@ -285,19 +282,6 @@ test.describe("Walk-in appointments", () => {
     await adminLogin(page);
     await page.goto("/manager/appointments");
     await expect(page.getByText(clientName).first()).toBeVisible({ timeout: 15_000 });
-  });
-
-  test("stylist opens store display from My Jobs", async ({ page }) => {
-    await stylistLogin(page);
-    await page.goto("/stylist");
-    await page.getByTestId("stylist-store-display-link").click();
-    await expect(page).toHaveURL(/\/stylist\/display/);
-    await expect(page.getByTestId("stylist-store-display")).toBeVisible();
-    await expect(page.getByTestId("manager-store-display-board")).toBeVisible({
-      timeout: 15_000,
-    });
-    await expect(page.getByTestId("display-waitlist-section")).toBeVisible();
-    await expect(page.getByTestId("display-floor-counts")).toBeVisible();
   });
 
   test("stylist can seat waitlist guest to self or another stylist", async ({

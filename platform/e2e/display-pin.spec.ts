@@ -77,8 +77,10 @@ test.describe("Store display PIN", () => {
     browser,
   }) => {
     await adminLogin(page);
-    await page.goto("/manager/display");
-    await expect(page.getByTestId("manager-display-pin")).toBeVisible();
+    await page.goto("/manager/account");
+    const pinCard = page.getByTestId("manager-display-pin");
+    await expect(pinCard).toBeVisible();
+    await pinCard.locator("summary").click();
 
     try {
       // UI: set or update to E2E_PIN
@@ -99,12 +101,7 @@ test.describe("Store display PIN", () => {
         });
       }
 
-      await expect(page.getByText(/a pin is active/i)).toBeVisible();
-
-      // Manager embedded board still works (session bypass)
-      await expect(page.getByTestId("manager-store-display-board")).toBeVisible({
-        timeout: 20_000,
-      });
+      await expect(page.getByText(/pin is active/i)).toBeVisible();
 
       // Guest tablet context — no manager session / unlock cookie
       const guest = await browser.newContext();
@@ -147,14 +144,15 @@ test.describe("Store display PIN", () => {
         await anon.close();
       }
 
-      // Remove PIN via manager UI
-      await page.goto("/manager/display");
+      // Remove PIN via manager Profile
+      await page.goto("/manager/account");
+      await page.getByTestId("manager-display-pin").locator("summary").click();
       await page.getByLabel(/^current pin$/i).fill(E2E_PIN);
       await page.getByRole("button", { name: /^remove pin$/i }).click();
       await expect(page.getByText(/pin removed|open again/i)).toBeVisible({
         timeout: 15_000,
       });
-      await expect(page.getByText(/no pin yet/i)).toBeVisible();
+      await expect(page.getByText(/no pin yet|optional — lock/i)).toBeVisible();
 
       // Public tablet open again
       const openGuest = await browser.newContext();
@@ -178,16 +176,14 @@ test.describe("Store display PIN", () => {
     }
   });
 
-  test("manager can update PIN from the Store display card", async ({
-    page,
-    browser,
-  }) => {
+  test("manager can update PIN from Profile", async ({ page, browser }) => {
     const nextPin = "1357";
     await adminLogin(page);
 
     try {
       await ensureE2ePin(page);
-      await page.goto("/manager/display");
+      await page.goto("/manager/account");
+      await page.getByTestId("manager-display-pin").locator("summary").click();
       await expect(page.getByTestId("manager-display-pin")).toBeVisible();
 
       await page.getByLabel(/^current pin$/i).fill(E2E_PIN);

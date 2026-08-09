@@ -90,13 +90,6 @@ async function DashboardBody() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Link
-            href="/manager/display"
-            className="rounded-full border border-[#7d6154]/45 px-5 py-2.5 text-sm font-semibold text-[#7d6154]"
-            data-testid="dashboard-store-display"
-          >
-            Salon display
-          </Link>
-          <Link
             href="/manager/appointments"
             className="btn-solid rounded-full px-5 py-2.5 text-sm font-semibold"
           >

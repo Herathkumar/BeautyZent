@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { SelfieCamera } from "@/components/SelfieCamera";
+import { TabletPinCard } from "@/components/TabletPinCard";
 import { MANAGER_DEFAULT_AVATAR } from "@/lib/manager-photo";
 import { ManagerThemeToggle } from "../ManagerThemeToggle";
 
@@ -530,6 +531,8 @@ export default function AdminAccountPage() {
           {saving ? "Saving…" : "Update password"}
         </button>
       </form>
+
+      <TabletPinCard />
 
       <ManagerThemeToggle />
     </main>
