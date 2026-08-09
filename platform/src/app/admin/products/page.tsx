@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { SelfieCamera } from "@/components/SelfieCamera";
 import { formatCad } from "@/lib/money";
 import { fileToJpegDataUrl } from "@/lib/photo-resize";
 
@@ -24,9 +23,8 @@ export default function ProductsAdminPage() {
   const [sku, setSku] = useState("");
   const [message, setMessage] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [cameraForId, setCameraForId] = useState<string | null>(null);
-  const galleryRef = useRef<HTMLInputElement>(null);
-  const galleryTargetRef = useRef<string | null>(null);
+  const uploadRef = useRef<HTMLInputElement>(null);
+  const uploadTargetRef = useRef<string | null>(null);
 
   async function load() {
     const res = await fetch("/api/admin/products");
@@ -96,7 +94,6 @@ export default function ProductsAdminPage() {
       setMessage("Could not process that photo.");
     } finally {
       setBusyId(null);
-      setCameraForId(null);
     }
   }
 
@@ -121,9 +118,9 @@ export default function ProductsAdminPage() {
     }
   }
 
-  function pickGallery(productId: string) {
-    galleryTargetRef.current = productId;
-    galleryRef.current?.click();
+  function pickUpload(productId: string) {
+    uploadTargetRef.current = productId;
+    uploadRef.current?.click();
   }
 
   return (
@@ -131,21 +128,22 @@ export default function ProductsAdminPage() {
       <div>
         <h1 className="font-[family-name:var(--font-display)] text-3xl">Retail products</h1>
         <p className="text-muted">
-          Track salon products for sale. Photos appear on the store display Products tab —
-          take a photo, pick from gallery, or generate with AI.
+          Track salon products for sale. Photos appear on the salon display Products tab —
+          upload from camera or gallery, or generate with AI.
         </p>
       </div>
 
       {message ? <p className="text-sm text-champagne">{message}</p> : null}
 
+      {/* No capture= — mobile OS offers Camera or Photos/Gallery. */}
       <input
-        ref={galleryRef}
+        ref={uploadRef}
         type="file"
         accept="image/*"
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0];
-          const id = galleryTargetRef.current;
+          const id = uploadTargetRef.current;
           e.target.value = "";
           if (file && id) void uploadPhoto(id, file);
         }}
@@ -226,24 +224,17 @@ export default function ProductsAdminPage() {
               <button
                 type="button"
                 disabled={busyId === p.id}
-                onClick={() => setCameraForId(p.id)}
-                className="rounded-full border border-ink/20 px-3 py-1 text-sm disabled:opacity-60"
+                onClick={() => pickUpload(p.id)}
+                className="admin-pill px-3 py-1.5 text-sm disabled:opacity-60"
+                data-testid={`product-upload-image-${p.id}`}
               >
-                Camera
-              </button>
-              <button
-                type="button"
-                disabled={busyId === p.id}
-                onClick={() => pickGallery(p.id)}
-                className="rounded-full border border-ink/20 px-3 py-1 text-sm disabled:opacity-60"
-              >
-                Gallery
+                {busyId === p.id ? "Uploading…" : "Upload image"}
               </button>
               <button
                 type="button"
                 disabled={busyId === p.id}
                 onClick={() => void generateImage(p.id)}
-                className="rounded-full border border-ink/20 px-3 py-1 text-sm disabled:opacity-60"
+                className="admin-pill px-3 py-1.5 text-sm disabled:opacity-60"
                 data-testid={`product-generate-image-${p.id}`}
               >
                 {busyId === p.id ? "Working…" : p.hasImage ? "AI again" : "AI image"}
@@ -251,7 +242,7 @@ export default function ProductsAdminPage() {
               <button
                 type="button"
                 onClick={() => save(p, { active: !p.active })}
-                className="rounded-full border border-ink/20 px-3 py-1 text-sm"
+                className="admin-pill px-3 py-1.5 text-sm"
               >
                 {p.active ? "Disable" : "Enable"}
               </button>
@@ -259,15 +250,6 @@ export default function ProductsAdminPage() {
           </div>
         ))}
       </div>
-
-      <SelfieCamera
-        open={Boolean(cameraForId)}
-        onClose={() => setCameraForId(null)}
-        accent="manager"
-        onCapture={async (file) => {
-          if (cameraForId) await uploadPhoto(cameraForId, file);
-        }}
-      />
     </main>
   );
 }
