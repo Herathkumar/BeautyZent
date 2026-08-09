@@ -245,68 +245,68 @@ function ServiceMenuColumn({
         </span>
       </div>
 
-      <div className="relative min-h-0 flex-1 overflow-hidden">
+      <div className="relative min-h-0 flex-1 overflow-x-clip overflow-y-hidden">
+        {/* Transform a viewport-width shell so -100% = one page (not a fraction of the wide track). */}
         <div
-          className="flex h-full transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform"
-          style={{
-            width: `${pageCount * 100}%`,
-            transform: `translate3d(-${(page * 100) / pageCount}%, 0, 0)`,
-          }}
+          className="h-full w-full transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform"
+          style={{ transform: `translate3d(-${page * 100}%, 0, 0)` }}
         >
-          {pages.map((pageItems, pageIndex) => (
-            <ul
-              key={`${label}-page-${pageIndex}`}
-              className="flex h-full min-w-0 shrink-0 flex-col justify-evenly overflow-hidden px-0.5"
-              style={{ width: `${100 / pageCount}%` }}
-              aria-hidden={pageIndex !== page}
-            >
-              {Array.from({ length: MENU_PAGE_SIZE }).map((_, slot) => {
-                const s = pageItems[slot];
-                if (!s) {
-                  return <li key={`empty-${slot}`} className="h-[4.25rem] sm:h-[4.75rem]" aria-hidden />;
-                }
-                return (
-                  <li
-                    key={s.id}
-                    className="group flex h-[4.25rem] items-center gap-3 sm:h-[4.75rem] sm:gap-3.5"
-                    data-testid={`display-service-${s.id}`}
-                  >
-                    <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full ring-1 ring-[#c9a87c]/35 sm:h-14 sm:w-14">
-                      {s.imageUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={s.imageUrl}
-                          alt=""
-                          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center bg-[#2a211c] text-[10px] text-white/35">
-                          •
+          <div className="flex h-full" style={{ width: `${pageCount * 100}%` }}>
+            {pages.map((pageItems, pageIndex) => (
+              <ul
+                key={`${label}-page-${pageIndex}`}
+                className="flex h-full min-w-0 shrink-0 grow-0 flex-col justify-evenly overflow-hidden px-0.5"
+                style={{ width: `${100 / pageCount}%`, flexBasis: `${100 / pageCount}%` }}
+                aria-hidden={pageIndex !== page}
+              >
+                {Array.from({ length: MENU_PAGE_SIZE }).map((_, slot) => {
+                  const s = pageItems[slot];
+                  if (!s) {
+                    return <li key={`empty-${slot}`} className="h-[4.25rem] sm:h-[4.75rem]" aria-hidden />;
+                  }
+                  return (
+                    <li
+                      key={s.id}
+                      className="group flex h-[4.25rem] items-center gap-3 sm:h-[4.75rem] sm:gap-3.5"
+                      data-testid={`display-service-${s.id}`}
+                    >
+                      <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full ring-1 ring-[#c9a87c]/35 sm:h-14 sm:w-14">
+                        {s.imageUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={s.imageUrl}
+                            alt=""
+                            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center bg-[#2a211c] text-[10px] text-white/35">
+                            •
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex w-full items-baseline gap-2">
+                          <h4 className="min-w-0 truncate font-[family-name:var(--font-display)] text-base leading-tight text-[#fffaf6] sm:text-lg">
+                            {s.name}
+                          </h4>
+                          <span
+                            className="min-w-[1rem] flex-1 border-b border-dotted border-white/20"
+                            aria-hidden
+                          />
+                          <p className="shrink-0 text-right font-[family-name:var(--font-display)] text-base font-medium tracking-wide text-[#f0c987] tabular-nums sm:text-lg">
+                            {formatCad(s.priceCents)}
+                          </p>
                         </div>
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex w-full items-baseline gap-2">
-                        <h4 className="min-w-0 truncate font-[family-name:var(--font-display)] text-base leading-tight text-[#fffaf6] sm:text-lg">
-                          {s.name}
-                        </h4>
-                        <span
-                          className="min-w-[1rem] flex-1 border-b border-dotted border-white/20"
-                          aria-hidden
-                        />
-                        <p className="shrink-0 text-right font-[family-name:var(--font-display)] text-base font-medium tracking-wide text-[#f0c987] tabular-nums sm:text-lg">
-                          {formatCad(s.priceCents)}
+                        <p className="mt-0.5 text-[11px] text-white/45 sm:text-xs">
+                          {s.durationMin} min
                         </p>
                       </div>
-                      <p className="mt-0.5 text-[11px] text-white/45 sm:text-xs">
-                        {s.durationMin} min
-                      </p>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          ))}
+                    </li>
+                  );
+                })}
+              </ul>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -406,37 +406,42 @@ function ProductMenuBoard({ items }: { items: MenuProduct[] }) {
           {pageCount > 1 ? ` · ${page + 1}/${pageCount}` : ""}
         </p>
       </div>
-      <div className="relative min-h-0 flex-1 overflow-hidden rounded-3xl border border-[#c9a87c]/20 bg-[#1c1714]/55 px-3 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-md sm:px-4 sm:py-4">
-        <div
-          className="flex h-full transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform"
-          style={{
-            width: `${pageCount * 100}%`,
-            transform: `translate3d(-${(page * 100) / pageCount}%, 0, 0)`,
-          }}
-        >
-          {pages.map((pageItems, pageIndex) => {
-            const left = pageItems.slice(0, 5);
-            const right = pageItems.slice(5, 10);
-            return (
-              <div
-                key={`products-page-${pageIndex}`}
-                className="grid h-full min-w-0 shrink-0 gap-4 overflow-hidden px-0.5 lg:grid-cols-2 lg:gap-6"
-                style={{ width: `${100 / pageCount}%` }}
-                aria-hidden={pageIndex !== page}
-              >
-                <ul className="flex h-full min-w-0 flex-col justify-evenly overflow-hidden">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <ProductMenuRow key={`L-${pageIndex}-${i}`} item={left[i]} />
-                  ))}
-                </ul>
-                <ul className="flex h-full min-w-0 flex-col justify-evenly overflow-hidden">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <ProductMenuRow key={`R-${pageIndex}-${i}`} item={right[i]} />
-                  ))}
-                </ul>
-              </div>
-            );
-          })}
+      <div className="relative min-h-0 flex-1 overflow-hidden rounded-3xl border border-[#c9a87c]/20 bg-[#1c1714]/55 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-md">
+        <div className="relative h-full min-h-0 overflow-x-clip overflow-y-hidden px-3 py-3 sm:px-4 sm:py-4">
+          {/* Viewport-width shell: translate -100% moves exactly one page. */}
+          <div
+            className="h-full w-full transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform"
+            style={{ transform: `translate3d(-${page * 100}%, 0, 0)` }}
+          >
+            <div className="flex h-full" style={{ width: `${pageCount * 100}%` }}>
+              {pages.map((pageItems, pageIndex) => {
+                const left = pageItems.slice(0, 5);
+                const right = pageItems.slice(5, 10);
+                return (
+                  <div
+                    key={`products-page-${pageIndex}`}
+                    className="grid h-full min-w-0 shrink-0 grow-0 grid-cols-1 gap-4 overflow-hidden px-0.5 lg:grid-cols-2 lg:gap-6"
+                    style={{
+                      width: `${100 / pageCount}%`,
+                      flexBasis: `${100 / pageCount}%`,
+                    }}
+                    aria-hidden={pageIndex !== page}
+                  >
+                    <ul className="flex h-full min-w-0 flex-col justify-evenly overflow-hidden">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <ProductMenuRow key={`L-${pageIndex}-${i}`} item={left[i]} />
+                      ))}
+                    </ul>
+                    <ul className="flex h-full min-w-0 flex-col justify-evenly overflow-hidden">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <ProductMenuRow key={`R-${pageIndex}-${i}`} item={right[i]} />
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
       {pageCount > 1 ? (

@@ -55,6 +55,11 @@ export function AdminBottomNav() {
     pathname.startsWith("/admin/book") ||
     pathname.startsWith("/admin/walk-in") ||
     pathname.startsWith("/admin/display");
+  const onProducts =
+    pathname.startsWith("/manager/products") ||
+    pathname.startsWith("/manager/services") ||
+    pathname.startsWith("/admin/products") ||
+    pathname.startsWith("/admin/services");
   const onMoney = MONEY_LINKS.some(
     (l) => pathname.startsWith(l.href) || pathname.startsWith(l.href.replace("/manager", "/admin"))
   );
@@ -102,6 +107,14 @@ export function AdminBottomNav() {
         <Link href="/manager/appointments" className={onBookings ? "active" : undefined}>
           <span aria-hidden>◉</span>
           Bookings
+        </Link>
+        <Link
+          href="/manager/products"
+          className={onProducts ? "active" : undefined}
+          data-testid="manager-nav-products"
+        >
+          <span aria-hidden>□</span>
+          Products
         </Link>
         <button
           type="button"

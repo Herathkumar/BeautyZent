@@ -54,6 +54,16 @@ export function AdminHeaderNav() {
       >
         Bookings
       </Link>
+      <Link
+        href="/manager/products"
+        className={
+          pathname.startsWith("/manager/products") || pathname.startsWith("/manager/services")
+            ? "is-active"
+            : undefined
+        }
+      >
+        Products
+      </Link>
       <div className="relative" ref={rootRef}>
         <button
           type="button"
