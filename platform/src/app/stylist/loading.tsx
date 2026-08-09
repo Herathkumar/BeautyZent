@@ -1,5 +1,9 @@
 import { AppSplash } from "@/components/AppSplash";
 
 export default function StylistLoading() {
-  return <AppSplash variant="stylist" />;
+  return (
+    <div className="app-splash-host">
+      <AppSplash variant="stylist" />
+    </div>
+  );
 }

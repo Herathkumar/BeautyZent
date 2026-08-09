@@ -62,6 +62,8 @@ html.paper-shell body {
   display: grid;
   place-items: center;
   padding: 2rem;
+  /* Never steal taps — stuck splash was freezing stylist/manager PWAs */
+  pointer-events: none;
   background:
     radial-gradient(900px 420px at 90% -10%, rgba(240, 201, 135, 0.16), transparent 55%),
     radial-gradient(700px 360px at 0% 100%, rgba(110, 74, 56, 0.3), transparent 50%),

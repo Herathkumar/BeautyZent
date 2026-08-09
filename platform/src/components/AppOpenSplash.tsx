@@ -16,12 +16,16 @@ function clearBootSplash() {
 /**
  * Shows once when the app is opened (per tab session).
  * Cold start paint is covered by #fhsalon-boot-splash in root layout.
+ * Splashes never capture pointer events.
  */
 export function AppOpenSplash({ variant }: { variant: Variant }) {
   const [visible, setVisible] = useState(false);
   const [leaving, setLeaving] = useState(false);
 
   useLayoutEffect(() => {
+    // Always drop the head-script splash as soon as React is alive.
+    clearBootSplash();
+
     const key = `fhsalon-open-splash:${variant}`;
     let already = false;
     try {
@@ -30,10 +34,7 @@ export function AppOpenSplash({ variant }: { variant: Variant }) {
       /* private mode */
     }
 
-    if (already) {
-      clearBootSplash();
-      return;
-    }
+    if (already) return;
 
     try {
       sessionStorage.setItem(key, "1");
@@ -44,12 +45,11 @@ export function AppOpenSplash({ variant }: { variant: Variant }) {
     setVisible(true);
 
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const holdMs = reduceMotion ? 80 : 480;
+    const holdMs = reduceMotion ? 80 : 420;
     const fadeMs = reduceMotion ? 0 : 220;
     let fadeTimer = 0;
 
     const hold = window.setTimeout(() => {
-      clearBootSplash();
       setLeaving(true);
       fadeTimer = window.setTimeout(() => setVisible(false), fadeMs);
     }, holdMs);
