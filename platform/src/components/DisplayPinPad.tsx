@@ -72,7 +72,7 @@ export function DisplayPinPad({ slug, salonName, onUnlocked }: Props) {
       data-testid="display-pin-pad"
     >
       <p className="text-xs font-semibold tracking-[0.2em] text-[#c9a87c] uppercase">
-        Store display
+        Salon display
       </p>
       <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl">
         {salonName || "Enter PIN"}

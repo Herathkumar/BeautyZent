@@ -8,7 +8,7 @@ const VARIANTS = {
     className: "app-splash--stylist",
   },
   display: {
-    label: "Store Display",
+    label: "Salon Display",
     className: "app-splash--display",
   },
   book: {

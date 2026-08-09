@@ -84,7 +84,7 @@ export default async function AdminHome() {
             className="rounded-full border border-[#7d6154]/35 bg-[rgba(125,97,84,0.08)] px-5 py-2.5 text-sm font-semibold text-[#7d6154]"
             data-testid="dashboard-store-display"
           >
-            Store display
+            Salon display
           </Link>
           <Link
             href="/manager/appointments"

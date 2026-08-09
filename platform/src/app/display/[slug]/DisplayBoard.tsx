@@ -714,7 +714,7 @@ export function DisplayBoard({
         <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
           <div className="min-w-0">
             <p className="text-xs tracking-[0.2em] text-[#c9a87c] uppercase">
-              {embedded ? "Store display" : "Salon floor"}
+              {embedded ? "Salon display" : "Salon floor"}
             </p>
             <h1 className="font-[family-name:var(--font-display)] text-3xl leading-tight sm:text-4xl">
               {salon?.name || "Bookings"}
@@ -743,57 +743,59 @@ export function DisplayBoard({
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex rounded-full border border-white/15 bg-white/5 p-1">
-            <button
-              type="button"
-              onClick={() => setTab("today")}
-              className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
-                tab === "today"
-                  ? "bg-[#c9a87c] text-[#1c1714]"
-                  : "text-white/70 hover:text-white"
-              }`}
-            >
-              Today
-              <span className="ml-2 opacity-80">({todayAppts.length})</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setTab("future")}
-              className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
-                tab === "future"
-                  ? "bg-[#c9a87c] text-[#1c1714]"
-                  : "text-white/70 hover:text-white"
-              }`}
-            >
-              Future
-              <span className="ml-2 opacity-80">({futureCount})</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setTab("services")}
-              data-testid="display-tab-services"
-              className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
-                tab === "services"
-                  ? "bg-[#c9a87c] text-[#1c1714]"
-                  : "text-white/70 hover:text-white"
-              }`}
-            >
-              Services
-              <span className="ml-2 opacity-80">({services.length})</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setTab("products")}
-              data-testid="display-tab-products"
-              className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
-                tab === "products"
-                  ? "bg-[#c9a87c] text-[#1c1714]"
-                  : "text-white/70 hover:text-white"
-              }`}
-            >
-              Products
-              <span className="ml-2 opacity-80">({products.length})</span>
-            </button>
+          <div className="-mx-1 max-w-full overflow-x-auto px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex w-max min-w-full rounded-full border border-white/15 bg-white/5 p-1 sm:min-w-0">
+              <button
+                type="button"
+                onClick={() => setTab("today")}
+                className={`shrink-0 rounded-full px-3.5 py-2 text-sm font-semibold transition sm:px-5 ${
+                  tab === "today"
+                    ? "bg-[#c9a87c] text-[#1c1714]"
+                    : "text-white/70 hover:text-white"
+                }`}
+              >
+                Today
+                <span className="ml-1.5 opacity-80 sm:ml-2">({todayAppts.length})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTab("future")}
+                className={`shrink-0 rounded-full px-3.5 py-2 text-sm font-semibold transition sm:px-5 ${
+                  tab === "future"
+                    ? "bg-[#c9a87c] text-[#1c1714]"
+                    : "text-white/70 hover:text-white"
+                }`}
+              >
+                Future
+                <span className="ml-1.5 opacity-80 sm:ml-2">({futureCount})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTab("services")}
+                data-testid="display-tab-services"
+                className={`shrink-0 rounded-full px-3.5 py-2 text-sm font-semibold transition sm:px-5 ${
+                  tab === "services"
+                    ? "bg-[#c9a87c] text-[#1c1714]"
+                    : "text-white/70 hover:text-white"
+                }`}
+              >
+                Services
+                <span className="ml-1.5 opacity-80 sm:ml-2">({services.length})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTab("products")}
+                data-testid="display-tab-products"
+                className={`shrink-0 rounded-full px-3.5 py-2 text-sm font-semibold transition sm:px-5 ${
+                  tab === "products"
+                    ? "bg-[#c9a87c] text-[#1c1714]"
+                    : "text-white/70 hover:text-white"
+                }`}
+              >
+                Products
+                <span className="ml-1.5 opacity-80 sm:ml-2">({products.length})</span>
+              </button>
+            </div>
           </div>
 
           {tab === "future" && (

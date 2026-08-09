@@ -36,7 +36,7 @@ export default function StylistStoreDisplayPage() {
             My Jobs
           </p>
           <h1 className="font-[family-name:var(--font-display)] text-3xl text-[#fffaf6]">
-            Store display
+            Salon display
           </h1>
           <p className="text-sm text-muted">
             Same floor board as the salon tablet — seat waitlist, check in, and complete jobs.
@@ -64,7 +64,7 @@ export default function StylistStoreDisplayPage() {
 
       {error ? <p className="text-sm text-[#f5a8a8]">{error}</p> : null}
       {!slug && !error ? (
-        <p className="text-sm text-muted">Loading store display…</p>
+        <p className="text-sm text-muted">Loading salon display…</p>
       ) : null}
       {slug ? (
         <div className="relative left-1/2 w-screen max-w-[100vw] -translate-x-1/2 px-2 sm:px-4">
