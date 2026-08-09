@@ -18,7 +18,7 @@ export default function ServicesAdminPage() {
   const [name, setName] = useState("");
   const [category, setCategory] = useState("WOMEN");
   const [durationMin, setDurationMin] = useState(45);
-  const [price, setPrice] = useState("40");
+  const [price, setPrice] = useState("20");
   const [message, setMessage] = useState("");
 
   async function load() {

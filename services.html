@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Men’s and women’s haircut services at Farzana Hair Salon in Dundas, Ontario.">
+  <meta name="description" content="Men’s and women’s haircut services and prices at Farzana Hair Salon in Dundas, Ontario.">
   <title>Services | Farzana Hair Salon</title>
   <link rel="canonical" href="https://www.fhsalon.ca/services.html">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,6 +23,7 @@
       <nav>
         <ul class="nav-desktop">
           <li><a href="index.html">Home</a></li>
+          <li><a href="index.html#apps">Apps</a></li>
           <li><a href="services.html" class="active">Services</a></li>
           <li><a href="contact.html">Visit</a></li>
           <li><a href="https://fhsalon.vercel.app/book/fhsalon" class="btn btn-primary">Book online</a></li>
@@ -35,6 +36,7 @@
     </div>
     <nav class="nav-mobile" aria-label="Mobile navigation">
       <a href="index.html">Home</a>
+      <a href="index.html#apps">Apps</a>
       <a href="services.html" class="active">Services</a>
       <a href="contact.html">Visit</a>
       <a href="https://fhsalon.vercel.app/book/fhsalon">Book online</a>
@@ -47,7 +49,7 @@
       <div class="container reveal">
         <span class="section-kicker">Services</span>
         <h1>Men’s &amp; women’s haircuts</h1>
-        <p>Thoughtful cuts for every guest. Tell us how you like it — we’ll shape, tidy, and finish so you leave looking fresh.</p>
+        <p>Live menu from our salon — book online or call. Prices can be updated anytime by the manager.</p>
       </div>
     </section>
 
@@ -60,7 +62,7 @@
           <div class="reveal">
             <span class="section-kicker">For everyone</span>
             <h2 class="section-title">One salon, both styles</h2>
-            <p class="section-copy">We welcome men and women for everyday cuts and special occasions. Pricing can be confirmed when you call to book.</p>
+            <p class="section-copy">We welcome men and women for everyday cuts and special occasions. New services added in the manager app appear here automatically under Women or Men.</p>
           </div>
         </div>
 
@@ -68,27 +70,30 @@
           <article class="service-panel">
             <h2>Women’s cuts</h2>
             <p>Reshape, refresh, or keep your current look polished.</p>
-            <ul>
-              <li><span>Women’s haircut &amp; style</span><span>Ask</span></li>
-              <li><span>Trim &amp; tidy</span><span>Ask</span></li>
-              <li><span>Bang / fringe trim</span><span>Ask</span></li>
+            <ul data-services-women>
+              <li><span>Loading…</span><span></span></li>
             </ul>
           </article>
           <article class="service-panel">
             <h2>Men’s cuts</h2>
             <p>Sharp, simple, and easy to maintain between visits.</p>
-            <ul>
-              <li><span>Men’s haircut</span><span>Ask</span></li>
-              <li><span>Fade / taper</span><span>Ask</span></li>
-              <li><span>Beard tidy (with cut)</span><span>Ask</span></li>
+            <ul data-services-men>
+              <li><span>Loading…</span><span></span></li>
             </ul>
+          </article>
+        </div>
+
+        <div class="services-grid reveal" data-services-other-wrap hidden style="margin-top: 2rem;">
+          <article class="service-panel" style="grid-column: 1 / -1;">
+            <h2>Other services</h2>
+            <p>Extra options from the salon menu.</p>
+            <ul data-services-other></ul>
           </article>
         </div>
 
         <p class="reveal" style="margin-top: 2.5rem; color: var(--muted);">
           Ready to book? <a href="https://fhsalon.vercel.app/book/fhsalon" style="color: var(--cocoa); font-weight: 550;">Book online</a>
           or call <a href="tel:+19059202277" style="color: var(--cocoa); font-weight: 550;">905-920-2277</a>.
-          Online reservations are planned for a later update.
         </p>
       </div>
     </section>
@@ -102,11 +107,14 @@
       </div>
       <div class="footer-meta">
         <a href="tel:+19059202277">905-920-2277</a>
+        ·
+        <a href="https://fhsalon.vercel.app/book/fhsalon">Book online</a>
       </div>
     </div>
   </footer>
 
   <script src="js/main.js"></script>
   <script src="js/chatbot.js"></script>
+  <script src="js/load-services.js"></script>
 </body>
 </html>

@@ -30,14 +30,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, linked });
   }
 
+  const priceNum = Number(body.price);
+  const priceCents = Number.isFinite(priceNum) ? Math.round(priceNum * 100) : 2000;
+  const categoryRaw = String(body.category || "WOMEN").toUpperCase();
+  const category =
+    categoryRaw === "MEN" || categoryRaw === "WOMEN" || categoryRaw === "OTHER"
+      ? categoryRaw
+      : "WOMEN";
+
   const service = await prisma.service.create({
     data: {
       salonId: session.salonId,
       name: body.name,
       description: body.description || null,
-      category: body.category || "HAIRCUT",
+      category,
       durationMin: Number(body.durationMin) || 45,
-      priceCents: Math.round(Number(body.price) * 100),
+      priceCents: priceCents > 0 ? priceCents : 2000,
       active: body.active !== false,
       sortOrder: Number(body.sortOrder) || 0,
     },

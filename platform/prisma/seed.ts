@@ -135,11 +135,12 @@ async function main() {
   }
 
   const services = [
-    { name: "Women's haircut & style", category: "WOMEN", durationMin: 60, priceCents: 4500, sortOrder: 1 },
-    { name: "Women's trim", category: "WOMEN", durationMin: 30, priceCents: 3000, sortOrder: 2 },
-    { name: "Men's haircut", category: "MEN", durationMin: 30, priceCents: 2500, sortOrder: 3 },
-    { name: "Men's fade / taper", category: "MEN", durationMin: 45, priceCents: 3000, sortOrder: 4 },
-    { name: "Beard tidy (with cut)", category: "MEN", durationMin: 15, priceCents: 1000, sortOrder: 5 },
+    { name: "Women's haircut & style", category: "WOMEN", durationMin: 60, priceCents: 2000, sortOrder: 1 },
+    { name: "Trim & tidy", category: "WOMEN", durationMin: 30, priceCents: 2000, sortOrder: 2 },
+    { name: "Bang / fringe trim", category: "WOMEN", durationMin: 15, priceCents: 2000, sortOrder: 3 },
+    { name: "Men's haircut", category: "MEN", durationMin: 30, priceCents: 2000, sortOrder: 4 },
+    { name: "Fade / taper", category: "MEN", durationMin: 45, priceCents: 2000, sortOrder: 5 },
+    { name: "Beard tidy (with cut)", category: "MEN", durationMin: 15, priceCents: 2000, sortOrder: 6 },
   ];
 
   const serviceRows = [];
