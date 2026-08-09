@@ -741,82 +741,116 @@ export function DisplayBoard({
 
       {tab === "services" && (
         <div
-          className={`flex min-h-0 flex-1 flex-col ${
-            embedded ? "px-4 py-3 sm:px-5" : "px-5 py-3 sm:px-6"
-          }`}
+          className="relative flex min-h-0 flex-1 flex-col overflow-hidden"
           data-testid="display-services-section"
         >
-          <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
-            <div className="min-w-0">
-              <p className="text-[10px] font-semibold tracking-[0.22em] text-[#f0c987] uppercase">
-                Menu
-              </p>
-              <h2 className="font-[family-name:var(--font-display)] text-2xl leading-none sm:text-3xl">
-                Services & prices
-              </h2>
-            </div>
-            <p className="max-w-md text-xs text-white/55 sm:text-sm">
-              Ask your stylist what’s right for you — walk-ins welcome when a chair is open.
-            </p>
+          <div className="pointer-events-none absolute inset-0" aria-hidden>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/display-promo.jpg"
+              alt=""
+              className="h-full w-full scale-105 object-cover opacity-40"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-[#1c1714]/92 via-[#1c1714]/88 to-[#1c1714]/96" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_20%_0%,rgba(240,201,135,0.16),transparent_50%)]" />
           </div>
 
-          {servicesByCategory.length === 0 ? (
-            <p className="rounded-2xl border border-white/10 p-6 text-white/60">
-              No active services yet.
-            </p>
-          ) : (
-            <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-2 lg:gap-5">
-              {servicesByCategory.map((group) => (
-                <section key={group.key} className="min-w-0 space-y-2">
-                  <h3 className="text-[11px] tracking-[0.16em] text-[#c9a87c] uppercase">
-                    {group.label}
-                    <span className="ml-2 text-white/40">({group.items.length})</span>
-                  </h3>
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3">
-                    {group.items.map((s) => (
-                      <article
-                        key={s.id}
-                        className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]"
-                        data-testid={`display-service-${s.id}`}
-                      >
-                        <div className="relative h-20 overflow-hidden bg-[#2a211c] sm:h-24">
-                          {s.imageUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={s.imageUrl}
-                              alt=""
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#3a2c24] to-[#1c1714] px-2 text-center text-[11px] text-white/40">
-                              {s.name}
+          <div
+            className={`relative z-[1] flex min-h-0 flex-1 flex-col ${
+              embedded ? "px-4 py-4 sm:px-5" : "px-5 py-4 sm:px-8 sm:py-5"
+            }`}
+          >
+            <header className="mb-4 flex flex-wrap items-end justify-between gap-3 border-b border-[#c9a87c]/25 pb-3">
+              <div className="min-w-0">
+                <p className="text-[10px] font-semibold tracking-[0.28em] text-[#f0c987] uppercase">
+                  Farzana Hair Salon
+                </p>
+                <h2 className="mt-1 font-[family-name:var(--font-display)] text-3xl leading-none tracking-tight sm:text-4xl">
+                  The menu
+                </h2>
+              </div>
+              <p className="max-w-sm text-right text-xs leading-relaxed text-white/60 sm:text-sm">
+                Ask your stylist what’s right for you.
+                <br className="hidden sm:block" />
+                Walk-ins welcome when a chair is open.
+              </p>
+            </header>
+
+            {servicesByCategory.length === 0 ? (
+              <p className="rounded-2xl border border-white/10 bg-black/20 p-6 text-white/60 backdrop-blur-sm">
+                No active services yet.
+              </p>
+            ) : (
+              <div className="grid min-h-0 flex-1 gap-5 lg:grid-cols-2 lg:gap-8">
+                {servicesByCategory.map((group) => (
+                  <section
+                    key={group.key}
+                    className="flex min-h-0 min-w-0 flex-col rounded-3xl border border-[#c9a87c]/20 bg-[#1c1714]/55 px-3 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-md sm:px-4 sm:py-4"
+                  >
+                    <div className="mb-2 flex items-baseline justify-between gap-2 border-b border-[#c9a87c]/20 pb-2">
+                      <h3 className="font-[family-name:var(--font-display)] text-xl text-[#f0c987] sm:text-2xl">
+                        {group.label}
+                      </h3>
+                      <span className="text-[10px] tracking-[0.18em] text-white/40 uppercase">
+                        {group.items.length} services
+                      </span>
+                    </div>
+                    <ul className="flex min-h-0 flex-1 flex-col justify-evenly gap-0.5">
+                      {group.items.map((s) => (
+                        <li
+                          key={s.id}
+                          className="group flex items-center gap-3 py-1.5 sm:gap-3.5 sm:py-2"
+                          data-testid={`display-service-${s.id}`}
+                        >
+                          <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full ring-1 ring-[#c9a87c]/35 sm:h-14 sm:w-14">
+                            {s.imageUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={s.imageUrl}
+                                alt=""
+                                className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center bg-[#2a211c] text-[10px] text-white/35">
+                                •
+                              </div>
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-baseline gap-2">
+                              <h4 className="truncate font-[family-name:var(--font-display)] text-base leading-tight text-[#fffaf6] sm:text-lg">
+                                {s.name}
+                              </h4>
+                              <span
+                                className="hidden min-w-[1.5rem] flex-1 border-b border-dotted border-white/20 sm:block"
+                                aria-hidden
+                              />
+                              <p className="shrink-0 font-[family-name:var(--font-display)] text-base font-medium tracking-wide text-[#f0c987] sm:text-lg">
+                                {formatCad(s.priceCents)}
+                              </p>
                             </div>
-                          )}
-                        </div>
-                        <div className="space-y-0.5 px-2.5 py-2">
-                          <div className="flex items-start justify-between gap-1.5">
-                            <h4 className="font-[family-name:var(--font-display)] text-sm leading-tight sm:text-[0.95rem]">
-                              {s.name}
-                            </h4>
-                            <p className="shrink-0 text-sm font-semibold text-[#f0c987]">
-                              {formatCad(s.priceCents)}
+                            <p className="mt-0.5 text-[11px] text-white/45 sm:text-xs">
+                              {s.durationMin} min
                             </p>
                           </div>
-                          <p className="text-[11px] text-white/50">{s.durationMin} min</p>
-                        </div>
-                      </article>
-                    ))}
-                  </div>
-                </section>
-              ))}
-            </div>
-          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
       <ZentraLabFooter
         compact={tab === "services"}
-        className={tab === "services" ? "!mt-3 !py-3 text-[11px] [&_.zentralab-footer-meta]:hidden" : undefined}
+        className={
+          tab === "services"
+            ? "relative z-[1] !mt-0 border-[#c9a87c]/15 !py-2.5 text-[11px] [&_.zentralab-footer-meta]:hidden"
+            : undefined
+        }
       />
     </div>
   );
