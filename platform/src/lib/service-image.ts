@@ -4,7 +4,7 @@
  */
 
 export type ServiceImageAiResult =
-  | { ok: true; mime: string; bytes: Buffer; model: string }
+  | { ok: true; mime: string; bytes: Uint8Array; model: string }
   | { ok: false; error: string; status?: number };
 
 function apiKey() {
@@ -153,8 +153,10 @@ export async function generateServiceImage(opts: {
       ("mime_type" in inline && inline.mime_type) ||
       "image/png";
     try {
-      const bytes = Buffer.from(inline.data, "base64");
-      if (!bytes.length) continue;
+      const decoded = Buffer.from(inline.data, "base64");
+      if (!decoded.length) continue;
+      const bytes = new Uint8Array(decoded.byteLength);
+      bytes.set(decoded);
       return {
         ok: true,
         mime: String(mime).includes("png") ? "image/png" : "image/jpeg",
