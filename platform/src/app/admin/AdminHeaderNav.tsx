@@ -9,24 +9,33 @@ const MONEY_LINKS = [
   { href: "/manager/pay", label: "Payroll" },
 ] as const;
 
+const SALON_LINKS = [
+  { href: "/manager/products", label: "Products" },
+  { href: "/manager/services", label: "Services" },
+  { href: "/manager/stylists", label: "Stylists" },
+] as const;
+
+type Menu = "money" | "salon" | null;
+
 export function AdminHeaderNav() {
   const pathname = usePathname();
-  const [open, setOpen] = useState(false);
+  const [menu, setMenu] = useState<Menu>(null);
   const rootRef = useRef<HTMLDivElement>(null);
 
   const onMoney = MONEY_LINKS.some((l) => pathname.startsWith(l.href));
+  const onSalon = SALON_LINKS.some((l) => pathname.startsWith(l.href));
 
   useEffect(() => {
-    setOpen(false);
+    setMenu(null);
   }, [pathname]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!menu) return;
     function onDoc(e: MouseEvent) {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+      if (!rootRef.current?.contains(e.target as Node)) setMenu(null);
     }
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") setMenu(null);
     }
     document.addEventListener("mousedown", onDoc);
     window.addEventListener("keydown", onKey);
@@ -34,10 +43,13 @@ export function AdminHeaderNav() {
       document.removeEventListener("mousedown", onDoc);
       window.removeEventListener("keydown", onKey);
     };
-  }, [open]);
+  }, [menu]);
 
   return (
-    <nav className="admin-nav admin-header-nav flex flex-wrap items-center justify-end gap-x-4 gap-y-2 text-sm">
+    <nav
+      ref={rootRef}
+      className="admin-nav admin-header-nav flex flex-wrap items-center justify-end gap-x-4 gap-y-2 text-sm"
+    >
       <Link href="/manager" className={pathname === "/manager" ? "is-active" : undefined}>
         Dashboard
       </Link>
@@ -46,41 +58,54 @@ export function AdminHeaderNav() {
         className={
           pathname.startsWith("/manager/appointments") ||
           pathname.startsWith("/manager/book") ||
-          pathname.startsWith("/manager/walk-in") ||
-          pathname.startsWith("/manager/display")
+          pathname.startsWith("/manager/walk-in")
             ? "is-active"
             : undefined
         }
       >
         Bookings
       </Link>
-      <Link
-        href="/manager/products"
-        className={
-          pathname.startsWith("/manager/products") || pathname.startsWith("/manager/services")
-            ? "is-active"
-            : undefined
-        }
-      >
-        Products
-      </Link>
-      <div className="relative" ref={rootRef}>
+      <div className="relative">
         <button
           type="button"
-          className={onMoney || open ? "is-active" : undefined}
-          aria-expanded={open}
-          onClick={() => setOpen((v) => !v)}
+          className={onSalon || menu === "salon" ? "is-active" : undefined}
+          aria-expanded={menu === "salon"}
+          onClick={() => setMenu((v) => (v === "salon" ? null : "salon"))}
+        >
+          Salon ▾
+        </button>
+        {menu === "salon" ? (
+          <div className="admin-salon-dropdown" role="menu">
+            {SALON_LINKS.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                role="menuitem"
+                onClick={() => setMenu(null)}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
+        ) : null}
+      </div>
+      <div className="relative">
+        <button
+          type="button"
+          className={onMoney || menu === "money" ? "is-active" : undefined}
+          aria-expanded={menu === "money"}
+          onClick={() => setMenu((v) => (v === "money" ? null : "money"))}
         >
           Money ▾
         </button>
-        {open ? (
+        {menu === "money" ? (
           <div className="admin-salon-dropdown" role="menu">
             {MONEY_LINKS.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 role="menuitem"
-                onClick={() => setOpen(false)}
+                onClick={() => setMenu(null)}
               >
                 {item.label}
               </Link>

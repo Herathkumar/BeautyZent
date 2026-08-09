@@ -9,6 +9,14 @@ const MONEY_LINKS = [
   { href: "/manager/pay", label: "Payroll", hint: "Pay, hours & leave" },
 ] as const;
 
+const SALON_LINKS = [
+  { href: "/manager/products", label: "Products", hint: "Retail inventory & photos" },
+  { href: "/manager/services", label: "Services", hint: "Menu, prices & images" },
+  { href: "/manager/stylists", label: "Stylists", hint: "Team & schedules" },
+] as const;
+
+type Sheet = "money" | "salon" | null;
+
 function useIsDesktop() {
   const [desktop, setDesktop] = useState(false);
 
@@ -26,20 +34,20 @@ function useIsDesktop() {
 export function AdminBottomNav() {
   const pathname = usePathname();
   const isDesktop = useIsDesktop();
-  const [moneyOpen, setMoneyOpen] = useState(false);
+  const [sheet, setSheet] = useState<Sheet>(null);
 
   useEffect(() => {
-    setMoneyOpen(false);
+    setSheet(null);
   }, [pathname]);
 
   useEffect(() => {
-    if (!moneyOpen) return;
+    if (!sheet) return;
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setMoneyOpen(false);
+      if (e.key === "Escape") setSheet(null);
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [moneyOpen]);
+  }, [sheet]);
 
   if (pathname.startsWith("/manager/login") || pathname.startsWith("/admin/login") || isDesktop) {
     return null;
@@ -50,16 +58,12 @@ export function AdminBottomNav() {
     pathname.startsWith("/manager/appointments") ||
     pathname.startsWith("/manager/book") ||
     pathname.startsWith("/manager/walk-in") ||
-    pathname.startsWith("/manager/display") ||
     pathname.startsWith("/admin/appointments") ||
     pathname.startsWith("/admin/book") ||
-    pathname.startsWith("/admin/walk-in") ||
-    pathname.startsWith("/admin/display");
-  const onProducts =
-    pathname.startsWith("/manager/products") ||
-    pathname.startsWith("/manager/services") ||
-    pathname.startsWith("/admin/products") ||
-    pathname.startsWith("/admin/services");
+    pathname.startsWith("/admin/walk-in");
+  const onSalon = SALON_LINKS.some(
+    (l) => pathname.startsWith(l.href) || pathname.startsWith(l.href.replace("/manager", "/admin"))
+  );
   const onMoney = MONEY_LINKS.some(
     (l) => pathname.startsWith(l.href) || pathname.startsWith(l.href.replace("/manager", "/admin"))
   );
@@ -68,13 +72,44 @@ export function AdminBottomNav() {
 
   return (
     <>
-      {moneyOpen ? (
+      {sheet === "salon" ? (
+        <div className="admin-salon-sheet" role="dialog" aria-label="Salon menu">
+          <button
+            type="button"
+            className="admin-salon-sheet-backdrop"
+            aria-label="Close salon menu"
+            onClick={() => setSheet(null)}
+          />
+          <div className="admin-salon-sheet-panel">
+            <p className="text-xs font-semibold tracking-[0.18em] text-[#7d6154] uppercase">
+              Salon
+            </p>
+            <p className="mt-1 text-sm text-[#6b5b52]">Products, services, and stylists</p>
+            <ul className="mt-4 grid gap-2">
+              {SALON_LINKS.map((item) => (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    className="admin-salon-sheet-link"
+                    onClick={() => setSheet(null)}
+                  >
+                    <span className="font-semibold text-[#2b2521]">{item.label}</span>
+                    <span className="text-sm text-[#6b5b52]">{item.hint}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      ) : null}
+
+      {sheet === "money" ? (
         <div className="admin-salon-sheet" role="dialog" aria-label="Money menu">
           <button
             type="button"
             className="admin-salon-sheet-backdrop"
             aria-label="Close money menu"
-            onClick={() => setMoneyOpen(false)}
+            onClick={() => setSheet(null)}
           />
           <div className="admin-salon-sheet-panel">
             <p className="text-xs font-semibold tracking-[0.18em] text-[#7d6154] uppercase">
@@ -87,7 +122,7 @@ export function AdminBottomNav() {
                   <Link
                     href={item.href}
                     className="admin-salon-sheet-link"
-                    onClick={() => setMoneyOpen(false)}
+                    onClick={() => setSheet(null)}
                   >
                     <span className="font-semibold text-[#2b2521]">{item.label}</span>
                     <span className="text-sm text-[#6b5b52]">{item.hint}</span>
@@ -108,19 +143,21 @@ export function AdminBottomNav() {
           <span aria-hidden>◉</span>
           Bookings
         </Link>
-        <Link
-          href="/manager/products"
-          className={onProducts ? "active" : undefined}
-          data-testid="manager-nav-products"
-        >
-          <span aria-hidden>□</span>
-          Products
-        </Link>
         <button
           type="button"
-          className={onMoney || moneyOpen ? "active" : undefined}
-          aria-expanded={moneyOpen}
-          onClick={() => setMoneyOpen((v) => !v)}
+          className={onSalon || sheet === "salon" ? "active" : undefined}
+          aria-expanded={sheet === "salon"}
+          data-testid="manager-nav-salon"
+          onClick={() => setSheet((v) => (v === "salon" ? null : "salon"))}
+        >
+          <span aria-hidden>□</span>
+          Salon
+        </button>
+        <button
+          type="button"
+          className={onMoney || sheet === "money" ? "active" : undefined}
+          aria-expanded={sheet === "money"}
+          onClick={() => setSheet((v) => (v === "money" ? null : "money"))}
         >
           <span aria-hidden>$</span>
           Money

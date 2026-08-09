@@ -44,9 +44,7 @@ test.describe("Walk-in appointments", () => {
     });
     expect(add.ok()).toBeTruthy();
 
-    await page.goto("/manager/appointments");
-    await page.getByTestId("bookings-store-display").click();
-    await expect(page).toHaveURL(/\/manager\/display/);
+    await page.goto("/manager/display");
     await expect(page.getByTestId("manager-store-display")).toBeVisible();
     await expect(page.getByTestId("manager-store-display-board")).toBeVisible({
       timeout: 15_000,

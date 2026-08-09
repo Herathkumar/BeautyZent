@@ -253,6 +253,9 @@ function ServiceMenuColumn({
     return chunks.length ? chunks : [[]];
   }, [items, pageSize]);
 
+  // Absolute slides need a real height; embedded boards (stylist/manager) often have no flex height.
+  const viewportMinH = `calc(${pageSize} * 4.25rem)`;
+
   return (
     <section className="flex min-h-0 min-w-0 flex-col rounded-3xl border border-[#c9a87c]/20 bg-[#1c1714]/55 px-3 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-md sm:px-4 sm:py-4">
       <div className="mb-2 flex items-baseline justify-between gap-2 border-b border-[#c9a87c]/20 pb-2">
@@ -265,7 +268,7 @@ function ServiceMenuColumn({
         </span>
       </div>
 
-      <div className="relative min-h-0 flex-1 overflow-hidden">
+      <div className="relative flex-1 overflow-hidden" style={{ minHeight: viewportMinH }}>
         {pages.map((pageItems, pageIndex) => (
           <ul
             key={`${label}-page-${pageIndex}`}
@@ -413,6 +416,8 @@ function ProductMenuBoard({ items }: { items: MenuProduct[] }) {
     return chunks.length ? chunks : [[]];
   }, [items, pageSize]);
 
+  const viewportMinH = `calc(${colSize} * 4.25rem + 1.5rem)`;
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="mb-2 flex items-baseline justify-between gap-2">
@@ -421,7 +426,10 @@ function ProductMenuBoard({ items }: { items: MenuProduct[] }) {
           {pageCount > 1 ? ` · ${page + 1}/${pageCount}` : ""}
         </p>
       </div>
-      <div className="relative min-h-0 flex-1 overflow-hidden rounded-3xl border border-[#c9a87c]/20 bg-[#1c1714]/55 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-md">
+      <div
+        className="relative flex-1 overflow-hidden rounded-3xl border border-[#c9a87c]/20 bg-[#1c1714]/55 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-md"
+        style={{ minHeight: viewportMinH }}
+      >
         <div className="absolute inset-0 overflow-hidden">
           {pages.map((pageItems, pageIndex) => {
             const left = pageItems.slice(0, colSize);
@@ -697,7 +705,7 @@ export function DisplayBoard({
     <div
       className={`flex flex-col ${
         embedded
-          ? "min-w-0 rounded-3xl border border-[#c9a87c]/25"
+          ? "min-h-[70vh] min-w-0 rounded-3xl border border-[#c9a87c]/25"
           : "min-h-screen"
       } bg-[#1c1714] text-[#fffaf6]`}
       data-testid={embedded ? "manager-store-display-board" : "store-display-board"}
@@ -1057,7 +1065,7 @@ export function DisplayBoard({
 
       {tab === "services" && (
         <div
-          className="relative flex min-h-0 flex-1 flex-col overflow-hidden"
+          className="relative flex min-h-[28rem] flex-1 flex-col overflow-hidden sm:min-h-[32rem]"
           data-testid="display-services-section"
         >
           <div className="pointer-events-none absolute inset-0" aria-hidden>
@@ -1113,7 +1121,7 @@ export function DisplayBoard({
 
       {tab === "products" && (
         <div
-          className="relative flex min-h-0 flex-1 flex-col overflow-hidden"
+          className="relative flex min-h-[28rem] flex-1 flex-col overflow-hidden sm:min-h-[32rem]"
           data-testid="display-products-section"
         >
           <div className="pointer-events-none absolute inset-0" aria-hidden>

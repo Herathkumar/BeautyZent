@@ -152,13 +152,6 @@ export default function AppointmentsAdminPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Link
-            href="/manager/display"
-            className="btn-solid rounded-full px-4 py-2.5 text-sm font-semibold"
-            data-testid="bookings-store-display"
-          >
-            Store display
-          </Link>
-          <Link
             href="/manager/walk-in"
             className="rounded-full border border-[#7d6154]/35 bg-[rgba(125,97,84,0.08)] px-4 py-2.5 text-sm font-semibold text-[#7d6154]"
           >
