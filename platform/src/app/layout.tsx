@@ -79,10 +79,14 @@ const BOOT_SCRIPT = `
     else if(stylist){
       document.documentElement.classList.add("stylist-shell");
       try{
-        if(localStorage.getItem("fhsalon-stylist-theme")==="light"){
+        var st=localStorage.getItem("fhsalon-stylist-theme")||"dark";
+        var sm=document.querySelector('meta[name="theme-color"]');
+        // Light preference → dark surfaces; dark preference → light surfaces.
+        if(st!=="light"){
           document.documentElement.classList.add("stylist-shell--light");
-          var sm=document.querySelector('meta[name="theme-color"]');
           if(sm) sm.setAttribute("content","#eef7f5");
+        }else if(sm){
+          sm.setAttribute("content","#0e1618");
         }
       }catch(e){}
     }
@@ -92,7 +96,8 @@ const BOOT_SCRIPT = `
         var bt=localStorage.getItem("fhsalon-book-theme")||"dark";
         var light=bt==="light"||(bt==="system"&&window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches);
         var bm=document.querySelector('meta[name="theme-color"]');
-        if(light){
+        // Light preference → dark plum; dark preference → lilac mist.
+        if(!light){
           document.documentElement.classList.add("book-shell--light");
           if(bm) bm.setAttribute("content","#f7f3fb");
         }else if(bm){

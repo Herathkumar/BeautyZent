@@ -31,14 +31,15 @@ export function writeStylistTheme(theme: StylistTheme) {
 export function applyStylistTheme(theme: StylistTheme) {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
-  root.classList.toggle("stylist-shell--light", theme === "light");
+  // Light preference uses the sea-glass dark surfaces; dark preference uses mist light.
+  root.classList.toggle("stylist-shell--light", theme === "dark");
 
   const shells = document.querySelectorAll(".stylist-theme");
   shells.forEach((el) => {
-    el.classList.toggle("stylist-theme--light", theme === "light");
+    el.classList.toggle("stylist-theme--light", theme === "dark");
   });
 
-  const color = theme === "light" ? STYLIST_THEME_LIGHT : STYLIST_THEME_DARK;
+  const color = theme === "light" ? STYLIST_THEME_DARK : STYLIST_THEME_LIGHT;
   let meta = document.querySelector('meta[name="theme-color"]');
   if (!meta) {
     meta = document.createElement("meta");
