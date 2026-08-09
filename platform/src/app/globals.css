@@ -120,6 +120,14 @@ html.manager-shell--dark .app-splash--manager .app-splash-spinner {
     linear-gradient(180deg, #152226 0%, #0e1618 50%, #0a1114 100%);
 }
 
+.app-splash--display {
+  background:
+    radial-gradient(900px 420px at 90% -10%, rgba(240, 201, 135, 0.16), transparent 55%),
+    radial-gradient(700px 360px at 0% 100%, rgba(110, 74, 56, 0.3), transparent 50%),
+    linear-gradient(180deg, #241c18 0%, #1c1714 50%, #15110f 100%);
+  color: #fffaf6;
+}
+
 .app-splash--book {
   background:
     radial-gradient(900px 480px at 85% -5%, rgba(201, 180, 232, 0.22), transparent 55%),

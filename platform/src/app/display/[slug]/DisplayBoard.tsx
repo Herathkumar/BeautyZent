@@ -715,8 +715,14 @@ export function DisplayBoard({
 
   if (!unlockChecked) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center bg-[#1c1714] text-sm text-white/60">
-        Loading store display…
+      <div className="app-splash-host">
+        <div className="app-splash app-splash--display" role="status" aria-live="polite" aria-busy="true">
+          <div className="app-splash-inner">
+            <p className="app-splash-brand">FHSalon</p>
+            <p className="app-splash-label">Salon Display</p>
+            <div className="app-splash-spinner" aria-hidden />
+          </div>
+        </div>
       </div>
     );
   }

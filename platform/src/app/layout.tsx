@@ -56,7 +56,12 @@ html.book-shell.book-shell--light,html.book-shell.book-shell--light body{
   color:#2a2434;
   color-scheme:light
 }
-`;
+html.display-shell,html.display-shell body{
+  background:linear-gradient(180deg,#241c18 0%,#1c1714 50%,#15110f 100%);
+  color:#fffaf6;
+  color-scheme:dark
+}
+`
 
 const BOOT_SCRIPT = `
 (function(){
@@ -64,8 +69,9 @@ const BOOT_SCRIPT = `
     var p=location.pathname||"";
     var manager=/^\\/(manager|admin)(\\/|$)/.test(p);
     var stylist=/^\\/stylist(\\/|$)/.test(p);
+    var display=/^\\/display(\\/|$)/.test(p);
     var book=/^\\/book(\\/|$)/.test(p);
-    var dark=/^\\/(display|demo)(\\/|$)/.test(p);
+    var demo=/^\\/demo(\\/|$)/.test(p);
     var darkManager=false;
     if(manager){
       document.documentElement.classList.add("manager-shell");
@@ -107,32 +113,39 @@ const BOOT_SCRIPT = `
         }
       }catch(e){}
     }
-    else if(!dark) document.documentElement.classList.add("paper-shell");
-
-    /* Immediate paint while the server shell loads (covers kill→reopen white gap). */
-    if(manager||stylist){
-      var skip=false;
-      try{ skip=sessionStorage.getItem("fhsalon-open-splash:"+(manager?"manager":"stylist"))==="1"; }catch(e){}
-      if(!skip){
-        var bg=manager
-          ?(darkManager
-            ?"linear-gradient(180deg,#241c18 0%,#1c1714 50%,#15110f 100%)"
-            :"linear-gradient(180deg,#fdf8f3 0%,#f7f1ea 50%,#f3ebe3 100%)")
-          :"linear-gradient(180deg,#152226 0%,#0e1618 48%,#0a1114 100%)";
-        var fg=manager&&!darkManager?"#2b2521":"#fffaf6";
-        var label=manager?"Manager":"Stylist App";
-        var el=document.createElement("div");
-        el.id="fhsalon-boot-splash";
-        el.setAttribute("role","status");
-        el.style.cssText="position:fixed;inset:0;z-index:9999;display:grid;place-items:center;padding:2rem;pointer-events:none;background:"+bg+";color:"+fg+";font-family:Outfit,system-ui,sans-serif";
-        el.innerHTML='<div style="text-align:center"><p style="margin:0;font-family:Fraunces,Georgia,serif;font-size:1.75rem;letter-spacing:.02em">FHSalon</p><p style="margin:.5rem 0 1rem;font-size:.8rem;letter-spacing:.18em;text-transform:uppercase;opacity:.72">'+label+'</p><div style="width:1.5rem;height:1.5rem;margin:0 auto;border:2px solid rgba(127,127,127,.25);border-top-color:currentColor;border-radius:50%;animation:fhsalon-boot-spin .75s linear infinite"></div></div>';
-        var css=document.createElement("style");
-        css.textContent="@keyframes fhsalon-boot-spin{to{transform:rotate(360deg)}}";
-        document.documentElement.appendChild(css);
-        document.documentElement.appendChild(el);
-        setTimeout(function(){ var n=document.getElementById("fhsalon-boot-splash"); if(n) n.remove(); },1200);
-      }
+    else if(display||demo){
+      document.documentElement.classList.add("display-shell");
     }
+    else document.documentElement.classList.add("paper-shell");
+
+    /* Stay up until React mounts — mobile cold starts often exceed a few seconds. */
+    if(manager||stylist||display){
+      var bg=manager
+        ?(darkManager
+          ?"linear-gradient(180deg,#241c18 0%,#1c1714 50%,#15110f 100%)"
+          :"linear-gradient(180deg,#fdf8f3 0%,#f7f1ea 50%,#f3ebe3 100%)")
+        :stylist
+          ?"linear-gradient(180deg,#152226 0%,#0e1618 48%,#0a1114 100%)"
+          :"linear-gradient(180deg,#241c18 0%,#1c1714 50%,#15110f 100%)";
+      var fg=manager&&!darkManager?"#2b2521":"#fffaf6";
+      var label=manager?"Manager":stylist?"Stylist App":"Salon Display";
+      var el=document.createElement("div");
+      el.id="fhsalon-boot-splash";
+      el.setAttribute("role","status");
+      el.style.cssText="position:fixed;inset:0;z-index:9999;display:grid;place-items:center;padding:2rem;pointer-events:none;background:"+bg+";color:"+fg+";font-family:Georgia,serif";
+      el.innerHTML='<div style="text-align:center"><p style="margin:0;font-size:1.75rem;letter-spacing:.02em">FHSalon</p><p style="margin:.5rem 0 1rem;font:600 .75rem Outfit,system-ui,sans-serif;letter-spacing:.18em;text-transform:uppercase;opacity:.72">'+label+'</p><div style="width:1.5rem;height:1.5rem;margin:0 auto;border:2px solid rgba(127,127,127,.25);border-top-color:currentColor;border-radius:50%;animation:fhsalon-boot-spin .75s linear infinite"></div></div>';
+      var css=document.createElement("style");
+      css.textContent="@keyframes fhsalon-boot-spin{to{transform:rotate(360deg)}}";
+      document.documentElement.appendChild(css);
+      document.documentElement.appendChild(el);
+      setTimeout(function(){ var n=document.getElementById("fhsalon-boot-splash"); if(n) n.remove(); },20000);
+    }
+
+    /* Fonts after first paint — blocking Google CSS was delaying mobile opens. */
+    var fl=document.createElement("link");
+    fl.rel="stylesheet";
+    fl.href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,450;9..144,520;9..144,560&family=Outfit:wght@400;500;600&display=swap";
+    document.head.appendChild(fl);
   }catch(e){}
 })();
 `;
@@ -145,10 +158,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: BOOT_SCRIPT }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,450;9..144,520;9..144,560&family=Outfit:wght@400;500;600&display=swap"
-          rel="stylesheet"
-        />
       </head>
       <body className="antialiased">
         <ConfirmProvider>{children}</ConfirmProvider>

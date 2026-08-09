@@ -23,9 +23,6 @@ export function AppOpenSplash({ variant }: { variant: Variant }) {
   const [leaving, setLeaving] = useState(false);
 
   useLayoutEffect(() => {
-    // Always drop the head-script splash as soon as React is alive.
-    clearBootSplash();
-
     const key = `fhsalon-open-splash:${variant}`;
     let already = false;
     try {
@@ -34,7 +31,11 @@ export function AppOpenSplash({ variant }: { variant: Variant }) {
       /* private mode */
     }
 
-    if (already) return;
+    // Keep boot splash until our React splash (or dismiss) is ready — avoids a white gap.
+    if (already) {
+      clearBootSplash();
+      return;
+    }
 
     try {
       sessionStorage.setItem(key, "1");
@@ -43,9 +44,10 @@ export function AppOpenSplash({ variant }: { variant: Variant }) {
     }
 
     setVisible(true);
+    clearBootSplash();
 
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const holdMs = reduceMotion ? 80 : 420;
+    const holdMs = reduceMotion ? 80 : 520;
     const fadeMs = reduceMotion ? 0 : 220;
     let fadeTimer = 0;
 

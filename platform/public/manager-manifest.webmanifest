@@ -6,8 +6,8 @@
   "scope": "/manager",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#fdf8f3",
-  "theme_color": "#fdf8f3",
+  "background_color": "#f7f1ea",
+  "theme_color": "#f7f1ea",
   "icons": [
     {
       "src": "/manager-icon-192.png",
