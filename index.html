@@ -60,29 +60,20 @@
       </div>
     </section>
 
-    <section>
-      <div class="container split">
-        <div class="split-media reveal">
-          <img src="images/services/cuts.jpg" alt="Men’s and women’s haircut styling at Farzana Hair Salon" width="1200" height="900">
-        </div>
-        <div class="reveal">
+    <section class="offer-section">
+      <div class="container">
+        <div class="offer-intro reveal">
           <span class="section-kicker">What we offer</span>
           <h2 class="section-title">Haircuts for every style</h2>
-          <p class="section-copy">Whether you need a sharp men’s cut or a soft women’s reshape, we take the time to listen and finish with a look that suits you.</p>
-          <div class="service-list">
-            <div class="service-row">
-              <h3>Women’s haircuts</h3>
-              <p>Trims, restyles, and everyday cuts shaped for your face and lifestyle.</p>
-            </div>
-            <div class="service-row">
-              <h3>Men’s haircuts</h3>
-              <p>Clean fades, classic cuts, and tidy finishes for work or weekend.</p>
-            </div>
-          </div>
-          <p style="margin-top: 1.75rem;">
-            <a class="btn btn-outline-dark" href="services.html">See all services</a>
-          </p>
+          <p class="section-copy">Whether you need a sharp men’s cut or a soft women’s reshape, we take the time to listen and finish with a look that suits you. Live prices from the salon menu.</p>
         </div>
+        <div class="service-offer-grid reveal" data-home-services aria-live="polite">
+          <p class="service-offer-empty">Loading services…</p>
+        </div>
+        <p class="offer-actions reveal">
+          <a class="btn btn-outline-dark" href="services.html">See all services</a>
+          <a class="btn btn-primary" href="https://fhsalon.vercel.app/book/fhsalon">Book a cut</a>
+        </p>
       </div>
     </section>
 
@@ -131,5 +122,6 @@
 
   <script src="js/main.js"></script>
   <script src="js/chatbot.js"></script>
+  <script src="js/load-services.js"></script>
 </body>
 </html>

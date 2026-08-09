@@ -419,6 +419,130 @@ main > section {
   color: var(--muted);
 }
 
+.offer-section {
+  padding-block: clamp(3rem, 7vw, 5rem);
+}
+
+.offer-intro {
+  max-width: 38rem;
+  margin-bottom: 2rem;
+}
+
+.service-offer-grid {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: 1fr;
+}
+
+.service-offer-card {
+  display: grid;
+  gap: 0.9rem;
+  min-width: 0;
+}
+
+.service-offer-media {
+  aspect-ratio: 4 / 3;
+  border-radius: 1.25rem;
+  overflow: hidden;
+  background: linear-gradient(145deg, #3a2c24, #1c1714);
+}
+
+.service-offer-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.55s ease;
+}
+
+.service-offer-card:hover .service-offer-media img {
+  transform: scale(1.03);
+}
+
+.service-offer-body {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.service-offer-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.service-offer-top h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 520;
+  line-height: 1.15;
+}
+
+.service-offer-price {
+  margin: 0;
+  flex-shrink: 0;
+  font-weight: 600;
+  color: var(--cocoa);
+  white-space: nowrap;
+}
+
+.service-offer-meta,
+.service-offer-desc,
+.service-offer-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.offer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 2rem;
+}
+
+.service-menu-item {
+  align-items: center !important;
+}
+
+.service-menu-item-main {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.service-menu-item-main img {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 0.75rem;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: #2a211c;
+}
+
+.service-menu-item-main > div {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.service-menu-name {
+  font-weight: 550;
+  color: var(--ink);
+}
+
+.service-menu-meta {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.service-menu-price {
+  font-weight: 600;
+  color: var(--cocoa) !important;
+}
+
 .visit-band {
   position: relative;
   overflow: hidden;
@@ -726,8 +850,19 @@ main > section {
     padding: 2rem 0;
   }
 
+  .service-offer-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.75rem;
+  }
+
   .contact-layout {
     grid-template-columns: 0.9fr 1.1fr;
     align-items: start;
+  }
+}
+
+@media (min-width: 1100px) {
+  .service-offer-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
