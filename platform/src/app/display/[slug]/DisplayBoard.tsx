@@ -188,6 +188,131 @@ function StylistLine({ a }: { a: Appt }) {
   );
 }
 
+const MENU_PAGE_SIZE = 5;
+const MENU_SLIDE_MS = 7000;
+
+function ServiceMenuColumn({
+  label,
+  items,
+}: {
+  label: string;
+  items: MenuService[];
+}) {
+  const pageCount = Math.max(1, Math.ceil(items.length / MENU_PAGE_SIZE));
+  const [page, setPage] = useState(0);
+
+  useEffect(() => {
+    setPage(0);
+  }, [items.length, label]);
+
+  useEffect(() => {
+    if (pageCount <= 1) return;
+    const id = window.setInterval(() => {
+      setPage((p) => (p + 1) % pageCount);
+    }, MENU_SLIDE_MS);
+    return () => window.clearInterval(id);
+  }, [pageCount]);
+
+  const pages = useMemo(() => {
+    const chunks: MenuService[][] = [];
+    for (let i = 0; i < items.length; i += MENU_PAGE_SIZE) {
+      chunks.push(items.slice(i, i + MENU_PAGE_SIZE));
+    }
+    return chunks.length ? chunks : [[]];
+  }, [items]);
+
+  return (
+    <section className="flex min-h-0 min-w-0 flex-col rounded-3xl border border-[#c9a87c]/20 bg-[#1c1714]/55 px-3 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-md sm:px-4 sm:py-4">
+      <div className="mb-2 flex items-baseline justify-between gap-2 border-b border-[#c9a87c]/20 pb-2">
+        <h3 className="font-[family-name:var(--font-display)] text-xl text-[#f0c987] sm:text-2xl">
+          {label}
+        </h3>
+        <span className="text-[10px] tracking-[0.18em] text-white/40 uppercase">
+          {items.length} services
+          {pageCount > 1 ? ` · ${page + 1}/${pageCount}` : ""}
+        </span>
+      </div>
+
+      <div className="relative min-h-0 flex-1 overflow-hidden">
+        <div
+          className="flex h-full transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
+          style={{ transform: `translateX(-${page * 100}%)` }}
+        >
+          {pages.map((pageItems, pageIndex) => (
+            <ul
+              key={`${label}-page-${pageIndex}`}
+              className="flex h-full w-full shrink-0 flex-col justify-evenly"
+              aria-hidden={pageIndex !== page}
+            >
+              {Array.from({ length: MENU_PAGE_SIZE }).map((_, slot) => {
+                const s = pageItems[slot];
+                if (!s) {
+                  return <li key={`empty-${slot}`} className="h-[4.25rem] sm:h-[4.75rem]" aria-hidden />;
+                }
+                return (
+                  <li
+                    key={s.id}
+                    className="group flex h-[4.25rem] items-center gap-3 sm:h-[4.75rem] sm:gap-3.5"
+                    data-testid={`display-service-${s.id}`}
+                  >
+                    <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full ring-1 ring-[#c9a87c]/35 sm:h-14 sm:w-14">
+                      {s.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={s.imageUrl}
+                          alt=""
+                          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-[#2a211c] text-[10px] text-white/35">
+                          •
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline gap-2">
+                        <h4 className="truncate font-[family-name:var(--font-display)] text-base leading-tight text-[#fffaf6] sm:text-lg">
+                          {s.name}
+                        </h4>
+                        <span
+                          className="hidden min-w-[1.5rem] flex-1 border-b border-dotted border-white/20 sm:block"
+                          aria-hidden
+                        />
+                        <p className="shrink-0 font-[family-name:var(--font-display)] text-base font-medium tracking-wide text-[#f0c987] sm:text-lg">
+                          {formatCad(s.priceCents)}
+                        </p>
+                      </div>
+                      <p className="mt-0.5 text-[11px] text-white/45 sm:text-xs">
+                        {s.durationMin} min
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          ))}
+        </div>
+      </div>
+
+      {pageCount > 1 ? (
+        <div className="mt-2 flex items-center justify-center gap-2">
+          {pages.map((_, i) => (
+            <button
+              key={`${label}-dot-${i}`}
+              type="button"
+              aria-label={`Show ${label} page ${i + 1}`}
+              onClick={() => setPage(i)}
+              className={`h-1.5 rounded-full transition ${
+                i === page ? "w-5 bg-[#f0c987]" : "w-1.5 bg-white/30 hover:bg-white/50"
+              }`}
+            />
+          ))}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 export function DisplayBoard({
   slug,
   /** When true, board sits inside manager chrome (not the tablet URL). */
@@ -783,60 +908,11 @@ export function DisplayBoard({
             ) : (
               <div className="grid min-h-0 flex-1 gap-5 lg:grid-cols-2 lg:gap-8">
                 {servicesByCategory.map((group) => (
-                  <section
+                  <ServiceMenuColumn
                     key={group.key}
-                    className="flex min-h-0 min-w-0 flex-col rounded-3xl border border-[#c9a87c]/20 bg-[#1c1714]/55 px-3 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-md sm:px-4 sm:py-4"
-                  >
-                    <div className="mb-2 flex items-baseline justify-between gap-2 border-b border-[#c9a87c]/20 pb-2">
-                      <h3 className="font-[family-name:var(--font-display)] text-xl text-[#f0c987] sm:text-2xl">
-                        {group.label}
-                      </h3>
-                      <span className="text-[10px] tracking-[0.18em] text-white/40 uppercase">
-                        {group.items.length} services
-                      </span>
-                    </div>
-                    <ul className="flex min-h-0 flex-1 flex-col justify-evenly gap-0.5">
-                      {group.items.map((s) => (
-                        <li
-                          key={s.id}
-                          className="group flex items-center gap-3 py-1.5 sm:gap-3.5 sm:py-2"
-                          data-testid={`display-service-${s.id}`}
-                        >
-                          <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full ring-1 ring-[#c9a87c]/35 sm:h-14 sm:w-14">
-                            {s.imageUrl ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={s.imageUrl}
-                                alt=""
-                                className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                              />
-                            ) : (
-                              <div className="flex h-full w-full items-center justify-center bg-[#2a211c] text-[10px] text-white/35">
-                                •
-                              </div>
-                            )}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-baseline gap-2">
-                              <h4 className="truncate font-[family-name:var(--font-display)] text-base leading-tight text-[#fffaf6] sm:text-lg">
-                                {s.name}
-                              </h4>
-                              <span
-                                className="hidden min-w-[1.5rem] flex-1 border-b border-dotted border-white/20 sm:block"
-                                aria-hidden
-                              />
-                              <p className="shrink-0 font-[family-name:var(--font-display)] text-base font-medium tracking-wide text-[#f0c987] sm:text-lg">
-                                {formatCad(s.priceCents)}
-                              </p>
-                            </div>
-                            <p className="mt-0.5 text-[11px] text-white/45 sm:text-xs">
-                              {s.durationMin} min
-                            </p>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  </section>
+                    label={group.label}
+                    items={group.items}
+                  />
                 ))}
               </div>
             )}
