@@ -11,7 +11,7 @@ export async function PATCH(
   const { slug, id } = await params;
   const salon = await prisma.salon.findUnique({
     where: { slug },
-    select: { id: true, slug: true, displayPinHash: true },
+    select: { id: true, slug: true, displayPinHash: true, displayPinSetAt: true },
   });
   if (!salon) return NextResponse.json({ error: "Salon not found" }, { status: 404 });
 

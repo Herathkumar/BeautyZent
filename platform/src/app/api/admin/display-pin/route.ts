@@ -91,8 +91,8 @@ export async function PUT(req: Request) {
     setAt: updated.displayPinSetAt?.toISOString() ?? null,
     slug: updated.slug,
     message: salon.displayPinHash
-      ? "Store display PIN updated. Tablets will need the new PIN."
-      : "Store display PIN set. The tablet URL now asks for this PIN.",
+      ? "Salon display PIN updated. Tablets will need the new PIN."
+      : "Salon display PIN set. The tablet URL now asks for this PIN every time.",
   });
 }
 
@@ -138,6 +138,6 @@ export async function DELETE(req: Request) {
   return NextResponse.json({
     ok: true,
     pinSet: false,
-    message: "Store display PIN removed. The tablet URL is open again.",
+    message: "Salon display PIN removed. The tablet URL is open again.",
   });
 }

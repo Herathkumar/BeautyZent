@@ -26,6 +26,7 @@ export async function GET(
       address: true,
       timezone: true,
       displayPinHash: true,
+      displayPinSetAt: true,
     },
   });
   if (!salon) return NextResponse.json({ error: "Salon not found" }, { status: 404 });

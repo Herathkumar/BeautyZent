@@ -6,7 +6,7 @@ import { createWalkInAppointment, findNextAvailableWalkIns } from "@/lib/walk-in
 async function loadSalon(slug: string) {
   return prisma.salon.findUnique({
     where: { slug },
-    select: { id: true, slug: true, displayPinHash: true },
+    select: { id: true, slug: true, displayPinHash: true, displayPinSetAt: true },
   });
 }
 

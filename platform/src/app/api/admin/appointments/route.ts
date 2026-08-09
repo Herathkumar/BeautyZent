@@ -120,6 +120,8 @@ export async function GET(req: Request) {
       ? { source }
       : {};
 
+  // Never include client/service/stylist with `true` — those models have Bytes
+  // image columns that make Bookings hang on "Loading bookings…".
   const appointments = await prisma.appointment.findMany({
     where: {
       salonId: salon.id,
@@ -128,10 +130,17 @@ export async function GET(req: Request) {
       ...statusWhere,
       ...sourceWhere,
     },
-    include: {
-      client: true,
-      service: true,
-      stylist: true,
+    select: {
+      id: true,
+      startsAt: true,
+      endsAt: true,
+      status: true,
+      source: true,
+      notes: true,
+      calendarSyncedAt: true,
+      client: { select: { name: true, phone: true } },
+      service: { select: { name: true } },
+      stylist: { select: { id: true, name: true } },
     },
     orderBy: { startsAt: "asc" },
   });

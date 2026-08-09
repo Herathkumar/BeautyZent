@@ -685,8 +685,11 @@ export function DisplayBoard({
         salonName={salon?.name}
         onUnlocked={() => {
           setNeedsPin(false);
+          setPinSet(true);
           setUnlockChecked(true);
           void load();
+          void loadServices();
+          void loadProducts();
         }}
       />
     );
@@ -695,8 +698,8 @@ export function DisplayBoard({
   if (needsPin && embedded) {
     return (
       <div className="rounded-3xl border border-[#c9a87c]/30 bg-[#2a211c] p-6 text-sm text-[#d4c4b0]">
-        Store display PIN is set. Sign in as manager to use the board here, or open the tablet
-        URL and enter the PIN.
+        Salon display PIN is set. Sign in as manager to use the board here. The public tablet
+        URL always asks for the PIN.
       </div>
     );
   }

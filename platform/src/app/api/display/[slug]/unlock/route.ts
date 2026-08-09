@@ -4,12 +4,15 @@ import {
   clearDisplayUnlockCookieOn,
   hasValidDisplayUnlock,
   normalizeDisplayPin,
-  sessionBypassesDisplayPin,
   verifyDisplayPin,
 } from "@/lib/display-pin";
 import { prisma } from "@/lib/prisma";
 
-/** Check whether this tablet needs / already has PIN unlock. */
+/**
+ * Check whether this tablet needs / already has PIN unlock.
+ * Staff login does NOT skip the PIN on the public tablet URL — only a valid
+ * unlock cookie (set after entering the PIN) does.
+ */
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ slug: string }> }
@@ -17,7 +20,13 @@ export async function GET(
   const { slug } = await params;
   const salon = await prisma.salon.findUnique({
     where: { slug },
-    select: { id: true, slug: true, name: true, displayPinHash: true },
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      displayPinHash: true,
+      displayPinSetAt: true,
+    },
   });
   if (!salon) return NextResponse.json({ error: "Salon not found" }, { status: 404 });
 
@@ -31,8 +40,10 @@ export async function GET(
     });
   }
 
-  const bypass = await sessionBypassesDisplayPin(salon.id);
-  const unlocked = bypass || (await hasValidDisplayUnlock(salon.id));
+  const unlocked = await hasValidDisplayUnlock({
+    id: salon.id,
+    displayPinSetAt: salon.displayPinSetAt,
+  });
   return NextResponse.json({
     pinSet: true,
     needsPin: !unlocked,
@@ -41,7 +52,7 @@ export async function GET(
   });
 }
 
-/** Unlock the store display with the manager-set PIN. */
+/** Unlock the salon display with the manager-set PIN. */
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ slug: string }> }
@@ -49,7 +60,13 @@ export async function POST(
   const { slug } = await params;
   const salon = await prisma.salon.findUnique({
     where: { slug },
-    select: { id: true, slug: true, name: true, displayPinHash: true },
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      displayPinHash: true,
+      displayPinSetAt: true,
+    },
   });
   if (!salon) return NextResponse.json({ error: "Salon not found" }, { status: 404 });
 
@@ -61,10 +78,6 @@ export async function POST(
   };
 
   if (!salon.displayPinHash) {
-    return NextResponse.json(unlockedBody);
-  }
-
-  if (await sessionBypassesDisplayPin(salon.id)) {
     return NextResponse.json(unlockedBody);
   }
 
@@ -87,9 +100,13 @@ export async function POST(
 
   const res = NextResponse.json({
     ...unlockedBody,
-    message: "Store display unlocked.",
+    message: "Salon display unlocked.",
   });
-  await attachDisplayUnlockCookie(res, { id: salon.id, slug: salon.slug });
+  await attachDisplayUnlockCookie(res, {
+    id: salon.id,
+    slug: salon.slug,
+    displayPinSetAt: salon.displayPinSetAt,
+  });
   return res;
 }
 

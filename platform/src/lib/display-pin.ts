@@ -31,6 +31,8 @@ type UnlockPayload = {
   purpose: "display";
   salonId: string;
   slug: string;
+  /** Invalidates unlock cookies when the manager changes the PIN. */
+  pinSetAt: string;
 };
 
 function unlockCookieOptions() {
@@ -39,25 +41,34 @@ function unlockCookieOptions() {
     sameSite: "lax" as const,
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: 60 * 60 * 24 * 7,
+    // Session cookie — closing the browser requires PIN again.
   };
 }
 
-export async function createDisplayUnlockToken(salon: { id: string; slug: string }) {
+export type DisplayUnlockSalon = {
+  id: string;
+  slug: string;
+  displayPinSetAt: Date | null;
+};
+
+export async function createDisplayUnlockToken(salon: DisplayUnlockSalon) {
+  const pinSetAt = salon.displayPinSetAt?.toISOString() ?? "";
   return new SignJWT({
     purpose: "display",
     salonId: salon.id,
     slug: salon.slug,
+    pinSetAt,
   } satisfies UnlockPayload)
     .setProtectedHeader({ alg: "HS256" })
-    .setExpirationTime("7d")
+    // Hard cap even if the browser stays open on the floor.
+    .setExpirationTime("12h")
     .sign(secret());
 }
 
 /** Prefer attaching the cookie on the Route Handler response (reliable in Next.js). */
 export async function attachDisplayUnlockCookie(
   res: NextResponse,
-  salon: { id: string; slug: string }
+  salon: DisplayUnlockSalon
 ) {
   const token = await createDisplayUnlockToken(salon);
   res.cookies.set(DISPLAY_UNLOCK_COOKIE, token, unlockCookieOptions());
@@ -72,7 +83,7 @@ export function clearDisplayUnlockCookieOn(res: NextResponse) {
   return res;
 }
 
-export async function issueDisplayUnlockCookie(salon: { id: string; slug: string }) {
+export async function issueDisplayUnlockCookie(salon: DisplayUnlockSalon) {
   const token = await createDisplayUnlockToken(salon);
   const jar = await cookies();
   jar.set(DISPLAY_UNLOCK_COOKIE, token, unlockCookieOptions());
@@ -83,20 +94,30 @@ export async function clearDisplayUnlockCookie() {
   jar.delete(DISPLAY_UNLOCK_COOKIE);
 }
 
-export async function hasValidDisplayUnlock(salonId: string): Promise<boolean> {
+export async function hasValidDisplayUnlock(salon: {
+  id: string;
+  displayPinSetAt?: Date | null;
+}): Promise<boolean> {
   const jar = await cookies();
   const token = jar.get(DISPLAY_UNLOCK_COOKIE)?.value;
   if (!token) return false;
   try {
     const { payload } = await jwtVerify(token, secret());
     const data = payload as unknown as UnlockPayload;
-    return data.purpose === "display" && data.salonId === salonId;
+    if (data.purpose !== "display" || data.salonId !== salon.id) return false;
+    const expected = salon.displayPinSetAt?.toISOString() ?? "";
+    // Older cookies without pinSetAt are rejected once a PIN version exists.
+    return data.pinSetAt === expected;
   } catch {
     return false;
   }
 }
 
-/** Staff/stylist already signed into this salon can use the board without the tablet PIN. */
+/**
+ * Staff/stylist already signed into this salon can use the board inside
+ * manager/stylist apps without the tablet PIN. The public /display/[slug]
+ * tablet URL does NOT use this bypass — it always asks for the PIN.
+ */
 export async function sessionBypassesDisplayPin(salonId: string): Promise<boolean> {
   const session = await getSession();
   return Boolean(session?.salonId === salonId);
@@ -106,6 +127,7 @@ export type DisplaySalonGate = {
   id: string;
   slug: string;
   displayPinHash: string | null;
+  displayPinSetAt?: Date | null;
 };
 
 /**
@@ -115,16 +137,23 @@ export type DisplaySalonGate = {
 export async function assertDisplayAccess(salon: DisplaySalonGate): Promise<NextResponse | null> {
   if (!salon.displayPinHash) return null;
   if (await sessionBypassesDisplayPin(salon.id)) return null;
-  if (await hasValidDisplayUnlock(salon.id)) return null;
+  if (
+    await hasValidDisplayUnlock({
+      id: salon.id,
+      displayPinSetAt: salon.displayPinSetAt ?? null,
+    })
+  ) {
+    return null;
+  }
   return NextResponse.json(
-    { error: "Store display PIN required", needsPin: true },
+    { error: "Salon display PIN required", needsPin: true },
     { status: 401 }
   );
 }
 
 export function pinRequiredResponse() {
   return NextResponse.json(
-    { error: "Store display PIN required", needsPin: true },
+    { error: "Salon display PIN required", needsPin: true },
     { status: 401 }
   );
 }
