@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { linkServiceToAllStylists, syncAllServiceStylistLinks } from "@/lib/service-links";
+import { serviceImageUrl } from "@/lib/service-image";
 
 export async function GET() {
   const session = await getSession();
@@ -12,10 +13,20 @@ export async function GET() {
     include: { _count: { select: { stylists: true } } },
   });
   return NextResponse.json({
-    services: services.map((s) => ({
-      ...s,
-      stylistCount: s._count.stylists,
-    })),
+    services: services.map((s) => {
+      const { imageData: _imageData, _count, ...rest } = s;
+      const hasImage = Boolean(s.imageUpdatedAt && s.imageMime);
+      return {
+        ...rest,
+        stylistCount: _count.stylists,
+        hasImage,
+        imageUrl: serviceImageUrl({
+          id: s.id,
+          hasImage,
+          imageUpdatedAt: s.imageUpdatedAt,
+        }),
+      };
+    }),
   });
 }
 

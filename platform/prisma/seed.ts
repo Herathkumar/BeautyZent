@@ -1,5 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import fs from "fs";
+import path from "path";
 
 const prisma = new PrismaClient();
 
@@ -143,14 +145,44 @@ async function main() {
     { name: "Beard tidy (with cut)", category: "MEN", durationMin: 15, priceCents: 2000, sortOrder: 6 },
   ];
 
+  const serviceImageFiles: Record<string, string> = {
+    "Women's haircut & style": "womens-haircut-style.jpg",
+    "Trim & tidy": "trim-tidy.jpg",
+    "Bang / fringe trim": "bang-fringe-trim.jpg",
+    "Men's haircut": "mens-haircut.jpg",
+    "Fade / taper": "fade-taper.jpg",
+    "Beard tidy (with cut)": "beard-tidy.jpg",
+  };
+  const serviceImageDir = path.join(__dirname, "seed-assets", "service-images");
+
   const serviceRows = [];
   for (const svc of services) {
     const existing = await prisma.service.findFirst({
       where: { salonId: salon.id, name: svc.name },
     });
+    const imageFile = serviceImageFiles[svc.name];
+    const imagePath = imageFile ? path.join(serviceImageDir, imageFile) : null;
+    const imageBytes =
+      imagePath && fs.existsSync(imagePath) ? fs.readFileSync(imagePath) : null;
+    const imageData = imageBytes
+      ? {
+          imageData: imageBytes,
+          imageMime: "image/jpeg" as const,
+          imageUpdatedAt: new Date(),
+        }
+      : {};
     const row = existing
-      ? await prisma.service.update({ where: { id: existing.id }, data: svc })
-      : await prisma.service.create({ data: { salonId: salon.id, ...svc } });
+      ? await prisma.service.update({
+          where: { id: existing.id },
+          data: {
+            ...svc,
+            // Keep an existing custom AI image unless this row has none yet.
+            ...(existing.imageData?.length ? {} : imageData),
+          },
+        })
+      : await prisma.service.create({
+          data: { salonId: salon.id, ...svc, ...imageData },
+        });
     serviceRows.push(row);
   }
 

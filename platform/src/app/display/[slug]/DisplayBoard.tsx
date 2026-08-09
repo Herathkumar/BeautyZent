@@ -5,6 +5,7 @@ import { useConfirm } from "@/components/ConfirmDialog";
 import { DisplayPinPad } from "@/components/DisplayPinPad";
 import { WalkInPanel } from "@/components/WalkInPanel";
 import { ZentraLabFooter } from "@/components/ZentraLabFooter";
+import { formatCad } from "@/lib/money";
 import { promptCompleteAmounts } from "@/lib/pay";
 
 type Appt = {
@@ -30,7 +31,18 @@ type SalonInfo = {
   today?: string | null;
 };
 
-type Tab = "today" | "future";
+type Tab = "today" | "future" | "services";
+
+type MenuService = {
+  id: string;
+  name: string;
+  description: string | null;
+  category: string;
+  durationMin: number;
+  priceCents: number;
+  hasImage?: boolean;
+  imageUrl?: string | null;
+};
 
 /** Calendar YYYY-MM-DD in the salon timezone (falls back to local). */
 function dayKey(iso: string, timeZone?: string | null) {
@@ -185,6 +197,7 @@ export function DisplayBoard({
   embedded?: boolean;
 }) {
   const [appointments, setAppointments] = useState<Appt[]>([]);
+  const [services, setServices] = useState<MenuService[]>([]);
   const [salon, setSalon] = useState<SalonInfo | null>(null);
   const [days, setDays] = useState(14);
   const [tab, setTab] = useState<Tab>("today");
@@ -235,6 +248,22 @@ export function DisplayBoard({
     }
   }, [slug, days]);
 
+  const loadServices = useCallback(async () => {
+    try {
+      const r = await fetch(`/api/display/${slug}/services`, {
+        credentials: "same-origin",
+      });
+      const data = await r.json();
+      if (r.status === 401 && data.needsPin) {
+        setNeedsPin(true);
+        return;
+      }
+      setServices(data.services || []);
+    } catch {
+      /* ignore */
+    }
+  }, [slug]);
+
   useEffect(() => {
     void checkUnlock();
   }, [checkUnlock]);
@@ -242,13 +271,22 @@ export function DisplayBoard({
   useEffect(() => {
     if (!unlockChecked || needsPin) return;
     void load();
-    const poll = setInterval(() => void load(), 15000);
+    void loadServices();
+    const poll = setInterval(() => {
+      void load();
+      if (tab === "services") void loadServices();
+    }, 15000);
     const clock = setInterval(() => setNow(new Date()), 30000);
     return () => {
       clearInterval(poll);
       clearInterval(clock);
     };
-  }, [load, unlockChecked, needsPin]);
+  }, [load, loadServices, unlockChecked, needsPin, tab]);
+
+  useEffect(() => {
+    if (!unlockChecked || needsPin || tab !== "services") return;
+    void loadServices();
+  }, [tab, unlockChecked, needsPin, loadServices]);
 
   const tKey = todayKey(salon?.timezone, salon?.today);
   /** Floor list: open bookings only — hide completed / no-show / cancelled */
@@ -277,6 +315,16 @@ export function DisplayBoard({
     () => futureGrouped.reduce((n, [, list]) => n + list.length, 0),
     [futureGrouped]
   );
+  const servicesByCategory = useMemo(() => {
+    const women = services.filter((s) => s.category === "WOMEN");
+    const men = services.filter((s) => s.category === "MEN");
+    const other = services.filter((s) => s.category !== "WOMEN" && s.category !== "MEN");
+    return [
+      { key: "WOMEN", label: "Women", items: women },
+      { key: "MEN", label: "Men", items: men },
+      { key: "OTHER", label: "More", items: other },
+    ].filter((g) => g.items.length > 0);
+  }, [services]);
 
   async function setStatus(
     id: string,
@@ -408,6 +456,19 @@ export function DisplayBoard({
             >
               Future
               <span className="ml-2 opacity-80">({futureCount})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab("services")}
+              data-testid="display-tab-services"
+              className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
+                tab === "services"
+                  ? "bg-[#c9a87c] text-[#1c1714]"
+                  : "text-white/70 hover:text-white"
+              }`}
+            >
+              Services
+              <span className="ml-2 opacity-80">({services.length})</span>
             </button>
           </div>
 
@@ -675,6 +736,80 @@ export function DisplayBoard({
               </div>
             </section>
           ))}
+        </div>
+      )}
+
+      {tab === "services" && (
+        <div
+          className={embedded ? "px-4 py-4 sm:px-5 sm:py-5" : "px-6 py-6"}
+          data-testid="display-services-section"
+        >
+          <div className="mb-6 max-w-2xl">
+            <p className="text-xs font-semibold tracking-[0.22em] text-[#f0c987] uppercase">
+              Menu
+            </p>
+            <h2 className="mt-2 font-[family-name:var(--font-display)] text-3xl leading-none sm:text-4xl">
+              Services & prices
+            </h2>
+            <p className="mt-3 text-sm text-white/70 sm:text-base">
+              Ask your stylist what’s right for you — walk-ins welcome when a chair is open.
+            </p>
+          </div>
+
+          {servicesByCategory.length === 0 ? (
+            <p className="rounded-2xl border border-white/10 p-8 text-white/60">
+              No active services yet.
+            </p>
+          ) : (
+            <div className="grid gap-8">
+              {servicesByCategory.map((group) => (
+                <section key={group.key} className="space-y-4">
+                  <h3 className="text-sm tracking-[0.16em] text-[#c9a87c] uppercase">
+                    {group.label}
+                  </h3>
+                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                    {group.items.map((s) => (
+                      <article
+                        key={s.id}
+                        className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04]"
+                        data-testid={`display-service-${s.id}`}
+                      >
+                        <div className="relative aspect-[4/3] overflow-hidden bg-[#2a211c]">
+                          {s.imageUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={s.imageUrl}
+                              alt=""
+                              className="h-full w-full object-cover transition duration-500 hover:scale-[1.03]"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#3a2c24] to-[#1c1714] text-sm text-white/40">
+                              {s.name}
+                            </div>
+                          )}
+                          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#1c1714]/90 to-transparent" />
+                        </div>
+                        <div className="space-y-1 p-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <h4 className="font-[family-name:var(--font-display)] text-xl leading-tight">
+                              {s.name}
+                            </h4>
+                            <p className="shrink-0 text-lg font-semibold text-[#f0c987]">
+                              {formatCad(s.priceCents)}
+                            </p>
+                          </div>
+                          <p className="text-sm text-white/55">{s.durationMin} min</p>
+                          {s.description ? (
+                            <p className="pt-1 text-sm text-white/70">{s.description}</p>
+                          ) : null}
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

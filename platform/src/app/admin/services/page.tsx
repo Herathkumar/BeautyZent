@@ -11,6 +11,8 @@ type Service = {
   priceCents: number;
   active: boolean;
   stylistCount?: number;
+  hasImage?: boolean;
+  imageUrl?: string | null;
 };
 
 export default function ServicesAdminPage() {
@@ -19,7 +21,10 @@ export default function ServicesAdminPage() {
   const [category, setCategory] = useState("WOMEN");
   const [durationMin, setDurationMin] = useState(45);
   const [price, setPrice] = useState("20");
+  const [generateImageOnAdd, setGenerateImageOnAdd] = useState(true);
   const [message, setMessage] = useState("");
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
 
   async function load() {
     const res = await fetch("/api/admin/services");
@@ -50,15 +55,52 @@ export default function ServicesAdminPage() {
     load();
   }, []);
 
+  async function generateImage(serviceId: string) {
+    setBusyId(serviceId);
+    setMessage("");
+    try {
+      const res = await fetch(`/api/admin/services/${serviceId}/generate-image`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMessage(data.error || "Could not generate image");
+        return;
+      }
+      setMessage(`AI image ready for ${data.service?.name || "service"}.`);
+      await load();
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   async function addService(e: React.FormEvent) {
     e.preventDefault();
-    await fetch("/api/admin/services", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, category, durationMin, price }),
-    });
-    setName("");
-    await load();
+    setAdding(true);
+    setMessage("");
+    try {
+      const res = await fetch("/api/admin/services", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, category, durationMin, price }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMessage(data.error || "Could not add service");
+        return;
+      }
+      setName("");
+      const createdId = data.service?.id as string | undefined;
+      if (generateImageOnAdd && createdId) {
+        await generateImage(createdId);
+      } else {
+        await load();
+      }
+    } finally {
+      setAdding(false);
+    }
   }
 
   async function toggleActive(s: Service) {
@@ -86,6 +128,7 @@ export default function ServicesAdminPage() {
           <h1 className="font-[family-name:var(--font-display)] text-3xl">Services & prices</h1>
           <p className="text-muted">
             New services are offered by all stylists automatically so online booking can continue.
+            AI images appear on the store display Services tab.
           </p>
         </div>
         <button
@@ -99,7 +142,10 @@ export default function ServicesAdminPage() {
 
       {message ? <p className="text-sm text-champagne">{message}</p> : null}
 
-      <form onSubmit={addService} className="grid gap-3 rounded-2xl border border-ink/10 bg-cream p-4 sm:grid-cols-5">
+      <form
+        onSubmit={addService}
+        className="grid gap-3 rounded-2xl border border-ink/10 bg-cream p-4 sm:grid-cols-5"
+      >
         <input
           required
           placeholder="Service name"
@@ -130,27 +176,47 @@ export default function ServicesAdminPage() {
             className="w-full rounded-xl border border-ink/15 px-3 py-2"
             placeholder="Price"
           />
-          <button type="submit" className="btn-solid rounded-full px-4">
-            Add
+          <button type="submit" disabled={adding} className="btn-solid rounded-full px-4 disabled:opacity-60">
+            {adding ? "…" : "Add"}
           </button>
         </div>
+        <label className="flex items-center gap-2 text-sm text-muted sm:col-span-5">
+          <input
+            type="checkbox"
+            checked={generateImageOnAdd}
+            onChange={(e) => setGenerateImageOnAdd(e.target.checked)}
+          />
+          Generate AI menu image after adding (stored on this service)
+        </label>
       </form>
 
       <div className="divide-y divide-ink/10 rounded-2xl border border-ink/10 bg-cream">
         {services.map((s) => (
           <div key={s.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-            <div>
-              <p className="font-medium">{s.name}</p>
-              <p className="text-sm text-muted">
-                {s.category} · {s.durationMin} min · {formatCad(s.priceCents)}
-                {typeof s.stylistCount === "number"
-                  ? ` · ${s.stylistCount} stylist${s.stylistCount === 1 ? "" : "s"}`
-                  : ""}
-                {s.stylistCount === 0 ? " · not bookable online yet" : ""}
-                {!s.active && " · inactive"}
-              </p>
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-ink/10 bg-ink/5">
+                {s.hasImage && s.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={s.imageUrl} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-[10px] text-muted">
+                    No image
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="font-medium">{s.name}</p>
+                <p className="text-sm text-muted">
+                  {s.category} · {s.durationMin} min · {formatCad(s.priceCents)}
+                  {typeof s.stylistCount === "number"
+                    ? ` · ${s.stylistCount} stylist${s.stylistCount === 1 ? "" : "s"}`
+                    : ""}
+                  {s.stylistCount === 0 ? " · not bookable online yet" : ""}
+                  {!s.active && " · inactive"}
+                </p>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <input
                 className="w-24 rounded-lg border border-ink/15 px-2 py-1 text-sm"
                 defaultValue={(s.priceCents / 100).toFixed(2)}
@@ -158,6 +224,15 @@ export default function ServicesAdminPage() {
                   if (e.target.value) updatePrice(s, e.target.value);
                 }}
               />
+              <button
+                type="button"
+                disabled={busyId === s.id}
+                onClick={() => void generateImage(s.id)}
+                className="rounded-full border border-ink/20 px-3 py-1 text-sm disabled:opacity-60"
+                data-testid={`service-generate-image-${s.id}`}
+              >
+                {busyId === s.id ? "Generating…" : s.hasImage ? "Regenerate AI image" : "Generate AI image"}
+              </button>
               <button
                 type="button"
                 onClick={() => toggleActive(s)}

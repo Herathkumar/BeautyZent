@@ -13,6 +13,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:seed:production": "tsx prisma/seed-production.ts",
     "db:upsert-services": "tsx scripts/upsert-standard-services.ts",
+    "db:seed-service-images": "tsx scripts/seed-service-images.ts",
     "db:setup": "prisma generate && prisma db push && tsx prisma/seed.ts",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { serviceImageUrl } from "@/lib/service-image";
 import { stylistPhotoUrl } from "@/lib/stylist-photo";
 
 const CORS_HEADERS = {
@@ -32,6 +33,8 @@ export async function GET(
           durationMin: true,
           priceCents: true,
           sortOrder: true,
+          imageMime: true,
+          imageUpdatedAt: true,
         },
       },
       stylists: {
@@ -55,9 +58,27 @@ export async function GET(
     return NextResponse.json({ error: "Salon not found" }, { status: 404, headers: CORS_HEADERS });
   }
 
-  const women = salon.services.filter((s) => s.category === "WOMEN");
-  const men = salon.services.filter((s) => s.category === "MEN");
-  const other = salon.services.filter((s) => s.category !== "WOMEN" && s.category !== "MEN");
+  const services = salon.services.map((s) => {
+    const hasImage = Boolean(s.imageUpdatedAt && s.imageMime);
+    return {
+      id: s.id,
+      name: s.name,
+      description: s.description,
+      category: s.category,
+      durationMin: s.durationMin,
+      priceCents: s.priceCents,
+      sortOrder: s.sortOrder,
+      hasImage,
+      imageUrl: serviceImageUrl({
+        id: s.id,
+        hasImage,
+        imageUpdatedAt: s.imageUpdatedAt,
+      }),
+    };
+  });
+  const women = services.filter((s) => s.category === "WOMEN");
+  const men = services.filter((s) => s.category === "MEN");
+  const other = services.filter((s) => s.category !== "WOMEN" && s.category !== "MEN");
 
   return NextResponse.json(
     {
@@ -77,7 +98,7 @@ export async function GET(
           day: "2-digit",
         }).format(new Date()),
       },
-      services: salon.services,
+      services,
       servicesByCategory: { women, men, other },
       stylists: salon.stylists.map((s) => {
         const hasPhoto = Boolean(s.photoUpdatedAt && s.photoMime);
