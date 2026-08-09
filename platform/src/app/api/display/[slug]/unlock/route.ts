@@ -1,20 +1,21 @@
 import { NextResponse } from "next/server";
 import {
-  attachDisplayUnlockCookie,
   clearDisplayUnlockCookieOn,
-  hasValidDisplayUnlock,
+  createDisplayUnlockToken,
   normalizeDisplayPin,
+  sessionBypassesDisplayPin,
   verifyDisplayPin,
 } from "@/lib/display-pin";
 import { prisma } from "@/lib/prisma";
 
 /**
- * Check whether this tablet needs / already has PIN unlock.
- * Staff login does NOT skip the PIN on the public tablet URL — only a valid
- * unlock cookie (set after entering the PIN) does.
+ * Check whether this tablet needs PIN unlock.
+ *
+ * Public tablet URL: always needs PIN when set (no cookie unlock).
+ * Embedded manager/stylist apps (`?mode=embedded`): signed-in staff skip PIN.
  */
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params;
@@ -40,19 +41,22 @@ export async function GET(
     });
   }
 
-  const unlocked = await hasValidDisplayUnlock({
-    id: salon.id,
-    displayPinSetAt: salon.displayPinSetAt,
-  });
-  return NextResponse.json({
+  const mode = new URL(req.url).searchParams.get("mode");
+  const unlockedBySession =
+    mode === "embedded" && (await sessionBypassesDisplayPin(salon.id));
+
+  const res = NextResponse.json({
     pinSet: true,
-    needsPin: !unlocked,
-    unlocked,
+    needsPin: !unlockedBySession,
+    unlocked: unlockedBySession,
     salon: { name: salon.name, slug: salon.slug },
   });
+  // Drop any legacy unlock cookies so refresh never auto-unlocks the tablet.
+  if (mode !== "embedded") clearDisplayUnlockCookieOn(res);
+  return res;
 }
 
-/** Unlock the salon display with the manager-set PIN. */
+/** Unlock the salon display with the manager-set PIN (returns in-memory token). */
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ slug: string }> }
@@ -70,15 +74,14 @@ export async function POST(
   });
   if (!salon) return NextResponse.json({ error: "Salon not found" }, { status: 404 });
 
-  const unlockedBody = {
-    ok: true,
-    unlocked: true,
-    needsPin: false,
-    salon: { name: salon.name, slug: salon.slug },
-  };
-
   if (!salon.displayPinHash) {
-    return NextResponse.json(unlockedBody);
+    return NextResponse.json({
+      ok: true,
+      unlocked: true,
+      needsPin: false,
+      unlockToken: null,
+      salon: { name: salon.name, slug: salon.slug },
+    });
   }
 
   let body: Record<string, unknown> = {};
@@ -98,19 +101,26 @@ export async function POST(
     return NextResponse.json({ error: "Incorrect PIN." }, { status: 401 });
   }
 
-  const res = NextResponse.json({
-    ...unlockedBody,
-    message: "Salon display unlocked.",
-  });
-  await attachDisplayUnlockCookie(res, {
+  const unlockToken = await createDisplayUnlockToken({
     id: salon.id,
     slug: salon.slug,
     displayPinSetAt: salon.displayPinSetAt,
   });
+
+  const res = NextResponse.json({
+    ok: true,
+    unlocked: true,
+    needsPin: false,
+    unlockToken,
+    salon: { name: salon.name, slug: salon.slug },
+    message: "Salon display unlocked.",
+  });
+  // Do not set a persistent cookie — refresh must ask for PIN again.
+  clearDisplayUnlockCookieOn(res);
   return res;
 }
 
-/** Lock this browser/tablet again (clears unlock cookie). */
+/** Lock this browser/tablet again. */
 export async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ slug: string }> }

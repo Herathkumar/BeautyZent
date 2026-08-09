@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { DisplayPinPad } from "@/components/DisplayPinPad";
+import { PadlockButton } from "@/components/PadlockButton";
 import { WalkInPanel } from "@/components/WalkInPanel";
 import { ZentraLabFooter } from "@/components/ZentraLabFooter";
 import { formatCad } from "@/lib/money";
@@ -499,19 +500,35 @@ export function DisplayBoard({
   const [needsPin, setNeedsPin] = useState(false);
   const [pinSet, setPinSet] = useState(false);
   const [unlockChecked, setUnlockChecked] = useState(false);
+  /** Public tablet unlock — memory only; refresh clears it and asks for PIN again. */
+  const [unlockToken, setUnlockToken] = useState("");
+  /** Manager/stylist in-app lock — hides the board until padlock unlock. */
+  const [boardLocked, setBoardLocked] = useState(false);
 
   const onWaitlistChange = useCallback((count: number) => {
     setWalkInWaiting(count);
   }, []);
 
+  const unlockHeaders = useMemo(() => {
+    if (!unlockToken) return {} as Record<string, string>;
+    return { "x-display-unlock": unlockToken };
+  }, [unlockToken]);
+
   const checkUnlock = useCallback(async () => {
     try {
-      const res = await fetch(`/api/display/${slug}/unlock`, {
+      const q = embedded ? "?mode=embedded" : "";
+      const res = await fetch(`/api/display/${slug}/unlock${q}`, {
         credentials: "same-origin",
       });
       const data = await res.json();
       if (data.salon) setSalon((prev) => ({ ...(prev || { name: "", slug }), ...data.salon }));
       setPinSet(Boolean(data.pinSet));
+      // Public tablet always needs a fresh PIN after load/refresh (no cookie unlock).
+      if (!embedded && data.pinSet) {
+        setUnlockToken("");
+        setNeedsPin(true);
+        return false;
+      }
       setNeedsPin(Boolean(data.needsPin));
       return !data.needsPin;
     } catch {
@@ -521,15 +538,17 @@ export function DisplayBoard({
     } finally {
       setUnlockChecked(true);
     }
-  }, [slug]);
+  }, [slug, embedded]);
 
   const load = useCallback(async () => {
     try {
       const r = await fetch(`/api/display/${slug}/today?days=${days}`, {
         credentials: "same-origin",
+        headers: unlockHeaders,
       });
       const data = await r.json();
       if (r.status === 401 && data.needsPin) {
+        setUnlockToken("");
         setNeedsPin(true);
         return;
       }
@@ -538,15 +557,17 @@ export function DisplayBoard({
     } catch {
       /* ignore transient poll errors */
     }
-  }, [slug, days]);
+  }, [slug, days, unlockHeaders]);
 
   const loadServices = useCallback(async () => {
     try {
       const r = await fetch(`/api/display/${slug}/services`, {
         credentials: "same-origin",
+        headers: unlockHeaders,
       });
       const data = await r.json();
       if (r.status === 401 && data.needsPin) {
+        setUnlockToken("");
         setNeedsPin(true);
         return;
       }
@@ -554,15 +575,17 @@ export function DisplayBoard({
     } catch {
       /* ignore */
     }
-  }, [slug]);
+  }, [slug, unlockHeaders]);
 
   const loadProducts = useCallback(async () => {
     try {
       const r = await fetch(`/api/display/${slug}/products`, {
         credentials: "same-origin",
+        headers: unlockHeaders,
       });
       const data = await r.json();
       if (r.status === 401 && data.needsPin) {
+        setUnlockToken("");
         setNeedsPin(true);
         return;
       }
@@ -570,7 +593,7 @@ export function DisplayBoard({
     } catch {
       /* ignore */
     }
-  }, [slug]);
+  }, [slug, unlockHeaders]);
 
   useEffect(() => {
     void checkUnlock();
@@ -645,24 +668,44 @@ export function DisplayBoard({
   ) {
     const res = await fetch(`/api/display/${slug}/appointments/${id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...unlockHeaders },
       body: JSON.stringify({ status, chargedCents, tipCents }),
     });
     const data = await res.json().catch(() => ({}));
     if (res.status === 401 && data.needsPin) {
+      setUnlockToken("");
       setNeedsPin(true);
       return;
     }
     void load();
   }
 
-  async function lockTablet() {
+  async function lockBoard() {
+    setUnlockToken("");
+    setAppointments([]);
+    if (embedded) {
+      setBoardLocked(true);
+      return;
+    }
     await fetch(`/api/display/${slug}/unlock`, {
       method: "DELETE",
       credentials: "same-origin",
     });
-    setAppointments([]);
     await checkUnlock();
+  }
+
+  async function unlockBoard() {
+    if (embedded) {
+      setBoardLocked(false);
+      const ok = await checkUnlock();
+      if (ok) {
+        void load();
+        void loadServices();
+        void loadProducts();
+      }
+      return;
+    }
+    // Public tablet unlock is via PIN pad (needsPin already true).
   }
 
   const waiting = todayAppts.filter(
@@ -683,13 +726,11 @@ export function DisplayBoard({
       <DisplayPinPad
         slug={slug}
         salonName={salon?.name}
-        onUnlocked={() => {
+        onUnlocked={(token) => {
+          setUnlockToken(token);
           setNeedsPin(false);
           setPinSet(true);
           setUnlockChecked(true);
-          void load();
-          void loadServices();
-          void loadProducts();
         }}
       />
     );
@@ -697,9 +738,25 @@ export function DisplayBoard({
 
   if (needsPin && embedded) {
     return (
-      <div className="rounded-3xl border border-[#c9a87c]/30 bg-[#2a211c] p-6 text-sm text-[#d4c4b0]">
-        Salon display PIN is set. Sign in as manager to use the board here. The public tablet
-        URL always asks for the PIN.
+      <div className="flex min-h-[40vh] flex-col items-center justify-center gap-4 rounded-3xl border border-[#c9a87c]/30 bg-[#2a211c] p-8 text-center">
+        <PadlockButton locked onClick={() => void unlockBoard()} data-testid="display-padlock" />
+        <p className="max-w-sm text-sm text-[#d4c4b0]">
+          Board is locked. Tap the padlock to unlock (stay signed in as manager or stylist).
+        </p>
+      </div>
+    );
+  }
+
+  if (boardLocked && embedded) {
+    return (
+      <div
+        className="flex min-h-[40vh] flex-col items-center justify-center gap-4 rounded-3xl border border-[#c9a87c]/30 bg-[#2a211c] p-8 text-center"
+        data-testid="manager-store-display-board"
+      >
+        <PadlockButton locked onClick={() => void unlockBoard()} data-testid="display-padlock" />
+        <p className="max-w-sm text-sm text-[#d4c4b0]">
+          Salon display locked. Tap the padlock to unlock.
+        </p>
       </div>
     );
   }
@@ -724,24 +781,25 @@ export function DisplayBoard({
             </h1>
           </div>
           <div className="flex flex-col items-end gap-2">
-            <p className="text-xl text-white/70">
-              {now.toLocaleString("en-CA", {
-                weekday: "short",
-                month: "short",
-                day: "numeric",
-                hour: "numeric",
-                minute: "2-digit",
-              })}
-            </p>
-            {!embedded && pinSet ? (
-              <button
-                type="button"
-                onClick={() => void lockTablet()}
-                className="rounded-full border border-white/20 px-3 py-1 text-xs font-semibold text-white/70 hover:text-white"
-              >
-                Lock tablet
-              </button>
-            ) : null}
+            <div className="flex items-center gap-3">
+              <p className="text-xl text-white/70">
+                {now.toLocaleString("en-CA", {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                  hour: "numeric",
+                  minute: "2-digit",
+                })}
+              </p>
+              {pinSet || embedded ? (
+                <PadlockButton
+                  locked={false}
+                  onClick={() => void lockBoard()}
+                  label="Lock board"
+                  data-testid="display-padlock"
+                />
+              ) : null}
+            </div>
           </div>
         </div>
 
@@ -921,6 +979,7 @@ export function DisplayBoard({
               pollMs={15_000}
               onCreated={load}
               onWaitlistChange={onWaitlistChange}
+              requestHeaders={unlockHeaders}
             />
           </section>
 
@@ -951,6 +1010,7 @@ export function DisplayBoard({
                   showForm
                   showWaitlist={false}
                   onCreated={load}
+                  requestHeaders={unlockHeaders}
                 />
               </div>
             ) : null}

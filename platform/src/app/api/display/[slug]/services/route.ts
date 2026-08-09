@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { serviceImageUrl } from "@/lib/service-image";
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params;
@@ -20,7 +20,7 @@ export async function GET(
   });
   if (!salon) return NextResponse.json({ error: "Salon not found" }, { status: 404 });
 
-  const locked = await assertDisplayAccess(salon);
+  const locked = await assertDisplayAccess(salon, req);
   if (locked) return locked;
 
   const services = await prisma.service.findMany({

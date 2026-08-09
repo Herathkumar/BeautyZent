@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 
 export const DISPLAY_UNLOCK_COOKIE = "fh_display_unlock";
+export const DISPLAY_UNLOCK_HEADER = "x-display-unlock";
 const PIN_RE = /^\d{4,6}$/;
 
 function secret() {
@@ -31,19 +32,9 @@ type UnlockPayload = {
   purpose: "display";
   salonId: string;
   slug: string;
-  /** Invalidates unlock cookies when the manager changes the PIN. */
+  /** Invalidates tokens when the manager changes the PIN. */
   pinSetAt: string;
 };
-
-function unlockCookieOptions() {
-  return {
-    httpOnly: true,
-    sameSite: "lax" as const,
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    // Session cookie — closing the browser requires PIN again.
-  };
-}
 
 export type DisplayUnlockSalon = {
   id: string;
@@ -60,33 +51,21 @@ export async function createDisplayUnlockToken(salon: DisplayUnlockSalon) {
     pinSetAt,
   } satisfies UnlockPayload)
     .setProtectedHeader({ alg: "HS256" })
-    // Hard cap even if the browser stays open on the floor.
+    // In-memory on the tablet — refresh clears it. Cap lifetime if a tab stays open.
     .setExpirationTime("12h")
     .sign(secret());
 }
 
-/** Prefer attaching the cookie on the Route Handler response (reliable in Next.js). */
-export async function attachDisplayUnlockCookie(
-  res: NextResponse,
-  salon: DisplayUnlockSalon
-) {
-  const token = await createDisplayUnlockToken(salon);
-  res.cookies.set(DISPLAY_UNLOCK_COOKIE, token, unlockCookieOptions());
-  return res;
-}
-
+/** Clear legacy unlock cookies (older builds persisted unlock across refresh). */
 export function clearDisplayUnlockCookieOn(res: NextResponse) {
   res.cookies.set(DISPLAY_UNLOCK_COOKIE, "", {
-    ...unlockCookieOptions(),
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
     maxAge: 0,
   });
   return res;
-}
-
-export async function issueDisplayUnlockCookie(salon: DisplayUnlockSalon) {
-  const token = await createDisplayUnlockToken(salon);
-  const jar = await cookies();
-  jar.set(DISPLAY_UNLOCK_COOKIE, token, unlockCookieOptions());
 }
 
 export async function clearDisplayUnlockCookie() {
@@ -94,19 +73,27 @@ export async function clearDisplayUnlockCookie() {
   jar.delete(DISPLAY_UNLOCK_COOKIE);
 }
 
-export async function hasValidDisplayUnlock(salon: {
-  id: string;
-  displayPinSetAt?: Date | null;
-}): Promise<boolean> {
-  const jar = await cookies();
-  const token = jar.get(DISPLAY_UNLOCK_COOKIE)?.value;
+export function unlockTokenFromRequest(req: Request | undefined): string | null {
+  if (!req) return null;
+  const header = req.headers.get(DISPLAY_UNLOCK_HEADER);
+  if (header?.trim()) return header.trim();
+  const auth = req.headers.get("authorization");
+  if (auth?.toLowerCase().startsWith("bearer ")) {
+    return auth.slice(7).trim() || null;
+  }
+  return null;
+}
+
+export async function isValidDisplayUnlockToken(
+  token: string | null | undefined,
+  salon: { id: string; displayPinSetAt?: Date | null }
+): Promise<boolean> {
   if (!token) return false;
   try {
     const { payload } = await jwtVerify(token, secret());
     const data = payload as unknown as UnlockPayload;
     if (data.purpose !== "display" || data.salonId !== salon.id) return false;
     const expected = salon.displayPinSetAt?.toISOString() ?? "";
-    // Older cookies without pinSetAt are rejected once a PIN version exists.
     return data.pinSetAt === expected;
   } catch {
     return false;
@@ -115,8 +102,7 @@ export async function hasValidDisplayUnlock(salon: {
 
 /**
  * Staff/stylist already signed into this salon can use the board inside
- * manager/stylist apps without the tablet PIN. The public /display/[slug]
- * tablet URL does NOT use this bypass — it always asks for the PIN.
+ * manager/stylist apps without the tablet PIN.
  */
 export async function sessionBypassesDisplayPin(salonId: string): Promise<boolean> {
   const session = await getSession();
@@ -131,14 +117,17 @@ export type DisplaySalonGate = {
 };
 
 /**
- * When a display PIN is set, require unlock cookie or a salon login session.
- * Returns a 401 Response when locked.
+ * When a display PIN is set, require an in-memory unlock token (header) or a
+ * salon login session. Public tablet does not use cookies — refresh asks again.
  */
-export async function assertDisplayAccess(salon: DisplaySalonGate): Promise<NextResponse | null> {
+export async function assertDisplayAccess(
+  salon: DisplaySalonGate,
+  req?: Request
+): Promise<NextResponse | null> {
   if (!salon.displayPinHash) return null;
   if (await sessionBypassesDisplayPin(salon.id)) return null;
   if (
-    await hasValidDisplayUnlock({
+    await isValidDisplayUnlockToken(unlockTokenFromRequest(req), {
       id: salon.id,
       displayPinSetAt: salon.displayPinSetAt ?? null,
     })

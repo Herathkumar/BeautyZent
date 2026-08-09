@@ -127,8 +127,8 @@ test.describe("Store display PIN", () => {
         });
         await expect(tablet.getByTestId("display-pin-pad")).toHaveCount(0);
 
-        // Lock again
-        await tablet.getByRole("button", { name: /lock tablet/i }).click();
+        // Lock again via padlock
+        await tablet.getByTestId("display-padlock").click();
         await expect(tablet.getByTestId("display-pin-pad")).toBeVisible({
           timeout: 15_000,
         });

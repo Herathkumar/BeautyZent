@@ -47,6 +47,8 @@ type Props = {
   onCreated?: () => void;
   /** Notify parent when waitlist length changes (display counters) */
   onWaitlistChange?: (count: number) => void;
+  /** Extra headers (e.g. tablet unlock token for public display APIs) */
+  requestHeaders?: Record<string, string>;
 };
 
 function formatWait(min: number | null | undefined) {
@@ -69,8 +71,10 @@ export function WalkInPanel({
   pollMs,
   onCreated,
   onWaitlistChange,
+  requestHeaders,
 }: Props) {
   const includeWaitlist = showWaitlist;
+  const extraHeaders = requestHeaders || {};
   const [services, setServices] = useState<Service[]>([]);
   const [stylists, setStylists] = useState<Stylist[]>([]);
   const [serviceId, setServiceId] = useState("");
@@ -104,8 +108,9 @@ export function WalkInPanel({
 
   const loadCatalog = useCallback(async () => {
     if (!showForm) return;
-    const res = await fetch(walkInBase);
+    const res = await fetch(walkInBase, { headers: extraHeaders });
     if (res.status === 401) {
+      if (mode === "display") return;
       window.location.href =
         mode === "stylist" ? "/stylist/login" : "/manager/login";
       return;
@@ -121,12 +126,13 @@ export function WalkInPanel({
     } else {
       setStylists(data.stylists || []);
     }
-  }, [walkInBase, mode, lockedStylistId, lockedStylistName, showForm]);
+  }, [walkInBase, mode, lockedStylistId, lockedStylistName, showForm, extraHeaders]);
 
   const loadWaitlist = useCallback(async () => {
     if (!includeWaitlist) return;
-    const res = await fetch(waitlistBase);
+    const res = await fetch(waitlistBase, { headers: extraHeaders });
     if (res.status === 401) {
+      if (mode === "display") return;
       window.location.href =
         mode === "stylist" ? "/stylist/login" : "/manager/login";
       return;
@@ -134,7 +140,7 @@ export function WalkInPanel({
     if (!res.ok) return;
     const data = await res.json();
     setWaitlist(data.waitlist || []);
-  }, [includeWaitlist, waitlistBase, mode]);
+  }, [includeWaitlist, waitlistBase, mode, extraHeaders]);
 
   const loadNext = useCallback(async () => {
     if (!showForm || !serviceId) {
@@ -147,7 +153,7 @@ export function WalkInPanel({
     } else if (!useNextAvailable && stylistId) {
       q.set("stylistId", stylistId);
     }
-    const res = await fetch(`${walkInBase}?${q}`);
+    const res = await fetch(`${walkInBase}?${q}`, { headers: extraHeaders });
     if (!res.ok) {
       setOptions([]);
       return;
@@ -163,6 +169,7 @@ export function WalkInPanel({
     walkInBase,
     mode,
     lockedStylistId,
+    extraHeaders,
   ]);
 
   useEffect(() => {
@@ -215,7 +222,7 @@ export function WalkInPanel({
     setMessage("");
     const res = await fetch(waitlistBase, {
       method: seatMethod,
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...extraHeaders },
       body: JSON.stringify({
         action: "seat",
         id: seatingId,
@@ -264,7 +271,7 @@ export function WalkInPanel({
 
     const res = await fetch(walkInBase, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...extraHeaders },
       body: JSON.stringify(body),
     });
     const data = await res.json();
@@ -305,7 +312,7 @@ export function WalkInPanel({
     }
     const res = await fetch(waitlistBase, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...extraHeaders },
       body: JSON.stringify(body),
     });
     const data = await res.json();
@@ -338,7 +345,7 @@ export function WalkInPanel({
     setBusy(true);
     const res = await fetch(waitlistBase, {
       method: seatMethod,
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...extraHeaders },
       body: JSON.stringify({ action: "cancel", id }),
     });
     setBusy(false);

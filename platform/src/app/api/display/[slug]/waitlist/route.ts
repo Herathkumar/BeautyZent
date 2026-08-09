@@ -15,14 +15,14 @@ async function loadSalon(slug: string) {
 }
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params;
   const salon = await loadSalon(slug);
   if (!salon) return NextResponse.json({ error: "Salon not found" }, { status: 404 });
 
-  const locked = await assertDisplayAccess(salon);
+  const locked = await assertDisplayAccess(salon, req);
   if (locked) return locked;
 
   const waitlist = await listWaitlistWithOptions(salon.id);
@@ -37,7 +37,7 @@ export async function POST(
   const salon = await loadSalon(slug);
   if (!salon) return NextResponse.json({ error: "Salon not found" }, { status: 404 });
 
-  const locked = await assertDisplayAccess(salon);
+  const locked = await assertDisplayAccess(salon, req);
   if (locked) return locked;
 
   let body: Record<string, unknown> = {};

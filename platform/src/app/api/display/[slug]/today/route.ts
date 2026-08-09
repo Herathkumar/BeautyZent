@@ -31,7 +31,7 @@ export async function GET(
   });
   if (!salon) return NextResponse.json({ error: "Salon not found" }, { status: 404 });
 
-  const locked = await assertDisplayAccess(salon);
+  const locked = await assertDisplayAccess(salon, req);
   if (locked) return locked;
 
   const url = new URL(req.url);

@@ -18,7 +18,7 @@ export async function GET(
   const salon = await loadSalon(slug);
   if (!salon) return NextResponse.json({ error: "Salon not found" }, { status: 404 });
 
-  const locked = await assertDisplayAccess(salon);
+  const locked = await assertDisplayAccess(salon, req);
   if (locked) return locked;
 
   const url = new URL(req.url);
@@ -69,7 +69,7 @@ export async function POST(
   const salon = await loadSalon(slug);
   if (!salon) return NextResponse.json({ error: "Salon not found" }, { status: 404 });
 
-  const locked = await assertDisplayAccess(salon);
+  const locked = await assertDisplayAccess(salon, req);
   if (locked) return locked;
 
   let body: Record<string, unknown> = {};

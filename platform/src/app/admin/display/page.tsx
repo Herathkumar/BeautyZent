@@ -154,7 +154,7 @@ export default function ManagerStoreDisplayPage() {
               </p>
               <p className="mt-1 text-sm text-[#6b5b52]">
                 {pinSet
-                  ? "PIN is active — tablet link asks for it every visit. Tap to manage."
+                  ? "PIN is active — tablet link asks for it on every open/refresh. Tap to manage."
                   : "Optional — lock the public tablet URL. Tap to set a PIN."}
               </p>
             </div>
@@ -170,7 +170,7 @@ export default function ManagerStoreDisplayPage() {
           </h2>
           <p className="mt-2 text-sm text-[#6b5b52]">
             {pinSet
-              ? "Anyone opening the tablet URL must enter the PIN. It stays unlocked on that browser until you lock it, close the browser, or about 12 hours — then PIN is required again. Manager/stylist apps stay unlocked while signed in."
+              ? "Anyone opening the tablet URL must enter the PIN. Refreshing or reopening the link asks for the PIN again. Manager/stylist apps stay unlocked while signed in."
               : "No PIN yet — the tablet URL is open to anyone with the link. Set a 4–6 digit PIN to lock it."}
           </p>
 

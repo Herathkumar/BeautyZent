@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { PadlockButton } from "@/components/PadlockButton";
 
 type Props = {
   slug: string;
   salonName?: string;
-  onUnlocked: () => void;
+  /** Unlock token is kept in memory only — refresh asks for PIN again. */
+  onUnlocked: (unlockToken: string) => void;
 };
 
 export function DisplayPinPad({ slug, salonName, onUnlocked }: Props) {
@@ -32,7 +34,7 @@ export function DisplayPinPad({ slug, salonName, onUnlocked }: Props) {
         setPin("");
         return;
       }
-      onUnlocked();
+      onUnlocked(typeof data.unlockToken === "string" ? data.unlockToken : "");
     } catch {
       setError("Could not unlock. Try again.");
       setPin("");
@@ -71,7 +73,8 @@ export function DisplayPinPad({ slug, salonName, onUnlocked }: Props) {
       className="flex min-h-screen flex-col items-center justify-center bg-[#1c1714] px-6 py-10 text-[#fffaf6]"
       data-testid="display-pin-pad"
     >
-      <p className="text-xs font-semibold tracking-[0.2em] text-[#c9a87c] uppercase">
+      <PadlockButton locked onClick={() => undefined} disabled label="Board locked" />
+      <p className="mt-4 text-xs font-semibold tracking-[0.2em] text-[#c9a87c] uppercase">
         Salon display
       </p>
       <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl">
