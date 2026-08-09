@@ -53,8 +53,7 @@ export async function POST(
     );
   }
 
-  const bytes = generated.bytes;
-  if (bytes.length > MAX_SERVICE_IMAGE_BYTES) {
+  if (generated.bytes.length > MAX_SERVICE_IMAGE_BYTES) {
     // Keep DB lean — refuse oversized payloads rather than silently truncating.
     return NextResponse.json(
       { error: "Generated image was too large. Try again." },
@@ -62,10 +61,12 @@ export async function POST(
     );
   }
 
+  const imageData: Uint8Array<ArrayBuffer> = generated.bytes;
+
   const updated = await prisma.service.update({
     where: { id: existing.id },
     data: {
-      imageData: bytes,
+      imageData,
       imageMime: generated.mime,
       imageUpdatedAt: new Date(),
     },

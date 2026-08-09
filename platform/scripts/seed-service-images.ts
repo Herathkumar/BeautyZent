@@ -15,7 +15,14 @@ const BY_NAME: Record<string, string> = {
   "Men's haircut": "mens-haircut.jpg",
   "Fade / taper": "fade-taper.jpg",
   "Beard tidy (with cut)": "beard-tidy.jpg",
+  "Eyebrow trimming": "eyebrow-trimming.jpg",
+  "Hair coloring": "hair-coloring.jpg",
+  "Beard trimming": "beard-trimming.jpg",
+  "Women's haircut": "womens-haircut-style.jpg",
 };
+
+/** Only fill services that have no image yet (default). Pass --all to overwrite. */
+const forceAll = process.argv.includes("--all");
 
 async function main() {
   const dir = path.join(process.cwd(), "prisma", "seed-assets", "service-images");
@@ -24,19 +31,32 @@ async function main() {
     throw new Error("Salon fhsalon not found. Run db:seed first.");
   }
 
+  const services = await prisma.service.findMany({
+    where: { salonId: salon.id },
+    select: {
+      id: true,
+      name: true,
+      imageMime: true,
+      imageUpdatedAt: true,
+    },
+  });
+
   let updated = 0;
-  for (const [name, file] of Object.entries(BY_NAME)) {
+  let skipped = 0;
+  for (const service of services) {
+    const file = BY_NAME[service.name];
+    const hasImage = Boolean(service.imageUpdatedAt && service.imageMime);
+    if (!file) {
+      if (!hasImage) console.warn(`No asset mapped for: ${service.name}`);
+      continue;
+    }
+    if (hasImage && !forceAll) {
+      skipped += 1;
+      continue;
+    }
     const full = path.join(dir, file);
     if (!existsSync(full)) {
       console.warn(`Missing asset: ${full}`);
-      continue;
-    }
-    const service = await prisma.service.findFirst({
-      where: { salonId: salon.id, name },
-      select: { id: true, imageUpdatedAt: true },
-    });
-    if (!service) {
-      console.warn(`Service not found: ${name}`);
       continue;
     }
     const bytes = readFileSync(full);
@@ -49,9 +69,9 @@ async function main() {
       },
     });
     updated += 1;
-    console.log(`Updated image: ${name} (${bytes.length} bytes)`);
+    console.log(`Updated image: ${service.name} (${bytes.length} bytes)`);
   }
-  console.log(`Done. ${updated} service image(s) stored.`);
+  console.log(`Done. ${updated} updated, ${skipped} already had images.`);
 }
 
 main()

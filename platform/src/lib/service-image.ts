@@ -4,7 +4,7 @@
  */
 
 export type ServiceImageAiResult =
-  | { ok: true; mime: string; bytes: Uint8Array; model: string }
+  | { ok: true; mime: string; bytes: Uint8Array<ArrayBuffer>; model: string }
   | { ok: false; error: string; status?: number };
 
 function apiKey() {
@@ -155,7 +155,8 @@ export async function generateServiceImage(opts: {
     try {
       const decoded = Buffer.from(inline.data, "base64");
       if (!decoded.length) continue;
-      const bytes = new Uint8Array(decoded.byteLength);
+      // Copy into a real ArrayBuffer so Prisma Bytes typing accepts it.
+      const bytes: Uint8Array<ArrayBuffer> = new Uint8Array(decoded.byteLength);
       bytes.set(decoded);
       return {
         ok: true,

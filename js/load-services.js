@@ -12,11 +12,15 @@
 
   const LOCAL_IMAGES = {
     "Women's haircut & style": "images/services/menu/womens-haircut-style.jpg",
+    "Women's haircut": "images/services/menu/womens-haircut-style.jpg",
     "Trim & tidy": "images/services/menu/trim-tidy.jpg",
     "Bang / fringe trim": "images/services/menu/bang-fringe-trim.jpg",
     "Men's haircut": "images/services/menu/mens-haircut.jpg",
     "Fade / taper": "images/services/menu/fade-taper.jpg",
     "Beard tidy (with cut)": "images/services/menu/beard-tidy.jpg",
+    "Eyebrow trimming": "images/services/menu/eyebrow-trimming.jpg",
+    "Hair coloring": "images/services/menu/hair-coloring.jpg",
+    "Beard trimming": "images/services/menu/beard-trimming.jpg",
   };
 
   const womenList = document.querySelector("[data-services-women]");
