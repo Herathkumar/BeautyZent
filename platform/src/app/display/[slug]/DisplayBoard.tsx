@@ -31,7 +31,7 @@ type SalonInfo = {
   today?: string | null;
 };
 
-type Tab = "today" | "future" | "services";
+type Tab = "today" | "future" | "services" | "products";
 
 type MenuService = {
   id: string;
@@ -40,6 +40,17 @@ type MenuService = {
   category: string;
   durationMin: number;
   priceCents: number;
+  hasImage?: boolean;
+  imageUrl?: string | null;
+};
+
+type MenuProduct = {
+  id: string;
+  name: string;
+  description: string | null;
+  sku: string | null;
+  priceCents: number;
+  stockQty: number;
   hasImage?: boolean;
   imageUrl?: string | null;
 };
@@ -190,6 +201,7 @@ function StylistLine({ a }: { a: Appt }) {
 
 const MENU_PAGE_SIZE = 5;
 const MENU_SLIDE_MS = 7000;
+const PRODUCT_PAGE_SIZE = 10;
 
 function ServiceMenuColumn({
   label,
@@ -270,15 +282,15 @@ function ServiceMenuColumn({
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-baseline gap-2">
-                        <h4 className="truncate font-[family-name:var(--font-display)] text-base leading-tight text-[#fffaf6] sm:text-lg">
+                      <div className="flex w-full items-baseline gap-2">
+                        <h4 className="min-w-0 truncate font-[family-name:var(--font-display)] text-base leading-tight text-[#fffaf6] sm:text-lg">
                           {s.name}
                         </h4>
                         <span
-                          className="hidden min-w-[1.5rem] flex-1 border-b border-dotted border-white/20 sm:block"
+                          className="min-w-[1rem] flex-1 border-b border-dotted border-white/20"
                           aria-hidden
                         />
-                        <p className="shrink-0 font-[family-name:var(--font-display)] text-base font-medium tracking-wide text-[#f0c987] sm:text-lg">
+                        <p className="shrink-0 text-right font-[family-name:var(--font-display)] text-base font-medium tracking-wide text-[#f0c987] tabular-nums sm:text-lg">
                           {formatCad(s.priceCents)}
                         </p>
                       </div>
@@ -313,6 +325,131 @@ function ServiceMenuColumn({
   );
 }
 
+function ProductMenuRow({ item }: { item: MenuProduct | undefined }) {
+  if (!item) {
+    return <li className="h-[4.25rem] sm:h-[4.75rem]" aria-hidden />;
+  }
+  return (
+    <li
+      className="group flex h-[4.25rem] items-center gap-3 sm:h-[4.75rem] sm:gap-3.5"
+      data-testid={`display-product-${item.id}`}
+    >
+      <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full ring-1 ring-[#c9a87c]/35 sm:h-14 sm:w-14">
+        {item.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={item.imageUrl}
+            alt=""
+            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-[#2a211c] text-[10px] text-white/35">
+            •
+          </div>
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex w-full items-baseline gap-2">
+          <h4 className="min-w-0 truncate font-[family-name:var(--font-display)] text-base leading-tight text-[#fffaf6] sm:text-lg">
+            {item.name}
+          </h4>
+          <span
+            className="min-w-[1rem] flex-1 border-b border-dotted border-white/20"
+            aria-hidden
+          />
+          <p className="shrink-0 text-right font-[family-name:var(--font-display)] text-base font-medium tracking-wide text-[#f0c987] tabular-nums sm:text-lg">
+            {formatCad(item.priceCents)}
+          </p>
+        </div>
+        <p className="mt-0.5 text-[11px] text-white/45 sm:text-xs">
+          {item.sku ? `${item.sku} · ` : ""}
+          {item.stockQty > 0 ? "In stock" : "Ask stylist"}
+        </p>
+      </div>
+    </li>
+  );
+}
+
+function ProductMenuBoard({ items }: { items: MenuProduct[] }) {
+  const pageCount = Math.max(1, Math.ceil(items.length / PRODUCT_PAGE_SIZE));
+  const [page, setPage] = useState(0);
+
+  useEffect(() => {
+    setPage(0);
+  }, [items.length]);
+
+  useEffect(() => {
+    if (pageCount <= 1) return;
+    const id = window.setInterval(() => {
+      setPage((p) => (p + 1) % pageCount);
+    }, MENU_SLIDE_MS);
+    return () => window.clearInterval(id);
+  }, [pageCount]);
+
+  const pages = useMemo(() => {
+    const chunks: MenuProduct[][] = [];
+    for (let i = 0; i < items.length; i += PRODUCT_PAGE_SIZE) {
+      chunks.push(items.slice(i, i + PRODUCT_PAGE_SIZE));
+    }
+    return chunks.length ? chunks : [[]];
+  }, [items]);
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="mb-2 flex items-baseline justify-between gap-2">
+        <p className="text-[10px] tracking-[0.18em] text-white/40 uppercase">
+          {items.length} products
+          {pageCount > 1 ? ` · ${page + 1}/${pageCount}` : ""}
+        </p>
+      </div>
+      <div className="relative min-h-0 flex-1 overflow-hidden rounded-3xl border border-[#c9a87c]/20 bg-[#1c1714]/55 px-3 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-md sm:px-4 sm:py-4">
+        <div
+          className="flex h-full transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
+          style={{ transform: `translateX(-${page * 100}%)` }}
+        >
+          {pages.map((pageItems, pageIndex) => {
+            const left = pageItems.slice(0, 5);
+            const right = pageItems.slice(5, 10);
+            return (
+              <div
+                key={`products-page-${pageIndex}`}
+                className="grid h-full w-full shrink-0 gap-4 lg:grid-cols-2 lg:gap-6"
+                aria-hidden={pageIndex !== page}
+              >
+                <ul className="flex h-full flex-col justify-evenly">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <ProductMenuRow key={`L-${pageIndex}-${i}`} item={left[i]} />
+                  ))}
+                </ul>
+                <ul className="flex h-full flex-col justify-evenly">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <ProductMenuRow key={`R-${pageIndex}-${i}`} item={right[i]} />
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      {pageCount > 1 ? (
+        <div className="mt-2 flex items-center justify-center gap-2">
+          {pages.map((_, i) => (
+            <button
+              key={`products-dot-${i}`}
+              type="button"
+              aria-label={`Show products page ${i + 1}`}
+              onClick={() => setPage(i)}
+              className={`h-1.5 rounded-full transition ${
+                i === page ? "w-5 bg-[#f0c987]" : "w-1.5 bg-white/30 hover:bg-white/50"
+              }`}
+            />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function DisplayBoard({
   slug,
   /** When true, board sits inside manager chrome (not the tablet URL). */
@@ -323,6 +460,7 @@ export function DisplayBoard({
 }) {
   const [appointments, setAppointments] = useState<Appt[]>([]);
   const [services, setServices] = useState<MenuService[]>([]);
+  const [products, setProducts] = useState<MenuProduct[]>([]);
   const [salon, setSalon] = useState<SalonInfo | null>(null);
   const [days, setDays] = useState(14);
   const [tab, setTab] = useState<Tab>("today");
@@ -389,6 +527,22 @@ export function DisplayBoard({
     }
   }, [slug]);
 
+  const loadProducts = useCallback(async () => {
+    try {
+      const r = await fetch(`/api/display/${slug}/products`, {
+        credentials: "same-origin",
+      });
+      const data = await r.json();
+      if (r.status === 401 && data.needsPin) {
+        setNeedsPin(true);
+        return;
+      }
+      setProducts(data.products || []);
+    } catch {
+      /* ignore */
+    }
+  }, [slug]);
+
   useEffect(() => {
     void checkUnlock();
   }, [checkUnlock]);
@@ -397,21 +551,24 @@ export function DisplayBoard({
     if (!unlockChecked || needsPin) return;
     void load();
     void loadServices();
+    void loadProducts();
     const poll = setInterval(() => {
       void load();
       if (tab === "services") void loadServices();
+      if (tab === "products") void loadProducts();
     }, 15000);
     const clock = setInterval(() => setNow(new Date()), 30000);
     return () => {
       clearInterval(poll);
       clearInterval(clock);
     };
-  }, [load, loadServices, unlockChecked, needsPin, tab]);
+  }, [load, loadServices, loadProducts, unlockChecked, needsPin, tab]);
 
   useEffect(() => {
-    if (!unlockChecked || needsPin || tab !== "services") return;
-    void loadServices();
-  }, [tab, unlockChecked, needsPin, loadServices]);
+    if (!unlockChecked || needsPin) return;
+    if (tab === "services") void loadServices();
+    if (tab === "products") void loadProducts();
+  }, [tab, unlockChecked, needsPin, loadServices, loadProducts]);
 
   const tKey = todayKey(salon?.timezone, salon?.today);
   /** Floor list: open bookings only — hide completed / no-show / cancelled */
@@ -594,6 +751,19 @@ export function DisplayBoard({
             >
               Services
               <span className="ml-2 opacity-80">({services.length})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab("products")}
+              data-testid="display-tab-products"
+              className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
+                tab === "products"
+                  ? "bg-[#c9a87c] text-[#1c1714]"
+                  : "text-white/70 hover:text-white"
+              }`}
+            >
+              Products
+              <span className="ml-2 opacity-80">({products.length})</span>
             </button>
           </div>
 
@@ -920,10 +1090,58 @@ export function DisplayBoard({
         </div>
       )}
 
+      {tab === "products" && (
+        <div
+          className="relative flex min-h-0 flex-1 flex-col overflow-hidden"
+          data-testid="display-products-section"
+        >
+          <div className="pointer-events-none absolute inset-0" aria-hidden>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/display-promo.jpg"
+              alt=""
+              className="h-full w-full scale-105 object-cover opacity-40"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-[#1c1714]/92 via-[#1c1714]/88 to-[#1c1714]/96" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_80%_0%,rgba(240,201,135,0.14),transparent_50%)]" />
+          </div>
+
+          <div
+            className={`relative z-[1] flex min-h-0 flex-1 flex-col ${
+              embedded ? "px-4 py-4 sm:px-5" : "px-5 py-4 sm:px-8 sm:py-5"
+            }`}
+          >
+            <header className="mb-4 flex flex-wrap items-end justify-between gap-3 border-b border-[#c9a87c]/25 pb-3">
+              <div className="min-w-0">
+                <p className="text-[10px] font-semibold tracking-[0.28em] text-[#f0c987] uppercase">
+                  Farzana Hair Salon
+                </p>
+                <h2 className="mt-1 font-[family-name:var(--font-display)] text-3xl leading-none tracking-tight sm:text-4xl">
+                  Retail
+                </h2>
+              </div>
+              <p className="max-w-sm text-right text-xs leading-relaxed text-white/60 sm:text-sm">
+                Take home the same care we use in the chair.
+                <br className="hidden sm:block" />
+                Ask your stylist what’s best for your hair.
+              </p>
+            </header>
+
+            {products.length === 0 ? (
+              <p className="rounded-2xl border border-white/10 bg-black/20 p-6 text-white/60 backdrop-blur-sm">
+                No retail products listed yet.
+              </p>
+            ) : (
+              <ProductMenuBoard items={products} />
+            )}
+          </div>
+        </div>
+      )}
+
       <ZentraLabFooter
-        compact={tab === "services"}
+        compact={tab === "services" || tab === "products"}
         className={
-          tab === "services"
+          tab === "services" || tab === "products"
             ? "relative z-[1] !mt-0 border-[#c9a87c]/15 !py-2.5 text-[11px] [&_.zentralab-footer-meta]:hidden"
             : undefined
         }

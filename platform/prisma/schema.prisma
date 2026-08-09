@@ -222,6 +222,10 @@ model Product {
   priceCents  Int
   stockQty    Int      @default(0)
   active      Boolean  @default(true)
+  /// Retail shelf photo (JPEG/PNG) — camera, gallery, or AI.
+  imageData      Bytes?
+  imageMime      String?
+  imageUpdatedAt DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

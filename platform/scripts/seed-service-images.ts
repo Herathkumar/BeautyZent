@@ -19,6 +19,8 @@ const BY_NAME: Record<string, string> = {
   "Hair coloring": "hair-coloring.jpg",
   "Beard trimming": "beard-trimming.jpg",
   "Women's haircut": "womens-haircut-style.jpg",
+  "Blow dry & style": "blow-dry-style.jpg",
+  "Hot towel shave": "hot-towel-shave.jpg",
 };
 
 /** Only fill services that have no image yet (default). Pass --all to overwrite. */

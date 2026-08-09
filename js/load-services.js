@@ -21,6 +21,8 @@
     "Eyebrow trimming": "images/services/menu/eyebrow-trimming.jpg",
     "Hair coloring": "images/services/menu/hair-coloring.jpg",
     "Beard trimming": "images/services/menu/beard-trimming.jpg",
+    "Blow dry & style": "images/services/menu/blow-dry-style.jpg",
+    "Hot towel shave": "images/services/menu/hot-towel-shave.jpg",
   };
 
   const womenList = document.querySelector("[data-services-women]");
