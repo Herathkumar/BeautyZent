@@ -36,10 +36,10 @@ html.stylist-shell,html.stylist-shell body{
   color:#f4fbfa;
   color-scheme:dark
 }
+/* Keep html/body nav-black so iOS never shows a white strip under the dock.
+   Page mint gradient lives on .stylist-theme (same idea as manager cream on .admin-theme). */
 html.stylist-shell.stylist-shell--light,html.stylist-shell.stylist-shell--light body{
-  background:radial-gradient(900px 460px at 85% -8%,rgba(42,143,130,.12),transparent 55%),
-    radial-gradient(720px 380px at 0% 100%,rgba(56,110,120,.08),transparent 52%),
-    linear-gradient(180deg,#f4fbfa 0%,#e8f4f1 48%,#dceee9 100%);
+  background:#0e1618;
   color:#0e1618;
   color-scheme:light
 }
@@ -93,10 +93,9 @@ const BOOT_SCRIPT = `
         // Light preference → dark surfaces; dark preference → light surfaces.
         if(st!=="light"){
           document.documentElement.classList.add("stylist-shell--light");
-          if(sm) sm.setAttribute("content","#eef7f5");
-        }else if(sm){
-          sm.setAttribute("content","#0e1618");
         }
+        // Always match the black bottom nav (avoids light home-indicator strip on iPhone).
+        if(sm) sm.setAttribute("content","#0e1618");
       }catch(e){}
     }
     else if(book){
