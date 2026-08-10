@@ -456,15 +456,30 @@ a {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: var(--app-nav-bottom, 0px);
   z-index: 100;
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.15rem;
-  padding: 0.45rem 0.4rem calc(0.45rem + env(safe-area-inset-bottom));
+  padding: 0.45rem 0.4rem calc(0.45rem + env(safe-area-inset-bottom, 0px));
   background: #0e1618;
   border-top: 1px solid rgba(201, 168, 124, 0.28);
   box-shadow: 0 -8px 24px rgba(14, 22, 24, 0.28);
+  overflow: visible;
+}
+
+/* Paint past the bar so iOS never shows page white under the dock. */
+.admin-theme .admin-bottom-nav::after,
+.admin-bottom-nav::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 100vh;
+  height: 100dvh;
+  background: #0e1618;
+  pointer-events: none;
 }
 
 /* Real desktops only — keep phone bottom nav in landscape / “desktop site” */
@@ -828,18 +843,32 @@ a {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: var(--app-nav-bottom, 0px);
   z-index: 100;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
   gap: 0.25rem;
-  padding: 0.55rem 0.75rem calc(0.55rem + env(safe-area-inset-bottom));
+  padding: 0.55rem 0.75rem calc(0.55rem + env(safe-area-inset-bottom, 0px));
   background: #0e1618;
   border-top: 1px solid rgba(126, 196, 184, 0.32);
   pointer-events: auto;
   touch-action: manipulation;
   -webkit-user-select: none;
   user-select: none;
+  overflow: visible;
+}
+
+.stylist-theme .stylist-bottom-nav::after,
+.stylist-bottom-nav::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 100vh;
+  height: 100dvh;
+  background: #0e1618;
+  pointer-events: none;
 }
 
 @media (min-width: 768px) and (hover: hover) and (pointer: fine) {

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { useDockToVisualViewport } from "@/lib/useDockToVisualViewport";
 
 const MONEY_LINKS = [
   { href: "/manager/earnings", label: "Store Earnings", hint: "Revenue & activity" },
@@ -42,6 +43,8 @@ export function AdminBottomNav() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useDockToVisualViewport(mounted && !isDesktop);
 
   useEffect(() => {
     setSheet(null);
