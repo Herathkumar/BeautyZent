@@ -833,11 +833,11 @@ a {
   background: rgba(126, 196, 184, 0.12);
 }
 
-/* Lean iPhone dock — same model as client .book-bottom-nav (52px + home indicator). */
+/* Lean iPhone dock — 52px tabs; home-indicator filled black even when env(safe-area) is 0. */
 .stylist-theme .stylist-bottom-nav,
 .stylist-bottom-nav {
-  --app-dock-h: calc(52px + constant(safe-area-inset-bottom));
-  --app-dock-h: calc(52px + env(safe-area-inset-bottom, 0px));
+  --stylist-dock-pad: constant(safe-area-inset-bottom);
+  --stylist-dock-pad: env(safe-area-inset-bottom, 0px);
   position: fixed;
   left: 0;
   right: 0;
@@ -848,17 +848,55 @@ a {
   grid-template-columns: 1fr 1fr 1fr 1fr;
   align-items: stretch;
   gap: 0;
-  height: var(--app-dock-h);
+  height: calc(52px + var(--stylist-dock-pad));
   padding: 0;
-  padding-bottom: constant(safe-area-inset-bottom);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-bottom: var(--stylist-dock-pad);
   background: #0e1618;
   border-top: 1px solid rgba(201, 168, 124, 0.28);
-  box-shadow: 0 -6px 18px rgba(14, 22, 24, 0.22);
+  /* Soft lift + solid fill below the bar (covers home-indicator / PWA gap). */
+  box-shadow:
+    0 -6px 18px rgba(14, 22, 24, 0.22),
+    0 40px 0 0 #0e1618;
   pointer-events: auto;
   touch-action: manipulation;
   -webkit-user-select: none;
   user-select: none;
+}
+
+/* iOS: env() is often 0 in Home Screen PWAs — keep a real home-indicator pad. */
+@supports (-webkit-touch-callout: none) {
+  .stylist-theme .stylist-bottom-nav,
+  .stylist-bottom-nav {
+    --stylist-dock-pad: max(34px, constant(safe-area-inset-bottom));
+    --stylist-dock-pad: max(34px, env(safe-area-inset-bottom, 0px));
+  }
+}
+
+.stylist-bottom-nav-safe {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 99;
+  height: constant(safe-area-inset-bottom);
+  height: env(safe-area-inset-bottom, 0px);
+  min-height: 34px;
+  background: #0e1618;
+  pointer-events: none;
+}
+
+@supports not (-webkit-touch-callout: none) {
+  .stylist-bottom-nav-safe {
+    min-height: 0;
+    height: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+html.stylist-shell,
+html.stylist-shell body,
+html.stylist-shell.stylist-shell--light,
+html.stylist-shell.stylist-shell--light body {
+  background: #0e1618;
 }
 
 @media (min-width: 768px) and (hover: hover) and (pointer: fine) {

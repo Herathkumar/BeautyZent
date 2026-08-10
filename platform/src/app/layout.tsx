@@ -36,10 +36,10 @@ html.stylist-shell,html.stylist-shell body{
   color:#f4fbfa;
   color-scheme:dark
 }
+/* Dock black under the lean nav — page mint stays on .stylist-theme only.
+   Light theme-color was painting a white/mint strip in the iPhone home-indicator. */
 html.stylist-shell.stylist-shell--light,html.stylist-shell.stylist-shell--light body{
-  background:radial-gradient(900px 460px at 85% -8%,rgba(42,143,130,.12),transparent 55%),
-    radial-gradient(720px 380px at 0% 100%,rgba(56,110,120,.08),transparent 52%),
-    linear-gradient(180deg,#f4fbfa 0%,#e8f4f1 48%,#dceee9 100%);
+  background:#0e1618;
   color:#0e1618;
   color-scheme:light
 }
@@ -93,10 +93,9 @@ const BOOT_SCRIPT = `
         // Light preference → dark surfaces; dark preference → light surfaces.
         if(st!=="light"){
           document.documentElement.classList.add("stylist-shell--light");
-          if(sm) sm.setAttribute("content","#eef7f5");
-        }else if(sm){
-          sm.setAttribute("content","#0e1618");
         }
+        // Always nav-black — light theme-color shows as a white strip under the dock on iPhone.
+        if(sm) sm.setAttribute("content","#0e1618");
       }catch(e){}
     }
     else if(book){
