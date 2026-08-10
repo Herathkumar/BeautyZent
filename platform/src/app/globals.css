@@ -833,11 +833,11 @@ a {
   background: rgba(126, 196, 184, 0.12);
 }
 
-/* Lean iPhone dock — 52px tabs; home-indicator filled black even when env(safe-area) is 0. */
+/* Exact same dock metrics as manager .admin-bottom-nav (4 tabs). */
 .stylist-theme .stylist-bottom-nav,
 .stylist-bottom-nav {
-  --stylist-dock-pad: constant(safe-area-inset-bottom);
-  --stylist-dock-pad: env(safe-area-inset-bottom, 0px);
+  --app-dock-h: calc(52px + constant(safe-area-inset-bottom));
+  --app-dock-h: calc(52px + env(safe-area-inset-bottom, 0px));
   position: fixed;
   left: 0;
   right: 0;
@@ -845,58 +845,20 @@ a {
   z-index: 100;
   box-sizing: border-box;
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   align-items: stretch;
   gap: 0;
-  height: calc(52px + var(--stylist-dock-pad));
+  height: var(--app-dock-h);
   padding: 0;
-  padding-bottom: var(--stylist-dock-pad);
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   background: #0e1618;
   border-top: 1px solid rgba(201, 168, 124, 0.28);
-  /* Soft lift + solid fill below the bar (covers home-indicator / PWA gap). */
-  box-shadow:
-    0 -6px 18px rgba(14, 22, 24, 0.22),
-    0 40px 0 0 #0e1618;
+  box-shadow: 0 -6px 18px rgba(14, 22, 24, 0.22);
   pointer-events: auto;
   touch-action: manipulation;
   -webkit-user-select: none;
   user-select: none;
-}
-
-/* iOS: env() is often 0 in Home Screen PWAs — keep a real home-indicator pad. */
-@supports (-webkit-touch-callout: none) {
-  .stylist-theme .stylist-bottom-nav,
-  .stylist-bottom-nav {
-    --stylist-dock-pad: max(34px, constant(safe-area-inset-bottom));
-    --stylist-dock-pad: max(34px, env(safe-area-inset-bottom, 0px));
-  }
-}
-
-.stylist-bottom-nav-safe {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 99;
-  height: constant(safe-area-inset-bottom);
-  height: env(safe-area-inset-bottom, 0px);
-  min-height: 34px;
-  background: #0e1618;
-  pointer-events: none;
-}
-
-@supports not (-webkit-touch-callout: none) {
-  .stylist-bottom-nav-safe {
-    min-height: 0;
-    height: env(safe-area-inset-bottom, 0px);
-  }
-}
-
-html.stylist-shell,
-html.stylist-shell body,
-html.stylist-shell.stylist-shell--light,
-html.stylist-shell.stylist-shell--light body {
-  background: #0e1618;
 }
 
 @media (min-width: 768px) and (hover: hover) and (pointer: fine) {
@@ -924,8 +886,7 @@ html.stylist-shell.stylist-shell--light body {
   justify-content: center;
   gap: 2px;
   min-width: 0;
-  min-height: 0;
-  margin: 4px 3px;
+  margin: 4px 2px;
   padding: 2px 2px;
   border-radius: 0.55rem;
   font-size: 10px;
