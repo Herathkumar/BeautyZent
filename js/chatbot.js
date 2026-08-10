@@ -1,6 +1,4 @@
 (function () {
-  const SALON_PHONE = "19059202277";
-  const SALON_PHONE_DISPLAY = "905-920-2277";
   const SALON_WHATSAPP = "19059202277";
   const BOOK_ONLINE_URL = "https://fhsalon.vercel.app/book/fhsalon";
 
@@ -11,22 +9,19 @@
     placeholder: "Type your message...",
     send: "Send",
     greeting:
-      "Hi! I'm the Farzana Hair Salon assistant.\n\nI can help with services, location, hours, and booking. You can book online in a few taps — or I can connect you by phone or WhatsApp.\n\nWhat would you like?",
+      "Hi! I'm the Farzana Hair Salon assistant.\n\nI can help with services, location, hours, and booking. The fastest way is to book online — pick a service, stylist, and time in a few taps.\n\nWhat would you like?",
     askName: "Great. What's your name?",
     askService: "Thanks, {name}! Which service — women's cut, men's cut, or something else?",
     askWhen: "When would you like to come in? (day and time, or say flexible)",
     askPhone: "Best phone number to reach you? (or type skip)",
     summary:
-      "Perfect. Here's what I have:\n\n• Name: {name}\n• Service: {service}\n• When: {when}\n• Phone: {phone}\n\nI can open WhatsApp so the salon can confirm your appointment — or you can book online now.",
+      "Perfect. Here's what I have:\n\n• Name: {name}\n• Service: {service}\n• When: {when}\n• Phone: {phone}\n\nYou can book online now — or open WhatsApp so the salon can confirm.",
     sendWhatsApp: "Send on WhatsApp",
     bookOnline: "Book online now",
     startOver: "Start over",
-    callUs: "Call salon",
     requestCallback: "Request a callback",
     thanks:
-      "Opening WhatsApp with your request. If it doesn't open, call us at " +
-      SALON_PHONE_DISPLAY +
-      ".",
+      "Opening WhatsApp with your request. If it doesn't open, book online and the salon will see your appointment.",
     skipped: "Not provided",
     topics: {
       book: "Book a haircut",
@@ -44,9 +39,7 @@
       location:
         "We're at 8 Taywood Crt, Dundas, ON L9H 7A2.\n\nEasy to find on Taywood Court. Open in Maps from our Visit page, or book a visit online.",
       hours:
-        "Please call " +
-        SALON_PHONE_DISPLAY +
-        " for today's hours and openings — they can confirm the best time for you.\n\nOr pick a time online.",
+        "Hours can vary by day — the surest way is to pick a time that works for you with online booking.\n\nWant to book now?",
     },
   };
 
@@ -198,12 +191,6 @@
         label: copy.requestCallback,
         onClick: () => startBooking(),
       },
-      {
-        label: copy.callUs,
-        onClick: () => {
-          window.location.href = "tel:" + SALON_PHONE;
-        },
-      },
     ]);
   }
 
@@ -232,14 +219,8 @@
           botSay(copy.askName);
         },
       },
-      {
-        label: copy.callUs,
-        onClick: () => {
-          window.location.href = "tel:" + SALON_PHONE;
-        },
-      },
     ]);
-    botSay("You can book online right away, request a callback, or call the salon.");
+    botSay("You can book online right away, or request a callback.");
   }
 
   function showTopicChips() {
@@ -275,17 +256,9 @@
             }
 
             state.step = "other";
-            botSay("Tell me what you need — I'll do my best to help, or connect you with the salon.");
+            botSay("Tell me what you need — I'll do my best to help, or you can book online.");
           },
         }))
-        .concat([
-          {
-            label: copy.callUs,
-            onClick: () => {
-              window.location.href = "tel:" + SALON_PHONE;
-            },
-          },
-        ])
     );
   }
 
@@ -298,15 +271,7 @@
           openBookOnline();
           addMessage(copy.bookOnline, "user");
           clearQuick();
-          addChips([
-            { label: copy.startOver, onClick: () => startConversation(true) },
-            {
-              label: copy.callUs,
-              onClick: () => {
-                window.location.href = "tel:" + SALON_PHONE;
-              },
-            },
-          ]);
+          addChips([{ label: copy.startOver, onClick: () => startConversation(true) }]);
         },
       },
       {
@@ -318,24 +283,12 @@
           addChips([
             { label: copy.bookOnline, primary: true, onClick: () => openBookOnline() },
             { label: copy.startOver, onClick: () => startConversation(true) },
-            {
-              label: copy.callUs,
-              onClick: () => {
-                window.location.href = "tel:" + SALON_PHONE;
-              },
-            },
           ]);
         },
       },
       {
         label: copy.startOver,
         onClick: () => startConversation(true),
-      },
-      {
-        label: copy.callUs,
-        onClick: () => {
-          window.location.href = "tel:" + SALON_PHONE;
-        },
       },
     ]);
   }
@@ -369,9 +322,7 @@
         return;
       }
       botSay(
-        "Thanks! For the quickest answer, call " +
-          SALON_PHONE_DISPLAY +
-          ", or I can help you book online.",
+        "Thanks! The quickest answer is to book online — I can open that for you.",
         offerBookingFollowUp
       );
       return;

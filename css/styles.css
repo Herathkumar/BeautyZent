@@ -421,6 +421,7 @@ main > section {
 
 .offer-section {
   padding-block: clamp(3rem, 7vw, 5rem);
+  scroll-margin-top: calc(var(--header-h) + 0.75rem);
 }
 
 .offer-intro {

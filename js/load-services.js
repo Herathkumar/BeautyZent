@@ -194,15 +194,15 @@
       console.warn("Could not load live services", err);
       if (homeGrid) {
         homeGrid.innerHTML =
-          '<p class="service-offer-empty">Couldn’t load live prices — <a href="services.html">see services</a> or call 905-920-2277.</p>';
+          '<p class="service-offer-empty">Couldn’t load live prices — <a href="services.html">see services</a> or <a href="https://fhsalon.vercel.app/book/fhsalon">book online</a>.</p>';
       }
       if (womenList) {
         womenList.innerHTML =
-          '<li><span>Couldn’t load live prices</span><span>Book online / call</span></li>';
+          '<li><span>Couldn’t load live prices</span><span>Book online</span></li>';
       }
       if (menList) {
         menList.innerHTML =
-          '<li><span>Couldn’t load live prices</span><span>Book online / call</span></li>';
+          '<li><span>Couldn’t load live prices</span><span>Book online</span></li>';
       }
     }
   }
