@@ -207,7 +207,13 @@ button {
   border-radius: 999px;
   font-weight: 550;
   letter-spacing: 0.01em;
-  transition: transform 0.25s var(--ease), background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+  border: 1px solid transparent;
+  transition:
+    transform 0.25s var(--ease),
+    background 0.25s ease,
+    color 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
 }
 
 .btn:hover {
@@ -218,28 +224,63 @@ button {
 .btn-accent,
 a.btn-primary,
 a.btn-accent {
-  background: var(--ink);
+  background: linear-gradient(180deg, #3a322c 0%, var(--ink) 52%, #14110f 100%);
   color: var(--white);
+  border-color: rgba(255, 250, 246, 0.35);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 250, 246, 0.22),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.35),
+    0 6px 14px rgba(0, 0, 0, 0.28);
 }
 
 .btn-primary:hover,
 .btn-accent:hover,
 a.btn-primary:hover,
 a.btn-accent:hover {
-  background: var(--cocoa);
+  background: linear-gradient(180deg, #4a3f37 0%, var(--cocoa) 55%, #2a221c 100%);
   color: var(--white);
+  border-color: rgba(255, 250, 246, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 250, 246, 0.28),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.3),
+    0 10px 22px rgba(0, 0, 0, 0.34);
+}
+
+.btn-primary:active,
+.btn-accent:active,
+a.btn-primary:active,
+a.btn-accent:active {
+  transform: translateY(1px);
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.4),
+    0 2px 6px rgba(0, 0, 0, 0.22);
 }
 
 .btn-outline {
-  border: 1px solid rgba(255, 250, 246, 0.55);
+  border: 1px solid rgba(255, 250, 246, 0.75);
   color: var(--white);
-  background: rgba(28, 23, 20, 0.2);
+  background: linear-gradient(180deg, rgba(255, 250, 246, 0.16) 0%, rgba(28, 23, 20, 0.28) 100%);
   backdrop-filter: blur(8px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 250, 246, 0.28),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.22),
+    0 6px 14px rgba(0, 0, 0, 0.22);
 }
 
 .btn-outline:hover {
-  background: rgba(255, 250, 246, 0.12);
-  border-color: rgba(255, 250, 246, 0.85);
+  background: linear-gradient(180deg, rgba(255, 250, 246, 0.24) 0%, rgba(28, 23, 20, 0.35) 100%);
+  border-color: rgba(255, 250, 246, 0.95);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 250, 246, 0.35),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.2),
+    0 10px 22px rgba(0, 0, 0, 0.28);
+}
+
+.btn-outline:active {
+  transform: translateY(1px);
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.35),
+    0 2px 6px rgba(0, 0, 0, 0.18);
 }
 
 .btn-outline-dark {
@@ -337,6 +378,11 @@ a.btn-accent:hover {
   flex-wrap: wrap;
   gap: 0.75rem;
   animation: rise 900ms var(--ease) 320ms both;
+}
+
+.hero-actions .btn-accent,
+.hero-actions .btn-outline {
+  border: 1.5px solid rgba(255, 250, 246, 0.85);
 }
 
 /* Sections */
@@ -859,6 +905,252 @@ main > section {
   .contact-layout {
     grid-template-columns: 0.9fr 1.1fr;
     align-items: start;
+  }
+
+  .apps-grid {
+    gap: 4rem;
+  }
+
+  .app-card {
+    grid-template-columns: 0.9fr 1.1fr;
+    align-items: center;
+    gap: 2.5rem;
+  }
+
+  .app-card-flip {
+    direction: rtl;
+  }
+
+  .app-card-flip > * {
+    direction: ltr;
+  }
+
+  .app-card-media {
+    min-height: 420px;
+  }
+
+  .app-card-media .iphone-frame {
+    --iphone-w: 210px;
+  }
+
+  .feature-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .feature-phone {
+    --iphone-w: 110px;
+  }
+}
+
+/* Apps showcase + iPhone frames */
+.apps-section {
+  padding: 5.5rem 0 4rem;
+  background:
+    radial-gradient(800px 400px at 90% 10%, rgba(201, 168, 124, 0.16), transparent 55%),
+    linear-gradient(180deg, #f7f3ee 0%, #efe8df 100%);
+}
+
+.apps-intro {
+  max-width: 36rem;
+  margin: 0 auto 2.75rem;
+  text-align: center;
+}
+
+.apps-grid {
+  display: grid;
+  gap: 2.5rem;
+}
+
+.app-card {
+  display: grid;
+  gap: 1.75rem;
+}
+
+.app-card-media {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 320px;
+  padding: 1.5rem 1rem;
+  border-radius: 0;
+  background: transparent;
+  overflow: visible;
+}
+
+.app-card-media-dark {
+  background: transparent;
+}
+
+.app-card-body h3 {
+  margin: 0 0 0.65rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 3vw, 2.1rem);
+  font-weight: 520;
+  letter-spacing: -0.02em;
+}
+
+.app-card-body > p {
+  margin: 0 0 1.1rem;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+.app-tag {
+  display: inline-block;
+  margin-bottom: 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--cocoa);
+}
+
+.app-points {
+  margin: 0 0 1.35rem;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.app-points li {
+  position: relative;
+  padding-left: 1.25rem;
+  color: var(--ink-soft);
+  font-size: 0.98rem;
+}
+
+.app-points li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.55rem;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--champagne-deep);
+}
+
+.features-section {
+  padding: 4.5rem 0 5rem;
+  background: var(--white);
+}
+
+.feature-grid {
+  display: grid;
+  gap: 1.15rem;
+  grid-template-columns: 1fr;
+}
+
+.feature-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 1rem 1.15rem;
+  padding: 1.15rem 1.2rem 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: 1.25rem;
+  background: rgba(255, 250, 246, 0.7);
+  transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease);
+}
+
+.feature-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 36px rgba(28, 23, 20, 0.08);
+}
+
+.feature-phone {
+  --iphone-w: 92px;
+  margin: 0;
+  background: transparent;
+}
+
+.feature-phone .iphone-bezel {
+  padding: 0.28rem;
+  border-radius: 1.15rem;
+  transform: rotateY(-10deg) rotateX(4deg);
+}
+
+.feature-phone.iphone-tilt-right .iphone-bezel {
+  transform: rotateY(10deg) rotateX(4deg);
+}
+
+.feature-phone:hover .iphone-bezel {
+  transform: rotateY(-4deg) rotateX(2deg);
+}
+
+.feature-phone.iphone-tilt-right:hover .iphone-bezel {
+  transform: rotateY(4deg) rotateX(2deg);
+}
+
+.feature-phone .iphone-screen {
+  border-radius: 0.95rem;
+}
+
+.feature-card-copy h3 {
+  margin: 0 0 0.45rem;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 520;
+}
+
+.feature-card-copy p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.98rem;
+}
+
+.iphone-frame {
+  --iphone-w: 170px;
+  width: var(--iphone-w);
+  margin: 0 auto;
+  perspective: 1200px;
+}
+
+.iphone-bezel {
+  position: relative;
+  padding: 0.4rem;
+  border-radius: 1.85rem;
+  background: linear-gradient(155deg, #3a3a3e 0%, #111114 40%, #2c2c30 100%);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+    0 22px 44px rgba(10, 8, 20, 0.35);
+  transform: rotateY(-14deg) rotateX(5deg);
+  transition: transform 0.45s var(--ease);
+}
+
+.iphone-tilt-right .iphone-bezel {
+  transform: rotateY(14deg) rotateX(5deg);
+}
+
+.iphone-frame:hover .iphone-bezel {
+  transform: rotateY(-6deg) rotateX(2deg);
+}
+
+.iphone-tilt-right:hover .iphone-bezel {
+  transform: rotateY(6deg) rotateX(2deg);
+}
+
+.iphone-screen {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 1.45rem;
+  background: #000;
+}
+
+@media (max-width: 767px) {
+  .app-card-media .iphone-frame {
+    --iphone-w: 150px;
+  }
+
+  .feature-phone {
+    --iphone-w: 78px;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
   }
 }
 
