@@ -9,7 +9,7 @@ test.describe("Booking edges", () => {
       date: nextOpenDate(),
     });
     await page.getByRole("button", { name: /book another/i }).click();
-    await expect(page.getByRole("heading", { name: /choose a service/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /choose services?/i })).toBeVisible();
   });
 
   test("confirmation shows calendar and book-another actions", async ({ page }) => {

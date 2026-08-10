@@ -39,7 +39,8 @@ test.describe("Admin — book for client", () => {
     await expect(page.getByRole("heading", { name: /product/i })).toBeVisible();
     await page.goto("/manager/stylists");
     await expect(page.getByRole("heading", { name: /stylist/i })).toBeVisible();
-    await expect(page.getByText(/farzana/i).first()).toBeVisible();
+    // Scope to stylist cards — nav brand also contains "Farzana"
+    await expect(page.locator("article").filter({ hasText: /farzana/i }).first()).toBeVisible();
   });
 
   test("manager can toggle self-manage schedule on existing stylist", async ({ page }) => {

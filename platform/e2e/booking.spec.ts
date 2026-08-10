@@ -7,21 +7,30 @@ test.describe("Client online booking flow", () => {
     const openDate = nextOpenDate();
 
     await page.goto(`/book/${DEMO.slug}`);
-    await expect(page.getByRole("heading", { name: /choose a service/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /choose services?/i })).toBeVisible();
 
-    // Prefer a short men's service that all stylists usually offer
-    const serviceBtn = page
+    // Prefer a short men's service — scope past Style preview AI chips (e.g. "Beard tidy")
+    const services = page.locator("section").filter({
+      has: page.getByRole("heading", { name: /choose services?/i }),
+    });
+    await services
       .getByRole("button")
       .filter({ hasText: /men'?s haircut|women'?s trim|beard/i })
-      .first();
-    await serviceBtn.click();
+      .first()
+      .click();
 
     await expect(page.getByRole("heading", { name: /choose your stylist/i })).toBeVisible();
     await expect(
       page.getByText(/no stylist is set up for this service/i)
     ).toHaveCount(0);
 
-    const stylistBtn = page.getByRole("button").filter({ hasText: /farzana|aisha|omar|aadil/i }).first();
+    const stylists = page.locator("section").filter({
+      has: page.getByRole("heading", { name: /choose your stylist/i }),
+    });
+    const stylistBtn = stylists
+      .getByRole("button")
+      .filter({ hasText: /farzana|aisha|omar|aadil/i })
+      .first();
     await expect(stylistBtn).toBeVisible();
     await stylistBtn.click();
 
@@ -87,11 +96,12 @@ test.describe("Client online booking flow", () => {
     await expect(serviceRow.getByText(/not bookable online yet/i)).toHaveCount(0);
 
     await page.goto(`/book/${DEMO.slug}`);
-    await page
-      .getByRole("button", {
-        name: new RegExp(serviceName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"),
-      })
-      .click();
+    await expect(page.getByRole("heading", { name: /choose services?/i })).toBeVisible();
+    const serviceBtn = page.getByRole("button", {
+      name: new RegExp(serviceName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"),
+    });
+    await expect(serviceBtn).toBeVisible({ timeout: 15_000 });
+    await serviceBtn.click();
     await expect(page.getByRole("heading", { name: /choose your stylist/i })).toBeVisible();
     await expect(
       page.getByRole("button").filter({ hasText: /farzana|aisha|omar|aadil/i }).first()

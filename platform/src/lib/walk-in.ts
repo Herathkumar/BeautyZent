@@ -291,7 +291,8 @@ export async function createWalkInAppointment(opts: {
     include: { client: true, service: true, stylist: true },
   });
 
-  await syncAppointmentToGoogle(appointment.id);
+  // Don't block seating on Google — OAuth/network stalls freeze the floor UI on "Seating…"
+  void syncAppointmentToGoogle(appointment.id).catch(() => null);
 
   const timeZone = salon.timezone || "America/Toronto";
   const now = new Date(nowInTz(timeZone).getTime());

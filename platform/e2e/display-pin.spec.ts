@@ -152,7 +152,10 @@ test.describe("Store display PIN", () => {
       await expect(page.getByText(/pin removed|open again/i)).toBeVisible({
         timeout: 15_000,
       });
-      await expect(page.getByText(/no pin yet|optional — lock/i)).toBeVisible();
+      // Expanded body + collapsed summary both mention lock/PIN — scope to card body
+      await expect(
+        page.getByTestId("manager-display-pin").getByText(/no pin yet/i)
+      ).toBeVisible();
 
       // Public tablet open again
       const openGuest = await browser.newContext();

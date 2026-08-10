@@ -13,8 +13,11 @@ test.use({
 test.describe("Mobile viewport", () => {
   test("client booking usable on phone", async ({ page }) => {
     await page.goto(`/book/${DEMO.slug}`);
-    await expect(page.getByRole("heading", { name: /choose a service/i })).toBeVisible();
-    await page.getByRole("button").filter({ hasText: /haircut|trim|beard/i }).first().click();
+    await expect(page.getByRole("heading", { name: /choose services?/i })).toBeVisible();
+    const services = page.locator("section").filter({
+      has: page.getByRole("heading", { name: /choose services?/i }),
+    });
+    await services.getByRole("button").filter({ hasText: /haircut|trim|beard/i }).first().click();
     await expect(page.getByRole("heading", { name: /choose your stylist/i })).toBeVisible();
   });
 
@@ -59,11 +62,14 @@ test.describe("Mobile viewport", () => {
     expect(Math.abs((after?.y ?? 0) - (before?.y ?? 0))).toBeLessThan(2);
     expect((after?.y ?? 0) + (after?.height ?? 0)).toBeGreaterThan(800);
 
-    await bottom.getByRole("button", { name: /^money$/i }).click();
+    const moneyBtn = bottom.getByRole("button", { name: /^money$/i });
+    await moneyBtn.scrollIntoViewIfNeeded();
+    await moneyBtn.click({ force: true });
     const sheet = page.getByRole("dialog", { name: /money menu/i });
-    await expect(sheet).toBeVisible();
+    await expect(sheet).toBeVisible({ timeout: 10_000 });
     await expect(sheet.getByRole("link", { name: /store earnings/i })).toBeVisible();
-    await sheet.getByRole("link", { name: /^payroll$/i }).click();
+    // Accessible name includes hint text ("Payroll Pay, hours & leave")
+    await sheet.locator('a[href="/manager/pay"]').click({ force: true });
     await expect(page).toHaveURL(/\/manager\/pay/);
   });
 

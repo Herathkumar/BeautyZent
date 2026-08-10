@@ -71,20 +71,22 @@ test.describe("Manager store earnings", () => {
     await expect(form).toBeVisible({ timeout: 15_000 });
     await form.getByLabel(/store open hour/i).selectOption("10");
     await form.getByLabel(/store close hour/i).selectOption("19");
-    await form.getByLabel(/sunday off/i).uncheck();
-    await form.getByLabel(/monday off/i).check();
+    // Checkboxes are sr-only inside pill labels — force avoids label intercept
+    await form.getByLabel(/sunday off/i).uncheck({ force: true });
+    await form.getByLabel(/monday off/i).check({ force: true });
     await form.getByRole("button", { name: /save store hours/i }).click();
-    await expect(page.getByText(/store hours saved|new stylists/i)).toBeVisible({
+    // Avoid /new stylists/ — that phrase appears in static help copy
+    await expect(form.getByText(/store hours saved/i)).toBeVisible({
       timeout: 10_000,
     });
 
     // Restore seed defaults
     await form.getByLabel(/store open hour/i).selectOption("9");
     await form.getByLabel(/store close hour/i).selectOption("18");
-    await form.getByLabel(/monday off/i).uncheck();
-    await form.getByLabel(/sunday off/i).check();
+    await form.getByLabel(/monday off/i).uncheck({ force: true });
+    await form.getByLabel(/sunday off/i).check({ force: true });
     await form.getByRole("button", { name: /save store hours/i }).click();
-    await expect(page.getByText(/store hours saved|new stylists/i)).toBeVisible({
+    await expect(form.getByText(/store hours saved/i)).toBeVisible({
       timeout: 10_000,
     });
   });

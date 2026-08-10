@@ -8,9 +8,19 @@ test.describe("Stylist profile photo", () => {
   test("default avatar shows on booking; selfie replaces it", async ({ page }) => {
     // Booking shows gender avatar before any selfie
     await page.goto(`/book/${DEMO.slug}`);
-    await page.getByRole("button").filter({ hasText: /women'?s haircut|women'?s trim/i }).first().click();
+    const services = page.locator("section").filter({
+      has: page.getByRole("heading", { name: /choose services?/i }),
+    });
+    await services
+      .getByRole("button")
+      .filter({ hasText: /women'?s haircut|women'?s trim/i })
+      .first()
+      .click();
     await expect(page.getByRole("heading", { name: /choose your stylist/i })).toBeVisible();
-    const farzanaBtn = page.getByRole("button").filter({ hasText: /farzana/i }).first();
+    const stylists = page.locator("section").filter({
+      has: page.getByRole("heading", { name: /choose your stylist/i }),
+    });
+    const farzanaBtn = stylists.getByRole("button").filter({ hasText: /farzana/i }).first();
     await expect(farzanaBtn).toBeVisible();
     const avatar = farzanaBtn.locator('img[alt*="Farzana" i]');
     await expect(avatar).toBeVisible();
@@ -36,13 +46,25 @@ test.describe("Stylist profile photo", () => {
 
     // Online booking now shows the selfie URL for Farzana
     await page.goto(`/book/${DEMO.slug}`);
-    await page.getByRole("button").filter({ hasText: /women'?s haircut|women'?s trim/i }).first().click();
+    await expect(page.getByRole("heading", { name: /choose services?/i })).toBeVisible();
+    await page
+      .locator("section")
+      .filter({ has: page.getByRole("heading", { name: /choose services?/i }) })
+      .getByRole("button")
+      .filter({ hasText: /women'?s haircut|women'?s trim/i })
+      .first()
+      .click();
+    await expect(page.getByRole("heading", { name: /choose your stylist/i })).toBeVisible();
     const bookedPhoto = page
+      .locator("section")
+      .filter({ has: page.getByRole("heading", { name: /choose your stylist/i }) })
       .getByRole("button")
       .filter({ hasText: /farzana/i })
       .first()
       .locator("img");
-    await expect(bookedPhoto).toHaveAttribute("src", /\/api\/public\/stylist-photo\//);
+    await expect(bookedPhoto).toHaveAttribute("src", /\/api\/public\/stylist-photo\//, {
+      timeout: 15_000,
+    });
 
     // Cleanup: restore avatar so later runs start from defaults
     await page.goto("/stylist/account");

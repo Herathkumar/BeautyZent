@@ -24,12 +24,15 @@ test.describe("Admin bookings filters & no-show", () => {
     await stylistFilter.selectOption({ label: "Farzana" });
     await expect(page.getByText(clientName).first()).toBeVisible({ timeout: 10_000 });
 
-    const row = page.locator(".divide-y > div").filter({ hasText: clientName }).first();
+    const row = page.locator("div.grid").filter({ hasText: clientName }).first();
     await expect(row.getByRole("button", { name: /mark no-show/i })).toBeVisible();
 
     await row.getByRole("button", { name: /mark no-show/i }).click();
     await acceptConfirm(page);
-    await expect(row.getByText(/no show/i)).toBeVisible({ timeout: 10_000 });
+    // Status label updates; the Mark no-show button is gone after success
+    await expect(
+      page.locator("div.grid").filter({ hasText: clientName }).getByText(/^no show$/i)
+    ).toBeVisible({ timeout: 10_000 });
 
     await statusFilter.selectOption("no_show");
     await expect(page.getByText(clientName).first()).toBeVisible({ timeout: 15_000 });

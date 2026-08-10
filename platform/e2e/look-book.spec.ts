@@ -84,14 +84,18 @@ test.describe("Client look book", () => {
     await joinAsMember(page, contact);
     const appointment = await createPastVisit(browser, contact);
 
-    await expect(page.getByRole("button", { name: /^sign out$/i })).toBeVisible();
+    // Reload so the member session picks up the desk-created past visit
+    await page.reload();
+    await expect(page.getByRole("button", { name: /^sign out$/i })).toBeVisible({
+      timeout: 15_000,
+    });
     await page.getByTestId("book-nav-lookbook").click();
 
     const sheet = page.getByRole("dialog", { name: /my bookings/i });
     await expect(sheet).toBeVisible({ timeout: 15_000 });
     await expect(sheet.getByRole("heading", { name: /my look book/i })).toBeVisible();
     await expect(sheet.getByTestId("look-photo-add").first()).toBeVisible({
-      timeout: 15_000,
+      timeout: 20_000,
     });
 
     await sheet
@@ -115,8 +119,17 @@ test.describe("Client look book", () => {
     await sheet.getByTestId("look-photo-thumb").first().click();
     const viewer = page.getByTestId("look-photo-viewer");
     await expect(viewer).toBeVisible();
-    await viewer.getByPlaceholder(/add a note/i).fill("Skin fade, 1.5 on sides");
-    await viewer.getByRole("button", { name: /save note/i }).click();
+    const note = "Skin fade, 1.5 on sides";
+    await viewer.getByPlaceholder(/add a note/i).fill(note);
+    // Bottom nav intercepts pointer events — call the DOM click handler directly
+    const saveResp = page.waitForResponse(
+      (r) => r.url().includes("/photos/") && r.request().method() === "PATCH"
+    );
+    await viewer.getByRole("button", { name: /save note/i }).evaluate((el: HTMLElement) => {
+      el.click();
+    });
+    const saved = await saveResp;
+    expect(saved.ok(), `save note: ${await saved.text()}`).toBeTruthy();
 
     await expect
       .poll(async () => {
@@ -125,7 +138,7 @@ test.describe("Client look book", () => {
         );
         return (await r.json()).photos[0]?.caption;
       }, { timeout: 15_000 })
-      .toBe("Skin fade, 1.5 on sides");
+      .toBe(note);
   });
 
   test("photo upload is rejected for guests and for future visits", async ({

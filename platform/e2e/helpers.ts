@@ -121,6 +121,8 @@ export async function joinAsMember(
 }
 
 export async function stylistLogin(page: Page) {
+  // Avoid leftover manager session interrupting navigation to the stylist app
+  await page.context().clearCookies();
   await page.goto("/stylist/login");
   await page.getByLabel(/email/i).fill(DEMO.stylistEmail);
   await page.getByLabel(/password/i).fill(DEMO.password);
@@ -161,10 +163,17 @@ export async function bookOnline(
   const date = opts.date ?? nextOpenDate();
 
   await page.goto(`/book/${DEMO.slug}`);
-  await expect(page.getByRole("heading", { name: /choose a service/i })).toBeVisible();
-  await page.getByRole("button").filter({ hasText: servicePattern }).first().click();
+  await expect(page.getByRole("heading", { name: /choose services?/i })).toBeVisible();
+  // Scope to wizard — Style preview AI chips can match /beard/i before services load
+  const services = page.locator("section").filter({
+    has: page.getByRole("heading", { name: /choose services?/i }),
+  });
+  await services.getByRole("button").filter({ hasText: servicePattern }).first().click();
   await expect(page.getByRole("heading", { name: /choose your stylist/i })).toBeVisible();
-  await page.getByRole("button").filter({ hasText: stylistPattern }).first().click();
+  const stylists = page.locator("section").filter({
+    has: page.getByRole("heading", { name: /choose your stylist/i }),
+  });
+  await stylists.getByRole("button").filter({ hasText: stylistPattern }).first().click();
   await expect(page.getByRole("heading", { name: /pick a time/i })).toBeVisible();
   const bookedDate = await pickFirstSlot(page, date);
   await expect(page.getByRole("heading", { name: /your details/i })).toBeVisible();

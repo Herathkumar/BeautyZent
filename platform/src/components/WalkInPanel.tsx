@@ -280,8 +280,10 @@ export function WalkInPanel({
       setError(data.error || "Could not create walk-in");
       return;
     }
+    const seatedClient =
+      data.appointment?.client?.name || clientName.trim() || "Walk-in";
     setMessage(
-      `Walk-in seated with ${data.appointment.stylist.name}` +
+      `Walk-in seated: ${seatedClient} with ${data.appointment.stylist.name}` +
         (data.waitMinutes > 0
           ? ` · starts in ~${data.waitMinutes} min`
           : " · ready now")

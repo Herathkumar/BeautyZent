@@ -34,6 +34,11 @@ function run(cmd: string, args: string[], env: NodeJS.ProcessEnv) {
 
 async function main() {
   const extraArgs = process.argv.slice(2).filter((a) => a !== "--");
+
+  // Throwaway cluster: wipe leftover data dir so initdb does not fail on re-runs
+  if (fs.existsSync(DATA_DIR)) {
+    fs.rmSync(DATA_DIR, { recursive: true, force: true });
+  }
   fs.mkdirSync(DATA_DIR, { recursive: true });
 
   const pg = new EmbeddedPostgres({

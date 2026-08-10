@@ -48,7 +48,7 @@ test.describe("Stylist account provisioning", () => {
     await page.getByLabel(/^new password/i).fill(newPassword);
     await page.getByLabel(/confirm new password/i).fill(newPassword);
     await page.getByRole("button", { name: /save login/i }).click();
-    await expect(page.getByText(/login updated|updated|password/i)).toBeVisible();
+    await expect(page.getByText(/login updated/i)).toBeVisible();
 
     await page.getByRole("button", { name: /log out/i }).click();
     await expect(page).toHaveURL(/\/stylist\/login/);

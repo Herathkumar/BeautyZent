@@ -226,20 +226,29 @@ export function BookingWizard({ slug }: { slug: string }) {
   }, []);
 
   useEffect(() => {
-    fetch(`/api/public/${slug}/catalog`)
-      .then((r) => r.json())
+    fetch(`/api/public/${slug}/catalog`, { cache: "no-store" })
+      .then(async (r) => {
+        const text = await r.text();
+        if (!text) throw new Error("Catalog unavailable");
+        return JSON.parse(text) as {
+          error?: string;
+          salon?: Salon & { today?: string; timezone?: string };
+          services?: Service[];
+          stylists?: Stylist[];
+        };
+      })
       .then((data) => {
         if (data.error) throw new Error(data.error);
-        setSalon(data.salon);
-        setServices(data.services);
-        setStylists(data.stylists);
+        setSalon(data.salon || null);
+        setServices(data.services || []);
+        setStylists(data.stylists || []);
         const today =
           data.salon?.today ||
           calendarDateInTz(data.salon?.timezone || "America/Toronto");
         setMinDate(today);
         setDate((prev) => (prev < today ? today : prev));
       })
-      .catch((e) => setError(e.message))
+      .catch((e) => setError(e instanceof Error ? e.message : "Catalog unavailable"))
       .finally(() => setLoading(false));
   }, [slug]);
 

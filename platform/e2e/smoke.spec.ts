@@ -12,7 +12,7 @@ test.describe("Smoke — surfaces load", () => {
 
   test("client booking page loads services", async ({ page }) => {
     await page.goto(`/book/${DEMO.slug}`);
-    await expect(page.getByRole("heading", { name: /choose a service/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /choose services?/i })).toBeVisible();
     await expect(page.getByRole("button", { name: /haircut|trim|beard|fade/i }).first()).toBeVisible();
   });
 

@@ -45,13 +45,19 @@ test.describe("Booking member auth", () => {
     });
     await expect(page.getByText(name).first()).toBeVisible();
 
-    // Advance to details so fields are visible
-    await page
+    // Advance to details — scope past Style preview AI chips (e.g. "Beard tidy")
+    const services = page.locator("section").filter({
+      has: page.getByRole("heading", { name: /choose services?/i }),
+    });
+    await services
       .getByRole("button")
       .filter({ hasText: /men'?s haircut|women'?s trim|beard/i })
       .first()
       .click();
-    await page
+    const stylists = page.locator("section").filter({
+      has: page.getByRole("heading", { name: /choose your stylist/i }),
+    });
+    await stylists
       .getByRole("button")
       .filter({ hasText: /farzana|aisha|omar|aadil|any stylist/i })
       .first()
@@ -112,12 +118,18 @@ test.describe("Store display shows online bookings", () => {
         });
 
         const today = todayDate();
-        if (bookedDate === today) {
-          await tablet.getByRole("button", { name: /^today/i }).click();
-        } else {
-          await tablet.getByRole("button", { name: /^future/i }).click();
+        const tab = bookedDate === today ? /^today/i : /^future/i;
+        await tablet.getByRole("button", { name: tab }).click();
+        // Board polls; reload once if the new booking is not painted yet
+        const onBoard = tablet.getByText(clientName);
+        if (!(await onBoard.isVisible().catch(() => false))) {
+          await tablet.reload();
+          await expect(tablet.getByTestId("store-display-board")).toBeVisible({
+            timeout: 15_000,
+          });
+          await tablet.getByRole("button", { name: tab }).click();
         }
-        await expect(tablet.getByText(clientName)).toBeVisible({ timeout: 20_000 });
+        await expect(onBoard).toBeVisible({ timeout: 20_000 });
       }
     } finally {
       await guest.close();

@@ -2,6 +2,8 @@ import { test, expect, type Page } from "@playwright/test";
 import { acceptConfirm, adminLogin, DEMO, stylistLogin, toLocalDateTimeInput } from "./helpers";
 
 async function loginAsAisha(page: Page) {
+  // Drop manager session so /stylist/login is not interrupted by /manager chrome
+  await page.context().clearCookies();
   await page.goto("/stylist/login");
   await page.getByLabel(/email/i).fill("aisha@fhsalon.ca");
   await page.getByLabel(/password/i).fill(DEMO.password);
