@@ -22,11 +22,12 @@ function isDocumentNavigation(request: NextRequest) {
   return true;
 }
 
+/** Only the app entry URLs — never intercept in-app routes (breaks nav taps). */
 function coldBootShell(pathname: string): string | null {
-  if (pathname === "/manager" || pathname.startsWith("/manager/")) {
+  if (pathname === "/manager" || pathname === "/manager/") {
     return "/shells/manager.html";
   }
-  if (pathname === "/stylist" || pathname.startsWith("/stylist/")) {
+  if (pathname === "/stylist" || pathname === "/stylist/") {
     return "/shells/stylist.html";
   }
   if (/^\/display\/[^/]+\/?$/.test(pathname)) {

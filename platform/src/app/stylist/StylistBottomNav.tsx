@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
@@ -29,15 +28,16 @@ export function StylistBottomNav() {
 
   return (
     <nav className="stylist-bottom-nav" aria-label="Stylist">
-      <Link href="/stylist" className={onJobs ? "active" : undefined}>
+      {/* Hard <a> — Next <Link> soft-nav is unreliable in iOS Home Screen PWAs */}
+      <a href="/stylist" className={onJobs ? "active" : undefined}>
         <span aria-hidden>◉</span>
         My Jobs
-      </Link>
-      <Link href="/stylist/schedule" className={onSchedule ? "active" : undefined}>
+      </a>
+      <a href="/stylist/schedule" className={onSchedule ? "active" : undefined}>
         <span aria-hidden>◷</span>
         Schedule
-      </Link>
-      <Link href="/stylist/earnings" className={onEarnings ? "active" : undefined}>
+      </a>
+      <a href="/stylist/earnings" className={onEarnings ? "active" : undefined}>
         <span aria-hidden>$</span>
         Earnings
         {unreadPayouts > 0 && !onEarnings ? (
@@ -45,11 +45,11 @@ export function StylistBottomNav() {
             {unreadPayouts > 9 ? "9+" : unreadPayouts}
           </span>
         ) : null}
-      </Link>
-      <Link href="/stylist/account" className={onProfile ? "active" : undefined}>
+      </a>
+      <a href="/stylist/account" className={onProfile ? "active" : undefined}>
         <span aria-hidden>✎</span>
         Profile
-      </Link>
+      </a>
     </nav>
   );
 }
