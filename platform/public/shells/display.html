@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#1c1714" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
     <title>FHSalon Salon Display</title>
     <style>
       html,
@@ -52,7 +53,7 @@
     </style>
   </head>
   <body>
-    <div class="wrap" role="status">
+    <div class="wrap" role="status" aria-live="polite">
       <div>
         <p class="brand">FHSalon</p>
         <p class="label">Salon Display</p>
@@ -61,13 +62,18 @@
     </div>
     <script>
       (function () {
+        document.cookie = "fhsalon_boot=1; Path=/; Max-Age=45; SameSite=Lax";
+        var next = "/display/fhsalon";
+        try {
+          var m = document.cookie.match(/(?:^|; )fhsalon_boot_next=([^;]*)/);
+          if (m) next = decodeURIComponent(m[1]);
+          document.cookie = "fhsalon_boot_next=; Path=/; Max-Age=0; SameSite=Lax";
+        } catch (e) {}
         if (location.pathname.indexOf("/shells/") === 0) {
-          location.replace("/display/fhsalon");
-          return;
+          var q = new URLSearchParams(location.search).get("next");
+          if (q) next = q;
         }
-        setTimeout(function () {
-          location.reload();
-        }, 1200);
+        location.replace(next);
       })();
     </script>
   </body>
