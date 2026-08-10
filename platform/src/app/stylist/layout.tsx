@@ -1,9 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import Link from "next/link";
 import { AppOpenSplash } from "@/components/AppOpenSplash";
-import { canAccessStylistPortal, getSession } from "@/lib/auth";
-import { StylistBottomNav } from "./StylistBottomNav";
-import { StylistThemeRoot } from "./StylistThemeRoot";
+import { StylistAppShell } from "./StylistAppShell";
 
 export const metadata: Metadata = {
   title: "FHSalon — Stylist App",
@@ -32,36 +29,12 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default async function StylistLayout({ children }: { children: React.ReactNode }) {
-  const session = await getSession();
-  // Trust JWT for chrome — avoids a Prisma round-trip on every navigation.
-  // Deactivated accounts still fail on API calls and login.
-  const showStylistChrome = canAccessStylistPortal(session);
-
+/** Sync layout — no auth/DB await so the shell can stream immediately. */
+export default function StylistLayout({ children }: { children: React.ReactNode }) {
   return (
-    <StylistThemeRoot showChrome={showStylistChrome}>
+    <>
       <AppOpenSplash variant="stylist" />
-      {showStylistChrome ? (
-        <header className="admin-header shrink-0 z-20 px-4 py-3">
-          <div className="mx-auto flex max-w-lg items-center justify-between">
-            <Link
-              href="/stylist"
-              className="font-[family-name:var(--font-display)] text-lg tracking-wide text-champagne"
-            >
-              FHSalon
-            </Link>
-            <p className="text-xs text-muted">Stylist App · no install</p>
-          </div>
-        </header>
-      ) : null}
-      <div
-        className={`stylist-app-main mx-auto w-full max-w-lg px-4 ${
-          showStylistChrome ? "pt-4 pb-6" : "py-8"
-        }`}
-      >
-        {children}
-      </div>
-      {showStylistChrome ? <StylistBottomNav /> : null}
-    </StylistThemeRoot>
+      <StylistAppShell>{children}</StylistAppShell>
+    </>
   );
 }

@@ -1,15 +1,11 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 
 /**
- * Registers the app-shell service worker and refreshes RSC data after a
- * stale-while-revalidate HTML hit so reopen feels instant but data stays fresh.
+ * Registers asset-only SW and clears any old HTML/nav caches that caused white screens.
  */
 export function RegisterServiceWorker() {
-  const router = useRouter();
-
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!("serviceWorker" in navigator)) return;
@@ -18,28 +14,27 @@ export function RegisterServiceWorker() {
 
     (async () => {
       try {
-        const reg = await navigator.serviceWorker.register("/fhsalon-sw.js", {
-          scope: "/",
-        });
-        if (cancelled) return;
-
-        // Warm the current route into the nav cache after a successful paint.
-        if (navigator.serviceWorker.controller || reg.active) {
-          const path = window.location.pathname + window.location.search;
-          void fetch(path, { credentials: "same-origin" }).catch(() => {});
+        // Drop poisoned document caches from earlier SW versions (white screens).
+        if ("caches" in window) {
+          const keys = await caches.keys();
+          await Promise.all(
+            keys
+              .filter((k) => k !== "fhsalon-assets-v4")
+              .map((k) => caches.delete(k))
+          );
         }
 
-        // If this document came from cache, pull fresh server data.
-        router.refresh();
+        if (cancelled) return;
+        await navigator.serviceWorker.register("/fhsalon-sw.js", { scope: "/" });
       } catch {
-        /* registration optional — app still works without SW */
+        /* optional */
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, []);
 
   return null;
 }
