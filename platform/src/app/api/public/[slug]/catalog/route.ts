@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { syncAllServiceStylistLinks } from "@/lib/service-links";
 import { serviceImageUrl } from "@/lib/service-image";
 import { stylistPhotoUrl } from "@/lib/stylist-photo";
 
@@ -37,26 +38,30 @@ export async function GET(
           imageUpdatedAt: true,
         },
       },
-      stylists: {
-        where: { active: true },
-        select: {
-          id: true,
-          name: true,
-          bio: true,
-          color: true,
-          gender: true,
-          photoUpdatedAt: true,
-          photoMime: true,
-          googleRefreshToken: true,
-          services: { select: { serviceId: true } },
-        },
-        orderBy: { name: "asc" },
-      },
     },
   });
   if (!salon) {
     return NextResponse.json({ error: "Salon not found" }, { status: 404, headers: CORS_HEADERS });
   }
+
+  // Heal orphans (e.g. services added outside admin POST) so booking always lists stylists.
+  await syncAllServiceStylistLinks(salon.id);
+
+  const stylists = await prisma.stylist.findMany({
+    where: { salonId: salon.id, active: true },
+    select: {
+      id: true,
+      name: true,
+      bio: true,
+      color: true,
+      gender: true,
+      photoUpdatedAt: true,
+      photoMime: true,
+      googleRefreshToken: true,
+      services: { select: { serviceId: true } },
+    },
+    orderBy: { name: "asc" },
+  });
 
   const services = salon.services.map((s) => {
     const hasImage = Boolean(s.imageUpdatedAt && s.imageMime);
@@ -100,7 +105,7 @@ export async function GET(
       },
       services,
       servicesByCategory: { women, men, other },
-      stylists: salon.stylists.map((s) => {
+      stylists: stylists.map((s) => {
         const hasPhoto = Boolean(s.photoUpdatedAt && s.photoMime);
         return {
           id: s.id,

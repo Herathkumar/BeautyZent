@@ -797,15 +797,15 @@ export function BookingWizard({ slug }: { slug: string }) {
             </div>
             {filteredStylists.length === 0 ? (
               <div className="book-card rounded-2xl px-4 py-5 text-sm text-muted">
-                No stylist is set up for this service yet. Please call{" "}
-                {salon?.phone ? (
-                  <a className="font-semibold text-champagne" href={`tel:${salon.phone}`}>
-                    {salon.phone}
-                  </a>
-                ) : (
-                  "the salon"
-                )}{" "}
-                or pick another service.
+                No stylist is available for this selection yet.{" "}
+                <button
+                  type="button"
+                  className="font-semibold text-champagne underline-offset-2 hover:underline"
+                  onClick={() => goToStep(0)}
+                >
+                  Pick another service
+                </button>
+                , or refresh the page and try again.
               </div>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2">
