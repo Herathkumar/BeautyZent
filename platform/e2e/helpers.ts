@@ -130,6 +130,35 @@ export async function stylistLogin(page: Page) {
   await expect(page).toHaveURL(/\/stylist(?!\/login)/, { timeout: 20_000 });
 }
 
+/**
+ * Cancel today's open bookings for a stylist so late-day walk-in e2e still has a chair.
+ * Requires an active manager session on `page` (or request context cookies).
+ */
+export async function clearOpenBookingsForStylist(
+  page: Page,
+  stylistName: RegExp | string
+) {
+  const day = todayDate();
+  const list = await page.request.get(
+    `/api/admin/appointments?day=${day}&status=open`
+  );
+  expect(list.ok(), `list open bookings: ${await list.text()}`).toBeTruthy();
+  const data = await list.json();
+  const nameRe =
+    typeof stylistName === "string"
+      ? new RegExp(stylistName, "i")
+      : stylistName;
+  const mine = (data.appointments || []).filter((a: { stylist?: { name?: string } }) =>
+    nameRe.test(a.stylist?.name || "")
+  );
+  for (const a of mine) {
+    const cancel = await page.request.patch("/api/admin/appointments", {
+      data: { id: a.id, status: "CANCELLED" },
+    });
+    expect(cancel.ok(), `cancel ${a.id}: ${await cancel.text()}`).toBeTruthy();
+  }
+}
+
 export async function pickFirstSlot(page: Page, startDate: string) {
   for (let attempt = 0; attempt < 10; attempt++) {
     const d = new Date(startDate + "T12:00:00");

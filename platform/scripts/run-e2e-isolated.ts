@@ -21,7 +21,13 @@ const DATABASE_URL = `postgresql://postgres:${PASSWORD}@127.0.0.1:${PORT}/postgr
 
 function run(cmd: string, args: string[], env: NodeJS.ProcessEnv) {
   return new Promise<number>((resolve, reject) => {
-    const child = spawn(cmd, args, {
+    // On Windows, shell:true joins args for cmd.exe — quote values so
+    // Playwright -g patterns with `|` are not treated as pipes.
+    const winArgs =
+      process.platform === "win32"
+        ? args.map((a) => (/[|&<>^%]/.test(a) ? `"${a.replace(/"/g, '\\"')}"` : a))
+        : args;
+    const child = spawn(cmd, winArgs, {
       cwd: platformRoot,
       env,
       stdio: "inherit",

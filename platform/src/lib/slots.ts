@@ -28,8 +28,10 @@ export async function getAvailableSlots(opts: {
     throw new Error("serviceId or serviceIds required");
   }
 
+  // Do not select imageData Bytes — slot checks run often and would stall the server.
   const services = await prisma.service.findMany({
     where: { id: { in: ids }, salonId: opts.salonId, active: true },
+    select: { id: true, durationMin: true },
   });
   if (services.length !== ids.length) {
     throw new Error("Invalid service");

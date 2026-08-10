@@ -30,13 +30,16 @@ export async function updateAppointmentStatus(opts: {
     data.chargedByUserId = opts.chargedByUserId ?? null;
   }
 
+  // Never include image/photo Bytes — they hang JSON responses (Bookings / seating).
   const updated = await prisma.appointment.update({
     where: { id: opts.appointmentId },
     data,
     include: {
-      client: true,
-      service: true,
-      stylist: true,
+      client: { select: { id: true, name: true, phone: true } },
+      service: {
+        select: { id: true, name: true, durationMin: true, priceCents: true },
+      },
+      stylist: { select: { id: true, name: true } },
     },
   });
 

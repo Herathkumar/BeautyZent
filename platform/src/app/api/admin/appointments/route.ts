@@ -195,6 +195,9 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }
 
-  await syncAppointmentToGoogle(result.appointment.id);
+  // Don't block status updates on Google (cancels during e2e / floor ops)
+  setTimeout(() => {
+    void syncAppointmentToGoogle(result.appointment.id).catch(() => null);
+  }, 0);
   return NextResponse.json({ appointment: result.appointment });
 }

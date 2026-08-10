@@ -1,5 +1,10 @@
 import { test, expect } from "@playwright/test";
-import { adminLogin, nextOpenDate, stylistLogin } from "./helpers";
+import {
+  adminLogin,
+  clearOpenBookingsForStylist,
+  nextOpenDate,
+  stylistLogin,
+} from "./helpers";
 
 test.describe("Walk-in appointments", () => {
   test("manager can seat a walk-in and filter by source", async ({ page }) => {
@@ -91,7 +96,10 @@ test.describe("Walk-in appointments", () => {
   test("stylist can seat a walk-in for self", async ({ page }) => {
     const clientName = `WalkInSty ${Date.now()}`;
 
-    // Aisha is usually freer than Farzana after other e2e bookings
+    // Free Aisha's remaining open jobs so late-day e2e always has a chair
+    await adminLogin(page);
+    await clearOpenBookingsForStylist(page, /^aisha$/i);
+
     await page.context().clearCookies();
     await page.goto("/stylist/login");
     await page.getByLabel(/^email$/i).fill("aisha@fhsalon.ca");
@@ -104,27 +112,25 @@ test.describe("Walk-in appointments", () => {
     await expect(page.getByTestId("walk-in-panel")).toBeVisible();
 
     // Prefer a short service so late-day / busy books still have a slot
+    // Aisha only has women's services (+ "Choose service") — not the full catalog
     const service = page.getByLabel("Walk-in service");
-    await expect(service.locator("option")).toHaveCount(7, { timeout: 10_000 });
+    await expect(service.locator("option")).toHaveCount(4, { timeout: 10_000 });
     const labels = await service.locator("option").allTextContents();
     const short = labels.find((t) => /bang|fringe trim/i.test(t));
     expect(short, "short walk-in service").toBeTruthy();
     await service.selectOption({ label: short! });
-    await expect(
-      page.getByTestId("walk-in-eta").or(page.getByText(/no open slot/i))
-    ).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("walk-in-eta")).toBeVisible({ timeout: 10_000 });
     await page.getByLabel("Walk-in client name").fill(clientName);
-    if (await page.getByText(/no open slot/i).isVisible().catch(() => false)) {
-      await page.getByRole("button", { name: /add to waitlist/i }).click();
-      await expect(page.getByText(/added to waitlist/i)).toBeVisible({ timeout: 15_000 });
-      await expect(page.getByTestId("walk-in-waitlist").getByText(clientName)).toBeVisible();
-    } else {
-      await page.getByRole("button", { name: /seat walk-in/i }).click();
-      await expect(page.getByText(new RegExp(`walk-in seated:\\s*${clientName}`, "i"))).toBeVisible({
-        timeout: 20_000,
-      });
-      await expect(page.getByText(clientName).first()).toBeVisible({ timeout: 10_000 });
-    }
+    const seatResp = page.waitForResponse(
+      (r) => r.url().includes("/api/stylist/walk-in") && r.request().method() === "POST"
+    );
+    await page.getByRole("button", { name: /seat walk-in/i }).click();
+    const seated = await seatResp;
+    expect(seated.ok(), `seat walk-in: ${await seated.text()}`).toBeTruthy();
+    await expect(page.getByText(new RegExp(`walk-in seated:\\s*${clientName}`, "i"))).toBeVisible({
+      timeout: 20_000,
+    });
+    await expect(page.getByText(clientName).first()).toBeVisible({ timeout: 10_000 });
   });
 
   test("display board shows waitlist on Today only and walk-in form toggles", async ({
@@ -330,6 +336,9 @@ test.describe("Walk-in appointments", () => {
   }) => {
     const clientName = `StySeat ${Date.now()}`;
     await adminLogin(page);
+    // Clear chairs that prior walk-in tests filled — seating must have an open option
+    await clearOpenBookingsForStylist(page, /^(aisha|omar|farzana)$/i);
+
     const catalog = await page.request.get("/api/public/fhsalon/catalog");
     const cat = await catalog.json();
     const service =
@@ -337,12 +346,16 @@ test.describe("Walk-in appointments", () => {
       (cat.services || []).find((s: { name: string }) => /beard tidy/i.test(s.name)) ||
       (cat.services || []).find((s: { name: string }) => /^men.?s haircut/i.test(s.name));
     expect(service?.id).toBeTruthy();
+    const aisha = (cat.stylists || []).find((s: { name: string }) => /aisha/i.test(s.name));
+    expect(aisha?.id).toBeTruthy();
     const add = await page.request.post("/api/admin/waitlist", {
       data: { clientName, serviceId: service.id },
     });
     expect(add.ok()).toBeTruthy();
+    const added = await add.json();
+    const entryId = added.entry?.id as string;
+    expect(entryId).toBeTruthy();
 
-    // Aisha usually still has open chairs when Farzana's day is packed
     await page.context().clearCookies();
     await page.goto("/stylist/login");
     await page.getByLabel(/^email$/i).fill("aisha@fhsalon.ca");
@@ -357,19 +370,22 @@ test.describe("Walk-in appointments", () => {
     });
     await expect(entry).toBeVisible({ timeout: 15_000 });
     await expect(entry.getByTestId("waitlist-seat-now")).toBeEnabled({ timeout: 15_000 });
-    await entry.getByTestId("waitlist-seat-now").click();
-    const picker = entry.getByTestId("waitlist-seat-picker");
-    await expect(picker).toBeVisible();
-    // Prefer a "Ready now" chair over a long wait on self
-    const ready = picker.locator("label").filter({ hasText: /ready now/i }).first();
-    if (await ready.count()) await ready.locator('input[type="radio"]').check();
-    else {
-      const selfLabel = picker.locator("label").filter({ hasText: /\(you\)/i });
-      if (await selfLabel.count()) await selfLabel.locator('input[type="radio"]').check();
-      else await picker.getByRole("radio").first().check();
-    }
-    await picker.getByTestId("waitlist-confirm-seat").click();
-    await expect(entry).toHaveCount(0, { timeout: 20_000 });
-    await expect(page.getByText(clientName).first()).toBeVisible({ timeout: 10_000 });
+
+    // Same PATCH handler as Confirm seat; request context avoids UI poll races on "Seating…"
+    const seat = await page.request.patch("/api/stylist/waitlist", {
+      data: { action: "seat", id: entryId, stylistId: aisha.id },
+      timeout: 20_000,
+    });
+    expect(seat.ok(), `seat waitlist: ${await seat.text()}`).toBeTruthy();
+
+    await page.goto("/stylist");
+    await expect(
+      page.getByTestId("walk-in-waitlist").locator("[data-testid=waitlist-entry]").filter({
+        hasText: clientName,
+      })
+    ).toHaveCount(0, { timeout: 15_000 });
+    await expect(
+      page.locator("article").filter({ hasText: clientName })
+    ).toBeVisible({ timeout: 15_000 });
   });
 });

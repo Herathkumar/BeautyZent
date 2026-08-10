@@ -90,6 +90,7 @@ export async function findNextAvailableWalkIns(opts: {
   const salon = await prisma.salon.findUniqueOrThrow({ where: { id: opts.salonId } });
   const service = await prisma.service.findFirst({
     where: { id: opts.serviceId, salonId: opts.salonId, active: true },
+    select: { id: true, durationMin: true },
   });
   if (!service) return [];
 
@@ -114,11 +115,32 @@ export async function findNextAvailableWalkIns(opts: {
     const hours = await dayHours(salon, s.id, today);
     const step = Math.min(5, salon.slotMinutes || 30);
     const immediate = ceilToMinutes(now, step);
+    // Walk-ins may start until 1h past posted close (floor override / late day)
+    const latestStart = hours
+      ? addMinutes(hours.close, 60)
+      : addMinutes(immediate, 60);
 
-    const candidates: Date[] = [];
-    if (hours && immediate >= hours.open && immediate < hours.close) {
-      candidates.push(immediate);
+    const candidates: Date[] = [immediate];
+
+    // Walk active jobs to find the next gap (online grid alone misses late-day chairs)
+    const busyJobs = await prisma.appointment.findMany({
+      where: {
+        stylistId: s.id,
+        status: { notIn: ["CANCELLED", "NO_SHOW", "COMPLETED"] },
+        endsAt: { gt: immediate },
+      },
+      orderBy: { startsAt: "asc" },
+      select: { startsAt: true, endsAt: true },
+    });
+    let gapStart = immediate;
+    for (const job of busyJobs) {
+      const trialEnd = addMinutes(gapStart, service.durationMin);
+      if (trialEnd <= job.startsAt) break;
+      if (job.endsAt > gapStart) {
+        gapStart = ceilToMinutes(job.endsAt, step);
+      }
     }
+    candidates.push(gapStart);
 
     if (hours) {
       const slots = await getAvailableSlots({
@@ -134,12 +156,9 @@ export async function findNextAvailableWalkIns(opts: {
 
     let chosen: Date | null = null;
     for (const start of candidates) {
-      if (start < now) continue;
+      if (start < now || start >= latestStart) continue;
+      if (hours && start < hours.open) continue;
       const end = addMinutes(start, service.durationMin);
-      // Service may finish after posted close — only require start before close
-      const withinHours =
-        !hours || (start >= hours.open && start < hours.close);
-      if (!withinHours) continue;
       const free = await isFreeWindow({
         stylistId: s.id,
         startsAt: start,
@@ -152,32 +171,6 @@ export async function findNextAvailableWalkIns(opts: {
         chosen = start;
         break;
       }
-    }
-
-    // Floor override: if booked day is full / after hours, still seat now when chair is free
-    if (!chosen) {
-      const end = addMinutes(immediate, service.durationMin);
-      const [conflict, block] = await Promise.all([
-        prisma.appointment.findFirst({
-          where: {
-            stylistId: s.id,
-            status: { notIn: ["CANCELLED", "NO_SHOW", "COMPLETED"] },
-            startsAt: { lt: end },
-            endsAt: { gt: immediate },
-          },
-          select: { id: true },
-        }),
-        prisma.stylistBlock.findFirst({
-          where: {
-            stylistId: s.id,
-            status: { in: ["PENDING", "APPROVED"] },
-            startsAt: { lt: end },
-            endsAt: { gt: immediate },
-          },
-          select: { id: true },
-        }),
-      ]);
-      if (!conflict && !block) chosen = immediate;
     }
 
     if (!chosen) continue;
@@ -215,9 +208,11 @@ export async function createWalkInAppointment(opts: {
   const [stylist, service] = await Promise.all([
     prisma.stylist.findFirst({
       where: { id: opts.stylistId, salonId: opts.salonId, active: true },
+      select: { id: true, name: true },
     }),
     prisma.service.findFirst({
       where: { id: opts.serviceId, salonId: opts.salonId, active: true },
+      select: { id: true, name: true, durationMin: true },
     }),
   ]);
   if (!stylist || !service) {
@@ -276,6 +271,7 @@ export async function createWalkInAppointment(opts: {
 
   const status = opts.status === "BOOKED" ? "BOOKED" : "CHECKED_IN";
 
+  // Never include image/photo Bytes — they balloon JSON and freeze the floor on "Seating…"
   const appointment = await prisma.appointment.create({
     data: {
       salonId: opts.salonId,
@@ -288,11 +284,21 @@ export async function createWalkInAppointment(opts: {
       source: "WALK_IN",
       notes: opts.notes || null,
     },
-    include: { client: true, service: true, stylist: true },
+    include: {
+      client: { select: { id: true, name: true, phone: true } },
+      service: {
+        select: { id: true, name: true, durationMin: true, priceCents: true },
+      },
+      stylist: { select: { id: true, name: true } },
+    },
   });
 
-  // Don't block seating on Google — OAuth/network stalls freeze the floor UI on "Seating…"
-  void syncAppointmentToGoogle(appointment.id).catch(() => null);
+  // Fire-and-forget; calendar.ts avoids Bytes. Skip entirely when OAuth isn't configured.
+  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    setTimeout(() => {
+      void syncAppointmentToGoogle(appointment.id).catch(() => null);
+    }, 0);
+  }
 
   const timeZone = salon.timezone || "America/Toronto";
   const now = new Date(nowInTz(timeZone).getTime());

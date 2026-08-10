@@ -220,34 +220,40 @@ export function WalkInPanel({
     setBusy(true);
     setError("");
     setMessage("");
-    const res = await fetch(waitlistBase, {
-      method: seatMethod,
-      headers: { "Content-Type": "application/json", ...extraHeaders },
-      body: JSON.stringify({
-        action: "seat",
-        id: seatingId,
-        stylistId: seatPickId,
-      }),
-    });
-    const data = await res.json();
-    setBusy(false);
-    if (!res.ok) {
-      setError(data.error || "Could not seat guest");
+    try {
+      const res = await fetch(waitlistBase, {
+        method: seatMethod,
+        headers: { "Content-Type": "application/json", ...extraHeaders },
+        body: JSON.stringify({
+          action: "seat",
+          id: seatingId,
+          stylistId: seatPickId,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      setBusy(false);
+      if (!res.ok) {
+        setError(data.error || "Could not seat guest");
+        await loadWaitlist();
+        return;
+      }
+      const stylistName =
+        data.appointment?.stylist?.name ||
+        data.entry?.stylist?.name ||
+        "stylist";
+      setMessage(
+        `Seated ${data.appointment?.client?.name || "guest"} with ${stylistName} — Check in when they sit, then Done with payment`
+      );
+      setSeatingId(null);
+      setSeatPickId("");
       await loadWaitlist();
-      return;
+      await loadNext();
+      onCreated?.();
+    } catch {
+      setBusy(false);
+      setError("Could not seat guest — refresh and try again");
+      await loadWaitlist();
     }
-    const stylistName =
-      data.appointment?.stylist?.name ||
-      data.entry?.stylist?.name ||
-      "stylist";
-    setMessage(
-      `Seated ${data.appointment?.client?.name || "guest"} with ${stylistName} — Check in when they sit, then Done with payment`
-    );
-    setSeatingId(null);
-    setSeatPickId("");
-    await loadWaitlist();
-    await loadNext();
-    onCreated?.();
   }
 
   async function createWalkIn() {
@@ -269,31 +275,36 @@ export function WalkInPanel({
       }
     }
 
-    const res = await fetch(walkInBase, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...extraHeaders },
-      body: JSON.stringify(body),
-    });
-    const data = await res.json();
-    setBusy(false);
-    if (!res.ok) {
-      setError(data.error || "Could not create walk-in");
-      return;
+    try {
+      const res = await fetch(walkInBase, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...extraHeaders },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      setBusy(false);
+      if (!res.ok) {
+        setError(data.error || "Could not create walk-in");
+        return;
+      }
+      const seatedClient =
+        data.appointment?.client?.name || clientName.trim() || "Walk-in";
+      setMessage(
+        `Walk-in seated: ${seatedClient} with ${data.appointment.stylist.name}` +
+          (data.waitMinutes > 0
+            ? ` · starts in ~${data.waitMinutes} min`
+            : " · ready now")
+      );
+      setClientName("Walk-in");
+      setClientPhone("");
+      setNotes("");
+      await loadNext();
+      await loadWaitlist();
+      onCreated?.();
+    } catch {
+      setBusy(false);
+      setError("Could not create walk-in — refresh and try again");
     }
-    const seatedClient =
-      data.appointment?.client?.name || clientName.trim() || "Walk-in";
-    setMessage(
-      `Walk-in seated: ${seatedClient} with ${data.appointment.stylist.name}` +
-        (data.waitMinutes > 0
-          ? ` · starts in ~${data.waitMinutes} min`
-          : " · ready now")
-    );
-    setClientName("Walk-in");
-    setClientPhone("");
-    setNotes("");
-    await loadNext();
-    await loadWaitlist();
-    onCreated?.();
   }
 
   async function addToWaitlist() {

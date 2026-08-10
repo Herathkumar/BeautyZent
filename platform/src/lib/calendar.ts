@@ -33,7 +33,14 @@ export async function exchangeGoogleCode(code: string) {
 }
 
 async function calendarForStylist(stylistId: string) {
-  const stylist = await prisma.stylist.findUnique({ where: { id: stylistId } });
+  const stylist = await prisma.stylist.findUnique({
+    where: { id: stylistId },
+    select: {
+      id: true,
+      googleRefreshToken: true,
+      googleCalendarId: true,
+    },
+  });
   if (!stylist?.googleRefreshToken) return null;
   const client = getGoogleOAuthClient();
   if (!client) return null;
@@ -46,13 +53,20 @@ async function calendarForStylist(stylistId: string) {
 }
 
 export async function syncAppointmentToGoogle(appointmentId: string) {
+  // Never pull image/photo Bytes — they stall the Node event loop and freeze seating.
   const appt = await prisma.appointment.findUnique({
     where: { id: appointmentId },
-    include: {
-      client: true,
-      service: true,
-      stylist: true,
-      salon: true,
+    select: {
+      id: true,
+      status: true,
+      startsAt: true,
+      endsAt: true,
+      notes: true,
+      googleEventId: true,
+      stylistId: true,
+      client: { select: { name: true, phone: true } },
+      service: { select: { name: true } },
+      salon: { select: { name: true } },
     },
   });
   if (!appt) return { ok: false, reason: "not_found" as const };
