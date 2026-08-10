@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 const MONEY_LINKS = [
   { href: "/manager/earnings", label: "Store Earnings", hint: "Revenue & activity" },
@@ -36,6 +37,11 @@ export function AdminBottomNav() {
   const pathname = usePathname();
   const isDesktop = useIsDesktop();
   const [sheet, setSheet] = useState<Sheet>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     setSheet(null);
@@ -71,8 +77,8 @@ export function AdminBottomNav() {
   const onProfile =
     pathname.startsWith("/manager/account") || pathname.startsWith("/admin/account");
 
-  return (
-    <>
+  const ui = (
+    <div className="admin-theme">
       {sheet === "salon" ? (
         <div className="admin-salon-sheet" role="dialog" aria-label="Salon menu">
           <button
@@ -136,14 +142,14 @@ export function AdminBottomNav() {
       ) : null}
 
       <nav className="admin-bottom-nav" aria-label="Manager">
-        <Link href="/manager" className={onDashboard ? "active" : undefined}>
+        <a href="/manager" className={onDashboard ? "active" : undefined}>
           <span aria-hidden>▣</span>
           Dashboard
-        </Link>
-        <Link href="/manager/appointments" className={onBookings ? "active" : undefined}>
+        </a>
+        <a href="/manager/appointments" className={onBookings ? "active" : undefined}>
           <span aria-hidden>◉</span>
           Bookings
-        </Link>
+        </a>
         <button
           type="button"
           className={onSalon || sheet === "salon" ? "active" : undefined}
@@ -163,11 +169,14 @@ export function AdminBottomNav() {
           <span aria-hidden>$</span>
           Money
         </button>
-        <Link href="/manager/account" className={onProfile ? "active" : undefined}>
+        <a href="/manager/account" className={onProfile ? "active" : undefined}>
           <span aria-hidden>✎</span>
           Profile
-        </Link>
+        </a>
       </nav>
-    </>
+    </div>
   );
+
+  if (!mounted) return null;
+  return createPortal(ui, document.body);
 }

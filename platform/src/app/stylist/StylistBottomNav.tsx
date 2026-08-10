@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 export function StylistBottomNav() {
   const pathname = usePathname();
@@ -10,6 +11,11 @@ export function StylistBottomNav() {
   const onEarnings = pathname.startsWith("/stylist/earnings");
   const onProfile = pathname.startsWith("/stylist/account");
   const [unreadPayouts, setUnreadPayouts] = useState(0);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const refreshBadge = useCallback(async () => {
     try {
@@ -26,7 +32,7 @@ export function StylistBottomNav() {
     void refreshBadge();
   }, [refreshBadge, pathname]);
 
-  return (
+  const nav = (
     <nav className="stylist-bottom-nav" aria-label="Stylist">
       {/* Hard <a> — Next <Link> soft-nav is unreliable in iOS Home Screen PWAs */}
       <a href="/stylist" className={onJobs ? "active" : undefined}>
@@ -52,4 +58,8 @@ export function StylistBottomNav() {
       </a>
     </nav>
   );
+
+  /* Portal to body so iOS doesn't trap position:fixed inside the app shell. */
+  if (!mounted) return null;
+  return createPortal(nav, document.body);
 }
