@@ -40,15 +40,14 @@ export function applyBookTheme(theme: BookThemePreference) {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
   root.classList.add("book-shell");
-  // Light preference uses the plum dark surfaces; dark preference uses lilac mist.
-  root.classList.toggle("book-shell--light", theme === "dark");
+  root.classList.toggle("book-shell--light", theme === "light");
 
   document.querySelectorAll(".book-theme").forEach((el) => {
-    el.classList.toggle("book-theme--light", theme === "dark");
+    el.classList.toggle("book-theme--light", theme === "light");
     el.setAttribute("data-book-theme", theme);
   });
 
-  const color = theme === "light" ? BOOK_THEME_DARK : BOOK_THEME_LIGHT;
+  const color = theme === "light" ? BOOK_THEME_LIGHT : BOOK_THEME_DARK;
   let meta = document.querySelector('meta[name="theme-color"]');
   if (!meta) {
     meta = document.createElement("meta");

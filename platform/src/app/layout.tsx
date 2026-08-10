@@ -104,8 +104,7 @@ const BOOT_SCRIPT = `
         var bt=localStorage.getItem("fhsalon-book-theme")||"dark";
         var light=bt==="light"||(bt==="system"&&window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches);
         var bm=document.querySelector('meta[name="theme-color"]');
-        // Light preference → dark plum; dark preference → lilac mist.
-        if(!light){
+        if(light){
           document.documentElement.classList.add("book-shell--light");
           if(bm) bm.setAttribute("content","#f7f3fb");
         }else if(bm){
