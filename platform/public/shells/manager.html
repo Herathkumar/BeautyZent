@@ -5,23 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#f3ebe3" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>FHSalon Manager</title>
     <style>
       html,
       body {
         margin: 0;
-        min-height: 100%;
-        min-height: 100dvh;
-        background: linear-gradient(180deg, #fdf8f3 0%, #f7f1ea 50%, #f3ebe3 100%);
+        width: 100%;
+        height: 100%;
+        background: #f3ebe3;
         color: #2b2521;
         font-family: Georgia, "Times New Roman", serif;
+        overflow: hidden;
       }
-      .wrap {
-        min-height: 100dvh;
+      #splash {
+        position: fixed;
+        inset: 0;
+        z-index: 2;
         display: grid;
         place-items: center;
         padding: 2rem;
         text-align: center;
+        background: linear-gradient(180deg, #fdf8f3 0%, #f7f1ea 50%, #f3ebe3 100%);
+        transition: opacity 0.35s ease;
+      }
+      #splash.is-done {
+        opacity: 0;
+        pointer-events: none;
       }
       .brand {
         margin: 0;
@@ -49,10 +59,19 @@
           transform: rotate(360deg);
         }
       }
+      #app {
+        position: fixed;
+        inset: 0;
+        z-index: 1;
+        width: 100%;
+        height: 100%;
+        border: 0;
+        background: #f3ebe3;
+      }
     </style>
   </head>
   <body>
-    <div class="wrap" role="status" aria-live="polite">
+    <div id="splash" role="status" aria-live="polite">
       <div>
         <p class="brand">FHSalon</p>
         <p class="label">Manager</p>
@@ -61,18 +80,42 @@
     </div>
     <script>
       (function () {
-        document.cookie = "fhsalon_boot=1; Path=/; Max-Age=45; SameSite=Lax";
+        /* Set before iframe loads so middleware serves the real app, not this shell again. */
+        document.cookie = "fhsalon_boot=1; Path=/; Max-Age=120; SameSite=Lax";
+
         var next = "/manager";
         try {
           var m = document.cookie.match(/(?:^|; )fhsalon_boot_next=([^;]*)/);
           if (m) next = decodeURIComponent(m[1]);
           document.cookie = "fhsalon_boot_next=; Path=/; Max-Age=0; SameSite=Lax";
         } catch (e) {}
-        if (location.pathname.indexOf("/shells/") === 0) {
-          var q = new URLSearchParams(location.search).get("next");
-          if (q) next = q;
+        var q = new URLSearchParams(location.search).get("next");
+        if (q) next = q;
+
+        var frame = document.createElement("iframe");
+        frame.id = "app";
+        frame.title = "FHSalon Manager";
+        frame.setAttribute("allow", "clipboard-read; clipboard-write");
+        frame.src = next;
+        document.body.appendChild(frame);
+
+        var splash = document.getElementById("splash");
+        var hidden = false;
+        function hideSplash() {
+          if (hidden) return;
+          hidden = true;
+          splash.classList.add("is-done");
+          setTimeout(function () {
+            splash.remove();
+          }, 400);
         }
-        location.replace(next);
+
+        frame.addEventListener("load", function () {
+          /* Give Next a moment to paint inside the iframe before removing splash. */
+          setTimeout(hideSplash, 400);
+        });
+        /* Safety: never leave splash forever if load is weird. */
+        setTimeout(hideSplash, 20000);
       })();
     </script>
   </body>

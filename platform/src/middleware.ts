@@ -11,10 +11,13 @@ function isDocumentNavigation(request: NextRequest) {
   if (request.headers.get("next-router-state-tree")) return false;
 
   const dest = request.headers.get("sec-fetch-dest");
+  // iframe loads of the real app use dest=iframe — must NOT get the splash again
+  if (dest === "iframe" || dest === "empty") return false;
   if (dest && dest !== "document") return false;
 
   const accept = request.headers.get("accept") || "";
-  if (accept && !accept.includes("text/html")) return false;
+  // Safari sometimes omits Accept details; only bail when clearly non-HTML.
+  if (accept.includes("application/json") && !accept.includes("text/html")) return false;
 
   return true;
 }
