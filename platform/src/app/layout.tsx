@@ -93,10 +93,9 @@ const BOOT_SCRIPT = `
         // Light preference → dark surfaces; dark preference → light surfaces.
         if(st!=="light"){
           document.documentElement.classList.add("stylist-shell--light");
-          if(sm) sm.setAttribute("content","#eef7f5");
-        }else if(sm){
-          sm.setAttribute("content","#0e1618");
         }
+        // Nav-black theme-color (mint was showing as a white strip under the dock).
+        if(sm) sm.setAttribute("content","#0e1618");
       }catch(e){}
     }
     else if(book){

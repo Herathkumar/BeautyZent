@@ -9,7 +9,8 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     title: "FHSalon Stylist",
-    statusBarStyle: "black-translucent",
+    /* Match manager — black-translucent breaks iPhone safe-area under the dock. */
+    statusBarStyle: "default",
   },
   icons: {
     icon: [
@@ -22,12 +23,12 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
+  /* Nav-black so iOS home-indicator chrome matches the dock (not mint/white). */
   themeColor: "#0e1618",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
   viewportFit: "cover",
-  /* Avoid layout viewport jumps that leave a white gap under the fixed nav on iOS. */
   interactiveWidget: "overlays-content",
 };
 
