@@ -447,24 +447,31 @@ a {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  /* Room for fixed bottom nav (phone) */
-  padding-bottom: calc(4.75rem + env(safe-area-inset-bottom));
+  /* Room for lean fixed bottom nav (phone) */
+  padding-bottom: calc(3.25rem + env(safe-area-inset-bottom, 0px));
 }
 
 .admin-theme .admin-bottom-nav,
 .admin-bottom-nav {
+  --app-dock-h: calc(52px + constant(safe-area-inset-bottom));
+  --app-dock-h: calc(52px + env(safe-area-inset-bottom, 0px));
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
   z-index: 100;
+  box-sizing: border-box;
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 0.15rem;
-  padding: 0.45rem 0.4rem calc(0.45rem + env(safe-area-inset-bottom, 0px));
+  align-items: stretch;
+  gap: 0;
+  height: var(--app-dock-h);
+  padding: 0;
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   background: #0e1618;
   border-top: 1px solid rgba(201, 168, 124, 0.28);
-  box-shadow: 0 -8px 24px rgba(14, 22, 24, 0.28);
+  box-shadow: 0 -6px 18px rgba(14, 22, 24, 0.22);
 }
 
 /* Real desktops only — keep phone bottom nav in landscape / “desktop site” */
@@ -484,13 +491,16 @@ a {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.15rem;
+  justify-content: center;
+  gap: 2px;
   min-width: 0;
-  padding: 0.45rem 0.1rem;
-  border-radius: 0.75rem;
-  font-size: 0.62rem;
+  margin: 4px 2px;
+  padding: 2px 2px;
+  border-radius: 0.55rem;
+  font-size: 10px;
   font-weight: 600;
-  line-height: 1.1;
+  line-height: 1.05;
+  letter-spacing: 0.01em;
   text-align: center;
   color: rgba(255, 250, 246, 0.55);
   background: transparent;
@@ -499,9 +509,9 @@ a {
 
 .admin-theme .admin-bottom-nav a.active,
 .admin-theme .admin-bottom-nav button.active {
-  background: rgba(201, 168, 124, 0.18);
+  background: rgba(201, 168, 124, 0.16);
   color: #f0c987;
-  box-shadow: inset 0 0 0 1px rgba(201, 168, 124, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(201, 168, 124, 0.4);
 }
 
 .admin-theme .admin-salon-sheet {
@@ -521,7 +531,7 @@ a {
   position: absolute;
   left: 0.75rem;
   right: 0.75rem;
-  bottom: calc(4.75rem + env(safe-area-inset-bottom));
+  bottom: calc(3.25rem + env(safe-area-inset-bottom, 0px));
   padding: 1.1rem 1.15rem 1.25rem;
   border-radius: 1.1rem;
   border: 1px solid rgba(125, 97, 84, 0.2);
@@ -823,21 +833,28 @@ a {
   background: rgba(126, 196, 184, 0.12);
 }
 
+/* Lean iPhone dock — same model as client .book-bottom-nav (52px + home indicator). */
 .stylist-theme .stylist-bottom-nav,
 .stylist-bottom-nav {
+  --app-dock-h: calc(52px + constant(safe-area-inset-bottom));
+  --app-dock-h: calc(52px + env(safe-area-inset-bottom, 0px));
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
   z-index: 100;
+  box-sizing: border-box;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
-  gap: 0.15rem;
-  /* Compact dock — same proportions as manager / client booking nav */
-  padding: 0.4rem 0.35rem calc(0.4rem + env(safe-area-inset-bottom, 0px));
+  align-items: stretch;
+  gap: 0;
+  height: var(--app-dock-h);
+  padding: 0;
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   background: #0e1618;
   border-top: 1px solid rgba(201, 168, 124, 0.28);
-  box-shadow: 0 -8px 24px rgba(14, 22, 24, 0.28);
+  box-shadow: 0 -6px 18px rgba(14, 22, 24, 0.22);
   pointer-events: auto;
   touch-action: manipulation;
   -webkit-user-select: none;
@@ -850,6 +867,8 @@ a {
     left: auto;
     right: auto;
     bottom: auto;
+    height: auto;
+    padding-bottom: 0;
   }
 
   .stylist-theme.stylist-app-shell .stylist-app-main {
@@ -865,14 +884,16 @@ a {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.15rem;
+  gap: 2px;
   min-width: 0;
   min-height: 0;
-  padding: 0.4rem 0.1rem;
-  border-radius: 0.75rem;
-  font-size: 0.62rem;
+  margin: 4px 3px;
+  padding: 2px 2px;
+  border-radius: 0.55rem;
+  font-size: 10px;
   font-weight: 600;
-  line-height: 1.1;
+  line-height: 1.05;
+  letter-spacing: 0.01em;
   text-align: center;
   color: rgba(255, 250, 246, 0.55);
   background: transparent;
@@ -884,14 +905,13 @@ a {
   text-decoration: none;
 }
 
-/* Match manager: gold active chip on black bar */
 .stylist-theme .stylist-bottom-nav a.active,
 .stylist-theme .stylist-bottom-nav button.active,
 .stylist-bottom-nav a.active,
 .stylist-bottom-nav button.active {
-  background: rgba(201, 168, 124, 0.18);
+  background: rgba(201, 168, 124, 0.16);
   color: #f0c987;
-  box-shadow: inset 0 0 0 1px rgba(201, 168, 124, 0.45);
+  box-shadow: inset 0 0 0 1px rgba(201, 168, 124, 0.4);
 }
 
 /* Keep manager + stylist bottom nav interaction feel aligned on iPhone */
@@ -949,17 +969,17 @@ a {
 .stylist-theme .stylist-nav-badge,
 .stylist-bottom-nav .stylist-nav-badge {
   position: absolute;
-  top: 0.15rem;
-  right: calc(50% - 1.25rem);
-  min-width: 1.1rem;
-  height: 1.1rem;
-  padding: 0 0.25rem;
+  top: 0;
+  right: calc(50% - 1.1rem);
+  min-width: 0.95rem;
+  height: 0.95rem;
+  padding: 0 0.2rem;
   border-radius: 999px;
   background: #f0c987;
   color: #0e1618;
-  font-size: 0.62rem;
+  font-size: 0.55rem;
   font-weight: 800;
-  line-height: 1.1rem;
+  line-height: 0.95rem;
   text-align: center;
 }
 
@@ -1228,7 +1248,8 @@ a {
 /* -------------------------------------------------------------------------- */
 
 .book-theme {
-  --book-nav-h: calc(64px + env(safe-area-inset-bottom));
+  --book-nav-h: calc(52px + constant(safe-area-inset-bottom));
+  --book-nav-h: calc(52px + env(safe-area-inset-bottom, 0px));
 }
 
 .book-bottom-nav {
@@ -1237,15 +1258,18 @@ a {
   right: 0;
   bottom: 0;
   z-index: 100;
+  box-sizing: border-box;
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: 1fr;
   align-items: stretch;
   height: var(--book-nav-h);
-  padding-bottom: env(safe-area-inset-bottom);
+  padding: 0;
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   border-top: 1px solid rgba(201, 180, 232, 0.28);
   background: #0e1618;
-  box-shadow: 0 -8px 24px rgba(14, 22, 24, 0.28);
+  box-shadow: 0 -6px 18px rgba(14, 22, 24, 0.22);
 }
 
 .book-bottom-nav__item {
@@ -2088,7 +2112,7 @@ html.stylist-shell--light .stylist-theme .stylist-bottom-nav,
 html.stylist-shell--light .stylist-bottom-nav {
   background: #0e1618;
   border-top: 1px solid rgba(201, 168, 124, 0.28);
-  box-shadow: 0 -8px 24px rgba(14, 22, 24, 0.28);
+  box-shadow: 0 -6px 18px rgba(14, 22, 24, 0.22);
 }
 
 html.stylist-shell--light .stylist-theme .stylist-bottom-nav a,
@@ -2102,9 +2126,9 @@ html.stylist-shell--light .stylist-theme .stylist-bottom-nav a.active,
 html.stylist-shell--light .stylist-theme .stylist-bottom-nav button.active,
 html.stylist-shell--light .stylist-bottom-nav a.active,
 html.stylist-shell--light .stylist-bottom-nav button.active {
-  background: rgba(201, 168, 124, 0.18);
+  background: rgba(201, 168, 124, 0.16);
   color: #f0c987;
-  box-shadow: inset 0 0 0 1px rgba(201, 168, 124, 0.45);
+  box-shadow: inset 0 0 0 1px rgba(201, 168, 124, 0.4);
 }
 
 html.stylist-shell--light .stylist-theme .stylist-nav-badge,
