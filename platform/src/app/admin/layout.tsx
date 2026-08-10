@@ -22,11 +22,12 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#fdf8f3",
+  themeColor: "#f3ebe3",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
   viewportFit: "cover",
+  interactiveWidget: "resizes-content",
 };
 
 /** Sync layout — no auth/DB await so the shell can stream immediately. */

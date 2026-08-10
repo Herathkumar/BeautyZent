@@ -426,12 +426,13 @@ a {
   color: #7d6154 !important;
 }
 
-/* Viewport-locked shell: page content scrolls; bottom nav stays docked */
+/* Viewport-locked shell: use svh so iPhone Chrome UI doesn't clip the bottom nav */
 .admin-theme.admin-app-shell,
 .stylist-theme.stylist-app-shell {
   height: 100vh;
   height: 100dvh;
-  max-height: 100dvh;
+  height: 100svh;
+  max-height: 100svh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -445,12 +446,16 @@ a {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
+  /* Room for fixed bottom nav (phone) */
+  padding-bottom: calc(4.75rem + env(safe-area-inset-bottom));
 }
 
 .admin-theme .admin-bottom-nav {
-  position: relative;
-  flex-shrink: 0;
-  z-index: 30;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.15rem;
@@ -460,11 +465,15 @@ a {
   box-shadow: 0 -8px 24px rgba(43, 37, 33, 0.04);
 }
 
-/* Desktop uses the top nav; bottom bar is phone-only (also gated in AdminBottomNav JS) */
-@media (min-width: 768px) {
+/* Real desktops only — keep phone bottom nav in landscape / “desktop site” */
+@media (min-width: 768px) and (hover: hover) and (pointer: fine) {
   .admin-theme .admin-bottom-nav,
   .admin-theme .admin-salon-sheet {
     display: none !important;
+  }
+
+  .admin-theme.admin-app-shell .admin-app-main {
+    padding-bottom: 1.5rem;
   }
 }
 
@@ -813,15 +822,30 @@ a {
 }
 
 .stylist-theme .stylist-bottom-nav {
-  position: relative;
-  flex-shrink: 0;
-  z-index: 30;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
   gap: 0.25rem;
   padding: 0.55rem 0.75rem calc(0.55rem + env(safe-area-inset-bottom));
   background: rgba(14, 22, 24, 0.98);
   border-top: 1px solid rgba(126, 196, 184, 0.32);
+}
+
+@media (min-width: 768px) and (hover: hover) and (pointer: fine) {
+  .stylist-theme .stylist-bottom-nav {
+    position: relative;
+    left: auto;
+    right: auto;
+    bottom: auto;
+  }
+
+  .stylist-theme.stylist-app-shell .stylist-app-main {
+    padding-bottom: 1.5rem;
+  }
 }
 
 .stylist-theme .stylist-bottom-nav a,

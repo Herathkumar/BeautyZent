@@ -17,11 +17,12 @@ const SALON_LINKS = [
 
 type Sheet = "money" | "salon" | null;
 
+/** True desktops only — phones (incl. landscape / “Request Desktop Website”) keep the bottom nav. */
 function useIsDesktop() {
   const [desktop, setDesktop] = useState(false);
 
   useEffect(() => {
-    const mq = window.matchMedia("(min-width: 768px)");
+    const mq = window.matchMedia("(min-width: 768px) and (hover: hover) and (pointer: fine)");
     const sync = () => setDesktop(mq.matches);
     sync();
     mq.addEventListener("change", sync);

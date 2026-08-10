@@ -2,12 +2,15 @@
   "name": "FHSalon — Manager",
   "short_name": "FHSalon Manager",
   "description": "Dashboard, bookings, earnings, and team for Farzana Hair Salon.",
-  "start_url": "/manager",
+  "id": "/manager",
+  "start_url": "/manager?source=pwa",
   "scope": "/manager",
   "display": "standalone",
+  "display_override": ["standalone", "browser"],
   "orientation": "any",
-  "background_color": "#f7f1ea",
-  "theme_color": "#f7f1ea",
+  "background_color": "#f3ebe3",
+  "theme_color": "#f3ebe3",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/manager-icon-192.png",
