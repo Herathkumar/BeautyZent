@@ -456,7 +456,7 @@ a {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: var(--app-nav-bottom, 0px);
+  bottom: 0;
   z-index: 100;
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -465,21 +465,6 @@ a {
   background: #0e1618;
   border-top: 1px solid rgba(201, 168, 124, 0.28);
   box-shadow: 0 -8px 24px rgba(14, 22, 24, 0.28);
-  overflow: visible;
-}
-
-/* Paint past the bar so iOS never shows page white under the dock. */
-.admin-theme .admin-bottom-nav::after,
-.admin-bottom-nav::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 100%;
-  height: 100vh;
-  height: 100dvh;
-  background: #0e1618;
-  pointer-events: none;
 }
 
 /* Real desktops only — keep phone bottom nav in landscape / “desktop site” */
@@ -843,12 +828,13 @@ a {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: var(--app-nav-bottom, 0px);
+  bottom: 0;
   z-index: 100;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
   gap: 0.15rem;
-  padding: 0.45rem 0.4rem calc(0.45rem + env(safe-area-inset-bottom, 0px));
+  /* Compact dock — same proportions as manager / client booking nav */
+  padding: 0.4rem 0.35rem calc(0.4rem + env(safe-area-inset-bottom, 0px));
   background: #0e1618;
   border-top: 1px solid rgba(201, 168, 124, 0.28);
   box-shadow: 0 -8px 24px rgba(14, 22, 24, 0.28);
@@ -856,20 +842,6 @@ a {
   touch-action: manipulation;
   -webkit-user-select: none;
   user-select: none;
-  overflow: visible;
-}
-
-.stylist-theme .stylist-bottom-nav::after,
-.stylist-bottom-nav::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 100%;
-  height: 100vh;
-  height: 100dvh;
-  background: #0e1618;
-  pointer-events: none;
 }
 
 @media (min-width: 768px) and (hover: hover) and (pointer: fine) {
@@ -895,8 +867,8 @@ a {
   justify-content: center;
   gap: 0.15rem;
   min-width: 0;
-  min-height: 2.6rem;
-  padding: 0.45rem 0.1rem;
+  min-height: 0;
+  padding: 0.4rem 0.1rem;
   border-radius: 0.75rem;
   font-size: 0.62rem;
   font-weight: 600;
@@ -2054,14 +2026,6 @@ html.manager-shell--dark .admin-theme .shadow-\[0_16px_40px_rgba\(0\,0\,0\,0\.35
 .stylist-theme [data-testid="schedule-week-ring"] path:focus,
 .stylist-theme [data-testid="schedule-week-ring"] path:focus-visible {
   outline: none;
-}
-
-/* Under-nav / overscroll stays dock black (page fill is on .stylist-theme). */
-html.stylist-shell.stylist-shell--light,
-html.stylist-shell.stylist-shell--light body {
-  background: #0e1618;
-  color: #0e1618;
-  color-scheme: light;
 }
 
 html.stylist-shell--light .stylist-theme {

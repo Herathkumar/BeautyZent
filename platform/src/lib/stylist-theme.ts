@@ -39,14 +39,14 @@ export function applyStylistTheme(theme: StylistTheme) {
     el.classList.toggle("stylist-theme--light", theme === "dark");
   });
 
+  const color = theme === "light" ? STYLIST_THEME_DARK : STYLIST_THEME_LIGHT;
   let meta = document.querySelector('meta[name="theme-color"]');
   if (!meta) {
     meta = document.createElement("meta");
     meta.setAttribute("name", "theme-color");
     document.head.appendChild(meta);
   }
-  // Match black bottom nav so iOS home-indicator / overscroll never flash mint/white.
-  meta.setAttribute("content", STYLIST_THEME_DARK);
+  meta.setAttribute("content", color);
 }
 
 export function setStylistTheme(theme: StylistTheme) {

@@ -3,7 +3,6 @@
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { useDockToVisualViewport } from "@/lib/useDockToVisualViewport";
 
 export function StylistBottomNav() {
   const pathname = usePathname();
@@ -17,8 +16,6 @@ export function StylistBottomNav() {
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  useDockToVisualViewport(mounted);
 
   const refreshBadge = useCallback(async () => {
     try {
