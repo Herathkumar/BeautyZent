@@ -460,9 +460,9 @@ a {
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.15rem;
   padding: 0.45rem 0.4rem calc(0.45rem + env(safe-area-inset-bottom));
-  background: rgba(255, 252, 249, 0.98);
-  border-top: 1px solid rgba(125, 97, 84, 0.22);
-  box-shadow: 0 -8px 24px rgba(43, 37, 33, 0.04);
+  background: #0e1618;
+  border-top: 1px solid rgba(201, 168, 124, 0.28);
+  box-shadow: 0 -8px 24px rgba(14, 22, 24, 0.28);
 }
 
 /* Real desktops only — keep phone bottom nav in landscape / “desktop site” */
@@ -490,16 +490,16 @@ a {
   font-weight: 600;
   line-height: 1.1;
   text-align: center;
-  color: rgba(43, 37, 33, 0.45);
+  color: rgba(255, 250, 246, 0.55);
   background: transparent;
   border: 0;
 }
 
 .admin-theme .admin-bottom-nav a.active,
 .admin-theme .admin-bottom-nav button.active {
-  background: rgba(125, 97, 84, 0.14);
-  color: #7d6154;
-  box-shadow: inset 0 0 0 1px rgba(125, 97, 84, 0.18);
+  background: rgba(201, 168, 124, 0.18);
+  color: #f0c987;
+  box-shadow: inset 0 0 0 1px rgba(201, 168, 124, 0.22);
 }
 
 .admin-theme .admin-salon-sheet {
@@ -1230,10 +1230,9 @@ a {
   align-items: stretch;
   height: var(--book-nav-h);
   padding-bottom: env(safe-area-inset-bottom);
-  border-top: 1px solid rgba(201, 180, 232, 0.22);
-  background: rgba(12, 9, 18, 0.96);
-  backdrop-filter: blur(18px);
-  box-shadow: 0 -10px 34px rgba(0, 0, 0, 0.4);
+  border-top: 1px solid rgba(201, 180, 232, 0.28);
+  background: #0e1618;
+  box-shadow: 0 -8px 24px rgba(14, 22, 24, 0.28);
 }
 
 .book-bottom-nav__item {
@@ -1287,19 +1286,19 @@ a {
 
 html.book-shell--light .book-bottom-nav,
 .book-theme--light .book-bottom-nav {
-  border-top: 1px solid rgba(122, 90, 168, 0.2);
-  background: rgba(252, 250, 255, 0.96);
-  box-shadow: 0 -10px 34px rgba(40, 32, 56, 0.08);
+  border-top: 1px solid rgba(201, 180, 232, 0.28);
+  background: #0e1618;
+  box-shadow: 0 -8px 24px rgba(14, 22, 24, 0.28);
 }
 
 html.book-shell--light .book-bottom-nav__item,
 .book-theme--light .book-bottom-nav__item {
-  color: #7a6a8a;
+  color: rgba(248, 244, 252, 0.55);
 }
 
 html.book-shell--light .book-bottom-nav__item.is-active,
 .book-theme--light .book-bottom-nav__item.is-active {
-  color: #6b4ea8;
+  color: #e0d0f5;
 }
 
 /* Booking light theme — soft lilac mist (pairs with plum dark) */
@@ -1634,9 +1633,9 @@ html.manager-shell--dark .admin-theme .admin-salon-dropdown a:hover {
 }
 
 html.manager-shell--dark .admin-theme .admin-bottom-nav {
-  background: rgba(18, 15, 13, 0.96);
-  border-top: 1px solid rgba(201, 168, 124, 0.3);
-  box-shadow: 0 -10px 28px rgba(0, 0, 0, 0.35);
+  background: #0e1618;
+  border-top: 1px solid rgba(201, 168, 124, 0.28);
+  box-shadow: 0 -8px 24px rgba(14, 22, 24, 0.28);
 }
 
 html.manager-shell--dark .admin-theme .admin-bottom-nav a,
