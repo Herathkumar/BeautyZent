@@ -447,11 +447,11 @@ a {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  /* Room for shared phone dock */
-  padding-bottom: calc(4.25rem + env(safe-area-inset-bottom, 0px));
+  /* Room for taller shared phone dock */
+  padding-bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
 }
 
-/* Shared phone dock — manager + stylist must stay identical. */
+/* Shared phone dock — manager + stylist (taller tap targets). */
 .admin-theme .admin-bottom-nav,
 .admin-bottom-nav,
 .stylist-theme .stylist-bottom-nav,
@@ -465,8 +465,8 @@ a {
   display: grid;
   align-items: stretch;
   gap: 0;
-  padding: 0.4rem 0.35rem constant(safe-area-inset-bottom);
-  padding: 0.4rem 0.35rem env(safe-area-inset-bottom, 0px);
+  padding: 0.55rem 0.4rem constant(safe-area-inset-bottom);
+  padding: 0.55rem 0.4rem env(safe-area-inset-bottom, 0px);
   background: #0e1618;
   border-top: 1px solid rgba(201, 168, 124, 0.28);
   box-shadow: 0 -6px 18px rgba(14, 22, 24, 0.22);
@@ -510,14 +510,15 @@ a {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 3px;
   min-width: 0;
-  margin: 3px 2px;
-  padding: 4px 2px;
-  border-radius: 0.55rem;
-  font-size: 10px;
+  min-height: 2.75rem;
+  margin: 2px 2px;
+  padding: 0.4rem 0.15rem;
+  border-radius: 0.65rem;
+  font-size: 11px;
   font-weight: 600;
-  line-height: 1.05;
+  line-height: 1.1;
   letter-spacing: 0.01em;
   text-align: center;
   color: rgba(255, 250, 246, 0.55);
@@ -564,7 +565,7 @@ a {
   position: absolute;
   left: 0.75rem;
   right: 0.75rem;
-  bottom: calc(4.25rem + env(safe-area-inset-bottom, 0px));
+  bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
   padding: 1.1rem 1.15rem 1.25rem;
   border-radius: 1.1rem;
   border: 1px solid rgba(125, 97, 84, 0.2);
@@ -1208,8 +1209,8 @@ a {
 /* -------------------------------------------------------------------------- */
 
 .book-theme {
-  --book-nav-h: calc(52px + constant(safe-area-inset-bottom));
-  --book-nav-h: calc(52px + env(safe-area-inset-bottom, 0px));
+  --book-nav-h: calc(64px + constant(safe-area-inset-bottom));
+  --book-nav-h: calc(64px + env(safe-area-inset-bottom, 0px));
 }
 
 .book-bottom-nav {
@@ -1237,8 +1238,9 @@ a {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
-  padding: 6px 4px;
+  gap: 4px;
+  min-height: 2.75rem;
+  padding: 8px 4px;
   background: transparent;
   color: rgba(248, 244, 252, 0.55);
   transition:
@@ -1258,10 +1260,11 @@ a {
 .book-bottom-nav__icon {
   position: relative;
   display: inline-flex;
+  font-size: 1.05rem;
 }
 
 .book-bottom-nav__label {
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.02em;
 }
