@@ -28,16 +28,27 @@ export async function linkStylistToAllServices(salonId: string, stylistId: strin
   return result.count;
 }
 
-/** Ensure every active service is offered by every active stylist. */
-export async function syncAllServiceStylistLinks(salonId: string) {
-  const [stylists, services] = await Promise.all([
+/**
+ * Link only orphan services (zero stylists) to every active stylist.
+ * Preserves intentional specialty menus (e.g. Aisha women-only, Omar men-only).
+ */
+export async function linkOrphanServicesToAllStylists(salonId: string) {
+  const [stylists, orphans] = await Promise.all([
     prisma.stylist.findMany({ where: { salonId, active: true }, select: { id: true } }),
-    prisma.service.findMany({ where: { salonId, active: true }, select: { id: true } }),
+    prisma.service.findMany({
+      where: { salonId, active: true, stylists: { none: {} } },
+      select: { id: true },
+    }),
   ]);
-  if (stylists.length === 0 || services.length === 0) return 0;
-  const data = stylists.flatMap((stylist) =>
-    services.map((service) => ({ stylistId: stylist.id, serviceId: service.id }))
+  if (stylists.length === 0 || orphans.length === 0) return 0;
+  const data = orphans.flatMap((service) =>
+    stylists.map((stylist) => ({ stylistId: stylist.id, serviceId: service.id }))
   );
   const result = await prisma.stylistService.createMany({ data, skipDuplicates: true });
   return result.count;
+}
+
+/** @deprecated Prefer linkOrphanServicesToAllStylists — full mesh breaks specialty menus. */
+export async function syncAllServiceStylistLinks(salonId: string) {
+  return linkOrphanServicesToAllStylists(salonId);
 }

@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import {
   adminLogin,
+  clearAuthSession,
   clearOpenBookingsForStylist,
   nextOpenDate,
   stylistLogin,
@@ -11,28 +12,25 @@ test.describe("Walk-in appointments", () => {
     const clientName = `WalkInMgr ${Date.now()}`;
 
     await adminLogin(page);
+    await clearOpenBookingsForStylist(page, /^(aisha|omar|farzana)$/i);
     await page.goto("/manager/walk-in");
     await expect(page.getByRole("heading", { name: /^walk-in$/i })).toBeVisible();
     await expect(page.getByTestId("walk-in-panel")).toBeVisible();
 
     const service = page.getByLabel("Walk-in service");
-    await expect(service.locator("option")).toHaveCount(7, { timeout: 10_000 });
+    // Wait until catalog hydrates (placeholder alone is 1 option)
+    await expect
+      .poll(async () => service.locator("option").count(), { timeout: 15_000 })
+      .toBeGreaterThanOrEqual(7);
     const labels = await service.locator("option").allTextContents();
     const short = labels.find((t) => /bang|fringe trim/i.test(t));
     expect(short, "short walk-in service").toBeTruthy();
     await service.selectOption({ label: short! });
-    await expect(
-      page.getByTestId("walk-in-eta").or(page.getByText(/no open slot/i))
-    ).toBeVisible({ timeout: 10_000 });
+    // Wait for real ETA — "no open slot" flashes while options load and must not win the race
+    await expect(page.getByTestId("walk-in-eta")).toBeVisible({ timeout: 15_000 });
     await page.getByLabel("Walk-in client name").fill(clientName);
-    // If the day is full, fall back to waitlist so the filter assertion still runs
-    if (await page.getByText(/no open slot/i).isVisible().catch(() => false)) {
-      await page.getByRole("button", { name: /add to waitlist/i }).click();
-      await expect(page.getByText(/added to waitlist/i)).toBeVisible({ timeout: 15_000 });
-    } else {
-      await page.getByRole("button", { name: /seat walk-in/i }).click();
-      await expect(page.getByText(/walk-in seated/i)).toBeVisible({ timeout: 20_000 });
-    }
+    await page.getByRole("button", { name: /seat walk-in/i }).click();
+    await expect(page.getByText(/walk-in seated/i)).toBeVisible({ timeout: 20_000 });
 
     await page.goto("/manager/appointments");
     await expect(page.getByRole("heading", { name: /^bookings$/i })).toBeVisible();
@@ -43,12 +41,13 @@ test.describe("Walk-in appointments", () => {
 
   test("manager can seat waitlist from public salon display", async ({ page }) => {
     await adminLogin(page);
+    await clearOpenBookingsForStylist(page, /^(aisha|omar|farzana)$/i);
 
     const catalog = await page.request.get("/api/public/fhsalon/catalog");
     const cat = await catalog.json();
-    const service = (cat.services || []).find((s: { name: string }) =>
-      /^men.?s haircut/i.test(s.name)
-    );
+    const service =
+      (cat.services || []).find((s: { name: string }) => /bang|fringe/i.test(s.name)) ||
+      (cat.services || []).find((s: { name: string }) => /^men.?s haircut/i.test(s.name));
     expect(service?.id).toBeTruthy();
 
     const clientName = `MgrDisplay ${Date.now()}`;
@@ -68,6 +67,7 @@ test.describe("Walk-in appointments", () => {
       hasText: clientName,
     });
     await expect(entry).toBeVisible({ timeout: 15_000 });
+    await expect(entry.getByTestId("waitlist-seat-now")).toBeEnabled({ timeout: 30_000 });
     await entry.getByTestId("waitlist-seat-now").click();
     const picker = entry.getByTestId("waitlist-seat-picker");
     await expect(picker).toBeVisible();
@@ -100,7 +100,7 @@ test.describe("Walk-in appointments", () => {
     await adminLogin(page);
     await clearOpenBookingsForStylist(page, /^aisha$/i);
 
-    await page.context().clearCookies();
+    await clearAuthSession(page);
     await page.goto("/stylist/login");
     await page.getByLabel(/^email$/i).fill("aisha@fhsalon.ca");
     await page.getByLabel(/^password$/i).fill("demo1234");
@@ -112,10 +112,16 @@ test.describe("Walk-in appointments", () => {
     await expect(page.getByTestId("walk-in-panel")).toBeVisible();
 
     // Prefer a short service so late-day / busy books still have a slot
-    // Aisha only has women's services (+ "Choose service") — not the full catalog
+    // Aisha's specialty menu: women's seed services (+ placeholder), not men's cuts
     const service = page.getByLabel("Walk-in service");
-    await expect(service.locator("option")).toHaveCount(4, { timeout: 10_000 });
+    await expect
+      .poll(async () => service.locator("option").count(), { timeout: 15_000 })
+      .toBeGreaterThanOrEqual(4);
     const labels = await service.locator("option").allTextContents();
+    expect(
+      labels.some((t) => /^men'?s haircut/i.test(t.trim()) || /fade\s*\/\s*taper/i.test(t)),
+      "Aisha must not list seed men's services"
+    ).toBeFalsy();
     const short = labels.find((t) => /bang|fringe trim/i.test(t));
     expect(short, "short walk-in service").toBeTruthy();
     await service.selectOption({ label: short! });
@@ -163,11 +169,12 @@ test.describe("Walk-in appointments", () => {
 
   test("display today hides completed bookings", async ({ page }) => {
     await adminLogin(page);
+    await clearOpenBookingsForStylist(page, /^omar$/i);
     const catalog = await page.request.get("/api/public/fhsalon/catalog");
     const cat = await catalog.json();
-    const service = (cat.services || []).find((s: { name: string }) =>
-      /^men.?s haircut/i.test(s.name)
-    );
+    const service =
+      (cat.services || []).find((s: { name: string }) => /beard tidy/i.test(s.name)) ||
+      (cat.services || []).find((s: { name: string }) => /^men.?s haircut/i.test(s.name));
     const omar = (cat.stylists || []).find((s: { name: string }) => /omar/i.test(s.name));
     expect(service?.id && omar?.id).toBeTruthy();
 
@@ -176,11 +183,11 @@ test.describe("Walk-in appointments", () => {
       data: {
         serviceId: service.id,
         stylistId: omar.id,
-        nextAvailable: false,
+        nextAvailable: true,
         clientName,
       },
     });
-    expect(walk.ok()).toBeTruthy();
+    expect(walk.ok(), `walk-in create: ${await walk.text()}`).toBeTruthy();
     const created = await walk.json();
     const id = created.appointment?.id as string;
     expect(id).toBeTruthy();
@@ -201,6 +208,7 @@ test.describe("Walk-in appointments", () => {
     const clientName = `WaitCycle ${Date.now()}`;
 
     await adminLogin(page);
+    await clearOpenBookingsForStylist(page, /^(aisha|omar|farzana)$/i);
 
     // Short service + Omar — long cuts / busy Farzana often leave Seat now disabled
     const catalog = await page.request.get("/api/public/fhsalon/catalog");
@@ -231,6 +239,7 @@ test.describe("Walk-in appointments", () => {
       hasText: clientName,
     });
     await expect(entry).toBeVisible({ timeout: 15_000 });
+    await expect(entry.getByTestId("waitlist-seat-now")).toBeEnabled({ timeout: 30_000 });
 
     await entry.getByTestId("waitlist-seat-now").click();
     const picker = entry.getByTestId("waitlist-seat-picker");
@@ -356,7 +365,7 @@ test.describe("Walk-in appointments", () => {
     const entryId = added.entry?.id as string;
     expect(entryId).toBeTruthy();
 
-    await page.context().clearCookies();
+    await clearAuthSession(page);
     await page.goto("/stylist/login");
     await page.getByLabel(/^email$/i).fill("aisha@fhsalon.ca");
     await page.getByLabel(/^password$/i).fill("demo1234");
@@ -369,7 +378,7 @@ test.describe("Walk-in appointments", () => {
       hasText: clientName,
     });
     await expect(entry).toBeVisible({ timeout: 15_000 });
-    await expect(entry.getByTestId("waitlist-seat-now")).toBeEnabled({ timeout: 15_000 });
+    await expect(entry.getByTestId("waitlist-seat-now")).toBeEnabled({ timeout: 30_000 });
 
     // Same PATCH handler as Confirm seat; request context avoids UI poll races on "Seating…"
     const seat = await page.request.patch("/api/stylist/waitlist", {

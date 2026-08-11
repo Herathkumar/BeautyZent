@@ -75,6 +75,8 @@ export function toLocalDateTimeInput(d: Date) {
 }
 
 export async function adminLogin(page: Page) {
+  // Clear stylist/manager session first so login is not skipped or raced
+  await clearAuthSession(page);
   await page.goto("/manager/login");
   await page.getByLabel(/email/i).fill(DEMO.adminEmail);
   await page.getByLabel(/password/i).fill(DEMO.password);
@@ -120,9 +122,15 @@ export async function joinAsMember(
   }
 }
 
+/** Drop auth cookies and leave the current SPA so 401 handlers cannot race navigations. */
+export async function clearAuthSession(page: Page) {
+  await page.context().clearCookies();
+  await page.goto("about:blank");
+}
+
 export async function stylistLogin(page: Page) {
   // Avoid leftover manager session interrupting navigation to the stylist app
-  await page.context().clearCookies();
+  await clearAuthSession(page);
   await page.goto("/stylist/login");
   await page.getByLabel(/email/i).fill(DEMO.stylistEmail);
   await page.getByLabel(/password/i).fill(DEMO.password);

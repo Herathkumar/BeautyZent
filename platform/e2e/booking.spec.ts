@@ -81,6 +81,8 @@ test.describe("Client online booking flow", () => {
     await page.waitForURL(/\/manager(?!\/login)/, { timeout: 20_000 });
 
     await page.goto("/manager/services");
+    // Skip AI image generation — slow/flaky in e2e and not needed for this regression.
+    await page.getByLabel(/generate ai menu image/i).uncheck();
     await page.getByPlaceholder(/service name/i).fill(serviceName);
     await page.locator("form select").first().selectOption("MEN");
     await page.locator('form input[type="number"]').first().fill("20");
@@ -88,9 +90,8 @@ test.describe("Client online booking flow", () => {
     await page.getByRole("button", { name: /^add$/i }).click();
     await expect(page.getByText(serviceName)).toBeVisible({ timeout: 15_000 });
 
-    // Repair any missing stylist links, then assert this service is bookable
-    await page.getByRole("button", { name: /link all services/i }).click();
-    await expect(page.getByText(/linked services to stylists/i)).toBeVisible({ timeout: 15_000 });
+    // Create already links the new service to all stylists — avoid full-mesh "link all"
+    // which would overwrite specialty menus (Aisha women-only / Omar men-only).
     const serviceRow = page.locator("div.flex.flex-wrap.items-center").filter({ hasText: serviceName });
     await expect(serviceRow.getByText(/\d+ stylists?/i)).toBeVisible();
     await expect(serviceRow.getByText(/not bookable online yet/i)).toHaveCount(0);
@@ -106,5 +107,13 @@ test.describe("Client online booking flow", () => {
     await expect(
       page.getByRole("button").filter({ hasText: /farzana|aisha|omar|aadil/i }).first()
     ).toBeVisible();
+
+    // Disable so later walk-in / stylist tests don't see an extra catalog row
+    await page.goto("/manager/services");
+    const cleanupRow = page.locator("div.flex.flex-wrap.items-center").filter({
+      hasText: serviceName,
+    });
+    await cleanupRow.getByRole("button", { name: /^disable$/i }).click();
+    await expect(cleanupRow.getByText(/inactive/i)).toBeVisible({ timeout: 10_000 });
   });
 });

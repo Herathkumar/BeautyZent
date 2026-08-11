@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { syncAllServiceStylistLinks } from "@/lib/service-links";
+import { linkOrphanServicesToAllStylists } from "@/lib/service-links";
 import { serviceImageUrl } from "@/lib/service-image";
 import { stylistPhotoUrl } from "@/lib/stylist-photo";
 
@@ -44,8 +44,8 @@ export async function GET(
     return NextResponse.json({ error: "Salon not found" }, { status: 404, headers: CORS_HEADERS });
   }
 
-  // Heal orphans (e.g. services added outside admin POST) so booking always lists stylists.
-  await syncAllServiceStylistLinks(salon.id);
+  // Heal orphans only — do not mesh every service onto every stylist (specialty menus).
+  await linkOrphanServicesToAllStylists(salon.id);
 
   const stylists = await prisma.stylist.findMany({
     where: { salonId: salon.id, active: true },

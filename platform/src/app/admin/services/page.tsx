@@ -93,10 +93,10 @@ export default function ServicesAdminPage() {
       }
       setName("");
       const createdId = data.service?.id as string | undefined;
+      // Show the new service immediately — do not wait on AI image generation.
+      await load();
       if (generateImageOnAdd && createdId) {
         await generateImage(createdId);
-      } else {
-        await load();
       }
     } finally {
       setAdding(false);

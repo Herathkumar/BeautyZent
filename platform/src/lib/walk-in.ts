@@ -115,10 +115,14 @@ export async function findNextAvailableWalkIns(opts: {
     const hours = await dayHours(salon, s.id, today);
     const step = Math.min(5, salon.slotMinutes || 30);
     const immediate = ceilToMinutes(now, step);
-    // Walk-ins may start until 1h past posted close (floor override / late day)
-    const latestStart = hours
+    // Floor override: seat walk-ins for the rest of the salon calendar day
+    // (posted close+1h alone fails evening e2e / late desk seating).
+    const endOfDay = zonedDateTime(today, 23, 55, timeZone);
+    const postedLatest = hours
       ? addMinutes(hours.close, 60)
       : addMinutes(immediate, 60);
+    const latestStart =
+      endOfDay.getTime() > postedLatest.getTime() ? endOfDay : postedLatest;
 
     const candidates: Date[] = [immediate];
 

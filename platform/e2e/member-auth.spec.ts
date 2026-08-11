@@ -5,6 +5,7 @@ import {
   DEMO,
   joinAsMember,
   nextOpenDate,
+  pickFirstSlot,
   todayDate,
 } from "./helpers";
 
@@ -59,20 +60,12 @@ test.describe("Booking member auth", () => {
     });
     await stylists
       .getByRole("button")
-      .filter({ hasText: /farzana|aisha|omar|aadil|any stylist/i })
+      .filter({ hasText: /farzana|aisha|omar|aadil/i })
       .first()
       .click();
     await expect(page.getByRole("heading", { name: /pick a time/i })).toBeVisible();
 
-    const openDate = nextOpenDate();
-    await page.locator('input[type="date"]').fill(openDate);
-    await page.waitForTimeout(700);
-    const slot = page
-      .getByRole("button")
-      .filter({ hasText: /\d{1,2}:\d{2}|a\.m\.|p\.m\./i })
-      .first();
-    await expect(slot).toBeVisible({ timeout: 15_000 });
-    await slot.click();
+    await pickFirstSlot(page, nextOpenDate());
 
     await expect(page.getByRole("heading", { name: /your details/i })).toBeVisible();
     await expect(page.getByLabel(/^name$/i)).toHaveValue(name);
