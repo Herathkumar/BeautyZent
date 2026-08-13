@@ -1,13 +1,13 @@
 import path from "path";
 import { test, expect } from "@playwright/test";
-import { adminLogin } from "./helpers";
+import { adminLogin, gotoSettled } from "./helpers";
 
 const selfieFixture = path.join(__dirname, "fixtures", "selfie.png");
 
 test.describe("Manager profile photo", () => {
   test("can upload selfie and remove it back to default avatar", async ({ page }) => {
     await adminLogin(page);
-    await page.goto("/manager/account");
+    await gotoSettled(page, "/manager/account");
     await expect(page.getByTestId("manager-profile-card")).toBeVisible();
     await expect(page.getByTestId("manager-photo-preview")).toBeVisible();
     await expect(page.getByTestId("manager-photo-button")).toBeVisible();

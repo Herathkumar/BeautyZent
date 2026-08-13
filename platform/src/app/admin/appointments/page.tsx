@@ -296,6 +296,7 @@ export default function AppointmentsAdminPage() {
           return (
             <div
               key={a.id}
+              data-testid="booking-row"
               className={`grid gap-2 border-b border-[#7d6154]/12 px-4 py-3 last:border-b-0 sm:grid-cols-[180px_1fr_auto] sm:items-center ${
                 i % 2 === 1 ? "bg-[#fffcf9]" : "bg-white"
               }`}

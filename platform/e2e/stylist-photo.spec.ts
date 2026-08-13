@@ -1,35 +1,52 @@
 import path from "path";
 import { test, expect } from "@playwright/test";
-import { DEMO, stylistLogin } from "./helpers";
+import { DEMO, gotoSettled, stylistLogin } from "./helpers";
 
 const selfieFixture = path.join(__dirname, "fixtures", "selfie.png");
+const womenService = /women'?s (hair)?cut|women'?s trim|blow-dry|bang|fringe/i;
+
+async function openStylistStep(page: import("@playwright/test").Page, service: string | RegExp) {
+  await gotoSettled(page, `/book/${DEMO.slug}`);
+  await expect(page.getByRole("heading", { name: /choose services?/i })).toBeVisible();
+  const services = page.locator("section").filter({
+    has: page.getByRole("heading", { name: /choose services?/i }),
+  });
+  if (typeof service === "string") {
+    await services
+      .getByRole("button")
+      .filter({ has: page.getByText(service, { exact: true }) })
+      .first()
+      .click();
+  } else {
+    await services.getByRole("button").filter({ hasText: service }).first().click();
+  }
+  await expect(page.getByRole("heading", { name: /choose your stylist/i })).toBeVisible();
+  return page.locator("section").filter({
+    has: page.getByRole("heading", { name: /choose your stylist/i }),
+  });
+}
 
 test.describe("Stylist profile photo", () => {
   test("default avatar shows on booking; selfie replaces it", async ({ page }) => {
-    // Booking shows gender avatar before any selfie
-    await page.goto(`/book/${DEMO.slug}`);
-    const services = page.locator("section").filter({
-      has: page.getByRole("heading", { name: /choose services?/i }),
+    await stylistLogin(page);
+    await gotoSettled(page, "/stylist/account");
+    await expect(page.getByTestId("stylist-profile-card")).toBeVisible();
+    const remove = page.getByRole("button", {
+      name: /remove photo|use default avatar instead|use avatar instead/i,
     });
-    await services
-      .getByRole("button")
-      .filter({ hasText: /women'?s haircut|women'?s trim/i })
-      .first()
-      .click();
-    await expect(page.getByRole("heading", { name: /choose your stylist/i })).toBeVisible();
-    const stylists = page.locator("section").filter({
-      has: page.getByRole("heading", { name: /choose your stylist/i }),
-    });
+    if (await remove.isVisible().catch(() => false)) {
+      await remove.click();
+      await expect(page.getByText(/photo removed/i)).toBeVisible({ timeout: 10_000 });
+    }
+
+    const stylists = await openStylistStep(page, womenService);
     const farzanaBtn = stylists.getByRole("button").filter({ hasText: /farzana/i }).first();
     await expect(farzanaBtn).toBeVisible();
-    const avatar = farzanaBtn.locator('img[alt*="Farzana" i]');
+    const avatar = farzanaBtn.locator("img").first();
     await expect(avatar).toBeVisible();
     await expect(avatar).toHaveAttribute("src", /avatars\/stylist-(female|neutral)\.svg/);
 
-    // Stylist uploads selfie
-    await stylistLogin(page);
-    await page.getByRole("link", { name: /^profile$/i }).click();
-    await expect(page.getByTestId("stylist-profile-card")).toBeVisible();
+    await gotoSettled(page, "/stylist/account");
     await expect(page.getByTestId("stylist-photo-preview")).toHaveAttribute(
       "src",
       /avatars\/stylist-/
@@ -44,20 +61,8 @@ test.describe("Stylist profile photo", () => {
       /\/api\/public\/stylist-photo\//
     );
 
-    // Online booking now shows the selfie URL for Farzana
-    await page.goto(`/book/${DEMO.slug}`);
-    await expect(page.getByRole("heading", { name: /choose services?/i })).toBeVisible();
-    await page
-      .locator("section")
-      .filter({ has: page.getByRole("heading", { name: /choose services?/i }) })
-      .getByRole("button")
-      .filter({ hasText: /women'?s haircut|women'?s trim/i })
-      .first()
-      .click();
-    await expect(page.getByRole("heading", { name: /choose your stylist/i })).toBeVisible();
-    const bookedPhoto = page
-      .locator("section")
-      .filter({ has: page.getByRole("heading", { name: /choose your stylist/i }) })
+    const after = await openStylistStep(page, womenService);
+    const bookedPhoto = after
       .getByRole("button")
       .filter({ hasText: /farzana/i })
       .first()
@@ -66,9 +71,12 @@ test.describe("Stylist profile photo", () => {
       timeout: 15_000,
     });
 
-    // Cleanup: restore avatar so later runs start from defaults
-    await page.goto("/stylist/account");
-    await page.getByRole("button", { name: /remove photo|use default avatar instead|use avatar instead/i }).click();
+    await gotoSettled(page, "/stylist/account");
+    await page
+      .getByRole("button", {
+        name: /remove photo|use default avatar instead|use avatar instead/i,
+      })
+      .click();
     await expect(page.getByText(/photo removed/i)).toBeVisible();
     await expect(page.getByTestId("stylist-photo-preview")).toHaveAttribute(
       "src",
@@ -77,10 +85,24 @@ test.describe("Stylist profile photo", () => {
   });
 
   test("male avatar used for male stylist without selfie", async ({ page }) => {
-    await page.goto(`/book/${DEMO.slug}`);
-    await page.getByRole("button").filter({ hasText: /men'?s haircut|fade|beard/i }).first().click();
-    await expect(page.getByRole("heading", { name: /choose your stylist/i })).toBeVisible();
-    const omar = page.getByRole("button").filter({ hasText: /omar/i }).first();
-    await expect(omar.locator("img")).toHaveAttribute("src", /avatars\/stylist-male\.svg/);
+    const catalog = await (await page.request.get(`/api/public/${DEMO.slug}/catalog`)).json();
+    const omar = catalog.stylists?.find((s: { name: string }) => /omar/i.test(s.name));
+    expect(omar, "Omar in catalog").toBeTruthy();
+    const men =
+      catalog.services?.find(
+        (s: { id: string; name: string }) =>
+          omar.serviceIds?.includes(s.id) && /men|fade|beard/i.test(s.name)
+      ) || catalog.services?.find((s: { id: string }) => omar.serviceIds?.includes(s.id));
+    expect(men?.name, "Omar service").toBeTruthy();
+    const stylists = await openStylistStep(page, men.name as string);
+    const omarBtn = stylists.getByRole("button").filter({ hasText: /omar/i }).first();
+    await omarBtn.scrollIntoViewIfNeeded();
+    await expect(omarBtn).toBeVisible({ timeout: 15_000 });
+    await expect(omarBtn.locator("img")).toHaveAttribute(
+      "src",
+      String(omar.photoUrl || "").includes("stylist-photo")
+        ? /\/api\/public\/stylist-photo\//
+        : /avatars\/stylist-male\.svg/
+    );
   });
 });

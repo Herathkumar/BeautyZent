@@ -5,6 +5,7 @@ import {
   bookableDateNearToday,
   clearOpenBookingsForStylist,
   DEMO,
+  gotoSettled,
   stylistLogin,
   todayDate,
 } from "./helpers";
@@ -40,7 +41,7 @@ test.describe("Guest booking visibility across apps", () => {
     await assertNoCrashOverlay(page);
 
     await adminLogin(page);
-    await page.goto("/manager/appointments");
+    await gotoSettled(page, "/manager/appointments");
     await expect(page.getByText(clientName).first()).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText(/E2E guest visibility/i).first()).toBeVisible();
     await assertNoCrashOverlay(page);

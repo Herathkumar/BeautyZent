@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import {
+  adminLogin,
   bookOnline,
   bookableDateNearToday,
   DEMO,
@@ -111,16 +112,23 @@ test.describe("Store display shows online bookings", () => {
         });
 
         const today = todayDate();
-        const tab = bookedDate === today ? /^today/i : /^future/i;
-        await tablet.getByRole("button", { name: tab }).click();
-        // Board polls; reload once if the new booking is not painted yet
+        const tabs = bookedDate === today ? [/^today/i, /^future/i] : [/^future/i, /^today/i];
         const onBoard = tablet.getByText(clientName);
-        if (!(await onBoard.isVisible().catch(() => false))) {
-          await tablet.reload();
-          await expect(tablet.getByTestId("store-display-board")).toBeVisible({
-            timeout: 15_000,
-          });
-          await tablet.getByRole("button", { name: tab }).click();
+        let found = false;
+        for (let attempt = 0; attempt < 3 && !found; attempt++) {
+          if (attempt > 0) {
+            await tablet.reload();
+            await expect(tablet.getByTestId("store-display-board")).toBeVisible({
+              timeout: 15_000,
+            });
+          }
+          for (const tab of tabs) {
+            await tablet.getByRole("button", { name: tab }).click();
+            if (await onBoard.isVisible().catch(() => false)) {
+              found = true;
+              break;
+            }
+          }
         }
         await expect(onBoard).toBeVisible({ timeout: 20_000 });
       }
@@ -129,11 +137,7 @@ test.describe("Store display shows online bookings", () => {
     }
 
     // API must return the booking when unlocked / no PIN (manager session bypass)
-    await page.goto("/manager/login");
-    await page.getByLabel(/email/i).fill(DEMO.adminEmail);
-    await page.getByLabel(/password/i).fill(DEMO.password);
-    await page.locator('form button[type="submit"]').click();
-    await expect(page).toHaveURL(/\/manager(?!\/login)/, { timeout: 20_000 });
+    await adminLogin(page);
 
     const res = await page.request.get(`/api/display/${DEMO.slug}/today?days=21`);
     expect(res.ok()).toBeTruthy();

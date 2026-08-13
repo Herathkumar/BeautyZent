@@ -1,10 +1,10 @@
 import { test, expect } from "@playwright/test";
-import { adminLogin } from "./helpers";
+import { adminLogin, gotoSettled } from "./helpers";
 
 test.describe("Manager payroll", () => {
   test("pay page loads filters and reports", async ({ page }) => {
     await adminLogin(page);
-    await page.goto("/manager/pay");
+    await gotoSettled(page, "/manager/pay");
     await expect(page.getByRole("heading", { name: /^payroll$/i })).toBeVisible();
     await expect(page.getByRole("combobox", { name: /^year$/i })).toBeVisible();
     await expect(page.getByRole("combobox", { name: /^month$/i })).toBeVisible();

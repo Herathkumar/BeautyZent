@@ -1,12 +1,12 @@
 import { test, expect } from "@playwright/test";
-import { acceptConfirm, adminLogin, nextOpenDate, pickFirstSlot } from "./helpers";
+import { acceptConfirm, adminLogin, gotoSettled, nextOpenDate, pickFirstSlot } from "./helpers";
 
 test.describe("Admin — book for client", () => {
   test("front desk can create a booking", async ({ page }) => {
     const clientName = `WalkIn ${Date.now()}`;
 
     await adminLogin(page);
-    await page.goto("/manager/book");
+    await gotoSettled(page, "/manager/book");
     await expect(page.getByRole("heading", { name: /book for a client/i })).toBeVisible();
 
     const selects = page.locator("form select");
@@ -35,9 +35,9 @@ test.describe("Admin — book for client", () => {
 
   test("products and stylists admin pages load", async ({ page }) => {
     await adminLogin(page);
-    await page.goto("/manager/products");
+    await gotoSettled(page, "/manager/products");
     await expect(page.getByRole("heading", { name: /product/i })).toBeVisible();
-    await page.goto("/manager/stylists");
+    await gotoSettled(page, "/manager/stylists");
     await expect(page.getByRole("heading", { name: /stylist/i })).toBeVisible();
     // Scope to stylist cards — nav brand also contains "Farzana"
     await expect(page.locator("article").filter({ hasText: /farzana/i }).first()).toBeVisible();
@@ -45,7 +45,7 @@ test.describe("Admin — book for client", () => {
 
   test("manager can toggle self-manage schedule on existing stylist", async ({ page }) => {
     await adminLogin(page);
-    await page.goto("/manager/stylists");
+    await gotoSettled(page, "/manager/stylists");
     await expect(page.getByRole("heading", { name: /stylists & logins/i })).toBeVisible();
 
     // Aisha is seeded without self-manage
@@ -53,6 +53,16 @@ test.describe("Admin — book for client", () => {
     await expect(card).toBeVisible({ timeout: 15_000 });
     const toggle = card.getByRole("checkbox", { name: /self-manage schedule/i });
     await expect(toggle).toBeVisible();
+    if (await toggle.isChecked()) {
+      const clearResp = page.waitForResponse(
+        (r) =>
+          r.url().includes("/api/admin/stylists") &&
+          r.request().method() === "POST" &&
+          r.request().postDataJSON()?.action === "updateSelfManage"
+      );
+      await toggle.uncheck();
+      expect((await clearResp).ok()).toBeTruthy();
+    }
     await expect(toggle).not.toBeChecked();
     await expect(card.getByText(/needs leave approval/i)).toBeVisible();
 
@@ -91,7 +101,7 @@ test.describe("Admin — book for client", () => {
   test("reset password shows credentials in the same stylist card", async ({ page }) => {
     const unique = `Rst${Date.now().toString(36)}`;
     await adminLogin(page);
-    await page.goto("/manager/stylists");
+    await gotoSettled(page, "/manager/stylists");
 
     await page.getByPlaceholder(/stylist name/i).fill(`${unique} Stylist`);
     await page.getByRole("button", { name: /add stylist \+ login/i }).click();

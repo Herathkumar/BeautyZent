@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { adminLogin, DEMO } from "./helpers";
+import { adminLogin, DEMO, gotoSettled } from "./helpers";
 
 test.describe("Manager portal", () => {
   test("login and see dashboard links", async ({ page }) => {
@@ -23,7 +23,7 @@ test.describe("Manager portal", () => {
 
   test("who's working page lists team for a day", async ({ page }) => {
     await adminLogin(page);
-    await page.goto("/manager/working");
+    await gotoSettled(page, "/manager/working");
     await expect(page.getByRole("heading", { name: /who.?s working/i })).toBeVisible();
     await expect(page.getByLabel(/^date$/i)).toBeVisible();
     await expect(page.getByTestId("working-roster-row").first()).toBeVisible({ timeout: 15_000 });
@@ -53,7 +53,7 @@ test.describe("Manager portal", () => {
     // If no open slot, still exercise empty/open breakdown UI
     const seated = walk.ok();
 
-    await page.goto(`/manager/working?stylist=${stylist.id}`);
+    await gotoSettled(page, `/manager/working?stylist=${stylist.id}`);
     const row = page.locator(`[data-testid=working-roster-row][data-stylist-id="${stylist.id}"]`);
     await expect(row).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId("working-jobs-breakdown")).toBeVisible({ timeout: 15_000 });
@@ -83,7 +83,7 @@ test.describe("Manager portal", () => {
 
   test("services page lists items and sync control", async ({ page }) => {
     await adminLogin(page);
-    await page.goto("/manager/services");
+    await gotoSettled(page, "/manager/services");
     await expect(page.getByRole("heading", { name: /services/i })).toBeVisible();
     await expect(page.getByRole("button", { name: /link all services/i })).toBeVisible();
     await expect(page.getByText(/min/i).first()).toBeVisible();
@@ -91,12 +91,12 @@ test.describe("Manager portal", () => {
 
   test("book for client page loads catalog", async ({ page }) => {
     await adminLogin(page);
-    await page.goto("/manager/book");
+    await gotoSettled(page, "/manager/book");
     await expect(page.getByText(/book|client|service|stylist/i).first()).toBeVisible();
   });
 
   test("rejects bad password", async ({ page }) => {
-    await page.goto("/manager/login");
+    await gotoSettled(page, "/manager/login");
     await page.getByLabel(/email/i).fill(DEMO.adminEmail);
     await page.getByLabel(/password/i).fill("wrong-password");
     await page.locator('form button[type="submit"]').click();
@@ -105,7 +105,7 @@ test.describe("Manager portal", () => {
 
   test("account page loads and rejects wrong current password", async ({ page }) => {
     await adminLogin(page);
-    await page.goto("/manager/account");
+    await gotoSettled(page, "/manager/account");
     await expect(page.getByRole("heading", { name: /^profile$/i })).toBeVisible();
     await expect(page.getByTestId("manager-profile-card")).toBeVisible();
     await expect(page.getByTestId("manager-photo-preview")).toBeVisible();
@@ -121,31 +121,57 @@ test.describe("Manager portal", () => {
   });
 
   test("manager can change password and sign back in", async ({ page }) => {
-    // Requires a working admin password in DEMO / E2E_ADMIN_PASSWORD.
-    // Changes password then restores the original so other tests keep working.
     const original = DEMO.password;
     const tempPassword = `AdminTmp${Date.now().toString(36)}!`;
 
-    await adminLogin(page);
-    await page.goto("/manager/account");
-    await page.getByLabel(/^current password$/i).fill(original);
-    await page.getByLabel(/^new password$/i).fill(tempPassword);
-    await page.getByLabel(/confirm new password/i).fill(tempPassword);
-    await page.getByRole("button", { name: /update password/i }).click();
-    await expect(page.getByText(/password updated/i)).toBeVisible();
+    const restore = async (current: string) => {
+      const login = await page.request.post(
+        `/api/auth/login?salon=${encodeURIComponent(DEMO.slug)}`,
+        {
+          data: {
+            email: DEMO.adminEmail,
+            password: current,
+            salonSlug: DEMO.slug,
+          },
+        }
+      );
+      if (!login.ok()) return false;
+      const patch = await page.request.patch("/api/admin/account", {
+        data: {
+          currentPassword: current,
+          newPassword: original,
+          confirmPassword: original,
+        },
+      });
+      return patch.ok();
+    };
 
-    await page.getByRole("main").getByRole("button", { name: /^log out$/i }).click();
-    await page.goto("/manager/login");
-    await page.getByLabel(/email/i).fill(DEMO.adminEmail);
-    await page.getByLabel(/password/i).fill(tempPassword);
-    await page.locator('form button[type="submit"]').click();
-    await expect(page).toHaveURL(/\/manager(?!\/login)/, { timeout: 20_000 });
+    try {
+      await adminLogin(page);
+      await gotoSettled(page, "/manager/account");
+      await page.getByLabel(/^current password$/i).fill(original);
+      await page.getByLabel(/^new password$/i).fill(tempPassword);
+      await page.getByLabel(/confirm new password/i).fill(tempPassword);
+      await page.getByRole("button", { name: /update password/i }).click();
+      await expect(page.getByText(/password updated/i)).toBeVisible();
 
-    await page.goto("/manager/account");
-    await page.getByLabel(/^current password$/i).fill(tempPassword);
-    await page.getByLabel(/^new password$/i).fill(original);
-    await page.getByLabel(/confirm new password/i).fill(original);
-    await page.getByRole("button", { name: /update password/i }).click();
-    await expect(page.getByText(/password updated/i)).toBeVisible();
+      await page.getByRole("main").getByRole("button", { name: /^log out$/i }).click();
+      await expect(page).toHaveURL(/\/manager\/login/, { timeout: 20_000 });
+      await page.getByLabel(/email/i).fill(DEMO.adminEmail);
+      await page.getByLabel(/password/i).fill(tempPassword);
+      await page.locator('form button[type="submit"]').click();
+      await expect(page).toHaveURL(/\/manager(?!\/login)/, { timeout: 20_000 });
+
+      await gotoSettled(page, "/manager/account");
+      await page.getByLabel(/^current password$/i).fill(tempPassword);
+      await page.getByLabel(/^new password$/i).fill(original);
+      await page.getByLabel(/confirm new password/i).fill(original);
+      await page.getByRole("button", { name: /update password/i }).click();
+      await expect(page.getByText(/password updated/i)).toBeVisible();
+    } finally {
+      if (!(await restore(original))) {
+        await restore(tempPassword);
+      }
+    }
   });
 });

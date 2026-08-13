@@ -475,6 +475,7 @@ export default function StylistAccountPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="username"
+                aria-label="Email"
                 className="stylist-tap rounded-2xl border border-ink/15 bg-white px-3 text-ink"
               />
             </label>

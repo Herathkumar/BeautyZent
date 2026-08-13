@@ -1,11 +1,70 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import {
   adminLogin,
+  bookableDateNearToday,
   clearAuthSession,
   clearOpenBookingsForStylist,
+  fillDateInput,
+  gotoSettled,
   nextOpenDate,
   stylistLogin,
 } from "./helpers";
+
+async function bookViaStylistForm(
+  page: Page,
+  opts: { clientName: string; phone: string; otherStylist?: boolean; date?: string }
+) {
+  const service = page.getByTestId("stylist-book-service");
+  await expect
+    .poll(async () => service.locator("option").count(), { timeout: 15_000 })
+    .toBeGreaterThan(1);
+  const labels = await service.locator("option").allTextContents();
+  const shortIdx = labels.findIndex((t) => /bang|beard|trim & tidy/i.test(t));
+  await service.selectOption({ index: shortIdx > 0 ? shortIdx : 1 });
+  const stylistSelect = page.getByTestId("stylist-book-stylist");
+  await expect(stylistSelect).toBeVisible({ timeout: 10_000 });
+  await expect.poll(async () => stylistSelect.locator("option").count()).toBeGreaterThan(1);
+  if (opts.otherStylist) {
+    const other = stylistSelect.locator("option").filter({ hasNotText: /\(you\)/i }).nth(1);
+    const otherValue = await other.getAttribute("value");
+    expect(otherValue).toBeTruthy();
+    await stylistSelect.selectOption(otherValue!);
+  }
+  const day = opts.date ?? nextOpenDate();
+  const slotsLoaded = page.waitForResponse(
+    (r) => r.url().includes("/slots") && r.url().includes(`date=${day}`) && r.ok(),
+    { timeout: 10_000 }
+  );
+  await fillDateInput(page.getByTestId("stylist-book-date"), day);
+  await slotsLoaded.catch(() => undefined);
+  const slots = page.getByTestId("stylist-book-slots").getByRole("button");
+  await expect(slots.first()).toBeVisible({ timeout: 15_000 });
+  await page.getByTestId("stylist-book-client-name").fill(opts.clientName);
+  await expect(page.getByTestId("stylist-book-client-name")).toHaveValue(opts.clientName);
+  await page.getByTestId("stylist-book-client-phone").fill(opts.phone);
+  const count = await slots.count();
+  let lastErr = "";
+  for (let i = 0; i < count; i++) {
+    await slots.nth(i).click();
+    await expect(page.getByTestId("stylist-book-submit")).toBeEnabled();
+    const posted = page.waitForResponse(
+      (r) =>
+        r.url().includes("/api/stylist/appointments/create") &&
+        r.request().method() === "POST" &&
+        (r.request().postData() || "").includes(opts.clientName)
+    );
+    await page.getByTestId("stylist-book-submit").click();
+    const res = await posted;
+    if (res.ok()) {
+      await expect(page.getByTestId("stylist-book-message")).toContainText(opts.clientName, {
+        timeout: 10_000,
+      });
+      return;
+    }
+    lastErr = await res.text();
+  }
+  throw new Error(`Could not book ${opts.clientName}. Last: ${lastErr}`);
+}
 
 test.describe("Walk-in appointments", () => {
   test("manager can seat a walk-in and filter by source", async ({ page }) => {
@@ -13,7 +72,7 @@ test.describe("Walk-in appointments", () => {
 
     await adminLogin(page);
     await clearOpenBookingsForStylist(page, /^(aisha|omar|farzana)$/i);
-    await page.goto("/manager/walk-in");
+    await gotoSettled(page, "/manager/walk-in");
     await expect(page.getByRole("heading", { name: /^walk-in$/i })).toBeVisible();
     await expect(page.getByTestId("walk-in-panel")).toBeVisible();
 
@@ -32,7 +91,7 @@ test.describe("Walk-in appointments", () => {
     await page.getByRole("button", { name: /seat walk-in/i }).click();
     await expect(page.getByText(/walk-in seated/i)).toBeVisible({ timeout: 20_000 });
 
-    await page.goto("/manager/appointments");
+    await gotoSettled(page, "/manager/appointments");
     await expect(page.getByRole("heading", { name: /^bookings$/i })).toBeVisible();
     await page.getByLabel("Source").selectOption("WALK_IN");
     await expect(page.getByText(clientName).first()).toBeVisible({ timeout: 15_000 });
@@ -82,7 +141,7 @@ test.describe("Walk-in appointments", () => {
     const clientName = `Waitlist ${Date.now()}`;
 
     await adminLogin(page);
-    await page.goto("/manager/walk-in");
+    await gotoSettled(page, "/manager/walk-in");
     await page.getByLabel("Walk-in service").selectOption({ index: 1 });
     await page.getByLabel("Walk-in client name").fill(clientName);
     await page.getByRole("button", { name: /add to waitlist/i }).click();
@@ -101,13 +160,13 @@ test.describe("Walk-in appointments", () => {
     await clearOpenBookingsForStylist(page, /^aisha$/i);
 
     await clearAuthSession(page);
-    await page.goto("/stylist/login");
+    await gotoSettled(page, "/stylist/login");
     await page.getByLabel(/^email$/i).fill("aisha@fhsalon.ca");
     await page.getByLabel(/^password$/i).fill("demo1234");
     await page.locator('form button[type="submit"]').click();
     await expect(page).toHaveURL(/\/stylist(?!\/login)/, { timeout: 20_000 });
 
-    await page.goto("/stylist");
+    await gotoSettled(page, "/stylist");
     await page.getByTestId("stylist-walk-in-toggle").click();
     await expect(page.getByTestId("walk-in-panel")).toBeVisible();
 
@@ -277,66 +336,38 @@ test.describe("Walk-in appointments", () => {
   });
 
   test("stylist can book for a client from Floor board", async ({ page }) => {
+    await adminLogin(page);
+    await clearOpenBookingsForStylist(page, /^farzana$/i);
     await stylistLogin(page);
-    await page.goto("/stylist");
+    await gotoSettled(page, "/stylist");
     await page.getByTestId("stylist-book-for-client").click();
     await expect(page).toHaveURL(/\/stylist\/book/);
     await expect(page.getByTestId("stylist-book-page")).toBeVisible();
 
     const clientName = `StyBook ${Date.now()}`;
-    const service = page.getByTestId("stylist-book-service");
-    const labels = await service.locator("option").allTextContents();
-    const shortIdx = labels.findIndex((t) => /bang|beard|trim & tidy/i.test(t));
-    await service.selectOption({ index: shortIdx > 0 ? shortIdx : 1 });
-    await expect(page.getByTestId("stylist-book-stylist")).toBeVisible();
-    const stylistSelect = page.getByTestId("stylist-book-stylist");
-    const optionCount = await stylistSelect.locator("option").count();
-    expect(optionCount).toBeGreaterThan(1);
-    // Next open weekday avoids a packed "today" book from earlier walk-ins
-    await page.getByTestId("stylist-book-date").fill(nextOpenDate());
-    await expect(page.getByTestId("stylist-book-slots").getByRole("button").first()).toBeVisible({
-      timeout: 15_000,
-    });
-    await page.getByTestId("stylist-book-slots").getByRole("button").first().click();
-    await page.getByTestId("stylist-book-client-name").fill(clientName);
-    await page.getByTestId("stylist-book-client-phone").fill("4165550199");
-    await page.getByTestId("stylist-book-submit").click();
-    await expect(page.getByText(new RegExp(`booked\\s+${clientName}`, "i"))).toBeVisible({
-      timeout: 15_000,
+    await bookViaStylistForm(page, {
+      clientName,
+      phone: `416${String(Date.now()).slice(-7)}`,
+      date: bookableDateNearToday(),
     });
 
-    await page.goto("/stylist");
+    await gotoSettled(page, "/stylist");
     await expect(page.getByText(clientName).first()).toBeVisible({ timeout: 15_000 });
   });
 
   test("stylist can book a client onto another stylist", async ({ page }) => {
     await stylistLogin(page);
-    await page.goto("/stylist/book");
+    await gotoSettled(page, "/stylist/book");
     const clientName = `StyOther ${Date.now()}`;
-    const service = page.getByTestId("stylist-book-service");
-    const labels = await service.locator("option").allTextContents();
-    const shortIdx = labels.findIndex((t) => /bang|beard|trim & tidy/i.test(t));
-    await service.selectOption({ index: shortIdx > 0 ? shortIdx : 1 });
-    const stylistSelect = page.getByTestId("stylist-book-stylist");
-    await expect(stylistSelect).toBeVisible({ timeout: 10_000 });
-    const other = stylistSelect.locator("option").filter({ hasNotText: /\(you\)/i }).nth(1);
-    const otherValue = await other.getAttribute("value");
-    expect(otherValue).toBeTruthy();
-    await stylistSelect.selectOption(otherValue!);
-    await page.getByTestId("stylist-book-date").fill(nextOpenDate());
-    await expect(page.getByTestId("stylist-book-slots").getByRole("button").first()).toBeVisible({
-      timeout: 15_000,
+    await bookViaStylistForm(page, {
+      clientName,
+      phone: `647${String(Date.now()).slice(-7)}`,
+      otherStylist: true,
     });
-    await page.getByTestId("stylist-book-slots").getByRole("button").first().click();
-    await page.getByTestId("stylist-book-client-name").fill(clientName);
-    await page.getByTestId("stylist-book-client-phone").fill("4165550188");
-    await page.getByTestId("stylist-book-submit").click();
-    await expect(page.getByText(new RegExp(`booked\\s+${clientName}\\s+with`, "i"))).toBeVisible({
-      timeout: 15_000,
-    });
+    await expect(page.getByText(new RegExp(`booked\\s+${clientName}\\s+with`, "i"))).toBeVisible();
     // Not on logged-in stylist's My Jobs — verify via manager appointments
     await adminLogin(page);
-    await page.goto("/manager/appointments");
+    await gotoSettled(page, "/manager/appointments");
     await expect(page.getByText(clientName).first()).toBeVisible({ timeout: 15_000 });
   });
 
@@ -366,13 +397,13 @@ test.describe("Walk-in appointments", () => {
     expect(entryId).toBeTruthy();
 
     await clearAuthSession(page);
-    await page.goto("/stylist/login");
+    await gotoSettled(page, "/stylist/login");
     await page.getByLabel(/^email$/i).fill("aisha@fhsalon.ca");
     await page.getByLabel(/^password$/i).fill("demo1234");
     await page.locator('form button[type="submit"]').click();
     await expect(page).toHaveURL(/\/stylist(?!\/login)/, { timeout: 20_000 });
 
-    await page.goto("/stylist");
+    await gotoSettled(page, "/stylist");
     const waitlist = page.getByTestId("walk-in-waitlist");
     const entry = waitlist.locator("[data-testid=waitlist-entry]").filter({
       hasText: clientName,
@@ -387,7 +418,7 @@ test.describe("Walk-in appointments", () => {
     });
     expect(seat.ok(), `seat waitlist: ${await seat.text()}`).toBeTruthy();
 
-    await page.goto("/stylist");
+    await gotoSettled(page, "/stylist");
     await expect(
       page.getByTestId("walk-in-waitlist").locator("[data-testid=waitlist-entry]").filter({
         hasText: clientName,

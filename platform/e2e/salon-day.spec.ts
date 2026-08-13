@@ -4,6 +4,7 @@ import {
   bookOnline,
   bookableDateNearToday,
   DEMO,
+  gotoSettled,
   stylistLogin,
   todayDate,
 } from "./helpers";
@@ -26,7 +27,7 @@ test.describe("Salon day — full path", () => {
     const isToday = bookedDate === todayDate();
 
     await adminLogin(page);
-    await page.goto("/manager/appointments");
+    await gotoSettled(page, "/manager/appointments");
     await expect(page.getByText(clientName).first()).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText(/E2E salon-day flow/i).first()).toBeVisible();
 

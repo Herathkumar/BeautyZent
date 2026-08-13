@@ -1,10 +1,10 @@
 import { test, expect } from "@playwright/test";
-import { acceptConfirm, adminLogin, todayDate } from "./helpers";
+import { acceptConfirm, adminLogin, createAppointmentAtOpenSlot, gotoSettled } from "./helpers";
 
 test.describe("Manager store earnings", () => {
   test("dashboard shows today + this week store earnings", async ({ page }) => {
     await adminLogin(page);
-    await page.goto("/manager");
+    await gotoSettled(page, "/manager");
     const card = page.getByTestId("dashboard-store-earnings");
     await expect(card).toBeVisible({ timeout: 15_000 });
     await expect(card.getByText(/store earnings/i)).toBeVisible();
@@ -18,7 +18,7 @@ test.describe("Manager store earnings", () => {
 
   test("store earnings page shows week bars and CSV", async ({ page }) => {
     await adminLogin(page);
-    await page.goto("/manager/earnings");
+    await gotoSettled(page, "/manager/earnings");
     await expect(page).toHaveURL(/\/manager\/earnings/);
     await expect(page.getByTestId("store-earnings-page")).toBeVisible();
     await expect(page.getByTestId("store-earnings-goal")).toBeVisible({ timeout: 15_000 });
@@ -66,7 +66,7 @@ test.describe("Manager store earnings", () => {
 
   test("manager can update store regular hours on Payroll", async ({ page }) => {
     await adminLogin(page);
-    await page.goto("/manager/pay");
+    await gotoSettled(page, "/manager/pay");
     const form = page.getByTestId("store-hours-form");
     await expect(form).toBeVisible({ timeout: 15_000 });
     await form.getByLabel(/store open hour/i).selectOption("10");
@@ -74,11 +74,13 @@ test.describe("Manager store earnings", () => {
     // Checkboxes are sr-only inside pill labels — force avoids label intercept
     await form.getByLabel(/sunday off/i).uncheck({ force: true });
     await form.getByLabel(/monday off/i).check({ force: true });
+    const saved = page.waitForResponse(
+      (r) => r.url().includes("/api/admin/salon") && r.request().method() === "PATCH"
+    );
     await form.getByRole("button", { name: /save store hours/i }).click();
-    // Avoid /new stylists/ — that phrase appears in static help copy
-    await expect(form.getByText(/store hours saved/i)).toBeVisible({
-      timeout: 10_000,
-    });
+    const savedRes = await saved;
+    expect(savedRes.ok(), await savedRes.text()).toBeTruthy();
+    await expect(form.getByText(/store hours saved/i)).toBeVisible({ timeout: 10_000 });
 
     // Restore seed defaults
     await form.getByLabel(/store open hour/i).selectOption("9");
@@ -95,38 +97,11 @@ test.describe("Manager store earnings", () => {
     const clientName = `StoreEarn ${Date.now()}`;
     await adminLogin(page);
 
-    const stylistsRes = await page.request.get("/api/admin/stylists");
-    expect(stylistsRes.ok()).toBeTruthy();
-    const stylistsJson = await stylistsRes.json();
-    const stylist =
-      stylistsJson.stylists?.find((s: { name: string }) => /farzana/i.test(s.name)) ||
-      stylistsJson.stylists?.[0];
-    expect(stylist?.id).toBeTruthy();
-
-    const servicesRes = await page.request.get("/api/admin/services");
-    expect(servicesRes.ok()).toBeTruthy();
-    const servicesJson = await servicesRes.json();
-    const service = servicesJson.services?.[0];
-    expect(service?.id).toBeTruthy();
-
-    // Unique mid-day slot in salon TZ to avoid conflicts with seed bookings.
-    const minute = (Date.now() % 50) + 5;
-    const startsAt = `${todayDate()}T11:${String(minute).padStart(2, "0")}:00`;
-
-    const createRes = await page.request.post("/api/admin/appointments/create", {
-      data: {
-        stylistId: stylist.id,
-        serviceId: service.id,
-        startsAt: new Date(startsAt).toISOString(),
-        clientName,
-        clientPhone: `905555${String(Date.now()).slice(-4)}`,
-        notes: "E2E store earnings void",
-      },
+    const created = await createAppointmentAtOpenSlot(page, {
+      clientName,
+      notes: "E2E store earnings void",
     });
-    expect(createRes.ok()).toBeTruthy();
-    const created = await createRes.json();
-    const appointmentId = created.appointment?.id as string;
-    expect(appointmentId).toBeTruthy();
+    const appointmentId = created.appointmentId;
 
     const doneRes = await page.request.patch("/api/admin/appointments", {
       data: {
@@ -136,9 +111,9 @@ test.describe("Manager store earnings", () => {
         tipCents: 300,
       },
     });
-    expect(doneRes.ok()).toBeTruthy();
+    expect(doneRes.ok(), await doneRes.text()).toBeTruthy();
 
-    await page.goto("/manager/earnings");
+    await gotoSettled(page, "/manager/earnings");
     await expect(page.getByTestId("store-earnings-activity")).toBeVisible({ timeout: 15_000 });
     const row = page
       .getByTestId("store-earnings-activity")

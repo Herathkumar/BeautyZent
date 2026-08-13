@@ -94,10 +94,14 @@ export default function StylistBookPage() {
     [stylists, stylistId]
   );
 
-  async function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setMessage("");
     setError("");
+    const fd = new FormData(e.currentTarget);
+    const name = String(fd.get("clientName") || clientName).trim();
+    const phone = String(fd.get("clientPhone") || clientPhone).trim();
+    const note = String(fd.get("notes") || notes);
     if (!startsAt) {
       setError("Pick an available slot.");
       return;
@@ -110,9 +114,9 @@ export default function StylistBookPage() {
         stylistId,
         serviceId,
         startsAt,
-        clientName,
-        clientPhone,
-        notes,
+        clientName: name,
+        clientPhone: phone,
+        notes: note,
       }),
     });
     const data = await res.json().catch(() => ({}));
@@ -123,7 +127,7 @@ export default function StylistBookPage() {
     }
     const withWhom = data.appointment?.stylist?.name || selectedStylist?.name || "stylist";
     setMessage(
-      `Booked ${data.appointment.client.name} with ${withWhom}` +
+      `Booked ${name} with ${withWhom}` +
         (selectedService ? ` · ${selectedService.name}` : "")
     );
     setStartsAt("");
@@ -252,6 +256,8 @@ export default function StylistBookPage() {
           Client name
           <input
             required
+            name="clientName"
+            autoComplete="off"
             value={clientName}
             onChange={(e) => setClientName(e.target.value)}
             className="rounded-xl border border-ink/15 bg-white px-3 py-2 text-ink"
@@ -262,6 +268,8 @@ export default function StylistBookPage() {
           Client phone
           <input
             required
+            name="clientPhone"
+            autoComplete="off"
             value={clientPhone}
             onChange={(e) => setClientPhone(e.target.value)}
             className="rounded-xl border border-ink/15 bg-white px-3 py-2 text-ink"
@@ -286,7 +294,11 @@ export default function StylistBookPage() {
           {busy ? "Booking…" : "Create booking"}
         </button>
         {error ? <p className="text-sm text-[#f5a8a8]">{error}</p> : null}
-        {message ? <p className="text-sm text-[#9fe3b8]">{message}</p> : null}
+        {message ? (
+          <p className="text-sm text-[#9fe3b8]" data-testid="stylist-book-message">
+            {message}
+          </p>
+        ) : null}
       </form>
     </main>
   );

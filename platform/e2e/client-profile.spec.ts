@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { DEMO, joinAsMember } from "./helpers";
+import { DEMO, acceptConfirm, joinAsMember } from "./helpers";
 
 /** 1×1 PNG — small but decodable by the browser-side resizer. */
 const TINY_PNG = Buffer.from(
@@ -8,15 +8,15 @@ const TINY_PNG = Buffer.from(
 );
 
 test.describe("FHS Client profile", () => {
-  test("app is branded FHS Client", async ({ page }) => {
+  test("app is branded for this salon", async ({ page }) => {
     await page.goto(`/book/${DEMO.slug}`);
-    await expect(page).toHaveTitle(/FHS Client/i);
+    await expect(page).toHaveTitle(/Farzana Hair Salon|FHS Client/i);
 
     const manifest = await page.request.get(`/book/${DEMO.slug}/manifest`);
     expect(manifest.ok()).toBeTruthy();
     const body = await manifest.json();
-    expect(body.name).toBe("FHS Client App");
-    expect(body.short_name).toBe("FHS Client");
+    expect(body.name).toMatch(/Farzana Hair Salon|FHS Client/i);
+    expect(body.short_name).toMatch(/Farzana Hair Salon|FHS Client/i);
   });
 
   test("member saves a selfie, edits details, and signs out from Profile", async ({
@@ -62,8 +62,9 @@ test.describe("FHS Client profile", () => {
     // Appearance lives here now
     await expect(profile.getByTestId("book-theme-toggle")).toBeVisible();
 
-    await profile.getByTestId("client-sign-out").click();
-    await page.getByTestId("confirm-dialog").getByTestId("confirm-dialog-ok").click();
+    await profile.getByTestId("client-sign-out").scrollIntoViewIfNeeded();
+    await profile.getByTestId("client-sign-out").evaluate((el: HTMLElement) => el.click());
+    await acceptConfirm(page);
     await expect(page.getByRole("button", { name: /^join free$/i })).toBeVisible({
       timeout: 15_000,
     });

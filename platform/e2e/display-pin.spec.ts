@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { adminLogin, DEMO } from "./helpers";
+import { adminLogin, DEMO, gotoSettled } from "./helpers";
 
 /** Stable PIN for this suite — always cleared in finally. */
 const E2E_PIN = "4829";
@@ -77,7 +77,7 @@ test.describe("Store display PIN", () => {
     browser,
   }) => {
     await adminLogin(page);
-    await page.goto("/manager/account");
+    await gotoSettled(page, "/manager/account");
     const pinCard = page.getByTestId("manager-display-pin");
     await expect(pinCard).toBeVisible();
     await pinCard.locator("summary").click();
@@ -145,7 +145,7 @@ test.describe("Store display PIN", () => {
       }
 
       // Remove PIN via manager Profile
-      await page.goto("/manager/account");
+      await gotoSettled(page, "/manager/account");
       await page.getByTestId("manager-display-pin").locator("summary").click();
       await page.getByLabel(/^current pin$/i).fill(E2E_PIN);
       await page.getByRole("button", { name: /^remove pin$/i }).click();
@@ -185,7 +185,7 @@ test.describe("Store display PIN", () => {
 
     try {
       await ensureE2ePin(page);
-      await page.goto("/manager/account");
+      await gotoSettled(page, "/manager/account");
       await page.getByTestId("manager-display-pin").locator("summary").click();
       await expect(page.getByTestId("manager-display-pin")).toBeVisible();
 

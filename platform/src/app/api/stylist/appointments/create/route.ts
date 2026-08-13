@@ -86,6 +86,11 @@ export async function POST(req: Request) {
         email: data.clientEmail || null,
       },
     });
+  } else if (data.clientName.trim() && data.clientName.trim() !== client.name) {
+    client = await prisma.client.update({
+      where: { id: client.id },
+      data: { name: data.clientName.trim() },
+    });
   }
 
   const appointment = await prisma.appointment.create({

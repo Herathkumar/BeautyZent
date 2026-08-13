@@ -1,4 +1,4 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 
 export const DEMO = {
   adminEmail: process.env.E2E_ADMIN_EMAIL || "manager@fhsalon.ca",
@@ -74,21 +74,74 @@ export function toLocalDateTimeInput(d: Date) {
   return `${formatDate(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-export async function adminLogin(page: Page) {
-  // Clear stylist/manager session first so login is not skipped or raced
+/** Login uses window.location.assign — wait it out or the next goto is aborted. */
+async function waitForLoginSettle(page: Page) {
+  await page.waitForLoadState("domcontentloaded").catch(() => undefined);
+  await page.waitForLoadState("load").catch(() => undefined);
+}
+
+export async function gotoSettled(page: Page, url: string) {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try {
+      await page.goto(url, { waitUntil: "domcontentloaded", timeout: 20_000 });
+      await page.waitForLoadState("load").catch(() => undefined);
+      return;
+    } catch (err) {
+      const msg = String(err);
+      if (!msg.includes("ERR_ABORTED") && !msg.includes("interrupted")) throw err;
+      await page.waitForTimeout(400 * (attempt + 1));
+    }
+  }
+  await page.goto(url, { waitUntil: "domcontentloaded", timeout: 20_000 });
+  await page.waitForLoadState("load").catch(() => undefined);
+}
+
+async function staffLogin(
+  page: Page,
+  opts: { email: string; password: string; dest: "/manager" | "/stylist" }
+) {
   await clearAuthSession(page);
-  await page.goto("/manager/login");
-  await page.getByLabel(/email/i).fill(DEMO.adminEmail);
-  await page.getByLabel(/password/i).fill(DEMO.password);
-  await page.locator('form button[type="submit"]').click();
-  await expect(page).toHaveURL(/\/manager(?!\/login)/, { timeout: 20_000 });
+  const res = await page.request.post(`/api/auth/login?salon=${encodeURIComponent(DEMO.slug)}`, {
+    data: {
+      email: opts.email,
+      password: opts.password,
+      salonSlug: DEMO.slug,
+    },
+  });
+  expect(res.ok(), `staff login ${opts.email}: ${await res.text()}`).toBeTruthy();
+  await gotoSettled(page, opts.dest);
+  await waitForLoginSettle(page);
+  await expect(page).toHaveURL(new RegExp(`${opts.dest}(?!/login)`), { timeout: 20_000 });
+}
+
+export async function adminLogin(page: Page) {
+  await staffLogin(page, {
+    email: DEMO.adminEmail,
+    password: DEMO.password,
+    dest: "/manager",
+  });
+}
+
+/**
+ * Set a date input so React controlled `onChange` fires.
+ * Playwright `fill()` can update the DOM without committing React state.
+ */
+export async function fillDateInput(locator: Locator, ymd: string) {
+  await locator.evaluate((el, value) => {
+    const input = el as HTMLInputElement;
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+    setter?.call(input, value);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  }, ymd);
+  await expect(locator).toHaveValue(ymd);
 }
 
 /** Accept the themed in-app confirm dialog (replaces native window.confirm). */
 export async function acceptConfirm(page: Page) {
   const dialog = page.getByTestId("confirm-dialog");
   await expect(dialog).toBeVisible({ timeout: 10_000 });
-  await dialog.getByTestId("confirm-dialog-ok").click();
+  await dialog.getByTestId("confirm-dialog-ok").click({ force: true });
   await expect(dialog).toHaveCount(0);
 }
 
@@ -97,8 +150,8 @@ export async function joinAsMember(
   page: Page,
   opts: { name: string; phone: string; email: string }
 ) {
-  await page.goto(`/book/${DEMO.slug}`);
-  await page.getByRole("button", { name: /^join free$/i }).click();
+  await gotoSettled(page, `/book/${DEMO.slug}`);
+  await page.getByRole("button", { name: /^join free$/i }).first().click();
   await page.getByLabel(/^name$/i).fill(opts.name);
   await page.getByLabel(/^phone$/i).fill(opts.phone);
   await page.getByLabel(/^email$/i).fill(opts.email);
@@ -129,13 +182,66 @@ export async function clearAuthSession(page: Page) {
 }
 
 export async function stylistLogin(page: Page) {
-  // Avoid leftover manager session interrupting navigation to the stylist app
-  await clearAuthSession(page);
-  await page.goto("/stylist/login");
-  await page.getByLabel(/email/i).fill(DEMO.stylistEmail);
-  await page.getByLabel(/password/i).fill(DEMO.password);
-  await page.locator('form button[type="submit"]').click();
-  await expect(page).toHaveURL(/\/stylist(?!\/login)/, { timeout: 20_000 });
+  await staffLogin(page, {
+    email: DEMO.stylistEmail,
+    password: DEMO.password,
+    dest: "/stylist",
+  });
+}
+
+/** Book into a real open slot so local-DB collisions do not 409. */
+export async function createAppointmentAtOpenSlot(
+  page: Page,
+  opts: { clientName: string; stylistName?: RegExp; notes?: string }
+) {
+  const stylistsRes = await page.request.get("/api/admin/stylists");
+  expect(stylistsRes.ok(), await stylistsRes.text()).toBeTruthy();
+  const stylistsJson = await stylistsRes.json();
+  const nameRe = opts.stylistName ?? /farzana/i;
+  const stylist =
+    stylistsJson.stylists?.find((s: { name: string }) => nameRe.test(s.name)) ||
+    stylistsJson.stylists?.[0];
+  expect(stylist?.id, "stylist").toBeTruthy();
+
+  const servicesRes = await page.request.get("/api/admin/services");
+  expect(servicesRes.ok(), await servicesRes.text()).toBeTruthy();
+  const servicesJson = await servicesRes.json();
+  const service =
+    servicesJson.services?.find((s: { active?: boolean }) => s.active !== false) ||
+    servicesJson.services?.[0];
+  expect(service?.id, "service").toBeTruthy();
+
+  const today = salonCalendarDate();
+  const errors: string[] = [];
+  for (let dayOffset = 0; dayOffset < 8; dayOffset++) {
+    const d = new Date(`${today}T12:00:00`);
+    d.setDate(d.getDate() + dayOffset);
+    if (d.getDay() === 0) continue;
+    const day = salonCalendarDate(d);
+    const slotsRes = await page.request.get(
+      `/api/public/${DEMO.slug}/slots?serviceId=${service.id}&stylistId=${stylist.id}&date=${day}`
+    );
+    const slotsJson = await slotsRes.json().catch(() => ({}));
+    const slots: string[] = slotsJson.slots || [];
+    for (const startsAt of slots) {
+      const createRes = await page.request.post("/api/admin/appointments/create", {
+        data: {
+          stylistId: stylist.id,
+          serviceId: service.id,
+          startsAt,
+          clientName: opts.clientName,
+          clientPhone: `416555${String(Date.now()).slice(-4)}`,
+          notes: opts.notes ?? "QA",
+        },
+      });
+      if (createRes.ok()) {
+        const created = await createRes.json();
+        return { appointmentId: created.appointment.id as string, startsAt, day };
+      }
+      errors.push(`${day}: ${await createRes.text()}`);
+    }
+  }
+  throw new Error(`No open slot. Last errors: ${errors.slice(-3).join(" | ")}`);
 }
 
 /**
@@ -168,14 +274,25 @@ export async function clearOpenBookingsForStylist(
 }
 
 export async function pickFirstSlot(page: Page, startDate: string) {
+  const timeSection = page.locator("section").filter({
+    has: page.getByRole("heading", { name: /pick a time/i }),
+  });
+  const dateInput = timeSection.locator('input[type="date"]');
   for (let attempt = 0; attempt < 10; attempt++) {
     const d = new Date(startDate + "T12:00:00");
     d.setDate(d.getDate() + attempt);
     if (d.getDay() === 0) continue;
     const dateStr = formatDate(d);
-    await page.locator('input[type="date"]').fill(dateStr);
-    await page.waitForTimeout(700);
-    const slotButtons = page.getByRole("button").filter({ hasText: /\d{1,2}:\d{2}|a\.m\.|p\.m\./i });
+    const slotsLoaded = page.waitForResponse(
+      (r) => r.url().includes("/slots") && r.url().includes(`date=${dateStr}`) && r.ok(),
+      { timeout: 8_000 }
+    );
+    await fillDateInput(dateInput, dateStr);
+    const slotsOk = await slotsLoaded.then(() => true).catch(() => false);
+    if (!slotsOk) continue;
+    const slotButtons = timeSection
+      .getByRole("button")
+      .filter({ hasText: /\d{1,2}:\d{2}|a\.m\.|p\.m\./i });
     if ((await slotButtons.count()) === 0) continue;
     await slotButtons.first().click();
     return dateStr;
@@ -199,7 +316,7 @@ export async function bookOnline(
   const stylistPattern = opts.stylistPattern ?? /farzana/i;
   const date = opts.date ?? nextOpenDate();
 
-  await page.goto(`/book/${DEMO.slug}`);
+  await gotoSettled(page, `/book/${DEMO.slug}`);
   await expect(page.getByRole("heading", { name: /choose services?/i })).toBeVisible();
   // Scope to wizard — Style preview AI chips can match /beard/i before services load
   const services = page.locator("section").filter({
@@ -210,7 +327,12 @@ export async function bookOnline(
   const stylists = page.locator("section").filter({
     has: page.getByRole("heading", { name: /choose your stylist/i }),
   });
-  await stylists.getByRole("button").filter({ hasText: stylistPattern }).first().click();
+  await stylists
+    .getByRole("button")
+    .filter({ has: page.getByText(stylistPattern) })
+    .filter({ hasNotText: /any available/i })
+    .first()
+    .click();
   await expect(page.getByRole("heading", { name: /pick a time/i })).toBeVisible();
   const bookedDate = await pickFirstSlot(page, date);
   await expect(page.getByRole("heading", { name: /your details/i })).toBeVisible();

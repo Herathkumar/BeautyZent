@@ -1,8 +1,8 @@
 import { test, expect, type Page } from "@playwright/test";
-import { adminLogin } from "./helpers";
+import { adminLogin, gotoSettled } from "./helpers";
 
 async function loginAsStylist(page: Page, email: string, password: string) {
-  await page.goto("/stylist/login");
+  await gotoSettled(page, "/stylist/login");
   await page.getByLabel(/^email$/i).fill(email);
   await page.getByLabel(/^password$/i).fill(password);
   await page.locator('form button[type="submit"]').click();
@@ -16,7 +16,7 @@ test.describe("Stylist account provisioning", () => {
     const newPassword = `Changed${Date.now().toString(36)}9`;
 
     await adminLogin(page);
-    await page.goto("/manager/stylists");
+    await gotoSettled(page, "/manager/stylists");
     await expect(page.getByRole("heading", { name: /stylists & logins/i })).toBeVisible();
 
     await page.getByPlaceholder(/stylist name/i).fill(stylistName);
@@ -41,8 +41,11 @@ test.describe("Stylist account provisioning", () => {
 
     await page.getByRole("link", { name: /^profile$/i }).click();
     await expect(page.getByRole("heading", { name: /^profile$/i })).toBeVisible();
-    await page.getByTestId("stylist-edit-profile").click();
-    await expect(page.getByLabel(/^email$/i).first()).toHaveValue(emailText.trim());
+    await expect(page.getByText(emailText.trim()).first()).toBeVisible({ timeout: 15_000 });
+    await page.getByTestId("stylist-edit-profile").click({ force: true });
+    const editor = page.getByTestId("stylist-profile-editor");
+    await expect(editor).toBeVisible({ timeout: 10_000 });
+    await expect(editor.getByLabel(/^email$/i)).toHaveValue(emailText.trim());
 
     await page.getByLabel(/current password/i).fill(tempPassword.trim());
     await page.getByLabel(/^new password/i).fill(newPassword);

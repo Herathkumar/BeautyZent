@@ -10,6 +10,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { createPortal } from "react-dom";
 
 export type ConfirmTone = "default" | "danger";
 
@@ -57,10 +58,15 @@ export function useConfirm(): ConfirmFn {
 
 export function ConfirmProvider({ children }: { children: ReactNode }) {
   const [active, setActive] = useState<ActiveConfirm | null>(null);
+  const [mounted, setMounted] = useState(false);
   const resolver = useRef<((value: boolean) => void) | null>(null);
   const titleId = useId();
   const descId = useId();
   const confirmBtnRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const confirm = useCallback<ConfirmFn>((opts) => {
     // Resolve any prior pending confirm as cancelled
@@ -90,61 +96,64 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [active, finish]);
 
+  const overlay =
+    active && mounted ? (
+      <div
+        className="fh-confirm-overlay fixed inset-0 z-[400] flex items-end justify-center bg-black/55 p-4 sm:items-center"
+        role="presentation"
+        onMouseDown={(e) => {
+          if (e.target === e.currentTarget) finish(false);
+        }}
+      >
+        <div
+          className="fh-confirm-dialog w-full max-w-md rounded-[1.75rem] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.4)] sm:p-7"
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+          aria-describedby={descId}
+          data-testid="confirm-dialog"
+          data-tone={active.tone}
+        >
+          <h2
+            id={titleId}
+            className="fh-confirm-title text-center font-[family-name:var(--font-display)] text-2xl leading-tight"
+          >
+            {active.title}
+          </h2>
+          <p
+            id={descId}
+            className="fh-confirm-message mt-3 whitespace-pre-line text-center text-sm leading-relaxed"
+          >
+            {active.message}
+          </p>
+          <div className="mt-7 grid gap-2.5 sm:grid-cols-2">
+            <button
+              type="button"
+              className="fh-confirm-cancel rounded-full px-5 py-3.5 text-sm font-semibold"
+              onClick={() => finish(false)}
+            >
+              {active.cancelLabel}
+            </button>
+            <button
+              ref={confirmBtnRef}
+              type="button"
+              className={`fh-confirm-ok rounded-full px-5 py-3.5 text-sm font-bold ${
+                active.tone === "danger" ? "fh-confirm-ok--danger" : ""
+              }`}
+              onClick={() => finish(true)}
+              data-testid="confirm-dialog-ok"
+            >
+              {active.confirmLabel}
+            </button>
+          </div>
+        </div>
+      </div>
+    ) : null;
+
   return (
     <ConfirmContext.Provider value={confirm}>
       {children}
-      {active ? (
-        <div
-          className="fh-confirm-overlay fixed inset-0 z-[300] flex items-end justify-center bg-black/55 p-4 sm:items-center"
-          role="presentation"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) finish(false);
-          }}
-        >
-          <div
-            className="fh-confirm-dialog w-full max-w-md rounded-[1.75rem] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.4)] sm:p-7"
-            role="alertdialog"
-            aria-modal="true"
-            aria-labelledby={titleId}
-            aria-describedby={descId}
-            data-testid="confirm-dialog"
-            data-tone={active.tone}
-          >
-            <h2
-              id={titleId}
-              className="fh-confirm-title text-center font-[family-name:var(--font-display)] text-2xl leading-tight"
-            >
-              {active.title}
-            </h2>
-            <p
-              id={descId}
-              className="fh-confirm-message mt-3 whitespace-pre-line text-center text-sm leading-relaxed"
-            >
-              {active.message}
-            </p>
-            <div className="mt-7 grid gap-2.5 sm:grid-cols-2">
-              <button
-                type="button"
-                className="fh-confirm-cancel rounded-full px-5 py-3.5 text-sm font-semibold"
-                onClick={() => finish(false)}
-              >
-                {active.cancelLabel}
-              </button>
-              <button
-                ref={confirmBtnRef}
-                type="button"
-                className={`fh-confirm-ok rounded-full px-5 py-3.5 text-sm font-bold ${
-                  active.tone === "danger" ? "fh-confirm-ok--danger" : ""
-                }`}
-                onClick={() => finish(true)}
-                data-testid="confirm-dialog-ok"
-              >
-                {active.confirmLabel}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      {overlay ? createPortal(overlay, document.body) : null}
     </ConfirmContext.Provider>
   );
 }

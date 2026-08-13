@@ -4,6 +4,7 @@ import {
   adminLogin,
   clearAuthSession,
   DEMO,
+  gotoSettled,
   stylistLogin,
   toLocalDateTimeInput,
 } from "./helpers";
@@ -11,7 +12,7 @@ import {
 async function loginAsAisha(page: Page) {
   // Drop manager session + leave SPA so 401 redirects cannot interrupt stylist login
   await clearAuthSession(page);
-  await page.goto("/stylist/login");
+  await gotoSettled(page, "/stylist/login");
   await page.getByLabel(/email/i).fill("aisha@fhsalon.ca");
   await page.getByLabel(/password/i).fill(DEMO.password);
   await page.locator('form button[type="submit"]').click();
@@ -20,7 +21,7 @@ async function loginAsAisha(page: Page) {
 
 async function setAishaSelfManage(page: Page, enabled: boolean) {
   await adminLogin(page);
-  await page.goto("/manager/stylists");
+    await gotoSettled(page, "/manager/stylists");
   const card = page.locator("article").filter({ hasText: /aisha/i }).first();
   await expect(card).toBeVisible({ timeout: 15_000 });
   const toggle = card.getByRole("checkbox", { name: /self-manage schedule/i });
@@ -49,7 +50,7 @@ async function openAwayForm(page: Page) {
 }
 
 async function requestLeave(page: Page, note: string, daysAhead: number) {
-  await page.goto("/stylist/schedule");
+  await gotoSettled(page, "/stylist/schedule");
   await openAwayForm(page);
   const start = new Date();
   start.setDate(start.getDate() + daysAhead);
@@ -120,7 +121,7 @@ test.describe("Stylist — schedule & leave", () => {
 
   test("can save work days", async ({ page }) => {
     await stylistLogin(page);
-    await page.goto("/stylist/schedule");
+    await gotoSettled(page, "/stylist/schedule");
     await expect(page.getByRole("heading", { name: "Schedule" })).toBeVisible();
     await page.getByRole("button", { name: /save work days/i }).click();
     await expect(page.getByText(/saved|clients only see/i)).toBeVisible({ timeout: 10_000 });
@@ -141,7 +142,7 @@ test.describe("Leave approval — self-manage on vs off", () => {
     ).toBeVisible();
 
     await adminLogin(page);
-    await page.goto("/manager");
+    await gotoSettled(page, "/manager");
     const panel = page.getByTestId("pending-leave-panel");
     await expect(panel).toBeVisible({ timeout: 15_000 });
     await expect(panel.getByText(/leave request from/i)).toBeVisible();
@@ -157,7 +158,7 @@ test.describe("Leave approval — self-manage on vs off", () => {
     await expect(panel.getByText(note)).toHaveCount(0, { timeout: 10_000 });
 
     await loginAsAisha(page);
-    await page.goto("/stylist/schedule");
+    await gotoSettled(page, "/stylist/schedule");
     await expect(page.getByText(note)).toBeVisible({ timeout: 10_000 });
     await expect(
       page.locator("div").filter({ hasText: note }).getByText(/^approved$/i)
@@ -184,7 +185,7 @@ test.describe("Leave approval — self-manage on vs off", () => {
     ).toHaveCount(0);
 
     await adminLogin(page);
-    await page.goto("/manager");
+    await gotoSettled(page, "/manager");
     // Give the dashboard a moment to load leave requests
     await page.waitForTimeout(800);
     const panel = page.getByTestId("pending-leave-panel");
@@ -193,7 +194,7 @@ test.describe("Leave approval — self-manage on vs off", () => {
     }
 
     await loginAsAisha(page);
-    await page.goto("/stylist/schedule");
+    await gotoSettled(page, "/stylist/schedule");
     await expect(
       page.locator("div").filter({ hasText: note }).getByText(/^approved$/i)
     ).toBeVisible({ timeout: 10_000 });

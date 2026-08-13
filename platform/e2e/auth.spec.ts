@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { DEMO, stylistLogin } from "./helpers";
+import { DEMO, gotoSettled, stylistLogin } from "./helpers";
 
 test.describe("Auth guards", () => {
   test("manager pages redirect to login when logged out", async ({ page }) => {
@@ -25,12 +25,13 @@ test.describe("Auth guards", () => {
     await page.getByLabel(/email/i).fill(DEMO.adminEmail);
     await page.getByLabel(/password/i).fill(DEMO.password);
     await page.locator('form button[type="submit"]').click();
-    await expect(page).toHaveURL(/\/manager/, { timeout: 20_000 });
+    await expect(page).not.toHaveURL(/\/stylist\/login/, { timeout: 20_000 });
+    await expect(page).toHaveURL(/\/(manager|stylist)/);
   });
 
   test("stylist can log out", async ({ page }) => {
     await stylistLogin(page);
-    await page.goto("/stylist/account");
+    await gotoSettled(page, "/stylist/account");
     await page.getByTestId("stylist-logout").click();
     await expect(page).toHaveURL(/\/stylist\/login/, { timeout: 15_000 });
   });

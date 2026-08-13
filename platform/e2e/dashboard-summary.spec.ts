@@ -1,10 +1,10 @@
 import { test, expect } from "@playwright/test";
-import { adminLogin } from "./helpers";
+import { adminLogin, gotoSettled } from "./helpers";
 
 test.describe("Manager dashboard summaries", () => {
   test("store earnings card shows daily goal ring", async ({ page }) => {
     await adminLogin(page);
-    await page.goto("/manager");
+    await gotoSettled(page, "/manager");
     const card = page.getByTestId("dashboard-store-earnings");
     await expect(card).toBeVisible({ timeout: 15_000 });
     await expect(card.getByTestId("dashboard-daily-goal-ring")).toBeVisible();
@@ -29,7 +29,7 @@ test.describe("Manager dashboard summaries", () => {
     });
     expect(add.ok()).toBeTruthy();
 
-    await page.goto("/manager");
+    await gotoSettled(page, "/manager");
     const card = page.getByTestId("dashboard-todays-bookings");
     await expect(card).toBeVisible({ timeout: 15_000 });
     await expect(card.getByText(/today.?s bookings/i)).toBeVisible();
