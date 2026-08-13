@@ -40,13 +40,27 @@ export default function ProductsAdminPage() {
     load();
   }, []);
 
-  async function addProduct(e: React.FormEvent) {
+  async function addProduct(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const nextName = String(fd.get("name") || name).trim();
+    const nextPrice = String(fd.get("price") || price);
+    const nextSku = String(fd.get("sku") || sku);
+    const nextStock = Number(fd.get("stockQty") || stockQty);
+    if (!nextName) {
+      setMessage("Name is required");
+      return;
+    }
     setMessage("");
     const res = await fetch("/api/admin/products", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, price, stockQty, sku }),
+      body: JSON.stringify({
+        name: nextName,
+        price: nextPrice,
+        stockQty: nextStock,
+        sku: nextSku,
+      }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
@@ -155,18 +169,21 @@ export default function ProductsAdminPage() {
       >
         <input
           required
+          name="name"
           placeholder="Product name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           className="rounded-xl border border-ink/15 px-3 py-2 sm:col-span-2"
         />
         <input
+          name="sku"
           placeholder="SKU"
           value={sku}
           onChange={(e) => setSku(e.target.value)}
           className="rounded-xl border border-ink/15 px-3 py-2"
         />
         <input
+          name="price"
           value={price}
           onChange={(e) => setPrice(e.target.value)}
           className="rounded-xl border border-ink/15 px-3 py-2"
@@ -175,6 +192,7 @@ export default function ProductsAdminPage() {
         <div className="flex gap-2">
           <input
             type="number"
+            name="stockQty"
             value={stockQty}
             onChange={(e) => setStockQty(Number(e.target.value))}
             className="w-full rounded-xl border border-ink/15 px-3 py-2"

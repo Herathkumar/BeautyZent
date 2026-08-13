@@ -76,15 +76,29 @@ export default function ServicesAdminPage() {
     }
   }
 
-  async function addService(e: React.FormEvent) {
+  async function addService(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const nextName = String(fd.get("name") || name).trim();
+    const nextCategory = String(fd.get("category") || category);
+    const nextDuration = Number(fd.get("durationMin") || durationMin);
+    const nextPrice = String(fd.get("price") || price);
+    if (!nextName) {
+      setMessage("Name is required");
+      return;
+    }
     setAdding(true);
     setMessage("");
     try {
       const res = await fetch("/api/admin/services", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, category, durationMin, price }),
+        body: JSON.stringify({
+          name: nextName,
+          category: nextCategory,
+          durationMin: nextDuration,
+          price: nextPrice,
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -148,12 +162,14 @@ export default function ServicesAdminPage() {
       >
         <input
           required
+          name="name"
           placeholder="Service name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           className="rounded-xl border border-ink/15 px-3 py-2 sm:col-span-2"
         />
         <select
+          name="category"
           value={category}
           onChange={(e) => setCategory(e.target.value)}
           className="rounded-xl border border-ink/15 px-3 py-2"
@@ -164,6 +180,7 @@ export default function ServicesAdminPage() {
         </select>
         <input
           type="number"
+          name="durationMin"
           value={durationMin}
           onChange={(e) => setDurationMin(Number(e.target.value))}
           className="rounded-xl border border-ink/15 px-3 py-2"
@@ -171,6 +188,7 @@ export default function ServicesAdminPage() {
         />
         <div className="flex gap-2">
           <input
+            name="price"
             value={price}
             onChange={(e) => setPrice(e.target.value)}
             className="w-full rounded-xl border border-ink/15 px-3 py-2"

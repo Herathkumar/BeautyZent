@@ -2,8 +2,11 @@ import { defineConfig, devices } from "@playwright/test";
 import path from "path";
 import { config as loadEnv } from "dotenv";
 
-// Prefer isolated E2E DB URL when provided (never required — falls back to .env).
+// Prefer isolated E2E DB URL when provided. Otherwise .env.local (local Postgres).
 loadEnv({ path: path.join(__dirname, ".env") });
+if (!process.env.E2E_DATABASE_URL) {
+  loadEnv({ path: path.join(__dirname, ".env.local"), override: true });
+}
 if (process.env.E2E_DATABASE_URL) {
   process.env.DATABASE_URL = process.env.E2E_DATABASE_URL;
 }

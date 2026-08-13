@@ -87,10 +87,15 @@ export async function POST(req: Request) {
     };
   }
 
+  const name = String(body.name || "").trim();
+  if (!name) {
+    return NextResponse.json({ error: "Name is required" }, { status: 400 });
+  }
+
   const product = await prisma.product.create({
     data: {
       salonId: session.salonId,
-      name: body.name,
+      name,
       description: body.description || null,
       sku: body.sku || null,
       priceCents: Math.round(Number(body.price) * 100),

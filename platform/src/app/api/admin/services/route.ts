@@ -41,6 +41,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, linked });
   }
 
+  const name = String(body.name || "").trim();
+  if (!name) {
+    return NextResponse.json({ error: "Name is required" }, { status: 400 });
+  }
+
   const priceNum = Number(body.price);
   const priceCents = Number.isFinite(priceNum) ? Math.round(priceNum * 100) : 2000;
   const categoryRaw = String(body.category || "WOMEN").toUpperCase();
@@ -52,7 +57,7 @@ export async function POST(req: Request) {
   const service = await prisma.service.create({
     data: {
       salonId: session.salonId,
-      name: body.name,
+      name,
       description: body.description || null,
       category,
       durationMin: Number(body.durationMin) || 45,
