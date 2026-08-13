@@ -298,7 +298,7 @@ export default function StylistHomePage() {
                   onClick={() => setStatus(a.id, "CHECKED_IN")}
                   className="stylist-tap btn-solid col-span-2 rounded-2xl"
                 >
-                  {busyId === a.id ? "Checking in…" : "Client is here"}
+                  {busyId === a.id ? "Checking in…" : "Check in"}
                 </button>
               ) : null}
               <button
