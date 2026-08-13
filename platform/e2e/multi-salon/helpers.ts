@@ -114,13 +114,27 @@ async function resolveStylistAndService(page: Page, tenant: Tenant) {
   const servicesRes = await page.request.get("/api/admin/services");
   expect(servicesRes.ok(), await servicesRes.text()).toBeTruthy();
   const servicesJson = await servicesRes.json();
-  const service =
-    servicesJson.services?.find(
-      (s: { name: string; active?: boolean; durationMin?: number }) =>
-        s.active !== false && tenant.servicePattern.test(s.name)
-    ) || servicesJson.services?.find((s: { active?: boolean }) => s.active !== false);
-  expect(service?.id, `${tenant.slug} service`).toBeTruthy();
-  return { stylist, service };
+  const matches = (
+    (servicesJson.services || []) as {
+      id: string;
+      name: string;
+      active?: boolean;
+      durationMin?: number;
+    }[]
+  ).filter((s) => s.active !== false && tenant.servicePattern.test(s.name));
+  // Shortest first so late-day / busy-chair e2e can still land a today slot.
+  matches.sort((a, b) => (a.durationMin ?? 999) - (b.durationMin ?? 999));
+  const fallback = (
+    (servicesJson.services || []) as {
+      id: string;
+      name: string;
+      active?: boolean;
+      durationMin?: number;
+    }[]
+  ).find((s) => s.active !== false);
+  const services = matches.length ? matches : fallback ? [fallback] : [];
+  expect(services[0]?.id, `${tenant.slug} service`).toBeTruthy();
+  return { stylist, services };
 }
 
 /** Book into a real open slot from the public slots API (avoids local-DB collisions). */
@@ -129,44 +143,55 @@ export async function createAppointmentAtOpenSlot(
   tenant: Tenant,
   opts: { clientName: string; preferToday?: boolean; notes?: string }
 ) {
-  const { stylist, service } = await resolveStylistAndService(page, tenant);
+  const { stylist, services } = await resolveStylistAndService(page, tenant);
   const today = salonCalendarDate();
   const errors: string[] = [];
 
   for (let dayOffset = 0; dayOffset < 8; dayOffset++) {
-    if (opts.preferToday && dayOffset > 0) break;
     const d = new Date(`${today}T12:00:00`);
     d.setDate(d.getDate() + dayOffset);
     if (d.getDay() === 0) continue;
     const day = salonCalendarDate(d);
-    const slotsRes = await page.request.get(
-      `/api/public/${tenant.slug}/slots?serviceId=${service.id}&stylistId=${stylist.id}&date=${day}`
-    );
-    const slotsJson = await slotsRes.json().catch(() => ({}));
-    const slots: string[] = slotsJson.slots || [];
-    for (const startsAt of slots) {
-      const createRes = await page.request.post("/api/admin/appointments/create", {
-        data: {
-          stylistId: stylist.id,
-          serviceId: service.id,
-          startsAt,
-          clientName: opts.clientName,
-          clientPhone: `416555${String(Date.now()).slice(-4)}`,
-          notes: opts.notes ?? `QA ${tenant.slug}`,
-        },
-      });
-      if (createRes.ok()) {
-        const created = await createRes.json();
-        return {
-          appointmentId: created.appointment.id as string,
-          stylistId: stylist.id as string,
-          serviceName: service.name as string,
-          startsAt,
-          day,
-          isToday: day === today,
-        };
+    for (const service of services) {
+      const slotsRes = await page.request.get(
+        `/api/public/${tenant.slug}/slots?serviceId=${service.id}&stylistId=${stylist.id}&date=${day}`
+      );
+      if (!slotsRes.ok()) {
+        errors.push(
+          `${service.name} ${day}: slots ${slotsRes.status()} ${await slotsRes.text()}`
+        );
+        continue;
       }
-      errors.push(`${day}: ${await createRes.text()}`);
+      const slotsJson = await slotsRes.json().catch(() => ({}));
+      const slots: string[] = slotsJson.slots || [];
+      if (slots.length === 0) {
+        errors.push(`${service.name} ${day}: 0 slots`);
+        continue;
+      }
+      for (const startsAt of slots) {
+        const createRes = await page.request.post("/api/admin/appointments/create", {
+          data: {
+            stylistId: stylist.id,
+            serviceId: service.id,
+            startsAt,
+            clientName: opts.clientName,
+            clientPhone: `416${String(Date.now()).slice(-7)}`,
+            notes: opts.notes ?? `QA ${tenant.slug}`,
+          },
+        });
+        if (createRes.ok()) {
+          const created = await createRes.json();
+          return {
+            appointmentId: created.appointment.id as string,
+            stylistId: stylist.id as string,
+            serviceName: service.name as string,
+            startsAt,
+            day,
+            isToday: day === today,
+          };
+        }
+        errors.push(`${service.name} ${day}: ${await createRes.text()}`);
+      }
     }
   }
 

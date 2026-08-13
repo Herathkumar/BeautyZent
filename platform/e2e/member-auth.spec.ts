@@ -3,6 +3,7 @@ import {
   adminLogin,
   bookOnline,
   bookableDateNearToday,
+  clearOpenBookingsForStylist,
   DEMO,
   joinAsMember,
   nextOpenDate,
@@ -87,16 +88,25 @@ test.describe("Booking member auth", () => {
 test.describe("Store display shows online bookings", () => {
   test("online booking appears on store display board", async ({ page, browser }) => {
     const clientName = `QA Display ${Date.now()}`;
+    await adminLogin(page);
+    await clearOpenBookingsForStylist(page, /farzana/i);
+
     const bookedDate = await bookOnline(page, {
       clientName,
-      phone: "9055550177",
+      phone: `416${String(Date.now()).slice(-7)}`,
       notes: "Display board visibility QA",
+      servicePattern: /bang \/ fringe trim/i,
+      stylistPattern: /farzana/i,
       date: bookableDateNearToday(),
     });
 
     const guest = await browser.newContext();
     const tablet = await guest.newPage();
     try {
+      const loaded = tablet.waitForResponse(
+        (r) => r.url().includes(`/api/display/${DEMO.slug}/today`) && r.ok(),
+        { timeout: 20_000 }
+      );
       await tablet.goto(`/display/${DEMO.slug}`);
 
       // If PIN pad shows, board is locked — skip unlock here (covered by display-pin.spec)
@@ -107,29 +117,17 @@ test.describe("Store display shows online bookings", () => {
           description: "Display PIN active — unlock required; API assert below still runs via manager session",
         });
       } else {
+        await loaded.catch(() => undefined);
         await expect(tablet.getByTestId("store-display-board")).toBeVisible({
           timeout: 15_000,
         });
 
-        const today = todayDate();
-        const tabs = bookedDate === today ? [/^today/i, /^future/i] : [/^future/i, /^today/i];
-        const onBoard = tablet.getByText(clientName);
-        let found = false;
-        for (let attempt = 0; attempt < 3 && !found; attempt++) {
-          if (attempt > 0) {
-            await tablet.reload();
-            await expect(tablet.getByTestId("store-display-board")).toBeVisible({
-              timeout: 15_000,
-            });
-          }
-          for (const tab of tabs) {
-            await tablet.getByRole("button", { name: tab }).click();
-            if (await onBoard.isVisible().catch(() => false)) {
-              found = true;
-              break;
-            }
-          }
-        }
+        const preferToday = bookedDate === todayDate();
+        const tab = tablet.getByRole("button", {
+          name: preferToday ? /^today/i : /^future/i,
+        });
+        await tab.click();
+        const onBoard = tablet.getByText(clientName).first();
         await expect(onBoard).toBeVisible({ timeout: 20_000 });
       }
     } finally {

@@ -277,20 +277,40 @@ export async function pickFirstSlot(page: Page, startDate: string) {
   const timeSection = page.locator("section").filter({
     has: page.getByRole("heading", { name: /pick a time/i }),
   });
-  const dateInput = timeSection.locator('input[type="date"]');
+  const wizardVisible = await timeSection
+    .getByRole("heading", { name: /pick a time/i })
+    .isVisible()
+    .catch(() => false);
+  // Client wizard has "Pick a time"; manager /manager/book uses a Date field on the form.
+  const dateInput = wizardVisible
+    ? timeSection.locator('input[type="date"]')
+    : page.locator("form input[type='date']").first();
+  const slotRoot = wizardVisible ? timeSection : page.locator("form");
+  await expect(dateInput).toBeVisible({ timeout: 15_000 });
+
   for (let attempt = 0; attempt < 10; attempt++) {
     const d = new Date(startDate + "T12:00:00");
     d.setDate(d.getDate() + attempt);
     if (d.getDay() === 0) continue;
     const dateStr = formatDate(d);
-    const slotsLoaded = page.waitForResponse(
-      (r) => r.url().includes("/slots") && r.url().includes(`date=${dateStr}`) && r.ok(),
-      { timeout: 8_000 }
-    );
-    await fillDateInput(dateInput, dateStr);
-    const slotsOk = await slotsLoaded.then(() => true).catch(() => false);
-    if (!slotsOk) continue;
-    const slotButtons = timeSection
+    const current = await dateInput.inputValue();
+    if (current !== dateStr) {
+      const slotsLoaded = page.waitForResponse(
+        (r) => r.url().includes("/slots") && r.url().includes(`date=${dateStr}`) && r.ok(),
+        { timeout: 15_000 }
+      );
+      await fillDateInput(dateInput, dateStr);
+      const slotsOk = await slotsLoaded.then(() => true).catch(() => false);
+      if (!slotsOk) continue;
+    } else {
+      await page
+        .waitForResponse(
+          (r) => r.url().includes("/slots") && r.url().includes(`date=${dateStr}`) && r.ok(),
+          { timeout: 8_000 }
+        )
+        .catch(() => undefined);
+    }
+    const slotButtons = slotRoot
       .getByRole("button")
       .filter({ hasText: /\d{1,2}:\d{2}|a\.m\.|p\.m\./i });
     if ((await slotButtons.count()) === 0) continue;
