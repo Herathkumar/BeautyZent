@@ -16,6 +16,15 @@ model Salon {
   email        String?
   address      String?
   timezone     String   @default("America/Toronto")
+  /// Platform operator can park a salon without deleting its data.
+  active       Boolean  @default(true)
+  /// Legacy accent colours — still used for stylist chips and splash tinting.
+  brandColor   String?
+  accentColor  String?
+  /// Theme pack per app, chosen in the platform portal (see src/lib/salon-themes.ts).
+  bookingThemeId String @default("plum")
+  managerThemeId String @default("cocoa")
+  stylistThemeId String @default("seaglass")
   openHour     Int      @default(9)
   closeHour    Int      @default(18)
   /// Days the store is closed by default (0=Sun … 6=Sat). Used for new stylist schedules.
@@ -41,6 +50,18 @@ model Salon {
   lookPhotos   AppointmentPhoto[]
   stylePrefs   AppointmentStylePref[]
   styleAiUsage StyleAiUsage[]
+}
+
+/// Platform operator login — separate from salon staff (User) so tenant auth is untouched.
+model PlatformAdmin {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String    @default("Platform Admin")
+  active       Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }
 
 /// Guests waiting for a walk-in chair (Phase 3)

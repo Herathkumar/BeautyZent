@@ -41,6 +41,6 @@ export async function PATCH(
     return NextResponse.json({ error: result.error }, { status: result.status });
   }
 
-  await syncAppointmentToGoogle(result.appointment.id);
+  void syncAppointmentToGoogle(result.appointment.id).catch(() => null);
   return NextResponse.json({ appointment: result.appointment });
 }

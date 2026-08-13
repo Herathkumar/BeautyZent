@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ANY_STYLIST_ID, CLIENT_CANCEL_HOURS } from "@/lib/client-booking";
 import { formatCad } from "@/lib/money";
 import { calendarDateInTz } from "@/lib/salon-time";
+import { writeSalonBrand } from "@/lib/salon-branding";
 import { BookBottomNav, BookTabKey } from "./BookBottomNav";
 import { BookingMyBookings, MemberTab } from "./BookingMyBookings";
 import { BookingProfile } from "./BookingProfile";
@@ -31,6 +32,7 @@ type Stylist = {
 type Salon = {
   id: string;
   name: string;
+  slug?: string;
   phone: string | null;
   address: string | null;
   timezone?: string;
@@ -240,6 +242,13 @@ export function BookingWizard({ slug }: { slug: string }) {
       .then((data) => {
         if (data.error) throw new Error(data.error);
         setSalon(data.salon || null);
+        if (data.salon?.name) {
+          writeSalonBrand({
+            slug: data.salon.slug || slug,
+            name: data.salon.name,
+            address: data.salon.address ?? null,
+          });
+        }
         setServices(data.services || []);
         setStylists(data.stylists || []);
         const today =
@@ -479,6 +488,7 @@ export function BookingWizard({ slug }: { slug: string }) {
       />
       <BookingProfile
         slug={slug}
+        salonName={salon?.name}
         open={profileOpen}
         client={client}
         onClose={() => setProfileOpen(false)}

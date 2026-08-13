@@ -49,10 +49,8 @@ function DailyGoalRing({
         />
       </svg>
       <div className="earnings-goal-center">
-        <p className="text-[10px] font-semibold tracking-wide text-[#7d6154] uppercase">
-          Today
-        </p>
-        <p className="font-[family-name:var(--font-display)] text-xl text-[#2b2521]">
+        <p className="text-[10px] font-semibold tracking-wide text-champagne uppercase">Today</p>
+        <p className="font-[family-name:var(--font-display)] text-xl text-ink">
           ${centsToDollars(earned)}
         </p>
         <p className="text-[10px] text-muted">of ${centsToDollars(goal)}</p>
@@ -73,18 +71,18 @@ export async function DashboardStoreEarnings({ salonId }: { salonId: string }) {
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <p className="text-xs font-semibold tracking-[0.16em] text-[#7d6154] uppercase">
+          <p className="text-xs font-semibold tracking-[0.16em] text-champagne uppercase">
             Store earnings
           </p>
-          <h2 className="mt-1 font-[family-name:var(--font-display)] text-2xl text-[#2b2521]">
+          <h2 className="mt-1 font-[family-name:var(--font-display)] text-2xl text-ink">
             Today&apos;s pulse
           </h2>
         </div>
         <span
           className={`rounded-full px-2.5 py-1 text-[11px] font-bold tracking-wide uppercase ${
             goalMet
-              ? "bg-[#e7f3eb] text-[#2f7a4f]"
-              : "bg-[rgba(125,97,84,0.1)] text-[#7d6154]"
+              ? "bg-[color:var(--t-accent-tint)] text-[color:var(--t-ok)]"
+              : "bg-[color:rgb(var(--t-accent-rgb)/0.12)] text-champagne"
           }`}
         >
           {goalMet ? "Goal met" : "In progress"}
@@ -101,7 +99,7 @@ export async function DashboardStoreEarnings({ salonId }: { salonId: string }) {
           <p className="text-xs font-semibold tracking-wide text-muted uppercase">
             Today · profit
           </p>
-          <p className="mt-1 font-[family-name:var(--font-display)] text-3xl text-[#2b2521]">
+          <p className="mt-1 font-[family-name:var(--font-display)] text-3xl text-ink">
             ${centsToDollars(todaySummary.profitCents)}
           </p>
           <p className="mt-1 text-sm text-muted">
@@ -109,18 +107,18 @@ export async function DashboardStoreEarnings({ salonId }: { salonId: string }) {
             {centsToDollars(todaySummary.stylistPayCents)} pay
           </p>
           {goal.remainingCents > 0 ? (
-            <p className="mt-2 text-sm font-semibold text-[#c47a4a]">
+            <p className="mt-2 text-sm font-semibold text-[color:var(--t-warn)]">
               ${centsToDollars(goal.remainingCents)} to daily goal
             </p>
           ) : (
-            <p className="mt-2 text-sm font-semibold text-[#2f7a4f]">Daily goal reached</p>
+            <p className="mt-2 text-sm font-semibold text-[color:var(--t-ok)]">Daily goal reached</p>
           )}
         </div>
-        <div className="rounded-2xl border border-[#7d6154]/15 bg-[#fffcf9] px-4 py-3">
+        <div className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--t-surface-1)] px-4 py-3">
           <p className="text-xs font-semibold tracking-wide text-muted uppercase">
             This week · profit
           </p>
-          <p className="mt-1 font-[family-name:var(--font-display)] text-3xl text-[#2b2521]">
+          <p className="mt-1 font-[family-name:var(--font-display)] text-3xl text-ink">
             ${centsToDollars(weekSummary.profitCents)}
           </p>
           <p className="mt-1 text-sm text-muted">
@@ -130,7 +128,7 @@ export async function DashboardStoreEarnings({ salonId }: { salonId: string }) {
         </div>
       </div>
 
-      <div className="mt-4 border-t border-[#7d6154]/12 pt-3">
+      <div className="mt-4 border-t border-[color:var(--line)] pt-3">
         <span className="admin-text-link text-sm">View all earnings →</span>
       </div>
     </Link>

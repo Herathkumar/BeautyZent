@@ -1,13 +1,20 @@
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { humanizeSlug } from "@/lib/salon-branding";
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params;
+  const salon = await prisma.salon.findUnique({
+    where: { slug },
+    select: { name: true, active: true },
+  });
+  const name = salon?.active && salon.name ? salon.name : humanizeSlug(slug);
   const manifest = {
-    name: "FHSalon — Store Display",
-    short_name: "FHSalon Display",
+    name: `${name} — Store Display`,
+    short_name: `${name} Display`,
     description: "Salon floor tablet — who's waiting, check-in, and walk-ins.",
     id: `/display/${slug}`,
     start_url: `/shells/display.html?next=${encodeURIComponent(`/display/${slug}`)}`,

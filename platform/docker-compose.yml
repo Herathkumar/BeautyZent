@@ -1,0 +1,26 @@
+### Local multi-salon dev database. Never used by Vercel/Neon.
+### Start:  docker compose up -d      (from platform/)
+### Stop:   docker compose down
+### Wipe:   docker compose down -v
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: salonbook-local-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: salonbook
+      POSTGRES_PASSWORD: salonbook
+      POSTGRES_DB: salonbook
+    ports:
+      # Non-default host port so it cannot clash with an existing local Postgres.
+      - "55433:5432"
+    volumes:
+      - salonbook-local-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U salonbook -d salonbook"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  salonbook-local-pgdata:

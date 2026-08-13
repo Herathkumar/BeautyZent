@@ -10,6 +10,7 @@ import type { BookClient } from "./ClientMemberBar";
 
 export function BookingProfile({
   slug,
+  salonName,
   open,
   client,
   onClose,
@@ -18,6 +19,7 @@ export function BookingProfile({
   onJoinRequest,
 }: {
   slug: string;
+  salonName?: string | null;
   open: boolean;
   client: BookClient | null;
   onClose: () => void;
@@ -164,7 +166,7 @@ export function BookingProfile({
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/55 sm:items-center sm:p-3">
       <div
-        className="book-card flex h-[92dvh] w-full max-w-lg flex-col rounded-t-3xl shadow-[0_24px_80px_rgba(0,0,0,0.45)] sm:h-auto sm:max-h-[88dvh] sm:rounded-3xl"
+        className="book-theme book-card flex h-[92dvh] w-full max-w-lg flex-col rounded-t-3xl shadow-[0_24px_80px_rgba(0,0,0,0.45)] sm:h-auto sm:max-h-[88dvh] sm:rounded-3xl"
         role="dialog"
         aria-label="Profile"
         data-testid="book-profile"
@@ -177,7 +179,7 @@ export function BookingProfile({
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs font-semibold tracking-[0.16em] text-champagne uppercase">
-                FHS Client
+                {salonName?.trim() || "Client"}
               </p>
               <h2 className="mt-1 font-[family-name:var(--font-display)] text-2xl">
                 Profile
@@ -204,7 +206,7 @@ export function BookingProfile({
                     onClick={() => setCameraOpen(true)}
                     aria-label={hasPhoto ? "Update selfie" : "Take selfie"}
                     data-testid="client-photo-button"
-                    className="relative rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e0d0f5]"
+                    className="relative rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--champagne)]"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
@@ -377,7 +379,7 @@ export function BookingProfile({
                   alt=""
                   width={96}
                   height={96}
-                  className="mx-auto h-24 w-24 rounded-full ring-[5px] ring-[#c9b4e8]/40"
+                  className="mx-auto h-24 w-24 rounded-full ring-[5px] ring-[color:var(--champagne)]/40"
                 />
                 <h3 className="mt-4 font-[family-name:var(--font-display)] text-2xl">
                   You&apos;re browsing as a guest

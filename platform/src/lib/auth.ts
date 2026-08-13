@@ -71,16 +71,27 @@ export async function refreshSessionForUserId(userId: string) {
   return user;
 }
 
-export async function login(email: string, password: string) {
+export type LoginResult =
+  | { ok: true; user: { id: string; salonId: string; email: string; name: string; role: string; stylistId: string | null } }
+  | { ok: false; reason: "invalid" | "wrong_salon" };
+
+export async function login(
+  email: string,
+  password: string,
+  opts?: { salonId?: string }
+): Promise<LoginResult> {
   const user = await prisma.user.findFirst({
     where: { email: email.toLowerCase().trim() },
   });
-  if (!user) return null;
+  if (!user) return { ok: false, reason: "invalid" };
   const ok = await bcrypt.compare(password, user.passwordHash);
-  if (!ok) return null;
+  if (!ok) return { ok: false, reason: "invalid" };
+  if (opts?.salonId && user.salonId !== opts.salonId) {
+    return { ok: false, reason: "wrong_salon" };
+  }
 
   await issueSessionCookie(user);
-  return user;
+  return { ok: true, user };
 }
 
 export async function logout() {

@@ -8,6 +8,7 @@ import { WalkInPanel } from "@/components/WalkInPanel";
 import { ZentraLabFooter } from "@/components/ZentraLabFooter";
 import { formatCad } from "@/lib/money";
 import { promptCompleteAmounts } from "@/lib/pay";
+import { resolveSplashName, writeSalonBrand } from "@/lib/salon-branding";
 
 type Appt = {
   id: string;
@@ -521,7 +522,23 @@ export function DisplayBoard({
         credentials: "same-origin",
       });
       const data = await res.json();
-      if (data.salon) setSalon((prev) => ({ ...(prev || { name: "", slug }), ...data.salon }));
+      if (data.salon) {
+        setSalon((prev) => {
+          const next = {
+            ...(prev || { name: "", slug }),
+            ...data.salon,
+            slug: data.salon.slug || slug,
+          };
+          if (next.name) {
+            writeSalonBrand({
+              slug: next.slug || slug,
+              name: next.name,
+              address: next.address ?? null,
+            });
+          }
+          return next;
+        });
+      }
       setPinSet(Boolean(data.pinSet));
       // Public tablet always needs a fresh PIN after load/refresh (no cookie unlock).
       if (!embedded && data.pinSet) {
@@ -553,7 +570,16 @@ export function DisplayBoard({
         return;
       }
       setAppointments(data.appointments || []);
-      if (data.salon) setSalon(data.salon);
+      if (data.salon) {
+        setSalon(data.salon);
+        if (data.salon.name) {
+          writeSalonBrand({
+            slug: data.salon.slug || slug,
+            name: data.salon.name,
+            address: data.salon.address ?? null,
+          });
+        }
+      }
     } catch {
       /* ignore transient poll errors */
     }
@@ -718,7 +744,9 @@ export function DisplayBoard({
       <div className="app-splash-host">
         <div className="app-splash app-splash--display" role="status" aria-live="polite" aria-busy="true">
           <div className="app-splash-inner">
-            <p className="app-splash-brand">FHSalon</p>
+            <p className="app-splash-brand">
+              {salon?.name || resolveSplashName({ slug })}
+            </p>
             <p className="app-splash-label">Salon Display</p>
             <div className="app-splash-spinner" aria-hidden />
           </div>
@@ -1158,7 +1186,7 @@ export function DisplayBoard({
             <header className="mb-4 flex flex-wrap items-end justify-between gap-3 border-b border-[#c9a87c]/25 pb-3">
               <div className="min-w-0">
                 <p className="text-[10px] font-semibold tracking-[0.28em] text-[#f0c987] uppercase">
-                  Farzana Hair Salon
+                  {salon?.name || "Salon"}
                 </p>
                 <h2 className="mt-1 font-[family-name:var(--font-display)] text-3xl leading-none tracking-tight sm:text-4xl">
                   The menu
@@ -1214,7 +1242,7 @@ export function DisplayBoard({
             <header className="mb-4 flex flex-wrap items-end justify-between gap-3 border-b border-[#c9a87c]/25 pb-3">
               <div className="min-w-0">
                 <p className="text-[10px] font-semibold tracking-[0.28em] text-[#f0c987] uppercase">
-                  Farzana Hair Salon
+                  {salon?.name || "Salon"}
                 </p>
                 <h2 className="mt-1 font-[family-name:var(--font-display)] text-3xl leading-none tracking-tight sm:text-4xl">
                   Retail

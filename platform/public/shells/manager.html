@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#f3ebe3" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <title>FHSalon Manager</title>
+    <title>Salon Manager</title>
     <style>
       html,
       body {
@@ -58,7 +58,7 @@
   <body>
     <div id="splash" role="status" aria-live="polite">
       <div>
-        <p class="brand">FHSalon</p>
+        <p class="brand" id="splash-brand">Salon</p>
         <p class="label">Manager</p>
         <div class="spin" aria-hidden="true"></div>
       </div>
@@ -76,6 +76,22 @@
         } catch (e) {}
         var q = new URLSearchParams(location.search).get("next");
         if (q) next = q;
+
+        /* No slug on /manager bookmarks — use last salon cached from book/display/login. */
+        try {
+          var raw = localStorage.getItem("salon-brand:last");
+          if (raw) {
+            var parsed = JSON.parse(raw);
+            if (parsed && parsed.name) {
+              var el = document.getElementById("splash-brand");
+              if (el) el.textContent = parsed.name;
+              document.title = parsed.name + " — Manager";
+            }
+            if (parsed && parsed.managerThemeId) {
+              document.documentElement.setAttribute("data-salon-theme", parsed.managerThemeId);
+            }
+          }
+        } catch (e) {}
 
         var going = false;
         function go() {

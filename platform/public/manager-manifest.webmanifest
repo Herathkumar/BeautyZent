@@ -1,7 +1,7 @@
 {
-  "name": "FHSalon — Manager",
-  "short_name": "FHSalon Manager",
-  "description": "Dashboard, bookings, earnings, and team for Farzana Hair Salon.",
+  "name": "Salon Manager",
+  "short_name": "Salon Manager",
+  "description": "Dashboard, bookings, earnings, and team for your salon.",
   "id": "/manager",
   "start_url": "/shells/manager.html?next=/manager",
   "scope": "/",

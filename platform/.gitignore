@@ -18,6 +18,9 @@
 /playwright/.cache/
 /.e2e-pg-data/
 
+# local dev database (pnpm db:local:up)
+/.local-pg-data/
+
 # next.js
 /.next/
 /out/
@@ -38,6 +41,7 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 !.env.example
+!.env.local.example
 
 # vercel
 .vercel

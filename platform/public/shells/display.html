@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#1c1714" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <title>FHSalon Salon Display</title>
+    <title>Salon Display</title>
     <style>
       html,
       body {
@@ -59,7 +59,7 @@
   <body>
     <div id="splash" role="status" aria-live="polite">
       <div>
-        <p class="brand">FHSalon</p>
+        <p class="brand" id="splash-brand">Salon</p>
         <p class="label">Salon Display</p>
         <div class="spin" aria-hidden="true"></div>
       </div>
@@ -76,6 +76,66 @@
         } catch (e) {}
         var q = new URLSearchParams(location.search).get("next");
         if (q) next = q;
+
+        function slugFromPath(path) {
+          var sm = String(path || "").match(/^\/display\/([^/?#]+)/i);
+          if (!sm || !sm[1]) return null;
+          try {
+            return decodeURIComponent(sm[1]);
+          } catch (e) {
+            return sm[1];
+          }
+        }
+
+        function setBrand(name) {
+          var el = document.getElementById("splash-brand");
+          if (el && name) el.textContent = name;
+          if (name) document.title = name + " — Salon Display";
+        }
+
+        function cacheBrand(salon) {
+          if (!salon || !salon.slug || !salon.name) return;
+          try {
+            var payload = JSON.stringify({
+              slug: salon.slug,
+              name: salon.name,
+              brandColor: salon.brandColor || null,
+              accentColor: salon.accentColor || null,
+            });
+            localStorage.setItem("salon-brand:" + salon.slug, payload);
+            localStorage.setItem("salon-brand:last", payload);
+          } catch (e) {}
+        }
+
+        var slug = slugFromPath(next);
+        try {
+          var raw = slug ? localStorage.getItem("salon-brand:" + slug) : null;
+          if (!raw) raw = localStorage.getItem("salon-brand:last");
+          if (raw) {
+            var parsed = JSON.parse(raw);
+            if (parsed && parsed.name) setBrand(parsed.name);
+          } else if (slug) {
+            setBrand(slug.charAt(0).toUpperCase() + slug.slice(1));
+          }
+        } catch (e) {}
+
+        if (slug) {
+          fetch("/api/public/" + encodeURIComponent(slug) + "/brand", {
+            credentials: "same-origin",
+            headers: { Accept: "application/json" },
+            cache: "no-store",
+          })
+            .then(function (r) {
+              return r.ok ? r.json() : null;
+            })
+            .then(function (data) {
+              if (data && data.salon && data.salon.name) {
+                cacheBrand(data.salon);
+                setBrand(data.salon.name);
+              }
+            })
+            .catch(function () {});
+        }
 
         var going = false;
         function go() {

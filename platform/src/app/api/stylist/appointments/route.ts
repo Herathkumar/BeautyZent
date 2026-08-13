@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
-import { addDays, endOfDay, startOfDay } from "date-fns";
 import { getStylistSession } from "@/lib/auth";
 import { syncAppointmentToGoogle } from "@/lib/calendar";
 import { updateAppointmentStatus } from "@/lib/complete-appointment";
 import { prisma } from "@/lib/prisma";
+import {
+  addCalendarDays,
+  calendarDateInTz,
+  zonedStartOfDay,
+} from "@/lib/salon-time";
 
 export async function GET(req: Request) {
   const session = await getStylistSession();
@@ -11,17 +15,27 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const salon = await prisma.salon.findUnique({
+    where: { id: session.salonId },
+    select: { timezone: true },
+  });
+  const timeZone = salon?.timezone || "America/Toronto";
+
   const url = new URL(req.url);
   const days = Math.min(60, Math.max(1, Number(url.searchParams.get("days") || 14)));
-  const from = startOfDay(new Date());
-  const to = endOfDay(addDays(from, days - 1));
+  const todayYmd = calendarDateInTz(timeZone);
+  const from = new Date(zonedStartOfDay(todayYmd, timeZone).getTime());
+  const to = new Date(
+    zonedStartOfDay(addCalendarDays(todayYmd, days, timeZone), timeZone).getTime()
+  );
 
   // Never include client/service with `true` — those models have Bytes image columns
   // that make this payload huge and My Jobs feel stuck on "Loading your day…".
   const appointments = await prisma.appointment.findMany({
     where: {
+      salonId: session.salonId,
       stylistId: session.stylistId,
-      startsAt: { gte: from, lte: to },
+      startsAt: { gte: from, lt: to },
     },
     select: {
       id: true,
@@ -108,7 +122,8 @@ export async function PATCH(req: Request) {
   }
 
   const appt = await prisma.appointment.findFirst({
-    where: { id: body.id, stylistId: session.stylistId },
+    where: { id: body.id, stylistId: session.stylistId, salonId: session.salonId },
+    select: { id: true },
   });
   if (!appt) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
@@ -123,6 +138,6 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }
 
-  await syncAppointmentToGoogle(result.appointment.id);
+  void syncAppointmentToGoogle(result.appointment.id).catch(() => null);
   return NextResponse.json({ appointment: result.appointment });
 }

@@ -1,3 +1,5 @@
+import { DEFAULT_STYLIST_THEME_ID, refreshSalonThemePaint, setThemeColorMeta } from "./salon-themes";
+
 export type StylistTheme = "light" | "dark";
 
 export const STYLIST_THEME_KEY = "fhsalon-stylist-theme";
@@ -31,22 +33,20 @@ export function writeStylistTheme(theme: StylistTheme) {
 export function applyStylistTheme(theme: StylistTheme) {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
-  // Light preference uses the sea-glass dark surfaces; dark preference uses mist light.
-  root.classList.toggle("stylist-shell--light", theme === "dark");
+  root.classList.toggle("stylist-shell--light", theme === "light");
+  // Drives which half of the salon's theme pack is active (see salon-themes.css).
+  root.classList.toggle("theme-light", theme === "light");
 
   const shells = document.querySelectorAll(".stylist-theme");
   shells.forEach((el) => {
-    el.classList.toggle("stylist-theme--light", theme === "dark");
+    el.classList.toggle("stylist-theme--light", theme === "light");
   });
 
-  let meta = document.querySelector('meta[name="theme-color"]');
-  if (!meta) {
-    meta = document.createElement("meta");
-    meta.setAttribute("name", "theme-color");
-    document.head.appendChild(meta);
-  }
-  // Always nav-black — mint theme-color paints a white strip under the iPhone dock.
-  meta.setAttribute("content", STYLIST_THEME_DARK);
+  // Keep whatever pack the shell already set (stylistThemeId) — only flip light/dark.
+  const packId = root.getAttribute("data-salon-theme") || DEFAULT_STYLIST_THEME_ID;
+  refreshSalonThemePaint(packId);
+  // Always dock-dark — a mint theme-color paints a white strip under the iPhone dock.
+  setThemeColorMeta("--t-dock-bg", STYLIST_THEME_DARK);
 }
 
 export function setStylistTheme(theme: StylistTheme) {

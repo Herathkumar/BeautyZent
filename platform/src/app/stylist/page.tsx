@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { WalkInPanel } from "@/components/WalkInPanel";
 import { useConfirm } from "@/components/ConfirmDialog";
+import { calendarDateInTz } from "@/lib/salon-time";
 import { centsToDollars, promptCompleteAmounts } from "@/lib/pay";
 
 type Appt = {
@@ -42,24 +43,22 @@ function statusLabel(status: string) {
   }
 }
 
-function isSameDay(a: Date, b: Date) {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
+function isSameDay(a: Date, b: Date, timeZone: string) {
+  return calendarDateInTz(timeZone, a) === calendarDateInTz(timeZone, b);
 }
 
-function formatDay(d: Date) {
+function formatDay(d: Date, timeZone: string) {
   return d.toLocaleDateString("en-CA", {
+    timeZone,
     weekday: "long",
     month: "short",
     day: "numeric",
   });
 }
 
-function formatTime(iso: string) {
+function formatTime(iso: string, timeZone: string) {
   return new Date(iso).toLocaleTimeString("en-CA", {
+    timeZone,
     hour: "numeric",
     minute: "2-digit",
   });
@@ -72,11 +71,13 @@ function phoneHref(phone: string) {
 export default function StylistHomePage() {
   const [name, setName] = useState("");
   const [stylistId, setStylistId] = useState("");
+  const [salonTz, setSalonTz] = useState("America/Toronto");
   const [photoUrl, setPhotoUrl] = useState("/avatars/stylist-neutral.svg");
   const [hasPhoto, setHasPhoto] = useState(false);
   const [appointments, setAppointments] = useState<Appt[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState("");
   const confirm = useConfirm();
   const [walkInOpen, setWalkInOpen] = useState(false);
   const [styleViewer, setStyleViewer] = useState<{
@@ -96,6 +97,7 @@ export default function StylistHomePage() {
     const [meData, data] = await Promise.all([me.json(), res.json()]);
     setName(meData.stylist?.name || meData.user?.name || "");
     setStylistId(meData.stylist?.id || "");
+    setSalonTz(meData.stylist?.salon?.timezone || "America/Toronto");
     if (meData.stylist?.photoUrl) setPhotoUrl(meData.stylist.photoUrl);
     setHasPhoto(Boolean(meData.stylist?.hasPhoto));
     setAppointments(data.appointments || []);
@@ -115,7 +117,7 @@ export default function StylistHomePage() {
     let done = 0;
     for (const a of appointments) {
       const start = new Date(a.startsAt);
-      if (isSameDay(start, now)) {
+      if (isSameDay(start, now, salonTz)) {
         todayList.push(a);
         if (a.status === "COMPLETED") done += 1;
       } else if (start > now && a.status !== "CANCELLED") {
@@ -129,7 +131,7 @@ export default function StylistHomePage() {
       (a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime()
     );
     return { today: todayList, upcoming: upcomingList, doneToday: done };
-  }, [appointments]);
+  }, [appointments, salonTz]);
 
   const nextOpen = today.find((a) => ["BOOKED", "CHECKED_IN"].includes(a.status));
 
@@ -152,14 +154,31 @@ export default function StylistHomePage() {
       chargedCents = amounts.chargedCents;
       tipCents = amounts.tipCents;
     }
+    const previous = appointments;
+    setActionError("");
     setBusyId(id);
-    await fetch("/api/stylist/appointments", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, status, chargedCents, tipCents }),
-    });
-    await load();
-    setBusyId(null);
+    setAppointments((list) =>
+      list.map((a) => (a.id === id ? { ...a, status, chargedCents, tipCents } : a))
+    );
+    try {
+      const res = await fetch("/api/stylist/appointments", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status, chargedCents, tipCents }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setAppointments(previous);
+        setActionError(data.error || "Could not update this booking. Try again.");
+        return;
+      }
+      await load();
+    } catch {
+      setAppointments(previous);
+      setActionError("Could not reach the server. Check your connection and try again.");
+    } finally {
+      setBusyId(null);
+    }
   }
 
   function AppointmentCard({ a, emphasize }: { a: Appt; emphasize?: boolean }) {
@@ -173,9 +192,9 @@ export default function StylistHomePage() {
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="font-[family-name:var(--font-display)] text-2xl text-champagne">
-              {formatTime(a.startsAt)}
+              {formatTime(a.startsAt, salonTz)}
               <span className="ml-2 text-sm font-normal text-muted">
-                – {formatTime(a.endsAt)}
+                – {formatTime(a.endsAt, salonTz)}
               </span>
             </p>
             <p className="mt-1 text-xl font-semibold text-ink">
@@ -183,7 +202,7 @@ export default function StylistHomePage() {
               {a.source === "WALK_IN" ? (
                 <span
                   data-testid="walk-in-badge"
-                  className="ml-2 align-middle rounded-full bg-[rgba(181, 235, 224,0.18)] px-2 py-0.5 text-[10px] font-bold tracking-wide text-[#b5ebe0] uppercase"
+                  className="ml-2 align-middle rounded-full bg-[color:rgb(var(--t-accent-rgb)/0.18)] px-2 py-0.5 text-[10px] font-bold tracking-wide text-champagne uppercase"
                 >
                   Walk-in
                 </span>
@@ -191,14 +210,14 @@ export default function StylistHomePage() {
             </p>
             <p className="text-sm text-muted">{a.service.name}</p>
             {a.status === "COMPLETED" ? (
-              <p className="mt-2 text-base font-semibold text-[#b5ebe0]">
+              <p className="mt-2 text-base font-semibold text-champagne">
                 $
                 {centsToDollars(
                   a.chargedCents ?? a.service.priceCents ?? 0
                 )}{" "}
                 charged
                 {(a.tipCents ?? 0) > 0 ? (
-                  <span className="text-[#9fe3b8]">
+                  <span className="text-[color:var(--t-ok)]">
                     {" "}
                     · +${centsToDollars(a.tipCents ?? 0)} tip
                   </span>
@@ -209,12 +228,12 @@ export default function StylistHomePage() {
           <span
             className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${
               a.status === "CHECKED_IN"
-                ? "bg-[rgba(159,227,184,0.18)] text-[#9fe3b8]"
+                ? "bg-[color:color-mix(in_srgb,var(--t-ok)_18%,transparent)] text-[color:var(--t-ok)]"
                 : a.status === "COMPLETED"
-                  ? "bg-[rgba(126,196,184,0.15)] text-champagne"
+                  ? "bg-[color:rgb(var(--t-accent-rgb)/0.15)] text-champagne"
                   : a.status === "CANCELLED" || a.status === "NO_SHOW"
-                    ? "bg-[rgba(245,168,168,0.15)] text-[#f5a8a8]"
-                    : "bg-[rgba(181, 235, 224,0.12)] text-champagne"
+                    ? "bg-[color:color-mix(in_srgb,var(--t-danger)_15%,transparent)] text-[color:var(--t-danger)]"
+                    : "bg-[color:rgb(var(--t-accent-rgb)/0.12)] text-champagne"
             }`}
           >
             {statusLabel(a.status)}
@@ -230,7 +249,7 @@ export default function StylistHomePage() {
                 label: `${a.client.name} · preferred look`,
               })
             }
-            className="mt-3 flex w-full gap-3 rounded-xl border border-[rgba(181,235,224,0.25)] bg-[rgba(181,235,224,0.08)] p-2.5 text-left"
+            className="mt-3 flex w-full gap-3 rounded-xl border border-[color:rgb(var(--t-accent-rgb)/0.25)] bg-[color:rgb(var(--t-accent-rgb)/0.08)] p-2.5 text-left"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -248,13 +267,13 @@ export default function StylistHomePage() {
                     : "Uploaded photo"}
                 {a.stylePref.prompt ? ` · ${a.stylePref.prompt}` : ""}
               </p>
-              <p className="mt-1 text-xs font-semibold text-[#b5ebe0]">Tap to enlarge</p>
+              <p className="mt-1 text-xs font-semibold text-champagne">Tap to enlarge</p>
             </div>
           </button>
         ) : null}
 
         {a.notes ? (
-          <p className="mt-3 rounded-xl border border-[rgba(181, 235, 224,0.25)] bg-[rgba(181, 235, 224,0.08)] px-3 py-2 text-sm text-champagne">
+          <p className="mt-3 rounded-xl border border-[color:rgb(var(--t-accent-rgb)/0.25)] bg-[color:rgb(var(--t-accent-rgb)/0.08)] px-3 py-2 text-sm text-champagne">
             <span className="font-semibold">Note · </span>
             {a.notes}
           </p>
@@ -279,7 +298,7 @@ export default function StylistHomePage() {
                   onClick={() => setStatus(a.id, "CHECKED_IN")}
                   className="stylist-tap btn-solid col-span-2 rounded-2xl"
                 >
-                  Client is here
+                  {busyId === a.id ? "Checking in…" : "Client is here"}
                 </button>
               ) : null}
               <button
@@ -290,14 +309,14 @@ export default function StylistHomePage() {
                   a.status === "CHECKED_IN" ? "btn-solid col-span-2" : ""
                 }`}
               >
-                Done
+                {busyId === a.id && a.status === "CHECKED_IN" ? "Saving…" : "Done"}
               </button>
               {a.status === "BOOKED" ? (
                 <button
                   type="button"
                   disabled={busyId === a.id}
                   onClick={() => setStatus(a.id, "CANCELLED")}
-                  className="stylist-tap rounded-2xl border border-[rgba(245,168,168,0.45)] text-[#f5a8a8]"
+                  className="stylist-tap rounded-2xl border border-[color:color-mix(in_srgb,var(--t-danger)_45%,transparent)] text-[color:var(--t-danger)]"
                 >
                   Cancel
                 </button>
@@ -333,7 +352,7 @@ export default function StylistHomePage() {
         </Link>
         <div className="min-w-0 space-y-1">
           <p className="text-sm uppercase tracking-[0.18em] text-champagne">
-            {formatDay(new Date())}
+            {formatDay(new Date(), salonTz)}
           </p>
           <h1 className="font-[family-name:var(--font-display)] text-3xl">
             Hi{name ? `, ${name.split(" ")[0]}` : ""}
@@ -343,7 +362,7 @@ export default function StylistHomePage() {
               ? "No clients today — enjoy the quiet."
               : `${today.length} today · ${doneToday} done`}
             {nextOpen
-              ? ` · next at ${formatTime(nextOpen.startsAt)}`
+              ? ` · next at ${formatTime(nextOpen.startsAt, salonTz)}`
               : today.length > 0
                 ? " · all wrapped up"
                 : ""}
@@ -399,6 +418,11 @@ export default function StylistHomePage() {
 
       <section className="space-y-3">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">Today</h2>
+        {actionError ? (
+          <p className="rounded-xl border border-[color:color-mix(in_srgb,var(--t-danger)_35%,transparent)] px-3 py-2 text-sm text-[color:var(--t-danger)]">
+            {actionError}
+          </p>
+        ) : null}
         {today.length === 0 ? (
           <div className="stylist-appt-card rounded-2xl border px-4 py-8 text-center text-muted">
             Nothing on the book for today.
@@ -443,6 +467,7 @@ export default function StylistHomePage() {
                     <p className="truncate font-semibold">{a.client.name}</p>
                     <p className="text-sm text-muted">
                       {new Date(a.startsAt).toLocaleString("en-CA", {
+                        timeZone: salonTz,
                         weekday: "short",
                         month: "short",
                         day: "numeric",

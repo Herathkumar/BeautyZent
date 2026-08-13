@@ -5,6 +5,143 @@ import path from "path";
 
 const prisma = new PrismaClient();
 
+/** e2e runs against a throwaway DB and expects exactly the Farzana fixtures. */
+const SEED_SECOND_SALON =
+  process.env.SEED_DEMO_SALON !== "false" && !process.env.E2E_DATABASE_URL;
+
+async function seedPlatformAdmin(passwordHash: string) {
+  const email = (process.env.PLATFORM_ADMIN_EMAIL || "platform@salonbook.local")
+    .toLowerCase()
+    .trim();
+  const hash = process.env.PLATFORM_ADMIN_PASSWORD
+    ? await bcrypt.hash(process.env.PLATFORM_ADMIN_PASSWORD, 10)
+    : passwordHash;
+
+  await prisma.platformAdmin.upsert({
+    where: { email },
+    update: { passwordHash: hash, active: true },
+    create: {
+      email,
+      passwordHash: hash,
+      name: process.env.PLATFORM_ADMIN_NAME || "Platform Admin",
+    },
+  });
+  return email;
+}
+
+/** Second tenant so multi-salon routing, slugs, and the platform console are exercised. */
+async function seedDemoSalon(passwordHash: string) {
+  const salon = await prisma.salon.upsert({
+    where: { slug: "demosalon" },
+    update: {
+      name: "Demo Hair Studio",
+      // Deliberately unlike FHSalon so per-tenant theming is obvious side by side.
+      bookingThemeId: "indigo",
+      managerThemeId: "laurel",
+      stylistThemeId: "ember",
+    },
+    create: {
+      name: "Demo Hair Studio",
+      slug: "demosalon",
+      phone: "416-555-0199",
+      email: "hello@demosalon.test",
+      address: "120 Queen St W, Toronto, ON",
+      timezone: "America/Toronto",
+      openHour: 10,
+      closeHour: 19,
+      slotMinutes: 30,
+      bookingThemeId: "indigo",
+      managerThemeId: "laurel",
+      stylistThemeId: "ember",
+    },
+  });
+
+  await prisma.user.upsert({
+    where: { salonId_email: { salonId: salon.id, email: "manager@demosalon.test" } },
+    update: { passwordHash, name: "Demo Manager" },
+    create: {
+      salonId: salon.id,
+      email: "manager@demosalon.test",
+      passwordHash,
+      name: "Demo Manager",
+      role: "ADMIN",
+    },
+  });
+
+  const demoStylists = [
+    { name: "Priya", bio: "Colour and balayage", color: "#3f5f8a", gender: "FEMALE" as const },
+    { name: "Marco", bio: "Barbering and fades", color: "#2f4356", gender: "MALE" as const },
+  ];
+
+  const demoServices = [
+    { name: "Women's cut & blow-dry", category: "WOMEN", durationMin: 60, priceCents: 7000, sortOrder: 1 },
+    { name: "Balayage", category: "WOMEN", durationMin: 120, priceCents: 18000, sortOrder: 2 },
+    { name: "Men's cut", category: "MEN", durationMin: 30, priceCents: 3500, sortOrder: 3 },
+    { name: "Skin fade", category: "MEN", durationMin: 45, priceCents: 4500, sortOrder: 4 },
+  ];
+
+  const serviceRows = [];
+  for (const svc of demoServices) {
+    const existing = await prisma.service.findFirst({
+      where: { salonId: salon.id, name: svc.name },
+    });
+    serviceRows.push(
+      existing
+        ? await prisma.service.update({ where: { id: existing.id }, data: svc })
+        : await prisma.service.create({ data: { salonId: salon.id, ...svc } })
+    );
+  }
+
+  for (const s of demoStylists) {
+    const existing = await prisma.stylist.findFirst({
+      where: { salonId: salon.id, name: s.name },
+    });
+    const row = existing
+      ? await prisma.stylist.update({ where: { id: existing.id }, data: s })
+      : await prisma.stylist.create({ data: { salonId: salon.id, ...s } });
+
+    for (let dayOfWeek = 0; dayOfWeek <= 6; dayOfWeek++) {
+      await prisma.stylistWeekHour.upsert({
+        where: { stylistId_dayOfWeek: { stylistId: row.id, dayOfWeek } },
+        update: {},
+        create: {
+          stylistId: row.id,
+          dayOfWeek,
+          startHour: salon.openHour,
+          endHour: salon.closeHour,
+          isOff: dayOfWeek === 0,
+        },
+      });
+    }
+
+    const stylistEmail = `${s.name.toLowerCase()}@demosalon.test`;
+    await prisma.user.upsert({
+      where: { salonId_email: { salonId: salon.id, email: stylistEmail } },
+      update: { passwordHash, name: s.name, role: "STYLIST", stylistId: row.id },
+      create: {
+        salonId: salon.id,
+        email: stylistEmail,
+        passwordHash,
+        name: s.name,
+        role: "STYLIST",
+        stylistId: row.id,
+      },
+    });
+
+    for (const service of serviceRows) {
+      if (s.name === "Marco" && service.category === "WOMEN") continue;
+      if (s.name === "Priya" && service.category === "MEN") continue;
+      await prisma.stylistService.upsert({
+        where: { stylistId_serviceId: { stylistId: row.id, serviceId: service.id } },
+        update: {},
+        create: { stylistId: row.id, serviceId: service.id },
+      });
+    }
+  }
+
+  return salon;
+}
+
 async function main() {
   const passwordHash = await bcrypt.hash("demo1234", 10);
 
@@ -14,6 +151,10 @@ async function main() {
       name: "Farzana Hair Salon",
       phone: "905-920-2277",
       address: "8 Taywood Crt, Dundas, ON L9H 7A2",
+      // The original Farzana palettes, now expressed as theme packs.
+      bookingThemeId: "plum",
+      managerThemeId: "cocoa",
+      stylistThemeId: "seaglass",
     },
     create: {
       name: "Farzana Hair Salon",
@@ -25,6 +166,9 @@ async function main() {
       openHour: 9,
       closeHour: 18,
       slotMinutes: 30,
+      bookingThemeId: "plum",
+      managerThemeId: "cocoa",
+      stylistThemeId: "seaglass",
     },
   });
 
@@ -219,10 +363,26 @@ async function main() {
     }
   }
 
+  const platformEmail = await seedPlatformAdmin(passwordHash);
+  if (SEED_SECOND_SALON) await seedDemoSalon(passwordHash);
+
   console.log("Seeded Farzana Hair Salon (slug: fhsalon)");
   console.log("Manager: manager@fhsalon.ca / demo1234");
   console.log("Stylist portal: farzana@fhsalon.ca / demo1234 (also aisha@, omar@)");
   console.log("Book: /book/fhsalon | Display: /display/fhsalon | Stylist: /stylist");
+  if (SEED_SECOND_SALON) {
+    console.log("");
+    console.log("Seeded Demo Hair Studio (slug: demosalon)");
+    console.log("Manager: manager@demosalon.test / demo1234");
+    console.log("Stylist portal: priya@demosalon.test / demo1234 (also marco@)");
+    console.log("Book: /book/demosalon | Display: /display/demosalon");
+  }
+  console.log("");
+  console.log(
+    `Platform console: /platform — ${platformEmail} / ${
+      process.env.PLATFORM_ADMIN_PASSWORD || "demo1234"
+    }`
+  );
 }
 
 main()

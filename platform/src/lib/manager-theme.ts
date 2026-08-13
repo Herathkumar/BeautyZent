@@ -1,3 +1,5 @@
+import { DEFAULT_MANAGER_THEME_ID, refreshSalonThemePaint, setThemeColorMeta } from "./salon-themes";
+
 export type ManagerTheme = "light" | "dark";
 
 export const MANAGER_THEME_KEY = "fhsalon-manager-theme";
@@ -31,20 +33,20 @@ export function applyManagerTheme(theme: ManagerTheme) {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
   root.classList.toggle("manager-shell--dark", theme === "dark");
+  // Drives which half of the salon's theme pack is active (see salon-themes.css).
+  root.classList.toggle("theme-light", theme !== "dark");
 
   const shells = document.querySelectorAll(".admin-theme");
   shells.forEach((el) => {
     el.classList.toggle("admin-theme--dark", theme === "dark");
   });
 
-  const color = theme === "dark" ? MANAGER_THEME_DARK : MANAGER_THEME_LIGHT;
-  let meta = document.querySelector('meta[name="theme-color"]');
-  if (!meta) {
-    meta = document.createElement("meta");
-    meta.setAttribute("name", "theme-color");
-    document.head.appendChild(meta);
-  }
-  meta.setAttribute("content", color);
+  // Keep the current pack id — only flip light/dark half (do not fall back to cocoa).
+  const packId =
+    root.getAttribute("data-salon-theme") ||
+    DEFAULT_MANAGER_THEME_ID;
+  refreshSalonThemePaint(packId);
+  setThemeColorMeta("--t-bg-2", theme === "dark" ? MANAGER_THEME_DARK : MANAGER_THEME_LIGHT);
 }
 
 export function setManagerTheme(theme: ManagerTheme) {

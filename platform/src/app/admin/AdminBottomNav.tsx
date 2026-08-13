@@ -88,10 +88,10 @@ export function AdminBottomNav() {
             onClick={() => setSheet(null)}
           />
           <div className="admin-salon-sheet-panel">
-            <p className="text-xs font-semibold tracking-[0.18em] text-[#7d6154] uppercase">
+            <p className="text-xs font-semibold tracking-[0.18em] text-champagne uppercase">
               Salon
             </p>
-            <p className="mt-1 text-sm text-[#6b5b52]">Products, services, and stylists</p>
+            <p className="mt-1 text-sm text-muted">Products, services, and stylists</p>
             <ul className="mt-4 grid gap-2">
               {SALON_LINKS.map((item) => (
                 <li key={item.href}>
@@ -100,8 +100,8 @@ export function AdminBottomNav() {
                     className="admin-salon-sheet-link"
                     onClick={() => setSheet(null)}
                   >
-                    <span className="font-semibold text-[#2b2521]">{item.label}</span>
-                    <span className="text-sm text-[#6b5b52]">{item.hint}</span>
+                    <span className="font-semibold text-ink">{item.label}</span>
+                    <span className="text-sm text-muted">{item.hint}</span>
                   </Link>
                 </li>
               ))}
@@ -119,10 +119,10 @@ export function AdminBottomNav() {
             onClick={() => setSheet(null)}
           />
           <div className="admin-salon-sheet-panel">
-            <p className="text-xs font-semibold tracking-[0.18em] text-[#7d6154] uppercase">
+            <p className="text-xs font-semibold tracking-[0.18em] text-champagne uppercase">
               Money
             </p>
-            <p className="mt-1 text-sm text-[#6b5b52]">Store earnings and payroll</p>
+            <p className="mt-1 text-sm text-muted">Store earnings and payroll</p>
             <ul className="mt-4 grid gap-2">
               {MONEY_LINKS.map((item) => (
                 <li key={item.href}>
@@ -131,8 +131,8 @@ export function AdminBottomNav() {
                     className="admin-salon-sheet-link"
                     onClick={() => setSheet(null)}
                   >
-                    <span className="font-semibold text-[#2b2521]">{item.label}</span>
-                    <span className="text-sm text-[#6b5b52]">{item.hint}</span>
+                    <span className="font-semibold text-ink">{item.label}</span>
+                    <span className="text-sm text-muted">{item.hint}</span>
                   </Link>
                 </li>
               ))}

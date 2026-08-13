@@ -20,32 +20,48 @@ export async function GET() {
       gender: true,
       photoMime: true,
       photoUpdatedAt: true,
-      salon: { select: { name: true, slug: true, phone: true } },
+      salon: {
+        select: {
+          name: true,
+          slug: true,
+          phone: true,
+          address: true,
+          brandColor: true,
+          accentColor: true,
+          bookingThemeId: true,
+          managerThemeId: true,
+          stylistThemeId: true,
+          timezone: true,
+        },
+      },
     },
   });
   if (!stylist) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const hasPhoto = Boolean(stylist.photoUpdatedAt && stylist.photoMime);
-  return NextResponse.json({
-    user: {
-      name: session.name,
-      email: session.email,
-      role: session.role,
-    },
-    stylist: {
-      id: stylist.id,
-      name: stylist.name,
-      bio: stylist.bio,
-      color: stylist.color,
-      gender: stylist.gender,
-      hasPhoto,
-      photoUrl: stylistPhotoUrl({
+  return NextResponse.json(
+    {
+      user: {
+        name: session.name,
+        email: session.email,
+        role: session.role,
+      },
+      stylist: {
         id: stylist.id,
+        name: stylist.name,
+        bio: stylist.bio,
+        color: stylist.color,
         gender: stylist.gender,
         hasPhoto,
-        photoUpdatedAt: stylist.photoUpdatedAt,
-      }),
-      salon: stylist.salon,
+        photoUrl: stylistPhotoUrl({
+          id: stylist.id,
+          gender: stylist.gender,
+          hasPhoto,
+          photoUpdatedAt: stylist.photoUpdatedAt,
+        }),
+        salon: stylist.salon,
+      },
     },
-  });
+    { headers: { "Cache-Control": "no-store" } }
+  );
 }

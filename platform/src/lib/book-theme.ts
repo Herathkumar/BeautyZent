@@ -1,3 +1,5 @@
+import { DEFAULT_BOOKING_THEME_ID, refreshSalonThemePaint, setThemeColorMeta } from "./salon-themes";
+
 export type BookThemePreference = "light" | "dark";
 export type BookThemeResolved = BookThemePreference;
 
@@ -41,20 +43,18 @@ export function applyBookTheme(theme: BookThemePreference) {
   const root = document.documentElement;
   root.classList.add("book-shell");
   root.classList.toggle("book-shell--light", theme === "light");
+  // Drives which half of the salon's theme pack is active (see salon-themes.css).
+  root.classList.toggle("theme-light", theme === "light");
 
   document.querySelectorAll(".book-theme").forEach((el) => {
     el.classList.toggle("book-theme--light", theme === "light");
     el.setAttribute("data-book-theme", theme);
   });
 
-  const color = theme === "light" ? BOOK_THEME_LIGHT : BOOK_THEME_DARK;
-  let meta = document.querySelector('meta[name="theme-color"]');
-  if (!meta) {
-    meta = document.createElement("meta");
-    meta.setAttribute("name", "theme-color");
-    document.head.appendChild(meta);
-  }
-  meta.setAttribute("content", color);
+  // Keep the current salon pack (indigo/noir/…) — only flip light/dark half.
+  const packId = root.getAttribute("data-salon-theme") || DEFAULT_BOOKING_THEME_ID;
+  refreshSalonThemePaint(packId);
+  setThemeColorMeta("--t-bg-2", theme === "light" ? BOOK_THEME_LIGHT : BOOK_THEME_DARK);
 }
 
 export function setBookThemePreference(theme: BookThemePreference) {

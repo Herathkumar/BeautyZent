@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { AppOpenSplash } from "@/components/AppOpenSplash";
+import { prisma } from "@/lib/prisma";
 
 type Props = {
   children: React.ReactNode;
@@ -8,13 +9,18 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
+  const salon = await prisma.salon.findUnique({
+    where: { slug },
+    select: { name: true, active: true },
+  });
+  const name = salon?.active && salon.name ? salon.name : "Salon";
   return {
-    title: "FHSalon — Store Display",
+    title: `${name} — Store Display`,
     description: "Salon floor tablet — who's waiting, check-in, and walk-ins.",
     manifest: `/display/${slug}/manifest`,
     appleWebApp: {
       capable: true,
-      title: "FHSalon Display",
+      title: `${name} Display`,
       statusBarStyle: "black-translucent",
     },
     icons: {
@@ -35,10 +41,23 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function DisplayLayout({ children }: Props) {
+export default async function DisplayLayout({ children, params }: Props) {
+  const { slug } = await params;
+  const salon = await prisma.salon.findUnique({
+    where: { slug },
+    select: { name: true, brandColor: true, accentColor: true, active: true },
+  });
+  const brand = salon?.active ? salon : null;
+
   return (
     <>
-      <AppOpenSplash variant="display" />
+      <AppOpenSplash
+        variant="display"
+        slug={slug}
+        brandName={brand?.name}
+        brandColor={brand?.brandColor}
+        accentColor={brand?.accentColor}
+      />
       {children}
     </>
   );

@@ -1,6 +1,6 @@
 {
-  "name": "FHSalon — Stylist App",
-  "short_name": "FHSalon Stylist",
+  "name": "Stylist App",
+  "short_name": "Stylist App",
   "description": "Stylist phone app for today's bookings, check-in, and time off.",
   "id": "/stylist",
   "start_url": "/shells/stylist.html?next=/stylist",

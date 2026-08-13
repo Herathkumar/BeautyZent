@@ -1,14 +1,19 @@
 import type { Metadata, Viewport } from "next";
-import { AppOpenSplash } from "@/components/AppOpenSplash";
 import { ManagerAppShell } from "./ManagerAppShell";
+import { SalonThemeSync } from "@/components/SalonThemeSync";
+import { getSession, isSalonStaff } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { DEFAULT_MANAGER_THEME_ID, normalizeThemeId } from "@/lib/salon-themes";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "FHSalon — Manager",
-  description: "Dashboard, bookings, earnings, and team for Farzana Hair Salon.",
+  title: "Salon Manager",
+  description: "Dashboard, bookings, earnings, and team for your salon.",
   manifest: "/manager-manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    title: "FHSalon Manager",
+    title: "Salon Manager",
     statusBarStyle: "default",
   },
   icons: {
@@ -30,12 +35,53 @@ export const viewport: Viewport = {
   interactiveWidget: "overlays-content",
 };
 
-/** Sync layout — no auth/DB await so the shell can stream immediately. */
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const session = await getSession();
+  let themeId = DEFAULT_MANAGER_THEME_ID;
+  let brand: {
+    name: string;
+    slug: string;
+    address?: string | null;
+    brandColor: string | null;
+    accentColor: string | null;
+    bookingThemeId: string | null;
+    managerThemeId: string | null;
+    stylistThemeId: string | null;
+  } | null = null;
+
+  if (session && isSalonStaff(session.role)) {
+    brand = await prisma.salon.findUnique({
+      where: { id: session.salonId },
+      select: {
+        name: true,
+        slug: true,
+        address: true,
+        brandColor: true,
+        accentColor: true,
+        bookingThemeId: true,
+        managerThemeId: true,
+        stylistThemeId: true,
+      },
+    });
+    themeId = normalizeThemeId(brand?.managerThemeId, DEFAULT_MANAGER_THEME_ID);
+  }
+
   return (
     <>
-      <AppOpenSplash variant="manager" />
-      <ManagerAppShell>{children}</ManagerAppShell>
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `document.documentElement.setAttribute("data-salon-theme","${themeId}")`,
+        }}
+      />
+      <SalonThemeSync
+        themeId={themeId}
+        fallbackThemeId={DEFAULT_MANAGER_THEME_ID}
+        themeField="managerThemeId"
+        slug={brand?.slug}
+        brand={brand}
+        staff
+      />
+      <ManagerAppShell initialBrand={brand}>{children}</ManagerAppShell>
     </>
   );
 }

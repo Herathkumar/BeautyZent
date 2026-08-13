@@ -1,54 +1,45 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useLayoutEffect, useRef } from "react";
 import {
   MANAGER_THEME_EVENT,
-  MANAGER_THEME_KEY,
   applyManagerTheme,
   readManagerTheme,
   type ManagerTheme,
 } from "@/lib/manager-theme";
 
-export function ManagerThemeRoot({
-  showChrome,
-  children,
-}: {
-  showChrome: boolean;
-  children: React.ReactNode;
-}) {
-  const [theme, setTheme] = useState<ManagerTheme>("light");
+/**
+ * Stable SSR markup — dark class is toggled after mount to avoid hydration mismatches.
+ */
+export function ManagerThemeRoot({ children }: { children: React.ReactNode }) {
+  const rootRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const next = readManagerTheme();
-    setTheme(next);
-    applyManagerTheme(next);
+  useLayoutEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
 
-    const sync = (nextTheme: ManagerTheme) => {
-      setTheme(nextTheme);
-      applyManagerTheme(nextTheme);
-    };
-    const onStorage = (e: StorageEvent) => {
-      if (e.key !== MANAGER_THEME_KEY) return;
-      sync(e.newValue === "dark" ? "dark" : "light");
-    };
-    const onLocal = (e: Event) => {
+    function sync(mode: ManagerTheme) {
+      root.dataset.managerTheme = mode;
+      root.classList.toggle("admin-theme--dark", mode === "dark");
+      applyManagerTheme(mode);
+    }
+
+    sync(readManagerTheme());
+
+    function onTheme(e: Event) {
       const detail = (e as CustomEvent<ManagerTheme>).detail;
       if (detail === "dark" || detail === "light") sync(detail);
-    };
-    window.addEventListener("storage", onStorage);
-    window.addEventListener(MANAGER_THEME_EVENT, onLocal);
-    return () => {
-      window.removeEventListener("storage", onStorage);
-      window.removeEventListener(MANAGER_THEME_EVENT, onLocal);
-    };
+    }
+    window.addEventListener(MANAGER_THEME_EVENT, onTheme);
+    return () => window.removeEventListener(MANAGER_THEME_EVENT, onTheme);
   }, []);
 
   return (
     <div
-      className={`admin-theme ${theme === "dark" ? "admin-theme--dark" : ""} ${
-        showChrome ? "admin-app-shell" : "min-h-screen"
-      }`}
-      data-manager-theme={theme}
+      ref={rootRef}
+      data-manager-theme="light"
+      className="admin-theme admin-app-shell"
+      suppressHydrationWarning
     >
       {children}
     </div>

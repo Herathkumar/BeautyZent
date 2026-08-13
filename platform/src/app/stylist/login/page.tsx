@@ -1,81 +1,45 @@
-"use client";
-
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { ZentraLabFooter } from "@/components/ZentraLabFooter";
+import { getStylistSession } from "@/lib/auth";
+import { salonLoginContext } from "@/lib/salon-login";
+import { StylistLoginForm } from "./StylistLoginForm";
 
-export default function StylistLoginPage() {
-  const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-    const data = await res.json();
-    setLoading(false);
-    if (!res.ok) {
-      setError(data.error || "Login failed");
-      return;
-    }
-    if (data.user?.role && data.user.role !== "STYLIST" && !data.user.stylistId) {
-      router.push("/manager");
-      return;
-    }
-    router.push("/stylist");
-    router.refresh();
+export default async function StylistLoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ salon?: string }>;
+}) {
+  const { salon: slug } = await searchParams;
+  const salon = await salonLoginContext(slug);
+  const stylistSession = await getStylistSession();
+  if (stylistSession && (!salon || stylistSession.salonId === salon.id)) {
+    redirect("/stylist");
   }
+
+  const accounts = (salon?.users || [])
+    .filter((user) => user.role === "STYLIST" || user.stylistId)
+    .map((user) => ({ email: user.email, name: user.name }));
 
   return (
     <main className="mx-auto max-w-md space-y-6">
       <div>
         <p className="text-sm uppercase tracking-[0.18em] text-champagne">Stylist App</p>
-        <h1 className="mt-2 font-[family-name:var(--font-display)] text-4xl">FHSalon</h1>
+        <h1 className="mt-2 font-[family-name:var(--font-display)] text-4xl">
+          {salon?.name || "Stylist App"}
+        </h1>
         <p className="mt-2 text-muted">
-          See today&apos;s clients, tap when they arrive, call them, and mark days off — no app
-          store install.
+          {salon
+            ? `Sign in to ${salon.name} — today's clients, walk-ins, and time off.`
+            : "See today's clients, tap when they arrive, call them, and mark days off — no app store install."}
         </p>
       </div>
 
-      <form onSubmit={onSubmit} className="grid gap-4">
-        <label className="grid gap-1.5 text-sm">
-          Email
-          <input
-            className="stylist-tap rounded-2xl border border-ink/15 bg-cream px-4"
-            value={email}
-            autoComplete="username"
-            inputMode="email"
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </label>
-        <label className="grid gap-1.5 text-sm">
-          Password
-          <input
-            type="password"
-            className="stylist-tap rounded-2xl border border-ink/15 bg-cream px-4"
-            value={password}
-            autoComplete="current-password"
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </label>
-        {error ? <p className="text-sm text-[#f5a8a8]">{error}</p> : null}
-        <button
-          type="submit"
-          disabled={loading}
-          className="stylist-tap btn-solid rounded-2xl px-5"
-        >
-          {loading ? "Opening…" : "Open FHSalon"}
-        </button>
-      </form>
+      <StylistLoginForm
+        salonSlug={salon?.slug}
+        salonName={salon?.name}
+        accounts={accounts}
+      />
 
       <div className="rounded-2xl border border-ink/15 bg-cream px-4 py-4 text-sm text-muted">
         <p className="font-semibold text-champagne">Put it on your home screen</p>
@@ -87,7 +51,7 @@ export default function StylistLoginPage() {
           </li>
         </ol>
         <p className="mt-3 text-xs">
-          Saves as <span className="text-ink-soft">FHSalon Stylist</span> with the teal stylist icon.
+          Saves as <span className="text-ink-soft">Stylist App</span> with the teal stylist icon.
           Your salon manager creates your login — change the password under Profile after first
           sign-in.
         </p>
@@ -95,7 +59,10 @@ export default function StylistLoginPage() {
 
       <p className="text-sm text-muted">
         Salon manager?{" "}
-        <Link href="/manager/login" className="text-champagne">
+        <Link
+          href={salon ? `/manager/login?salon=${encodeURIComponent(salon.slug)}` : "/manager/login"}
+          className="text-champagne"
+        >
           Manager App
         </Link>
       </p>

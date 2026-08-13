@@ -1,15 +1,19 @@
 import type { Metadata, Viewport } from "next";
-import { AppOpenSplash } from "@/components/AppOpenSplash";
 import { StylistAppShell } from "./StylistAppShell";
+import { SalonThemeSync } from "@/components/SalonThemeSync";
+import { getStylistSession } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { DEFAULT_STYLIST_THEME_ID, normalizeThemeId } from "@/lib/salon-themes";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "FHSalon — Stylist App",
+  title: "Stylist App",
   description: "Today's bookings, check-in, and time off — phone-friendly stylist portal.",
   manifest: "/stylist-manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    title: "FHSalon Stylist",
-    /* Match manager — black-translucent breaks iPhone safe-area under the dock. */
+    title: "Stylist App",
     statusBarStyle: "default",
   },
   icons: {
@@ -23,7 +27,6 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  /* Nav-black so iOS home-indicator chrome matches the dock (not mint/white). */
   themeColor: "#0e1618",
   width: "device-width",
   initialScale: 1,
@@ -32,12 +35,58 @@ export const viewport: Viewport = {
   interactiveWidget: "overlays-content",
 };
 
-/** Sync layout — no auth/DB await so the shell can stream immediately. */
-export default function StylistLayout({ children }: { children: React.ReactNode }) {
+export default async function StylistLayout({ children }: { children: React.ReactNode }) {
+  const session = await getStylistSession();
+  let themeId = DEFAULT_STYLIST_THEME_ID;
+  let brand: {
+    name: string;
+    slug: string;
+    address?: string | null;
+    brandColor: string | null;
+    accentColor: string | null;
+    bookingThemeId: string | null;
+    managerThemeId: string | null;
+    stylistThemeId: string | null;
+  } | null = null;
+
+  if (session?.stylistId) {
+    const stylist = await prisma.stylist.findUnique({
+      where: { id: session.stylistId },
+      select: {
+        salon: {
+          select: {
+            name: true,
+            slug: true,
+            address: true,
+            brandColor: true,
+            accentColor: true,
+            bookingThemeId: true,
+            managerThemeId: true,
+            stylistThemeId: true,
+          },
+        },
+      },
+    });
+    brand = stylist?.salon ?? null;
+    themeId = normalizeThemeId(brand?.stylistThemeId, DEFAULT_STYLIST_THEME_ID);
+  }
+
   return (
     <>
-      <AppOpenSplash variant="stylist" />
-      <StylistAppShell>{children}</StylistAppShell>
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `document.documentElement.setAttribute("data-salon-theme","${themeId}")`,
+        }}
+      />
+      <SalonThemeSync
+        themeId={themeId}
+        fallbackThemeId={DEFAULT_STYLIST_THEME_ID}
+        themeField="stylistThemeId"
+        slug={brand?.slug}
+        brand={brand}
+        staff
+      />
+      <StylistAppShell initialBrand={brand}>{children}</StylistAppShell>
     </>
   );
 }

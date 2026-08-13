@@ -11,7 +11,6 @@ import {
 import { DashboardFloorToday } from "./DashboardFloorToday";
 import { DashboardStoreEarnings } from "./DashboardStoreEarnings";
 import { PendingLeavePanel } from "./PendingLeavePanel";
-import { AppSplash } from "@/components/AppSplash";
 
 function toDate(d: { getTime: () => number }) {
   return new Date(d.getTime());
@@ -19,8 +18,15 @@ function toDate(d: { getTime: () => number }) {
 
 function DashboardFallback() {
   return (
-    <div className="app-splash-host">
-      <AppSplash variant="manager" />
+    <div className="animate-pulse space-y-4 py-2" aria-busy="true">
+      <div className="h-3 w-24 rounded bg-[color:var(--line)]" />
+      <div className="h-10 w-64 max-w-full rounded bg-[color:var(--line)]" />
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="admin-stat-card h-28 rounded-2xl" />
+        ))}
+      </div>
+      <span className="sr-only">Loading dashboard…</span>
     </div>
   );
 }
@@ -80,10 +86,10 @@ async function DashboardBody() {
     <main className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold tracking-[0.2em] text-[#7d6154] uppercase">
+          <p className="text-xs font-semibold tracking-[0.2em] text-champagne uppercase">
             Dashboard
           </p>
-          <h1 className="mt-1 font-[family-name:var(--font-display)] text-4xl leading-tight text-[#2b2521]">
+          <h1 className="mt-1 font-[family-name:var(--font-display)] text-4xl leading-tight text-ink">
             {salon.name}
           </h1>
           <p className="mt-1.5 text-sm text-muted">Welcome, {session.name}</p>
@@ -99,7 +105,7 @@ async function DashboardBody() {
       </div>
 
       {pendingLeaveCount > 0 ? (
-        <p className="rounded-xl border border-[#c47a4a]/35 bg-[#f8efe6] px-4 py-2.5 text-sm font-medium text-[#8a5530]">
+        <p className="rounded-xl border border-[color:var(--line)] bg-[color:var(--color-cream)] px-4 py-2.5 text-sm font-medium text-ink-soft">
           {pendingLeaveCount} leave request{pendingLeaveCount === 1 ? "" : "s"} awaiting your
           approval — review below.
         </p>
@@ -116,28 +122,28 @@ async function DashboardBody() {
           data-testid="dashboard-todays-bookings"
         >
           <div className="flex items-center justify-between gap-2">
-            <p className="text-xs font-semibold tracking-[0.14em] text-[#7d6154] uppercase">
+            <p className="text-xs font-semibold tracking-[0.14em] text-champagne uppercase">
               Today&apos;s bookings
             </p>
             <span className="admin-stat-icon" aria-hidden>
               ◉
             </span>
           </div>
-          <p className="mt-2 font-[family-name:var(--font-display)] text-4xl leading-none text-[#2b2521]">
+          <p className="mt-2 font-[family-name:var(--font-display)] text-4xl leading-none text-ink">
             {bookingsTotal}
           </p>
           <ul className="mt-3 space-y-1 text-sm text-muted">
             <li className="flex justify-between gap-2">
               <span>Online</span>
-              <span className="font-semibold text-[#2b2521]">{onlineToday}</span>
+              <span className="font-semibold text-ink">{onlineToday}</span>
             </li>
             <li className="flex justify-between gap-2">
               <span>Walk-in</span>
-              <span className="font-semibold text-[#2b2521]">{walkInToday}</span>
+              <span className="font-semibold text-ink">{walkInToday}</span>
             </li>
             <li className="flex justify-between gap-2">
               <span>Waitlist</span>
-              <span className="font-semibold text-[#c47a4a]">{waitlistWaiting}</span>
+              <span className="font-semibold text-champagne">{waitlistWaiting}</span>
             </li>
           </ul>
         </Link>
@@ -148,14 +154,14 @@ async function DashboardBody() {
         ].map((card) => (
           <Link key={card.label} href={card.href} className="admin-stat-card rounded-2xl p-4">
             <div className="flex items-center justify-between gap-2">
-              <p className="text-xs font-semibold tracking-[0.14em] text-[#7d6154] uppercase">
+              <p className="text-xs font-semibold tracking-[0.14em] text-champagne uppercase">
                 {card.label}
               </p>
               <span className="admin-stat-icon" aria-hidden>
                 {card.icon}
               </span>
             </div>
-            <p className="mt-3 font-[family-name:var(--font-display)] text-4xl leading-none text-[#2b2521]">
+            <p className="mt-3 font-[family-name:var(--font-display)] text-4xl leading-none text-ink">
               {card.value}
             </p>
           </Link>

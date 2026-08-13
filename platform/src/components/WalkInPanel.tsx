@@ -74,7 +74,12 @@ export function WalkInPanel({
   requestHeaders,
 }: Props) {
   const includeWaitlist = showWaitlist;
-  const extraHeaders = requestHeaders || {};
+  const extraHeaders = useMemo(
+    () => requestHeaders ?? {},
+    // Parent may pass a new object each render; compare by contents.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [JSON.stringify(requestHeaders ?? {})]
+  );
   const [services, setServices] = useState<Service[]>([]);
   const [stylists, setStylists] = useState<Stylist[]>([]);
   const [serviceId, setServiceId] = useState("");
@@ -144,7 +149,7 @@ export function WalkInPanel({
 
   const loadNext = useCallback(async () => {
     if (!showForm || !serviceId) {
-      setOptions([]);
+      setOptions((prev) => (prev.length === 0 ? prev : []));
       return;
     }
     const q = new URLSearchParams({ serviceId });
@@ -155,7 +160,7 @@ export function WalkInPanel({
     }
     const res = await fetch(`${walkInBase}?${q}`, { headers: extraHeaders });
     if (!res.ok) {
-      setOptions([]);
+      setOptions((prev) => (prev.length === 0 ? prev : []));
       return;
     }
     const data = await res.json();

@@ -783,7 +783,7 @@ export default function StylistOwnSchedulePage() {
                 <button
                   type="button"
                   onClick={() => removeBlock(b.id)}
-                  className="stylist-tap rounded-2xl border border-[rgba(245,168,168,0.45)] text-[#f5a8a8]"
+                  className="stylist-tap rounded-2xl border border-[color:color-mix(in_srgb,var(--t-danger)_45%,transparent)] text-[color:var(--t-danger)]"
                 >
                   Remove
                 </button>

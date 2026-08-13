@@ -40,7 +40,8 @@ export async function GET(
       },
     },
   });
-  if (!salon) {
+  // Paused salons (platform console) stay invisible to public booking.
+  if (!salon || !salon.active) {
     return NextResponse.json({ error: "Salon not found" }, { status: 404, headers: CORS_HEADERS });
   }
 
