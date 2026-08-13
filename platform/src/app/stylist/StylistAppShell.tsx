@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import {
   readStaffSalonBrand,
@@ -21,16 +20,16 @@ function applyStylistPack(salon: Pick<SalonBrand, "stylistThemeId"> | null | und
 
 export function StylistAppShell({
   children,
+  brandLink,
   initialBrand = null,
 }: {
   children: React.ReactNode;
+  /** Server-rendered salon name — do not recompute this text on the client. */
+  brandLink: ReactNode;
   initialBrand?: SalonBrand | null;
 }) {
   const pathname = usePathname() || "";
   const showChrome = !pathname.includes("/login");
-  const [salonName, setSalonName] = useState(
-    () => initialBrand?.name?.trim() || "Salon"
-  );
 
   useEffect(() => {
     try {
@@ -46,11 +45,8 @@ export function StylistAppShell({
     if (initialBrand?.name) {
       writeSalonBrand(initialBrand, { staff: true });
       applyStylistPack(initialBrand);
-      setSalonName(initialBrand.name.trim());
     } else if (!showChrome) {
-      const cached = readStaffSalonBrand();
-      if (cached?.name) setSalonName(cached.name.trim());
-      applyStylistPack(cached);
+      applyStylistPack(readStaffSalonBrand());
     }
 
     let cancelled = false;
@@ -70,7 +66,6 @@ export function StylistAppShell({
             const salon = data.stylist.salon;
             writeSalonBrand(salon, { staff: true });
             applyStylistPack(salon);
-            setSalonName(salon.name);
           }
         )
         .catch(() => {});
@@ -86,12 +81,7 @@ export function StylistAppShell({
       {showChrome ? (
         <header className="admin-header shrink-0 z-20 px-4 py-3">
           <div className="mx-auto flex max-w-lg items-center justify-between">
-            <Link
-              href="/stylist"
-              className="font-[family-name:var(--font-display)] text-lg tracking-wide text-champagne"
-            >
-              {salonName}
-            </Link>
+            {brandLink}
             <p className="text-xs text-muted">Stylist App · no install</p>
           </div>
         </header>

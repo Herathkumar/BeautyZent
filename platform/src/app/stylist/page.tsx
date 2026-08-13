@@ -31,7 +31,7 @@ function statusLabel(status: string) {
     case "BOOKED":
       return "Waiting";
     case "CHECKED_IN":
-      return "Here";
+      return "Checked in";
     case "COMPLETED":
       return "Done";
     case "CANCELLED":

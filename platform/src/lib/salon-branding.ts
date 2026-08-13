@@ -18,6 +18,23 @@ export type SalonBrand = {
   stylistThemeId?: string | null;
 };
 
+/** Plain JSON clone — Prisma rows cannot be passed into client components. */
+export function toClientSalonBrand(
+  brand: Partial<SalonBrand> | null | undefined
+): SalonBrand | null {
+  if (!brand?.slug || !brand?.name) return null;
+  return {
+    slug: brand.slug,
+    name: brand.name,
+    address: brand.address ?? null,
+    brandColor: brand.brandColor ?? null,
+    accentColor: brand.accentColor ?? null,
+    bookingThemeId: brand.bookingThemeId ?? null,
+    managerThemeId: brand.managerThemeId ?? null,
+    stylistThemeId: brand.stylistThemeId ?? null,
+  };
+}
+
 /** Split "Demo Hair Studio" → lead "Demo" + accent "Hair Studio" for header mark. */
 export function splitBrandName(name: string): { lead: string; rest: string | null } {
   const trimmed = (name || "").trim();

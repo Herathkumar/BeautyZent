@@ -3,6 +3,7 @@ import { StylistAppShell } from "./StylistAppShell";
 import { SalonThemeSync } from "@/components/SalonThemeSync";
 import { getStylistSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { toClientSalonBrand } from "@/lib/salon-branding";
 import { DEFAULT_STYLIST_THEME_ID, normalizeThemeId } from "@/lib/salon-themes";
 
 export const dynamic = "force-dynamic";
@@ -67,7 +68,7 @@ export default async function StylistLayout({ children }: { children: React.Reac
         },
       },
     });
-    brand = stylist?.salon ?? null;
+    brand = toClientSalonBrand(stylist?.salon);
     themeId = normalizeThemeId(brand?.stylistThemeId, DEFAULT_STYLIST_THEME_ID);
   }
 
@@ -86,7 +87,19 @@ export default async function StylistLayout({ children }: { children: React.Reac
         brand={brand}
         staff
       />
-      <StylistAppShell initialBrand={brand}>{children}</StylistAppShell>
+      <StylistAppShell
+        initialBrand={brand}
+        brandLink={
+          <a
+            href="/stylist"
+            className="font-[family-name:var(--font-display)] text-lg tracking-wide text-champagne"
+          >
+            {brand?.name?.trim() || "Salon"}
+          </a>
+        }
+      >
+        {children}
+      </StylistAppShell>
     </>
   );
 }

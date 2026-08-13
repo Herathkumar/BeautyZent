@@ -39,6 +39,14 @@ self.addEventListener("fetch", (event) => {
 
   if (!url.pathname.startsWith("/_next/static/")) return;
 
+  // Local Next/Turbopack: never cache — stale chunks vs fresh HTML cause hydration errors.
+  if (
+    self.location.hostname === "localhost" ||
+    self.location.hostname === "127.0.0.1"
+  ) {
+    return;
+  }
+
   event.respondWith(
     (async () => {
       const cache = await caches.open(ASSET_CACHE);

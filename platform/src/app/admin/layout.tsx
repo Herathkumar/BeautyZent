@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { ManagerAppShell } from "./ManagerAppShell";
 import { SalonThemeSync } from "@/components/SalonThemeSync";
+import { SalonBrandMark } from "@/components/SalonBrandMark";
 import { getSession, isSalonStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { locationEyebrow, toClientSalonBrand } from "@/lib/salon-branding";
 import { DEFAULT_MANAGER_THEME_ID, normalizeThemeId } from "@/lib/salon-themes";
 
 export const dynamic = "force-dynamic";
@@ -50,21 +52,26 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   } | null = null;
 
   if (session && isSalonStaff(session.role)) {
-    brand = await prisma.salon.findUnique({
-      where: { id: session.salonId },
-      select: {
-        name: true,
-        slug: true,
-        address: true,
-        brandColor: true,
-        accentColor: true,
-        bookingThemeId: true,
-        managerThemeId: true,
-        stylistThemeId: true,
-      },
-    });
+    brand = toClientSalonBrand(
+      await prisma.salon.findUnique({
+        where: { id: session.salonId },
+        select: {
+          name: true,
+          slug: true,
+          address: true,
+          brandColor: true,
+          accentColor: true,
+          bookingThemeId: true,
+          managerThemeId: true,
+          stylistThemeId: true,
+        },
+      })
+    );
     themeId = normalizeThemeId(brand?.managerThemeId, DEFAULT_MANAGER_THEME_ID);
   }
+
+  const brandName = brand?.name?.trim() || "Salon";
+  const location = locationEyebrow(brand?.address);
 
   return (
     <>
@@ -81,7 +88,34 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         brand={brand}
         staff
       />
-      <ManagerAppShell initialBrand={brand}>{children}</ManagerAppShell>
+      <ManagerAppShell
+        initialBrand={brand}
+        brandLink={
+          <a
+            href="/manager"
+            className="font-[family-name:var(--font-display)] text-lg tracking-wide text-ink"
+          >
+            <SalonBrandMark name={brandName} />
+          </a>
+        }
+        brandLinkDesktop={
+          <div>
+            {location ? (
+              <p className="text-[11px] font-semibold tracking-[0.2em] text-champagne uppercase">
+                {location}
+              </p>
+            ) : null}
+            <a
+              href="/manager"
+              className="font-[family-name:var(--font-display)] text-2xl text-ink"
+            >
+              <SalonBrandMark name={brandName} />
+            </a>
+          </div>
+        }
+      >
+        {children}
+      </ManagerAppShell>
     </>
   );
 }

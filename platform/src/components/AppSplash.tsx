@@ -38,13 +38,8 @@ type Props = {
 
 export function AppSplash({ variant, brandName, slug, brandColor, accentColor }: Props) {
   const v = VARIANTS[variant];
-  const [name, setName] = useState(() =>
-    resolveSplashName({
-      brandName,
-      slug,
-      pathname: typeof window !== "undefined" ? window.location.pathname : undefined,
-    })
-  );
+  // Never read localStorage/window here — that is the SSR vs client name mismatch.
+  const [name, setName] = useState(() => brandName?.trim() || "Salon");
 
   useEffect(() => {
     if (brandName?.trim()) {

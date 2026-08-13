@@ -14,6 +14,16 @@ export function RegisterServiceWorker() {
 
     (async () => {
       try {
+        const isLocal =
+          window.location.hostname === "localhost" ||
+          window.location.hostname === "127.0.0.1";
+        // Dev + Turbopack: a cached /_next/static chunk hydrates against fresh HTML.
+        if (process.env.NODE_ENV === "development" || isLocal) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map((r) => r.unregister()));
+          return;
+        }
+
         // Drop poisoned document caches from earlier SW versions (white screens).
         if ("caches" in window) {
           const keys = await caches.keys();
