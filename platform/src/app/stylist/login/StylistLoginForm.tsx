@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { writeSalonBrand } from "@/lib/salon-branding";
 import { DEFAULT_STYLIST_THEME_ID, applySalonThemeId } from "@/lib/salon-themes";
 
@@ -9,40 +8,46 @@ export type StylistLoginAccount = { email: string; name: string };
 
 export function StylistLoginForm({
   salonSlug,
+  salonId,
   salonName,
   accounts = [],
 }: {
   salonSlug?: string | null;
+  salonId?: string | null;
   salonName?: string | null;
   accounts?: StylistLoginAccount[];
 }) {
-  const router = useRouter();
   const [email, setEmail] = useState(accounts[0]?.email || "");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (!salonSlug) return;
-    void fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" });
-  }, [salonSlug]);
-
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError("");
-    const res = await fetch("/api/auth/login", {
+    const slugFromUrl =
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search).get("salon")
+        : null;
+    const slug = (salonSlug || slugFromUrl || "").trim();
+    const loginUrl = slug
+      ? `/api/auth/login?salon=${encodeURIComponent(slug)}`
+      : "/api/auth/login";
+    const res = await fetch(loginUrl, {
       method: "POST",
+      credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         email,
         password,
-        ...(salonSlug ? { salonSlug } : {}),
+        ...(slug ? { salonSlug: slug } : {}),
+        ...(salonId ? { salonId } : {}),
       }),
     });
     const data = await res.json();
-    setLoading(false);
     if (!res.ok) {
+      setLoading(false);
       setError(data.error || "Login failed");
       return;
     }
@@ -50,16 +55,17 @@ export function StylistLoginForm({
       writeSalonBrand(data.salon, { staff: true });
       applySalonThemeId(data.salon.stylistThemeId, DEFAULT_STYLIST_THEME_ID);
     }
-    if (data.user?.role && data.user.role !== "STYLIST" && !data.user.stylistId) {
-      router.push("/manager");
-      return;
-    }
-    router.push("/stylist");
-    router.refresh();
+    const next =
+      data.user?.role && data.user.role !== "STYLIST" && !data.user.stylistId
+        ? "/manager"
+        : "/stylist";
+    window.location.assign(next);
   }
 
   return (
     <form onSubmit={onSubmit} className="grid gap-4">
+      {salonSlug ? <input type="hidden" name="salon" value={salonSlug} /> : null}
+      {salonId ? <input type="hidden" name="salonId" value={salonId} /> : null}
       {accounts.length > 1 ? (
         <div className="flex flex-wrap gap-2">
           {accounts.map((account) => (

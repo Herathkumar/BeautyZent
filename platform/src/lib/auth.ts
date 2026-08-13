@@ -73,22 +73,40 @@ export async function refreshSessionForUserId(userId: string) {
 
 export type LoginResult =
   | { ok: true; user: { id: string; salonId: string; email: string; name: string; role: string; stylistId: string | null } }
-  | { ok: false; reason: "invalid" | "wrong_salon" };
+  | { ok: false; reason: "invalid" | "wrong_salon" | "ambiguous" };
 
 export async function login(
   email: string,
   password: string,
   opts?: { salonId?: string }
 ): Promise<LoginResult> {
-  const user = await prisma.user.findFirst({
-    where: { email: email.toLowerCase().trim() },
-  });
-  if (!user) return { ok: false, reason: "invalid" };
+  const normalized = email.toLowerCase().trim();
+  const user = opts?.salonId
+    ? await prisma.user.findUnique({
+        where: { salonId_email: { salonId: opts.salonId, email: normalized } },
+      })
+    : await prisma.user.findFirst({
+        where: { email: normalized },
+      });
+
+  if (!user) {
+    if (opts?.salonId) {
+      const elsewhere = await prisma.user.findFirst({
+        where: { email: normalized },
+        select: { id: true },
+      });
+      if (elsewhere) return { ok: false, reason: "wrong_salon" };
+    }
+    return { ok: false, reason: "invalid" };
+  }
+
+  if (!opts?.salonId) {
+    const twins = await prisma.user.count({ where: { email: normalized } });
+    if (twins > 1) return { ok: false, reason: "ambiguous" };
+  }
+
   const ok = await bcrypt.compare(password, user.passwordHash);
   if (!ok) return { ok: false, reason: "invalid" };
-  if (opts?.salonId && user.salonId !== opts.salonId) {
-    return { ok: false, reason: "wrong_salon" };
-  }
 
   await issueSessionCookie(user);
   return { ok: true, user };

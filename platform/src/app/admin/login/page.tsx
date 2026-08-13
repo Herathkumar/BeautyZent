@@ -45,6 +45,7 @@ export default async function AdminLoginPage({
 
       <ManagerLoginForm
         salonSlug={salon?.slug}
+        salonId={salon?.id}
         salonName={salon?.name}
         accounts={accounts}
       />

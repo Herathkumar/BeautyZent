@@ -2,17 +2,54 @@ import { NextResponse } from "next/server";
 import { login } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+function salonHintFromRequest(
+  req: Request,
+  body: { salonSlug?: unknown; salonId?: unknown }
+) {
+  const url = new URL(req.url);
+  let refererSlug = "";
+  try {
+    const referer = req.headers.get("referer");
+    if (referer) refererSlug = new URL(referer).searchParams.get("salon") || "";
+  } catch {
+    /* ignore */
+  }
+  const salonId = typeof body.salonId === "string" ? body.salonId.trim() : "";
+  const salonSlug = (
+    (typeof body.salonSlug === "string" && body.salonSlug) ||
+    url.searchParams.get("salon") ||
+    refererSlug ||
+    ""
+  )
+    .trim()
+    .toLowerCase();
+  return { salonId, salonSlug };
+}
+
 export async function POST(req: Request) {
-  const { email, password, salonSlug } = await req.json();
+  const body = await req.json();
+  const { email, password } = body;
   if (!email || !password) {
     return NextResponse.json({ error: "Email and password required" }, { status: 400 });
   }
 
+  const hint = salonHintFromRequest(req, body);
   let salonId: string | undefined;
   let requestedName = "";
-  if (typeof salonSlug === "string" && salonSlug.trim()) {
+
+  if (hint.salonId) {
     const requested = await prisma.salon.findUnique({
-      where: { slug: salonSlug.trim().toLowerCase() },
+      where: { id: hint.salonId },
+      select: { id: true, name: true, slug: true },
+    });
+    if (!requested) {
+      return NextResponse.json({ error: "Salon not found" }, { status: 404 });
+    }
+    salonId = requested.id;
+    requestedName = requested.name;
+  } else if (hint.salonSlug) {
+    const requested = await prisma.salon.findUnique({
+      where: { slug: hint.salonSlug },
       select: { id: true, name: true },
     });
     if (!requested) {
@@ -32,6 +69,14 @@ export async function POST(req: Request) {
             : "That login belongs to a different salon.",
         },
         { status: 403 }
+      );
+    }
+    if (result.reason === "ambiguous") {
+      return NextResponse.json(
+        {
+          error: "That email is used at more than one salon. Open the stylist app from that salon in the operator console.",
+        },
+        { status: 409 }
       );
     }
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });

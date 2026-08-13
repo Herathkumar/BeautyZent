@@ -37,6 +37,7 @@ export default async function StylistLoginPage({
 
       <StylistLoginForm
         salonSlug={salon?.slug}
+        salonId={salon?.id}
         salonName={salon?.name}
         accounts={accounts}
       />
