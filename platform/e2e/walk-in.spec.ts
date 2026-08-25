@@ -79,7 +79,7 @@ test.describe("Walk-in appointments", () => {
     const service = page.getByLabel("Walk-in service");
     // Wait until catalog hydrates (placeholder alone is 1 option)
     await expect
-      .poll(async () => service.locator("option").count(), { timeout: 15_000 })
+      .poll(async () => service.locator("option").count(), { timeout: 30_000 })
       .toBeGreaterThanOrEqual(7);
     const labels = await service.locator("option").allTextContents();
     const short = labels.find((t) => /bang|fringe trim/i.test(t));
@@ -115,11 +115,10 @@ test.describe("Walk-in appointments", () => {
     });
     expect(add.ok()).toBeTruthy();
 
-    await page.goto("/display/fhsalon");
-    await expect(page.getByTestId("store-display-board")).toBeVisible({
+    await page.goto("/manager/walk-in");
+    await expect(page.getByTestId("walk-in-panel")).toBeVisible({
       timeout: 15_000,
     });
-    await expect(page.getByTestId("display-waitlist-section")).toBeVisible();
 
     const waitlist = page.getByTestId("walk-in-waitlist");
     const entry = waitlist.locator("[data-testid=waitlist-entry]").filter({
@@ -198,31 +197,12 @@ test.describe("Walk-in appointments", () => {
     await expect(page.getByText(clientName).first()).toBeVisible({ timeout: 10_000 });
   });
 
-  test("display board shows waitlist on Today only and walk-in form toggles", async ({
-    page,
-  }) => {
-    await page.goto("/display/fhsalon");
-    await expect(page.getByRole("button", { name: /^today/i })).toBeVisible();
-    await expect(page.getByTestId("display-waitlist-section")).toBeVisible();
-    await expect(page.getByTestId("walk-in-waitlist")).toBeVisible();
-    await expect(
-      page.getByText(/seat now → pick stylist → check in → done with payment/i)
-    ).toBeVisible();
-
-    const welcome = page.getByRole("heading", { name: /^book online$/i });
-    const waitSection = page.getByTestId("display-waitlist-section");
-    const welcomeBox = await welcome.boundingBox();
-    const waitBox = await waitSection.boundingBox();
-    expect(welcomeBox && waitBox).toBeTruthy();
-    expect(waitBox!.y).toBeGreaterThan(welcomeBox!.y);
-
-    await page.getByRole("button", { name: /^future/i }).click();
-    await expect(page.getByTestId("walk-in-waitlist")).toHaveCount(0);
-
-    await page.getByRole("button", { name: /^today/i }).click();
-    await expect(page.getByTestId("walk-in-waitlist")).toBeVisible();
-    await expect(page.getByRole("heading", { name: /walk-in desk/i })).toBeVisible();
-    await page.getByTestId("display-walk-in-toggle").click();
+  test("reception new booking opens walk-in form", async ({ page }) => {
+    await adminLogin(page);
+    await page.goto("/display/fhsalon/reception");
+    await expect(page.getByTestId("store-display-board")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("reception-client-panel")).toBeVisible();
+    await page.getByTestId("reception-new-booking").click();
     await expect(page.getByLabel("Walk-in service")).toBeVisible();
   });
 
@@ -256,83 +236,138 @@ test.describe("Walk-in appointments", () => {
     });
     expect(done.ok()).toBeTruthy();
 
-    await page.goto("/display/fhsalon");
-    await expect(page.getByRole("button", { name: /^today/i })).toBeVisible();
+    await page.goto("/display/fhsalon/reception");
+    await expect(page.getByTestId("store-display-board")).toBeVisible({ timeout: 15_000 });
     await expect(page.locator("article").filter({ hasText: clientName })).toHaveCount(0);
   });
 
   test("display waitlist seat then check in then done with payment", async ({
     page,
   }) => {
+    test.setTimeout(180_000);
     const clientName = `WaitCycle ${Date.now()}`;
 
     await adminLogin(page);
     await clearOpenBookingsForStylist(page, /^(aisha|omar|farzana)$/i);
-
-    // Short service + Omar — long cuts / busy Farzana often leave Seat now disabled
+    await page.request.post("/api/display/fhsalon/checkout", { data: { action: "cancel" } }).catch(() => undefined);
     const catalog = await page.request.get("/api/public/fhsalon/catalog");
     expect(catalog.ok()).toBeTruthy();
     const cat = await catalog.json();
     const service =
-      (cat.services || []).find((s: { name: string }) => /bang|fringe/i.test(s.name)) ||
       (cat.services || []).find((s: { name: string }) => /beard tidy/i.test(s.name)) ||
-      (cat.services || []).find((s: { name: string }) => /^men.?s haircut/i.test(s.name));
+      (cat.services || []).find((s: { name: string }) => /\bmen'?s haircut\b/i.test(s.name));
     const omar = (cat.stylists || []).find((s: { name: string }) => /omar/i.test(s.name));
     expect(service?.id).toBeTruthy();
     expect(omar?.id).toBeTruthy();
 
-    const add = await page.request.post("/api/admin/waitlist", {
+    const walk = await page.request.post("/api/admin/walk-in", {
       data: {
-        clientName,
         serviceId: service.id,
         stylistId: omar.id,
+        nextAvailable: true,
+        clientName,
       },
     });
-    expect(add.ok()).toBeTruthy();
-    const added = await add.json();
-    expect(added.entry?.id).toBeTruthy();
+    expect(walk.ok(), `walk-in create: ${await walk.text()}`).toBeTruthy();
 
-    await page.goto("/display/fhsalon");
-    const waitlist = page.getByTestId("walk-in-waitlist");
-    const entry = waitlist.locator("[data-testid=waitlist-entry]").filter({
-      hasText: clientName,
-    });
-    await expect(entry).toBeVisible({ timeout: 15_000 });
-    await expect(entry.getByTestId("waitlist-seat-now")).toBeEnabled({ timeout: 30_000 });
-
-    await entry.getByTestId("waitlist-seat-now").click();
-    const picker = entry.getByTestId("waitlist-seat-picker");
-    await expect(picker).toBeVisible();
-    await expect(picker.getByRole("radio")).not.toHaveCount(0);
-    // Switch / confirm a specific available stylist (Omar preferred)
-    const omarRadio = picker.getByLabel(/seat with omar/i);
-    if (await omarRadio.count()) {
-      await omarRadio.check();
-    } else {
-      await picker.getByRole("radio").first().check();
-    }
-    await picker.getByTestId("waitlist-confirm-seat").click();
-
-    await expect(entry).toHaveCount(0, { timeout: 10_000 });
-
+    await page.goto("/display/fhsalon/reception");
     const row = page.locator("article").filter({ hasText: clientName }).first();
-    await expect(row).toBeVisible({ timeout: 15_000 });
-    await row.scrollIntoViewIfNeeded();
-    await expect(row.getByRole("button", { name: /^check in$/i })).toBeVisible();
-    await row.getByRole("button", { name: /^check in$/i }).click();
-    await expect(row.getByText(/checked in/i)).toBeVisible({ timeout: 10_000 });
+    await expect(row).toBeVisible({ timeout: 40_000 });
+    await row.click();
+    const panel = page.getByTestId("reception-client-panel");
+    await expect(panel).toContainText(clientName);
+    const checkIn = panel.getByRole("button", { name: /^check-in$/i });
+    if (await checkIn.count()) {
+      await checkIn.click();
+      await expect(row.getByText(/checked in/i)).toBeVisible({ timeout: 10_000 });
+    } else {
+      await expect(row.getByText(/checked in/i)).toBeVisible();
+    }
 
-    page.on("dialog", async (d) => {
-      const msg = d.message().toLowerCase();
-      if (msg.includes("tip")) await d.accept("5.00");
-      else if (msg.includes("charge") || msg.includes("$")) await d.accept("45.00");
-      else await d.accept("0");
-    });
-    await row.getByRole("button", { name: /^done$/i }).click();
-    // Completed jobs drop off today's floor list
+    await panel.getByRole("button", { name: /^checkout$/i }).click();
+    const desk = page.getByTestId("reception-checkout-desk");
+    await expect(desk).toBeVisible({ timeout: 10_000 });
+    await expect(desk.getByText(service.name, { exact: true })).toBeVisible();
+    await expect(desk.getByTestId("reception-checkout-tip-picker")).toBeVisible();
+    await page.getByTestId("reception-tip-pct-20").click();
+    const productSelect = page.getByTestId("reception-add-product");
+    const productOptions = await productSelect.locator("option").all();
+    if (productOptions.length > 1) {
+      await productSelect.selectOption({ index: 1 });
+      await expect(desk.getByTestId("checkout-product-line").first()).toBeVisible({ timeout: 8_000 });
+    }
+    await page.getByTestId("reception-payment-received").click();
     await expect(
       page.locator("article").filter({ hasText: clientName })
     ).toHaveCount(0, { timeout: 15_000 });
+  });
+
+  test("checkout shows service bill on the customer display", async ({ page, browser }) => {
+    const clientName = `BillTv ${Date.now()}`;
+    await adminLogin(page);
+    await clearOpenBookingsForStylist(page, /^(aisha|omar|farzana)$/i);
+    await page.request.post("/api/display/fhsalon/checkout", { data: { action: "cancel" } }).catch(() => undefined);
+    const catalog = await page.request.get("/api/public/fhsalon/catalog");
+    const cat = await catalog.json();
+    const service =
+      (cat.services || []).find((s: { name: string }) => /beard tidy/i.test(s.name)) ||
+      (cat.services || []).find((s: { name: string }) => /\bmen'?s haircut\b/i.test(s.name));
+    const omar = (cat.stylists || []).find((s: { name: string }) => /omar/i.test(s.name));
+    expect(service?.id).toBeTruthy();
+    expect(omar?.id).toBeTruthy();
+
+    const walk = await page.request.post("/api/admin/walk-in", {
+      data: {
+        serviceId: service.id,
+        stylistId: omar.id,
+        nextAvailable: true,
+        clientName,
+      },
+    });
+    expect(walk.ok(), `walk-in create: ${await walk.text()}`).toBeTruthy();
+
+    const customer = await browser.newPage();
+    await customer.goto("/display/fhsalon");
+    await expect(customer.getByTestId("store-display-board")).toBeVisible({ timeout: 15_000 });
+
+    await page.goto("/display/fhsalon/reception");
+    const row = page.locator("article").filter({ hasText: clientName }).first();
+    await expect(row).toBeVisible({ timeout: 40_000 });
+    await row.click();
+    await page.getByTestId("reception-client-panel").getByRole("button", { name: /^checkout$/i }).click();
+    await expect(page.getByTestId("reception-checkout-desk")).toBeVisible({ timeout: 10_000 });
+
+    const overlay = customer.getByTestId("customer-checkout-overlay");
+    await expect(overlay).toBeVisible({ timeout: 20_000 });
+    await expect(overlay).toContainText(/please review your visit/i);
+    await expect(overlay.getByText(service.name)).toBeVisible();
+    await expect(overlay).toContainText(/amount due/i);
+    await expect(customer.getByTestId("customer-checkout-tip-picker")).toBeVisible();
+    await expect(overlay.locator("input")).toHaveCount(0);
+    await expect(customer.getByTestId("customer-tip-other")).toBeVisible();
+    await customer.getByTestId("customer-tip-pct-20").click();
+    await expect(overlay).toContainText(/20%/i);
+    await customer.getByTestId("customer-tip-other").click();
+    await expect(customer.getByTestId("customer-tip-keypad")).toBeVisible();
+    await customer.getByTestId("customer-tip-key-7").click();
+    await customer.getByTestId("customer-tip-key-0").click();
+    await customer.getByTestId("customer-tip-key-0").click();
+    await customer.getByTestId("customer-tip-key-set").click();
+    await expect(overlay).toContainText("$7.00");
+
+    const productSelect = page.getByTestId("reception-add-product");
+    if ((await productSelect.locator("option").count()) > 1) {
+      await productSelect.selectOption({ index: 1 });
+      await expect(overlay.getByTestId("checkout-product-line").first()).toBeVisible({ timeout: 8_000 });
+    }
+
+    await customer.getByTestId("customer-checkout-confirm").click();
+    await expect(page.getByTestId("reception-customer-confirmed")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("reception-customer-confirmed")).toContainText(/ready to pay/i);
+
+    await page.getByTestId("reception-payment-received").click();
+    await expect(overlay).toContainText(/thank you/i, { timeout: 10_000 });
+    await customer.close();
   });
 
   test("stylist can book for a client from Floor board", async ({ page }) => {

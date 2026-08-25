@@ -1,0 +1,342 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+import {
+  clockParts,
+  formatClock,
+  formatHourLabel,
+  hourMarks,
+  HOUR_PX,
+  initials,
+  serviceKind,
+  statusLabel,
+  type DisplayAppt,
+  type DisplayStylist,
+} from "@/lib/display-schedule";
+
+function cardTone(serviceName: string) {
+  const kind = serviceKind(serviceName);
+  if (kind === "color") return "bg-[#5b3d7a] text-[#f3e8ff]";
+  if (kind === "style") return "bg-[#2f6b55] text-[#e8fff4]";
+  return "bg-[#c45b7a] text-white";
+}
+
+function ServiceGlyph({ name }: { name: string }) {
+  const kind = serviceKind(name);
+  const cls = "h-3.5 w-3.5 shrink-0 opacity-90";
+  if (kind === "color") {
+    return (
+      <svg className={cls} viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path
+          d="M12 3c2 3.5 6 7 6 11a6 6 0 1 1-12 0c0-4 4-7.5 6-11Z"
+          stroke="currentColor"
+          strokeWidth="1.8"
+        />
+      </svg>
+    );
+  }
+  if (kind === "style") {
+    return (
+      <svg className={cls} viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path d="M4 7h16M6 12h12M8 17h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  return (
+    <svg className={cls} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="6.5" cy="7" r="2.4" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="17.5" cy="7" r="2.4" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M8.4 8.6 12 14l3.6-5.4M12 14v6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function ReceptionSchedule({
+  appointments,
+  stylists,
+  openHour,
+  closeHour,
+  timeZone,
+  selectedId,
+  onSelect,
+  now,
+}: {
+  appointments: DisplayAppt[];
+  stylists: DisplayStylist[];
+  openHour: number;
+  closeHour: number;
+  timeZone?: string | null;
+  selectedId: string | null;
+  onSelect: (appt: DisplayAppt) => void;
+  now: Date;
+}) {
+  const hours = hourMarks(openHour, closeHour);
+  const spanMin = Math.max(60, (closeHour - openHour) * 60);
+  const height = hours.length * HOUR_PX;
+  const openMin = openHour * 60;
+  const nowMin = clockParts(now.toISOString(), timeZone).minutes;
+  const nowTop = ((nowMin - openMin) / spanMin) * height;
+  const showNow = nowMin >= openMin && nowMin <= closeHour * 60;
+  const columns = stylists.length
+    ? stylists
+    : [{ id: "none", name: "Chair", bio: null, color: "#c9a87c", photoUrl: "" }];
+  const headerRef = useRef<HTMLDivElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const scrolled = useRef(false);
+
+  useEffect(() => {
+    const el = bodyRef.current;
+    if (!showNow || !el) return;
+    const top = Math.max(0, nowTop - el.clientHeight * 0.35);
+    el.scrollTo({ top, behavior: scrolled.current ? "smooth" : "auto" });
+    scrolled.current = true;
+  }, [showNow, nowMin, nowTop, columns.length]);
+
+  const cols = `3.5rem repeat(${columns.length}, minmax(9rem, 1fr))`;
+
+  return (
+    <div className="flex h-full min-h-0 flex-col">
+      <div ref={headerRef} className="shrink-0 overflow-x-hidden bg-[var(--rx-bg)]">
+        <div className="grid min-w-[720px]" style={{ gridTemplateColumns: cols }}>
+          <div />
+          {columns.map((s) => (
+            <div key={s.id} className="flex items-center gap-2 border-l border-[color:var(--rx-line)] px-3 py-3">
+              <div className="relative h-10 w-10 shrink-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={s.photoUrl || "/avatars/stylist-neutral.svg"}
+                  alt=""
+                  className="h-10 w-10 rounded-full object-cover ring-2 ring-[color:var(--rx-line)]"
+                />
+                <span className="absolute right-0 bottom-0 h-2.5 w-2.5 rounded-full bg-emerald-400 ring-2 ring-[color:var(--rx-nav)]" />
+              </div>
+              <p className="truncate text-sm font-semibold text-[color:var(--rx-text)]">{s.name}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div
+        ref={bodyRef}
+        className="min-h-0 flex-1 overflow-auto"
+        onScroll={(e) => {
+          if (headerRef.current) headerRef.current.scrollLeft = e.currentTarget.scrollLeft;
+        }}
+      >
+        <div className="relative grid min-w-[720px]" style={{ gridTemplateColumns: cols, height }}>
+        <div className="relative">
+          {hours.map((h, i) => (
+            <p
+              key={h}
+              className="absolute right-2 text-[10px] text-[color:var(--rx-faint)] tabular-nums"
+              style={{ top: i * HOUR_PX - 5 }}
+            >
+              {formatHourLabel(h)}
+            </p>
+          ))}
+          <p
+            className="absolute right-2 text-[10px] text-[color:var(--rx-faint)] tabular-nums"
+            style={{ top: hours.length * HOUR_PX - 5 }}
+          >
+            {formatHourLabel(closeHour)}
+          </p>
+        </div>
+        {columns.map((stylist) => {
+          const items = appointments.filter(
+            (a) => a.stylist.id === stylist.id || a.stylist.name === stylist.name
+          );
+          return (
+            <div key={stylist.id} className="relative border-l border-[color:var(--rx-line)]">
+              {hours.map((h, i) => (
+                <div
+                  key={h}
+                  className="absolute inset-x-0 border-t border-[color:var(--rx-line)]"
+                  style={{ top: i * HOUR_PX }}
+                />
+              ))}
+              {items.map((a) => {
+                const start = clockParts(a.startsAt, timeZone).minutes - openMin;
+                const end = clockParts(a.endsAt, timeZone).minutes - openMin;
+                const top = (start / spanMin) * height;
+                const h = Math.max(72, ((end - start) / spanMin) * height - 6);
+                const selected = selectedId === a.id;
+                return (
+                  <article
+                    key={a.id}
+                    className={`absolute inset-x-1.5 overflow-hidden rounded-xl px-2.5 py-1.5 text-left shadow-md ${cardTone(
+                      a.service.name
+                    )} ${selected ? "ring-2 ring-[color:var(--rx-accent)]" : ""}`}
+                    style={{ top, height: h }}
+                  >
+                    <button type="button" className="block h-full w-full text-left" onClick={() => onSelect(a)}>
+                      <p className="flex items-center gap-1.5 truncate text-sm font-semibold">
+                        <ServiceGlyph name={a.service.name} />
+                        {a.client.name}
+                      </p>
+                      <p className="truncate text-[11px] opacity-90">{a.service.name}</p>
+                      <span className="mt-1 inline-block rounded-full bg-white/20 px-1.5 py-0.5 text-[9px] font-bold tracking-wide uppercase">
+                        {statusLabel(a.status)}
+                      </span>
+                    </button>
+                  </article>
+                );
+              })}
+            </div>
+          );
+        })}
+        {showNow ? (
+          <div
+            className="pointer-events-none absolute right-0 left-14 z-10 flex items-center"
+            style={{ top: nowTop }}
+          >
+            <div className="h-px flex-1 bg-[#c45b7a]" />
+            <span className="ml-2 flex items-center gap-1 text-[10px] font-bold tracking-[0.18em] text-[#c45b7a] uppercase">
+              <span className="h-2 w-2 rounded-full bg-[#c45b7a]" />
+              Now
+            </span>
+          </div>
+        ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function ReceptionClientPanel({
+  appt,
+  onClose,
+  onStatus,
+  onCheckout,
+}: {
+  appt: DisplayAppt | null;
+  onClose: () => void;
+  onStatus: (id: string, status: string, chargedCents?: number, tipCents?: number) => void;
+  onCheckout?: (appt: DisplayAppt) => void;
+}) {
+  if (!appt) {
+    return (
+      <aside
+        className="flex h-full min-h-[24rem] flex-col justify-center bg-[var(--rx-panel)] px-6 text-center text-sm text-[color:var(--rx-faint)]"
+        data-testid="reception-client-panel"
+      >
+        Select a booking to see client details.
+      </aside>
+    );
+  }
+  const vip = (appt.client.visitCount || 0) >= 8;
+  const since = appt.client.createdAt
+    ? new Date(appt.client.createdAt).toLocaleDateString("en-CA", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "—";
+  const visits = appt.client.recentVisits || [];
+
+  return (
+    <aside
+      className="flex h-full min-h-[24rem] flex-col bg-[var(--rx-panel)] px-5 py-5"
+      data-testid="reception-client-panel"
+    >
+      <div className="mb-5 flex items-start justify-between">
+        <p className="text-sm font-semibold text-[color:var(--rx-text)]">Client Details</p>
+        <button type="button" onClick={onClose} className="text-lg leading-none text-[color:var(--rx-faint)] hover:text-[color:var(--rx-text)]" aria-label="Close">
+          ×
+        </button>
+      </div>
+
+      <div className="flex gap-3">
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#c45b7a] text-base font-bold text-white">
+          {initials(appt.client.name)}
+        </div>
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="truncate text-base font-semibold text-[color:var(--rx-text)]">{appt.client.name}</h3>
+            {vip ? (
+              <span className="rounded-full bg-[#6b4a9a] px-2 py-0.5 text-[10px] font-bold tracking-wide text-[#e9d5ff] uppercase">
+                VIP Client
+              </span>
+            ) : null}
+          </div>
+          {appt.client.email ? <p className="mt-1 truncate text-xs text-[color:var(--rx-muted)]">{appt.client.email}</p> : null}
+          {appt.client.phone ? <p className="truncate text-xs text-[color:var(--rx-muted)]">{appt.client.phone}</p> : null}
+        </div>
+      </div>
+
+      <div className="mt-5 grid grid-cols-2 gap-3 border-y border-[color:var(--rx-line)] py-4">
+        <div>
+          <p className="text-[10px] font-semibold tracking-wide text-[color:var(--rx-faint)] uppercase">Client Since</p>
+          <p className="mt-1 text-sm text-[color:var(--rx-text-80)]">{since}</p>
+        </div>
+        <div>
+          <p className="text-[10px] font-semibold tracking-wide text-[color:var(--rx-faint)] uppercase">Total Visits</p>
+          <p className="mt-1 text-sm text-[color:var(--rx-text-80)]">{appt.client.visitCount ?? 0}</p>
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <p className="mb-1.5 flex items-center justify-between text-[10px] font-semibold tracking-wide text-[color:var(--rx-faint)] uppercase">
+          Notes
+          <span aria-hidden>✎</span>
+        </p>
+        <p className="rounded-2xl bg-[var(--rx-input)] p-3 text-sm leading-relaxed text-[color:var(--rx-text-80)]">
+          {appt.client.notes || appt.notes || "No notes yet."}
+        </p>
+      </div>
+
+      <div className="mt-5 min-h-0 flex-1">
+        <p className="mb-2 text-[10px] font-semibold tracking-wide text-[color:var(--rx-faint)] uppercase">Recent Visits</p>
+        {visits.length === 0 ? (
+          <p className="text-sm text-[color:var(--rx-faint)]">No completed visits yet.</p>
+        ) : (
+          <ul className="space-y-2">
+            {visits.map((v, i) => (
+              <li key={`${v.date}-${i}`} className="flex items-center justify-between gap-2 text-sm">
+                <div>
+                  <p className="text-[color:var(--rx-text-80)]">{v.serviceName}</p>
+                  <p className="text-[11px] text-[color:var(--rx-faint)]">
+                    {new Date(v.date).toLocaleDateString("en-CA", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </p>
+                </div>
+                <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold tracking-wide text-emerald-300 uppercase">
+                  Completed
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div className="mt-4 grid gap-2">
+        {appt.status === "BOOKED" ? (
+          <button
+            type="button"
+            onClick={() => onStatus(appt.id, "CHECKED_IN")}
+            className="rounded-2xl bg-[#c45b7a] py-3 text-sm font-semibold text-white"
+          >
+            Check-in
+          </button>
+        ) : null}
+        <a
+          href="/manager/appointments"
+          className="rounded-2xl border border-[color:var(--rx-line)] py-3 text-center text-sm font-semibold text-[color:var(--rx-text-80)]"
+        >
+          Reschedule
+        </a>
+        {["BOOKED", "CHECKED_IN"].includes(appt.status) ? (
+          <button
+            type="button"
+            onClick={() => onCheckout?.(appt)}
+            className="rounded-2xl bg-[#1f6b5a] py-3 text-sm font-semibold text-white"
+          >
+            Checkout
+          </button>
+        ) : null}
+      </div>
+    </aside>
+  );
+}

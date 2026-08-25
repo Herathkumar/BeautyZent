@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { PadlockButton } from "@/components/PadlockButton";
+import { CustomerThemeToggle } from "@/components/display/CustomerThemeToggle";
 
 type Props = {
   slug: string;
@@ -70,17 +71,26 @@ export function DisplayPinPad({ slug, salonName, onUnlocked }: Props) {
 
   return (
     <div
-      className="flex min-h-screen flex-col items-center justify-center bg-[#1c1714] px-6 py-10 text-[#fffaf6]"
+      className="relative flex min-h-screen flex-col items-center justify-center bg-[var(--cd-bg)] px-6 py-10 text-[color:var(--cd-text)]"
       data-testid="display-pin-pad"
     >
-      <PadlockButton locked onClick={() => undefined} disabled label="Board locked" />
-      <p className="mt-4 text-xs font-semibold tracking-[0.2em] text-[#c9a87c] uppercase">
+      <div className="absolute top-5 right-5">
+        <CustomerThemeToggle />
+      </div>
+      <PadlockButton
+        locked
+        onClick={() => undefined}
+        disabled
+        label="Board locked"
+        className="!border-[color:var(--cd-line)] !bg-[var(--cd-input)] !text-[color:var(--cd-accent)]"
+      />
+      <p className="mt-4 text-xs font-semibold tracking-[0.2em] text-[color:var(--cd-accent)] uppercase">
         Salon display
       </p>
-      <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl">
+      <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl text-[color:var(--cd-heading)]">
         {salonName || "Enter PIN"}
       </h1>
-      <p className="mt-2 max-w-sm text-center text-sm text-white/60">
+      <p className="mt-2 max-w-sm text-center text-sm text-[color:var(--cd-muted)]">
         This board is locked. Enter the PIN set by the salon manager.
       </p>
 
@@ -89,14 +99,14 @@ export function DisplayPinPad({ slug, salonName, onUnlocked }: Props) {
           <span
             key={i}
             className={`h-3 w-3 rounded-full ${
-              i < pin.length ? "bg-[#f0c987]" : "bg-white/20"
+              i < pin.length ? "bg-[var(--cd-accent)]" : "bg-[color:var(--cd-line)]"
             }`}
           />
         ))}
       </div>
 
-      {error ? <p className="mt-4 text-sm text-[#f5a8a8]">{error}</p> : null}
-      {busy ? <p className="mt-4 text-sm text-[#f0c987]">Unlocking…</p> : null}
+      {error ? <p className="mt-4 text-sm text-red-400">{error}</p> : null}
+      {busy ? <p className="mt-4 text-sm text-[color:var(--cd-accent)]">Unlocking…</p> : null}
 
       <div className="mt-8 grid w-full max-w-xs grid-cols-3 gap-3">
         {keys.map((k, i) =>
@@ -108,7 +118,7 @@ export function DisplayPinPad({ slug, salonName, onUnlocked }: Props) {
               type="button"
               disabled={busy}
               onClick={() => (k === "⌫" ? backspace() : press(k))}
-              className="rounded-2xl border border-white/15 bg-white/5 py-4 text-xl font-semibold text-[#fffaf6] hover:bg-white/10 disabled:opacity-50"
+              className="rounded-2xl border border-[color:var(--cd-line)] bg-[var(--cd-input)] py-4 text-xl font-semibold text-[color:var(--cd-heading)] hover:border-[color:var(--cd-accent)] disabled:opacity-50"
             >
               {k}
             </button>
@@ -120,7 +130,7 @@ export function DisplayPinPad({ slug, salonName, onUnlocked }: Props) {
         type="button"
         disabled={busy || pin.length < 4}
         onClick={() => void submit(pin)}
-        className="mt-6 rounded-full bg-[#c9a87c] px-8 py-3 text-sm font-bold text-[#1c1714] disabled:opacity-50"
+        className="mt-6 rounded-full bg-[var(--cd-accent)] px-8 py-3 text-sm font-bold text-[color:var(--cd-on-accent)] disabled:opacity-50"
       >
         Unlock
       </button>

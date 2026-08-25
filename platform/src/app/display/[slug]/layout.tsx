@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const name = salon?.active && salon.name ? salon.name : "Salon";
   return {
     title: `${name} — Store Display`,
-    description: "Salon floor tablet — who's waiting, check-in, and walk-ins.",
+    description: "Customer waiting-room board and reception check-in display.",
     manifest: `/display/${slug}/manifest`,
     appleWebApp: {
       capable: true,

@@ -10,11 +10,20 @@ async function waitForLoginSettle(page: Page) {
   await page.waitForLoadState("load").catch(() => undefined);
 }
 
+async function looksLikeNext404(page: Page) {
+  const heading = await page.locator("h1, h2").first().innerText().catch(() => "");
+  return /404|this page could not be found/i.test(heading);
+}
+
 export async function gotoSettled(page: Page, url: string) {
   for (let attempt = 0; attempt < 4; attempt++) {
     try {
-      await page.goto(url, { waitUntil: "domcontentloaded", timeout: 20_000 });
+      const res = await page.goto(url, { waitUntil: "domcontentloaded", timeout: 20_000 });
       await page.waitForLoadState("load").catch(() => undefined);
+      if (res?.status() === 404 || (await looksLikeNext404(page))) {
+        await page.waitForTimeout(400 * (attempt + 1));
+        continue;
+      }
       return;
     } catch (err) {
       const msg = String(err);

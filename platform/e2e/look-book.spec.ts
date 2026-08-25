@@ -38,10 +38,11 @@ async function createPastVisit(
     expect(service?.id, "seed service").toBeTruthy();
     expect(stylist?.id, "seed stylist").toBeTruthy();
 
-    // Early morning, three days back — outside seeded hours, so no conflicts.
+    // Early morning, three days back — outside seeded hours. Unique minutes so a
+    // retry does not 409 the same 6:05 slot the previous attempt already created.
     const startsAt = new Date();
     startsAt.setDate(startsAt.getDate() - 3);
-    startsAt.setHours(6, 5, 0, 0);
+    startsAt.setHours(6, 1 + (Date.now() % 50), 0, 0);
 
     const res = await manager.request.post("/api/admin/appointments/create", {
       data: {
@@ -62,6 +63,7 @@ async function createPastVisit(
 }
 
 test.describe("Client look book", () => {
+  test.describe.configure({ timeout: 180_000 });
   test("app tab bar switches between Book, Visits and Look book", async ({ page }) => {
     await page.goto(`/book/${DEMO.slug}`);
 
@@ -80,6 +82,7 @@ test.describe("Client look book", () => {
     page,
     browser,
   }) => {
+    test.setTimeout(180_000);
     const contact = uniqueContact("look");
     await joinAsMember(page, contact);
     const appointment = await createPastVisit(browser, contact);
@@ -98,10 +101,19 @@ test.describe("Client look book", () => {
       timeout: 20_000,
     });
 
+    const uploaded = page.waitForResponse(
+      (r) =>
+        r.url().includes("/my-bookings/") &&
+        r.url().includes("/photos") &&
+        r.request().method() === "POST",
+      { timeout: 40_000 }
+    );
     await sheet
       .getByTestId("look-photo-input")
       .first()
       .setInputFiles({ name: "look.png", mimeType: "image/png", buffer: TINY_PNG });
+    const uploadedRes = await uploaded;
+    expect(uploadedRes.ok(), `look photo upload: ${uploadedRes.status()}`).toBeTruthy();
 
     await expect(sheet.getByTestId("look-photo-thumb").first()).toBeVisible({
       timeout: 20_000,

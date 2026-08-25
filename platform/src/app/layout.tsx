@@ -31,6 +31,16 @@ html.display-shell,html.display-shell body{
   color:#fffaf6;
   color-scheme:dark
 }
+html.display-shell.customer-shell--light,html.display-shell.customer-shell--light body{
+  background:#f4ead9;
+  color:#3d2b22;
+  color-scheme:light
+}
+html.display-shell.customer-shell--dark,html.display-shell.customer-shell--dark body{
+  background:#14110f;
+  color:#f6efe4;
+  color-scheme:dark
+}
 `
 
 const BOOT_SCRIPT = `
@@ -83,6 +93,21 @@ const BOOT_SCRIPT = `
     }
     else if(display||demo){
       root.classList.add("display-shell");
+      if(/\\/reception(\\/|$)/.test(p)){
+        try{
+          if(localStorage.getItem("fhsalon-reception-theme")==="light"){
+            root.classList.add("reception-shell--light");
+          }
+        }catch(e){}
+      }else{
+        try{
+          if(localStorage.getItem("fhsalon-customer-theme")==="dark"){
+            root.classList.add("customer-shell--dark");
+          }else{
+            root.classList.add("customer-shell--light");
+          }
+        }catch(e){ root.classList.add("customer-shell--light"); }
+      }
     }
     else root.classList.add("paper-shell");
 
@@ -97,6 +122,12 @@ const BOOT_SCRIPT = `
         ?"linear-gradient(180deg,var(--t-bg-1) 0%,var(--t-bg-2) 50%,var(--t-bg-3) 100%)"
         :"linear-gradient(180deg,#241c18 0%,#1c1714 50%,#15110f 100%)";
       var fg=themeId?"var(--t-text)":"#fffaf6";
+      if(display && !/\\/reception(\\/|$)/.test(p)){
+        var custDark=false;
+        try{ custDark=localStorage.getItem("fhsalon-customer-theme")==="dark"; }catch(e){}
+        bg=custDark?"#14110f":"#f4ead9";
+        fg=custDark?"#f6efe4":"#3d2b22";
+      }
       var label=manager?"Manager":stylist?"Stylist App":book?"Online Booking":"Salon Display";
       /* Active salon name: staff session (manager/stylist) or URL slug cache → last visit. */
       var brand="Salon";

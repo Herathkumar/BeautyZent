@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { linkOrphanServicesToAllStylists } from "@/lib/service-links";
 import { serviceImageUrl } from "@/lib/service-image";
 import { stylistPhotoUrl } from "@/lib/stylist-photo";
+import { isE2eFixtureStylist } from "@/lib/display-schedule";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -106,7 +107,9 @@ export async function GET(
       },
       services,
       servicesByCategory: { women, men, other },
-      stylists: stylists.map((s) => {
+      stylists: stylists
+        .filter((s) => !isE2eFixtureStylist(s))
+        .map((s) => {
         const hasPhoto = Boolean(s.photoUpdatedAt && s.photoMime);
         return {
           id: s.id,

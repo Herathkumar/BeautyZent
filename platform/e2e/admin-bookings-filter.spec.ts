@@ -50,7 +50,15 @@ test.describe("Admin bookings filters & no-show", () => {
     await statusFilter.selectOption("no_show");
     await expect(page.getByText(clientName).first()).toBeVisible({ timeout: 15_000 });
 
+    const afterDay = page.waitForResponse(
+      (r) =>
+        r.url().includes("/api/admin/appointments") &&
+        r.url().includes(`day=${bookedDate}`) &&
+        r.request().method() === "GET",
+      { timeout: 10_000 }
+    );
     await fillDateInput(page.getByLabel(/^day$/i), bookedDate);
+    await afterDay;
     await expect(page.getByText(/loading bookings/i)).toHaveCount(0);
     await expect(page.getByText(clientName).first()).toBeVisible({ timeout: 10_000 });
   });

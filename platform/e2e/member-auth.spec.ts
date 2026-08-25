@@ -107,29 +107,25 @@ test.describe("Store display shows online bookings", () => {
         (r) => r.url().includes(`/api/display/${DEMO.slug}/today`) && r.ok(),
         { timeout: 20_000 }
       );
-      await tablet.goto(`/display/${DEMO.slug}`);
+      const login = await tablet.request.post(
+        `/api/auth/login?salon=${encodeURIComponent(DEMO.slug)}`,
+        {
+          data: {
+            email: DEMO.adminEmail,
+            password: DEMO.password,
+            salonSlug: DEMO.slug,
+          },
+        }
+      );
+      expect(login.ok(), `tablet reception login: ${await login.text()}`).toBeTruthy();
+      await tablet.goto(`/display/${DEMO.slug}/reception`);
 
-      // If PIN pad shows, board is locked — skip unlock here (covered by display-pin.spec)
-      const pad = tablet.getByTestId("display-pin-pad");
-      if (await pad.isVisible({ timeout: 3_000 }).catch(() => false)) {
-        test.info().annotations.push({
-          type: "note",
-          description: "Display PIN active — unlock required; API assert below still runs via manager session",
-        });
-      } else {
-        await loaded.catch(() => undefined);
-        await expect(tablet.getByTestId("store-display-board")).toBeVisible({
-          timeout: 15_000,
-        });
-
-        const preferToday = bookedDate === todayDate();
-        const tab = tablet.getByRole("button", {
-          name: preferToday ? /^today/i : /^future/i,
-        });
-        await tab.click();
-        const onBoard = tablet.getByText(clientName).first();
-        await expect(onBoard).toBeVisible({ timeout: 20_000 });
-      }
+      await expect(tablet.getByTestId("store-display-board")).toBeVisible({
+        timeout: 15_000,
+      });
+      await loaded.catch(() => undefined);
+      const onBoard = tablet.getByText(clientName).first();
+      await expect(onBoard).toBeVisible({ timeout: 20_000 });
     } finally {
       await guest.close();
     }

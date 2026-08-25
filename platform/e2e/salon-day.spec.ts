@@ -51,7 +51,8 @@ test.describe("Salon day — full path", () => {
         await card.getByRole("button", { name: /^done$/i }).click();
         await expect(card.getByText(/^done$/i).first()).toBeVisible({ timeout: 10_000 });
       }
-      await page.goto(`/display/${DEMO.slug}`);
+      await adminLogin(page);
+      await page.goto(`/display/${DEMO.slug}/reception`);
       await expect(page.getByText(clientName).first()).toBeVisible({ timeout: 15_000 });
     } else {
       await expect(page.getByText(/coming up|today/i).first()).toBeVisible();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useConfirm } from "@/components/ConfirmDialog";
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -306,10 +306,13 @@ function AwayMonthStrip({
 
 export default function StylistOwnSchedulePage() {
   const [stylistId, setStylistId] = useState("");
+  const [stylistName, setStylistName] = useState("");
   const [selfManage, setSelfManage] = useState(false);
   const [weekHours, setWeekHours] = useState<WeekHour[]>([]);
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [message, setMessage] = useState("");
+  const [savingHours, setSavingHours] = useState(false);
+  const hoursSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [leaveStart, setLeaveStart] = useState("");
   const [leaveEnd, setLeaveEnd] = useState("");
@@ -334,6 +337,7 @@ export default function StylistOwnSchedulePage() {
     const meData = await me.json();
     const id = meData.stylist?.id as string;
     setStylistId(id);
+    setStylistName(meData.stylist?.name || meData.user?.name || "");
     await loadSchedule(id);
   }
 
@@ -363,6 +367,9 @@ export default function StylistOwnSchedulePage() {
 
   useEffect(() => {
     bootstrap();
+    return () => {
+      if (hoursSaveTimer.current) clearTimeout(hoursSaveTimer.current);
+    };
   }, []);
 
   const awayDates = useMemo(() => {
@@ -384,20 +391,42 @@ export default function StylistOwnSchedulePage() {
 
   const selectedRow = weekHours.find((r) => r.dayOfWeek === selectedDay);
 
-  function updateDay(dayOfWeek: number, patch: Partial<WeekHour>) {
-    setWeekHours((rows) =>
-      rows.map((r) => (r.dayOfWeek === dayOfWeek ? { ...r, ...patch } : r))
+  async function persistHours(rows: WeekHour[]) {
+    if (!stylistId) return;
+    setSavingHours(true);
+    const res = await fetch(`/api/admin/stylists/${stylistId}/schedule`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ weekHours: rows }),
+    });
+    const data = await res.json().catch(() => ({}));
+    setSavingHours(false);
+    setMessage(
+      res.ok
+        ? "Work days saved — clients only see times you work."
+        : data.error || "Could not save work days."
     );
+  }
+
+  function queueSaveHours(rows: WeekHour[]) {
+    if (hoursSaveTimer.current) clearTimeout(hoursSaveTimer.current);
+    hoursSaveTimer.current = setTimeout(() => {
+      void persistHours(rows);
+    }, 400);
+  }
+
+  function updateDay(dayOfWeek: number, patch: Partial<WeekHour>) {
+    setWeekHours((rows) => {
+      const next = rows.map((r) => (r.dayOfWeek === dayOfWeek ? { ...r, ...patch } : r));
+      queueSaveHours(next);
+      return next;
+    });
   }
 
   async function saveHours(e: React.FormEvent) {
     e.preventDefault();
-    const res = await fetch(`/api/admin/stylists/${stylistId}/schedule`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ weekHours }),
-    });
-    setMessage(res.ok ? "Saved — clients only see times you work." : "Could not save");
+    if (hoursSaveTimer.current) clearTimeout(hoursSaveTimer.current);
+    await persistHours(weekHours);
   }
 
   function startEdit(b: Block) {
@@ -512,9 +541,12 @@ export default function StylistOwnSchedulePage() {
   return (
     <main className="space-y-8">
       <div>
-        <h1 className="font-[family-name:var(--font-display)] text-3xl">Schedule</h1>
+        <h1 className="font-[family-name:var(--font-display)] text-3xl">
+          {stylistName ? `${stylistName}'s schedule` : "Schedule"}
+        </h1>
         <p className="mt-2 text-muted">
-          Set your week on the ring first. Use the calendar below when you need time away.
+          Change a day on the ring — hours save automatically. Use the calendar below when you need
+          time away.
         </p>
         {selfManage ? (
           <p className="mt-1 text-xs text-[#7ec4b8]">Self-managed — leave auto-approves.</p>
@@ -616,6 +648,10 @@ export default function StylistOwnSchedulePage() {
           </div>
         ) : null}
 
+        <button type="submit" className="stylist-tap btn-solid w-full rounded-full px-5">
+          {savingHours ? "Saving…" : "Save work days"}
+        </button>
+
         <div className="flex flex-wrap justify-center gap-2">
           {weekHours.map((row) => (
             <button
@@ -634,10 +670,6 @@ export default function StylistOwnSchedulePage() {
             </button>
           ))}
         </div>
-
-        <button type="submit" className="stylist-tap btn-solid w-full rounded-full px-5">
-          Save work days
-        </button>
       </form>
       {/* Away calendar */}
       <section className="stylist-panel stylist-panel--away rounded-3xl border p-4">

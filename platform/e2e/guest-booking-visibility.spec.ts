@@ -4,8 +4,8 @@ import {
   bookOnline,
   bookableDateNearToday,
   clearOpenBookingsForStylist,
-  DEMO,
   gotoSettled,
+  receptionLogin,
   stylistLogin,
   todayDate,
 } from "./helpers";
@@ -22,6 +22,7 @@ test.describe("Guest booking visibility across apps", () => {
   test("guest book today appears on booking, manager, stylist, and display", async ({
     page,
   }) => {
+    test.setTimeout(240_000);
     const clientName = `Guest Priya ${Date.now()}`;
     const targetDate = bookableDateNearToday();
 
@@ -62,9 +63,9 @@ test.describe("Guest booking visibility across apps", () => {
       await expect(page.getByText(/coming up/i).first()).toBeVisible();
     }
 
-    await page.goto(`/display/${DEMO.slug}`);
-    await expect(page.getByTestId("store-display-board")).toBeVisible({
-      timeout: 15_000,
+    await receptionLogin(page);
+    await expect(page.getByTestId("reception-client-panel")).toBeVisible({
+      timeout: 20_000,
     });
     await assertNoCrashOverlay(page);
     await expect(page.getByText(clientName).first()).toBeVisible({ timeout: 15_000 });

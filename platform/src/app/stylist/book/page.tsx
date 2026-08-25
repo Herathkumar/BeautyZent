@@ -79,10 +79,18 @@ export default function StylistBookPage() {
       setSlots([]);
       return;
     }
+    const ac = new AbortController();
+    setSlots([]);
     const q = new URLSearchParams({ serviceId, stylistId, date });
-    fetch(`/api/public/${slug}/slots?${q}`)
+    fetch(`/api/public/${slug}/slots?${q}`, { signal: ac.signal, cache: "no-store" })
       .then((r) => r.json())
-      .then((data) => setSlots(data.slots || []));
+      .then((data) => {
+        if (!ac.signal.aborted) setSlots(data.slots || []);
+      })
+      .catch(() => {
+        if (!ac.signal.aborted) setSlots([]);
+      });
+    return () => ac.abort();
   }, [slug, serviceId, stylistId, date]);
 
   const selectedService = useMemo(
@@ -235,6 +243,7 @@ export default function StylistBookPage() {
                 <button
                   key={slot}
                   type="button"
+                  data-slot-day={calendarDateInTz("America/Toronto", new Date(slot))}
                   onClick={() => setStartsAt(slot)}
                   className={`rounded-full px-3 py-1.5 text-sm ${
                     startsAt === slot
@@ -245,6 +254,7 @@ export default function StylistBookPage() {
                   {new Date(slot).toLocaleTimeString("en-CA", {
                     hour: "numeric",
                     minute: "2-digit",
+                    timeZone: "America/Toronto",
                   })}
                 </button>
               ))

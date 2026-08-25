@@ -25,6 +25,11 @@ export function isSalonStaff(role: string | null | undefined) {
   return role === "ADMIN" || role === "MANAGER" || role === "FRONT_DESK";
 }
 
+/** Manager, front desk, or stylist — anyone who can open the reception board. */
+export function canAccessReception(role: string | null | undefined) {
+  return isSalonStaff(role) || role === "STYLIST";
+}
+
 /** Pure stylist login, or manager who is also linked as an active stylist. */
 export function canAccessStylistPortal(
   session: SessionUser | null | undefined

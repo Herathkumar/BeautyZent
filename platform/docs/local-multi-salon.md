@@ -56,6 +56,7 @@ Handy extra: `pnpm db:local:studio` opens Prisma Studio on the local database.
 | Platform console | http://localhost:3000/platform | `platform@salonbook.local` / `demo1234` |
 | Manager (either salon) | http://localhost:3000/manager | `manager@fhsalon.ca` / `demo1234` |
 | Manager (demo salon) | http://localhost:3000/manager | `manager@demosalon.test` / `demo1234` |
+| Reception (either salon) | `/display/<slug>/reception` | Manager or stylist login for that salon |
 | Stylist app | http://localhost:3000/stylist | `farzana@fhsalon.ca`, `aisha@`, `omar@` / `demo1234` |
 | Stylist app (demo salon) | http://localhost:3000/stylist | `priya@demosalon.test`, `marco@` / `demo1234` |
 
@@ -64,10 +65,10 @@ tenant. Staff emails must therefore be unique across salons — the platform con
 
 ## Salon URLs
 
-| Salon | Booking | Tablet display |
-| --- | --- | --- |
-| Farzana Hair Salon (`fhsalon`) | `/book/fhsalon` | `/display/fhsalon` |
-| Demo Hair Studio (`demosalon`) | `/book/demosalon` | `/display/demosalon` |
+| Salon | Booking | Customer display | Reception display |
+| --- | --- | --- | --- |
+| Farzana Hair Salon (`fhsalon`) | `/book/fhsalon` | `/display/fhsalon` | `/display/fhsalon/reception` |
+| Demo Hair Studio (`demosalon`) | `/book/demosalon` | `/display/demosalon` | `/display/demosalon/reception` |
 
 Member sign-in, my-bookings, walk-in, and the look book all live under the booking app for each slug.
 

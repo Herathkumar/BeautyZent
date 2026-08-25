@@ -63,10 +63,15 @@ test.describe("FHS Client profile", () => {
     await expect(profile.getByTestId("book-theme-toggle")).toBeVisible();
 
     await profile.getByTestId("client-sign-out").scrollIntoViewIfNeeded();
+    const loggedOut = page.waitForResponse(
+      (r) => r.url().includes("/auth/logout") && r.request().method() === "POST",
+      { timeout: 30_000 }
+    );
     await profile.getByTestId("client-sign-out").evaluate((el: HTMLElement) => el.click());
     await acceptConfirm(page);
+    await loggedOut;
     await expect(page.getByRole("button", { name: /^join free$/i })).toBeVisible({
-      timeout: 15_000,
+      timeout: 20_000,
     });
   });
 

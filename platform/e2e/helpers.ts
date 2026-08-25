@@ -80,11 +80,20 @@ async function waitForLoginSettle(page: Page) {
   await page.waitForLoadState("load").catch(() => undefined);
 }
 
+async function looksLikeNext404(page: Page) {
+  const heading = await page.locator("h1, h2").first().innerText().catch(() => "");
+  return /404|this page could not be found/i.test(heading);
+}
+
 export async function gotoSettled(page: Page, url: string) {
   for (let attempt = 0; attempt < 4; attempt++) {
     try {
-      await page.goto(url, { waitUntil: "domcontentloaded", timeout: 20_000 });
+      const res = await page.goto(url, { waitUntil: "domcontentloaded", timeout: 20_000 });
       await page.waitForLoadState("load").catch(() => undefined);
+      if (res?.status() === 404 || (await looksLikeNext404(page))) {
+        await page.waitForTimeout(400 * (attempt + 1));
+        continue;
+      }
       return;
     } catch (err) {
       const msg = String(err);
@@ -122,6 +131,23 @@ export async function adminLogin(page: Page) {
   });
 }
 
+export async function receptionLogin(page: Page) {
+  await clearAuthSession(page);
+  const res = await page.request.post(`/api/auth/login?salon=${encodeURIComponent(DEMO.slug)}`, {
+    data: {
+      email: DEMO.adminEmail,
+      password: DEMO.password,
+      salonSlug: DEMO.slug,
+    },
+  });
+  expect(res.ok(), `reception login: ${await res.text()}`).toBeTruthy();
+  await page.goto(`/display/${DEMO.slug}/reception`, {
+    waitUntil: "domcontentloaded",
+    timeout: 20_000,
+  });
+  await expect(page.getByTestId("reception-signed-in")).toBeVisible({ timeout: 30_000 });
+}
+
 /**
  * Set a date input so React controlled `onChange` fires.
  * Playwright `fill()` can update the DOM without committing React state.
@@ -155,10 +181,15 @@ export async function joinAsMember(
   await page.getByLabel(/^name$/i).fill(opts.name);
   await page.getByLabel(/^phone$/i).fill(opts.phone);
   await page.getByLabel(/^email$/i).fill(opts.email);
+  const codeSent = page.waitForResponse(
+    (r) => r.url().includes("/auth/request-otp") && r.request().method() === "POST",
+    { timeout: 40_000 }
+  );
   await page.getByRole("button", { name: /email me a code/i }).click();
+  await codeSent;
 
   const demoCode = page.locator("text=/Demo code:/i");
-  await expect(demoCode).toBeVisible({ timeout: 20_000 });
+  await expect(demoCode).toBeVisible({ timeout: 15_000 });
   const codeText = await demoCode.innerText();
   const code = (codeText.match(/\b(\d{6})\b/) || [])[1];
   expect(code, "Expected demo OTP code on screen").toBeTruthy();
@@ -252,12 +283,18 @@ export async function clearOpenBookingsForStylist(
   page: Page,
   stylistName: RegExp | string
 ) {
-  const day = todayDate();
-  const list = await page.request.get(
-    `/api/admin/appointments?day=${day}&status=open`
-  );
-  expect(list.ok(), `list open bookings: ${await list.text()}`).toBeTruthy();
-  const data = await list.json();
+  let list: Awaited<ReturnType<Page["request"]["get"]>> | undefined;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      list = await page.request.get(`/api/admin/appointments?status=open&days=14`);
+      break;
+    } catch (err) {
+      if (attempt === 2) throw err;
+      await page.waitForTimeout(400 * (attempt + 1));
+    }
+  }
+  expect(list?.ok(), `list open bookings: ${await list?.text()}`).toBeTruthy();
+  const data = await list!.json();
   const nameRe =
     typeof stylistName === "string"
       ? new RegExp(stylistName, "i")
@@ -310,10 +347,13 @@ export async function pickFirstSlot(page: Page, startDate: string) {
         )
         .catch(() => undefined);
     }
-    const slotButtons = slotRoot
-      .getByRole("button")
-      .filter({ hasText: /\d{1,2}:\d{2}|a\.m\.|p\.m\./i });
-    if ((await slotButtons.count()) === 0) continue;
+    const slotButtons = slotRoot.locator(`[data-slot-day="${dateStr}"]`);
+    const appeared = await slotButtons
+      .first()
+      .waitFor({ state: "visible", timeout: 8_000 })
+      .then(() => true)
+      .catch(() => false);
+    if (!appeared) continue;
     await slotButtons.first().click();
     return dateStr;
   }

@@ -8,6 +8,7 @@ import {
   zonedDateTime,
 } from "@/lib/salon-time";
 import { getAvailableSlots } from "@/lib/slots";
+import { isE2eFixtureStylist } from "@/lib/display-schedule";
 
 function ceilToMinutes(d: Date, stepMin: number) {
   const ms = stepMin * 60_000;
@@ -105,13 +106,13 @@ export async function findNextAvailableWalkIns(opts: {
       ...(opts.stylistId ? { id: opts.stylistId } : {}),
       services: { some: { serviceId: opts.serviceId } },
     },
-    select: { id: true, name: true },
+    select: { id: true, name: true, bio: true },
     orderBy: { name: "asc" },
   });
 
   const options: NextAvailableOption[] = [];
 
-  for (const s of stylists) {
+  for (const s of stylists.filter((row) => !isE2eFixtureStylist(row))) {
     const hours = await dayHours(salon, s.id, today);
     const step = Math.min(5, salon.slotMinutes || 30);
     const immediate = ceilToMinutes(now, step);

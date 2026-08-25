@@ -673,6 +673,163 @@ a {
   color: var(--t-text);
 }
 
+/* Reception dashboard — light/dark tokens (default dark Luxe). */
+.reception-board {
+  --rx-bg: #0e1016;
+  --rx-nav: #12141a;
+  --rx-panel: #16181f;
+  --rx-text: #ffffff;
+  --rx-text-80: rgba(255, 255, 255, 0.8);
+  --rx-muted: rgba(255, 255, 255, 0.55);
+  --rx-faint: rgba(255, 255, 255, 0.38);
+  --rx-line: rgba(255, 255, 255, 0.1);
+  --rx-input: rgba(255, 255, 255, 0.05);
+  --rx-accent: #c45b7a;
+  --rx-accent-soft: #f4a0b8;
+  color: var(--rx-text);
+  background: var(--rx-bg);
+  color-scheme: dark;
+}
+.reception-board--light,
+.reception-board[data-reception-theme="light"] {
+  --rx-bg: #f3ebe3;
+  --rx-nav: #fffaf6;
+  --rx-panel: #ffffff;
+  --rx-text: #3d2b22;
+  --rx-text-80: rgba(61, 43, 34, 0.82);
+  --rx-muted: rgba(61, 43, 34, 0.58);
+  --rx-faint: rgba(61, 43, 34, 0.4);
+  --rx-line: rgba(61, 43, 34, 0.12);
+  --rx-input: rgba(61, 43, 34, 0.05);
+  --rx-accent: #c45b7a;
+  --rx-accent-soft: #9a3d5c;
+  color-scheme: light;
+}
+html.reception-shell--light,
+html.reception-shell--light body {
+  background: #f3ebe3;
+  color: #3d2b22;
+  color-scheme: light;
+}
+
+/* Customer waiting-room display — light/dark tokens (default cream). */
+.customer-board {
+  --cd-bg: #f4ead9;
+  --cd-panel: #fffaf4;
+  --cd-text: #3d2b22;
+  --cd-heading: #4a3424;
+  --cd-muted: #8a6a48;
+  --cd-faint: rgba(74, 52, 36, 0.5);
+  --cd-line: #e6d5b8;
+  --cd-line-soft: #eadcc4;
+  --cd-accent: #c4a056;
+  --cd-accent-soft: #e2c48a;
+  --cd-on-accent: #3d2b22;
+  --cd-card: #f3d5c4;
+  --cd-card-text: #5a3a28;
+  --cd-glyph: #b0893d;
+  --cd-input: rgba(61, 43, 34, 0.05);
+  --cd-overlay: rgba(61, 43, 34, 0.45);
+  --cd-shadow: 0 24px 60px rgba(90, 60, 20, 0.08);
+  --cd-wait-ok: #15803d;
+  --cd-wait-ok-bg: #dcfce7;
+  --cd-wait-busy: #c2410c;
+  --cd-wait-busy-bg: #ffedd5;
+  --cd-wait-soon: #1d4ed8;
+  --cd-wait-soon-bg: #dbeafe;
+  --cd-wait-off: #6b5344;
+  --cd-wait-off-bg: #eee4d6;
+  color: var(--cd-text);
+  background: var(--cd-bg);
+  color-scheme: light;
+}
+.customer-board--dark,
+.customer-board[data-customer-theme="dark"] {
+  --cd-bg: #14110f;
+  --cd-panel: #1c1714;
+  --cd-text: #f6efe4;
+  --cd-heading: #fffaf4;
+  --cd-muted: rgba(246, 239, 228, 0.62);
+  --cd-faint: rgba(246, 239, 228, 0.42);
+  --cd-line: rgba(226, 196, 138, 0.22);
+  --cd-line-soft: rgba(226, 196, 138, 0.16);
+  --cd-accent: #c4a056;
+  --cd-accent-soft: #e2c48a;
+  --cd-on-accent: #1c1714;
+  --cd-card: #f3d5c4;
+  --cd-card-text: #5a3a28;
+  --cd-glyph: #b0893d;
+  --cd-input: rgba(255, 250, 244, 0.06);
+  --cd-overlay: rgba(10, 8, 6, 0.62);
+  --cd-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  --cd-wait-ok: #4ade80;
+  --cd-wait-ok-bg: rgba(34, 197, 94, 0.18);
+  --cd-wait-busy: #fb923c;
+  --cd-wait-busy-bg: rgba(234, 88, 12, 0.22);
+  --cd-wait-soon: #93c5fd;
+  --cd-wait-soon-bg: rgba(59, 130, 246, 0.2);
+  --cd-wait-off: rgba(246, 239, 228, 0.62);
+  --cd-wait-off-bg: rgba(255, 250, 244, 0.08);
+  color-scheme: dark;
+}
+html.customer-shell--light,
+html.customer-shell--light body {
+  background: #f4ead9;
+  color: #3d2b22;
+  color-scheme: light;
+}
+html.customer-shell--dark,
+html.customer-shell--dark body {
+  background: #14110f;
+  color: #f6efe4;
+  color-scheme: dark;
+}
+
+.customer-stylist-wait {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 0.45rem;
+  padding: 0.5rem 1rem 0.55rem;
+  border-radius: 999px;
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+.customer-stylist-wait__time {
+  margin-top: 0.12rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  opacity: 0.88;
+}
+.customer-stylist-wait--ok {
+  color: var(--cd-wait-ok);
+  background: var(--cd-wait-ok-bg);
+}
+.customer-stylist-wait--busy {
+  color: var(--cd-wait-busy);
+  background: var(--cd-wait-busy-bg);
+}
+.customer-stylist-wait--soon {
+  color: var(--cd-wait-soon);
+  background: var(--cd-wait-soon-bg);
+}
+.customer-stylist-wait--off {
+  color: var(--cd-wait-off);
+  background: var(--cd-wait-off-bg);
+}
+
+/* Native Windows dropdowns stay light; force dark option text on the reception checkout desk. */
+.reception-catalog-select {
+  color-scheme: light;
+}
+.reception-catalog-select option {
+  background-color: #ffffff;
+  color: #1a1c24;
+}
+
 .admin-theme .border-ink,
 .admin-theme .border-ink\/10,
 .admin-theme .border-ink\/15,

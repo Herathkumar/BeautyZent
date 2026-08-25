@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ANY_STYLIST_ID } from "@/lib/client-auth";
+import { isE2eFixtureStylist } from "@/lib/display-schedule";
 import { getAvailableSlots } from "@/lib/slots";
 
 function parseServiceIds(url: URL) {
@@ -49,9 +50,14 @@ export async function GET(
       set.add(link.serviceId);
       byStylist.set(link.stylistId, set);
     }
-    const eligible = [...byStylist.entries()]
+    const eligibleIds = [...byStylist.entries()]
       .filter(([, set]) => serviceIds.every((id) => set.has(id)))
       .map(([id]) => id);
+    const real = await prisma.stylist.findMany({
+      where: { salonId: salon.id, id: { in: eligibleIds } },
+      select: { id: true, name: true, bio: true },
+    });
+    const eligible = real.filter((s) => !isE2eFixtureStylist(s)).map((s) => s.id);
 
     const byStart = new Map<string, string>();
     for (const sid of eligible) {

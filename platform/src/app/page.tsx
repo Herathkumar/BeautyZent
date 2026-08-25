@@ -35,7 +35,13 @@ export default function HomePage() {
           href={`/display/${slug}`}
           className="rounded-full border border-ink/20 px-5 py-3 font-medium text-ink-soft hover:border-ink"
         >
-          Salon tablet display
+          Customer display
+        </Link>
+        <Link
+          href={`/display/${slug}/reception`}
+          className="rounded-full border border-ink/20 px-5 py-3 font-medium text-ink-soft hover:border-ink"
+        >
+          Reception display
         </Link>
         <Link
           href="/manager"

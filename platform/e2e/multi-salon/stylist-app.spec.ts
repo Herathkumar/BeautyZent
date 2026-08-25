@@ -11,7 +11,7 @@ test.describe("Stylist app", () => {
 
       await page.getByRole("link", { name: /^schedule$/i }).click();
       await expect(page).toHaveURL(/\/stylist\/schedule/);
-      await expect(page.getByRole("heading", { name: /^schedule$/i })).toBeVisible({
+      await expect(page.getByRole("heading", { name: /schedule/i })).toBeVisible({
         timeout: 15_000,
       });
 

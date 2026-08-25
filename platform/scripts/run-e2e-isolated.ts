@@ -17,7 +17,7 @@ loadEnv({ path: path.join(platformRoot, ".env") });
 const PORT = Number(process.env.E2E_PG_PORT || 55432);
 const PASSWORD = "e2e_local_only";
 const DATA_DIR = path.join(platformRoot, ".e2e-pg-data");
-const DATABASE_URL = `postgresql://postgres:${PASSWORD}@127.0.0.1:${PORT}/postgres`;
+const DATABASE_URL = `postgresql://postgres:${PASSWORD}@127.0.0.1:${PORT}/postgres?sslmode=disable&connection_limit=8&connect_timeout=30`;
 
 function run(cmd: string, args: string[], env: NodeJS.ProcessEnv) {
   return new Promise<number>((resolve, reject) => {
@@ -55,6 +55,18 @@ async function main() {
     password: PASSWORD,
     port: PORT,
     persistent: false,
+    postgresFlags: [
+      "-c",
+      "fsync=off",
+      "-c",
+      "synchronous_commit=off",
+      "-c",
+      "full_page_writes=off",
+      "-c",
+      "autovacuum=off",
+      "-c",
+      "max_connections=60",
+    ],
   });
 
   console.log(`Starting isolated Postgres on 127.0.0.1:${PORT} …`);
@@ -67,12 +79,20 @@ async function main() {
     DATABASE_URL,
     E2E_DATABASE_URL: DATABASE_URL,
     AUTH_SECRET: process.env.AUTH_SECRET || "e2e-auth-secret-not-for-production",
-    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+    NEXT_PUBLIC_APP_URL:
+      process.env.NEXT_PUBLIC_APP_URL ||
+      process.env.PLAYWRIGHT_BASE_URL ||
+      "http://localhost:3333",
+    PLAYWRIGHT_BASE_URL:
+      process.env.PLAYWRIGHT_BASE_URL || "http://localhost:3333",
     NEXT_PUBLIC_DEFAULT_SALON_SLUG: "fhsalon",
     E2E_ADMIN_PASSWORD: "demo1234",
-    PLAYWRIGHT_BROWSERS_PATH:
-      process.env.PLAYWRIGHT_BROWSERS_PATH ||
-      path.join(process.env.USERPROFILE || "", "AppData", "Local", "ms-playwright"),
+    PLAYWRIGHT_BROWSERS_PATH: path.join(
+      process.env.USERPROFILE || process.env.HOME || "",
+      "AppData",
+      "Local",
+      "ms-playwright"
+    ),
     CI: process.env.CI || "",
   };
 
@@ -95,8 +115,7 @@ async function main() {
     console.log(`Playwright finished with exit code ${testCode}`);
     console.log("HTML report: platform/playwright-report/index.html");
     console.log("Open with: pnpm test:e2e:report");
-
-    process.exitCode = testCode;
+    return testCode;
   } finally {
     console.log("Stopping isolated Postgres …");
     try {
@@ -107,7 +126,11 @@ async function main() {
   }
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+main()
+  .then((code) => {
+    if (typeof code === "number") process.exit(code);
+  })
+  .catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });

@@ -1,28 +1,37 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { DisplayPinPad } from "@/components/DisplayPinPad";
 import { PadlockButton } from "@/components/PadlockButton";
 import { WalkInPanel } from "@/components/WalkInPanel";
 import { ZentraLabFooter } from "@/components/ZentraLabFooter";
+import { CustomerCheckoutOverlay } from "@/components/display/CustomerCheckoutOverlay";
+import { CustomerScheduleGrid } from "@/components/display/CustomerScheduleGrid";
+import { DisplayViewSwitch } from "@/components/display/DisplayViewSwitch";
+import { ReceptionCheckoutDesk } from "@/components/display/ReceptionCheckoutDesk";
+import {
+  groupReceptionClients,
+  ReceptionClientsView,
+  ReceptionProductsView,
+  ReceptionReportsView,
+  ReceptionServicesView,
+  ReceptionStaffView,
+  RECEPTION_NAV_ITEMS,
+  type ReceptionSection,
+} from "@/components/display/ReceptionDeskViews";
+import { ReceptionClientPanel, ReceptionSchedule } from "@/components/display/ReceptionSchedule";
+import { ReceptionThemeRoot } from "@/components/display/ReceptionThemeRoot";
+import { ReceptionThemeToggle } from "@/components/display/ReceptionThemeToggle";
+import { CustomerThemeRoot } from "@/components/display/CustomerThemeRoot";
+import { CustomerThemeToggle } from "@/components/display/CustomerThemeToggle";
+import { clampDisplayHours, formatHourLabel, isE2eFixtureStylist, type DisplayAppt, type DisplayStylist } from "@/lib/display-schedule";
+import type { CheckoutBill } from "@/lib/display-checkout-types";
 import { formatCad } from "@/lib/money";
 import { promptCompleteAmounts } from "@/lib/pay";
-import { resolveSplashName, writeSalonBrand } from "@/lib/salon-branding";
+import { humanizeSlug, writeSalonBrand } from "@/lib/salon-branding";
 
-type Appt = {
-  id: string;
-  startsAt: string;
-  endsAt: string;
-  status: string;
-  source?: string;
-  notes: string | null;
-  chargedCents?: number | null;
-  tipCents?: number | null;
-  client: { name: string; phone: string | null };
-  service: { name: string; priceCents?: number };
-  stylist: { name: string; color: string };
-};
+type Appt = DisplayAppt;
 
 type SalonInfo = {
   name: string;
@@ -31,6 +40,10 @@ type SalonInfo = {
   address?: string | null;
   timezone?: string | null;
   today?: string | null;
+  openHour?: number;
+  closeHour?: number;
+  closedDays?: number[];
+  todayClosed?: boolean;
 };
 
 type Tab = "today" | "future" | "services" | "products";
@@ -76,6 +89,10 @@ function todayKey(timeZone?: string | null, salonToday?: string | null) {
   return dayKey(new Date().toISOString(), timeZone);
 }
 
+function keepIfSame<T>(prev: T, next: T): T {
+  return JSON.stringify(prev) === JSON.stringify(next) ? prev : next;
+}
+
 function dayLabel(key: string, timeZone?: string | null, salonToday?: string | null) {
   const [y, m, d] = key.split("-").map(Number);
   const date = new Date(y, m - 1, d);
@@ -94,14 +111,6 @@ function dayLabel(key: string, timeZone?: string | null, salonToday?: string | n
   if (key === tomorrowKey) return `Tomorrow · ${formatted}`;
   return formatted;
 }
-
-const STATUS_STYLES: Record<string, string> = {
-  BOOKED: "bg-[#3d2b22] text-[#f0c987]",
-  CHECKED_IN: "bg-[#2a4a3a] text-[#9fe3b8]",
-  COMPLETED: "bg-white/10 text-white/60",
-  CANCELLED: "bg-white/10 text-red-200/80",
-  NO_SHOW: "bg-[#3d2b22] text-[#f0c987]",
-};
 
 function AppointmentActions({
   a,
@@ -481,15 +490,33 @@ function ProductMenuBoard({ items }: { items: MenuProduct[] }) {
   );
 }
 
+const TODAY_POLL_MS = 15_000;
+const CHECKOUT_POLL_MS = 5_000;
+/** Browser global so Fast Refresh / remounts cannot reset the throttle and stampede. */
+const displayPollAt = (globalThis as typeof globalThis & {
+  __displayPollAt?: { today: number; checkout: number };
+}).__displayPollAt ?? { today: 0, checkout: 0 };
+(globalThis as typeof globalThis & {
+  __displayPollAt?: { today: number; checkout: number };
+}).__displayPollAt = displayPollAt;
+
 export function DisplayBoard({
   slug,
   /** When true, board sits inside manager chrome (not the tablet URL). */
   embedded = false,
+  variant = "customer",
+  staffName,
+  staffRole,
 }: {
   slug: string;
   embedded?: boolean;
+  variant?: "customer" | "reception";
+  staffName?: string;
+  staffRole?: string;
 }) {
   const [appointments, setAppointments] = useState<Appt[]>([]);
+  const [stylists, setStylists] = useState<DisplayStylist[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [services, setServices] = useState<MenuService[]>([]);
   const [products, setProducts] = useState<MenuProduct[]>([]);
   const [salon, setSalon] = useState<SalonInfo | null>(null);
@@ -498,6 +525,8 @@ export function DisplayBoard({
   const [now, setNow] = useState(() => new Date());
   const [walkInOpen, setWalkInOpen] = useState(false);
   const [walkInWaiting, setWalkInWaiting] = useState(0);
+  const [query, setQuery] = useState("");
+  const [receptionSection, setReceptionSection] = useState<ReceptionSection>("calendar");
   const [needsPin, setNeedsPin] = useState(false);
   const [pinSet, setPinSet] = useState(false);
   const [unlockChecked, setUnlockChecked] = useState(false);
@@ -505,6 +534,10 @@ export function DisplayBoard({
   const [unlockToken, setUnlockToken] = useState("");
   /** Manager/stylist in-app lock — hides the board until padlock unlock. */
   const [boardLocked, setBoardLocked] = useState(false);
+  const [checkout, setCheckout] = useState<CheckoutBill | null>(null);
+  const [checkoutBusy, setCheckoutBusy] = useState(false);
+  const checkoutInFlight = useRef(false);
+  const checkoutWriteSeq = useRef(0);
 
   const onWaitlistChange = useCallback((count: number) => {
     setWalkInWaiting(count);
@@ -523,24 +556,28 @@ export function DisplayBoard({
       });
       const data = await res.json();
       if (data.salon) {
-        setSalon((prev) => {
-          const next = {
-            ...(prev || { name: "", slug }),
-            ...data.salon,
-            slug: data.salon.slug || slug,
-          };
-          if (next.name) {
-            writeSalonBrand({
-              slug: next.slug || slug,
-              name: next.name,
-              address: next.address ?? null,
-            });
-          }
-          return next;
-        });
+        const nextSalon = {
+          name: "",
+          slug,
+          ...data.salon,
+          slug: data.salon.slug || slug,
+        };
+        setSalon((prev) => keepIfSame(prev, nextSalon));
+        if (nextSalon.name) {
+          writeSalonBrand({
+            slug: nextSalon.slug || slug,
+            name: nextSalon.name,
+            address: nextSalon.address ?? null,
+          });
+        }
       }
       setPinSet(Boolean(data.pinSet));
-      // Public tablet always needs a fresh PIN after load/refresh (no cookie unlock).
+      // Reception is staff-login gated; skip the waiting-room PIN pad.
+      if (variant === "reception" && !embedded) {
+        setNeedsPin(false);
+        return true;
+      }
+      // Public customer tablet always needs a fresh PIN after load/refresh (no cookie unlock).
       if (!embedded && data.pinSet) {
         setUnlockToken("");
         setNeedsPin(true);
@@ -555,7 +592,15 @@ export function DisplayBoard({
     } finally {
       setUnlockChecked(true);
     }
-  }, [slug, embedded]);
+  }, [slug, embedded, variant]);
+
+  const skipPinLock = variant === "reception" && !embedded;
+
+  const lockToPin = useCallback(() => {
+    if (skipPinLock) return;
+    setUnlockToken("");
+    setNeedsPin(true);
+  }, [skipPinLock]);
 
   const load = useCallback(async () => {
     try {
@@ -565,13 +610,13 @@ export function DisplayBoard({
       });
       const data = await r.json();
       if (r.status === 401 && data.needsPin) {
-        setUnlockToken("");
-        setNeedsPin(true);
+        lockToPin();
         return;
       }
-      setAppointments(data.appointments || []);
+      setAppointments((prev) => keepIfSame(prev, data.appointments || []));
+      setStylists((prev) => keepIfSame(prev, data.stylists || []));
       if (data.salon) {
-        setSalon(data.salon);
+        setSalon((prev) => keepIfSame(prev, data.salon));
         if (data.salon.name) {
           writeSalonBrand({
             slug: data.salon.slug || slug,
@@ -583,7 +628,7 @@ export function DisplayBoard({
     } catch {
       /* ignore transient poll errors */
     }
-  }, [slug, days, unlockHeaders]);
+  }, [slug, days, unlockHeaders, lockToPin]);
 
   const loadServices = useCallback(async () => {
     try {
@@ -593,15 +638,14 @@ export function DisplayBoard({
       });
       const data = await r.json();
       if (r.status === 401 && data.needsPin) {
-        setUnlockToken("");
-        setNeedsPin(true);
+        lockToPin();
         return;
       }
-      setServices(data.services || []);
+      setServices((prev) => keepIfSame(prev, data.services || []));
     } catch {
       /* ignore */
     }
-  }, [slug, unlockHeaders]);
+  }, [slug, unlockHeaders, lockToPin]);
 
   const loadProducts = useCallback(async () => {
     try {
@@ -611,42 +655,166 @@ export function DisplayBoard({
       });
       const data = await r.json();
       if (r.status === 401 && data.needsPin) {
-        setUnlockToken("");
-        setNeedsPin(true);
+        lockToPin();
         return;
       }
-      setProducts(data.products || []);
+      setProducts((prev) => keepIfSame(prev, data.products || []));
     } catch {
       /* ignore */
     }
-  }, [slug, unlockHeaders]);
+  }, [slug, unlockHeaders, lockToPin]);
+
+  const loadCheckout = useCallback(async () => {
+    if (checkoutInFlight.current) return;
+    checkoutInFlight.current = true;
+    const seq = checkoutWriteSeq.current;
+    try {
+      const r = await fetch(`/api/display/${slug}/checkout`, {
+        credentials: "same-origin",
+        headers: unlockHeaders,
+      });
+      const data = await r.json().catch(() => ({}));
+      if (r.status === 401 && data.needsPin) {
+        lockToPin();
+        return;
+      }
+      if (seq !== checkoutWriteSeq.current) return;
+      const next = data.checkout || null;
+      setCheckout((prev) => keepIfSame(prev, next));
+    } catch {
+      /* ignore */
+    } finally {
+      checkoutInFlight.current = false;
+    }
+  }, [slug, unlockHeaders, lockToPin]);
+
+  async function checkoutAction(body: Record<string, unknown>) {
+    const seq = ++checkoutWriteSeq.current;
+    const r = await fetch(`/api/display/${slug}/checkout`, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json", ...unlockHeaders },
+      body: JSON.stringify(body),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (r.status === 401 && data.needsPin) {
+      lockToPin();
+      return null;
+    }
+    if (seq !== checkoutWriteSeq.current) return data;
+    setCheckout(data.checkout || null);
+    return data;
+  }
 
   useEffect(() => {
     void checkUnlock();
   }, [checkUnlock]);
 
+  const loadRef = useRef(load);
+  const loadServicesRef = useRef(loadServices);
+  const loadProductsRef = useRef(loadProducts);
+  const loadCheckoutRef = useRef(loadCheckout);
+  loadRef.current = load;
+  loadServicesRef.current = loadServices;
+  loadProductsRef.current = loadProducts;
+  loadCheckoutRef.current = loadCheckout;
+
+  const pollEnabledRef = useRef(false);
+  pollEnabledRef.current = unlockChecked && !needsPin;
+  const variantRef = useRef(variant);
+  variantRef.current = variant;
+  const receptionSectionRef = useRef(receptionSection);
+  receptionSectionRef.current = receptionSection;
+
   useEffect(() => {
-    if (!unlockChecked || needsPin) return;
-    void load();
-    void loadServices();
-    void loadProducts();
-    const poll = setInterval(() => {
-      void load();
-      if (tab === "services") void loadServices();
-      if (tab === "products") void loadProducts();
-    }, 15000);
-    const clock = setInterval(() => setNow(new Date()), 30000);
-    return () => {
-      clearInterval(poll);
-      clearInterval(clock);
+    let cancelled = false;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    const sleep = (ms: number) =>
+      new Promise<void>((resolve) => {
+        timeout = setTimeout(resolve, ms);
+      });
+
+    const loop = async () => {
+      while (!cancelled && !pollEnabledRef.current) {
+        await sleep(50);
+      }
+      while (!cancelled) {
+        if (pollEnabledRef.current) {
+          const now = Date.now();
+          if (now - displayPollAt.today >= TODAY_POLL_MS) {
+            displayPollAt.today = now;
+            await loadRef.current();
+            if (variantRef.current === "reception") {
+              const section = receptionSectionRef.current;
+              if (section === "services") await loadServicesRef.current();
+              else if (section === "products") await loadProductsRef.current();
+            }
+          }
+        }
+        await sleep(TODAY_POLL_MS);
+      }
     };
-  }, [load, loadServices, loadProducts, unlockChecked, needsPin, tab]);
+    void loop();
+    return () => {
+      cancelled = true;
+      if (timeout) clearTimeout(timeout);
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    const tick = () => {
+      if (cancelled) return;
+      if (pollEnabledRef.current) setNow(new Date());
+      timeout = setTimeout(tick, 1000);
+    };
+    timeout = setTimeout(tick, 1000);
+    return () => {
+      cancelled = true;
+      if (timeout) clearTimeout(timeout);
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    const sleep = (ms: number) =>
+      new Promise<void>((resolve) => {
+        timeout = setTimeout(resolve, ms);
+      });
+
+    const loop = async () => {
+      while (!cancelled && !pollEnabledRef.current) {
+        await sleep(50);
+      }
+      while (!cancelled) {
+        if (pollEnabledRef.current) {
+          const now = Date.now();
+          if (now - displayPollAt.checkout >= CHECKOUT_POLL_MS) {
+            displayPollAt.checkout = now;
+            await loadCheckoutRef.current();
+          }
+        }
+        await sleep(CHECKOUT_POLL_MS);
+      }
+    };
+    void loop();
+    return () => {
+      cancelled = true;
+      if (timeout) clearTimeout(timeout);
+    };
+  }, []);
 
   useEffect(() => {
     if (!unlockChecked || needsPin) return;
-    if (tab === "services") void loadServices();
-    if (tab === "products") void loadProducts();
-  }, [tab, unlockChecked, needsPin, loadServices, loadProducts]);
+    if (variant === "reception" || tab === "services" || receptionSection === "services") {
+      void loadServices();
+    }
+    if (variant === "reception" || tab === "products" || receptionSection === "products") {
+      void loadProducts();
+    }
+  }, [tab, receptionSection, unlockChecked, needsPin, variant, loadServices, loadProducts]);
 
   const tKey = todayKey(salon?.timezone, salon?.today);
   /** Floor list: open bookings only — hide completed / no-show / cancelled */
@@ -657,6 +825,10 @@ export function DisplayBoard({
           dayKey(a.startsAt, salon?.timezone) === tKey &&
           (a.status === "BOOKED" || a.status === "CHECKED_IN")
       ),
+    [appointments, tKey, salon?.timezone]
+  );
+  const todayAll = useMemo(
+    () => appointments.filter((a) => dayKey(a.startsAt, salon?.timezone) === tKey),
     [appointments, tKey, salon?.timezone]
   );
   const futureGrouped = useMemo(() => {
@@ -699,11 +871,21 @@ export function DisplayBoard({
     });
     const data = await res.json().catch(() => ({}));
     if (res.status === 401 && data.needsPin) {
-      setUnlockToken("");
-      setNeedsPin(true);
+      lockToPin();
       return;
     }
     void load();
+  }
+
+  async function presentCheckout(appt: DisplayAppt) {
+    setCheckoutBusy(true);
+    try {
+      void loadServices();
+      void loadProducts();
+      await checkoutAction({ action: "present", appointmentId: appt.id });
+    } finally {
+      setCheckoutBusy(false);
+    }
   }
 
   async function lockBoard() {
@@ -734,10 +916,57 @@ export function DisplayBoard({
     // Public tablet unlock is via PIN pad (needsPin already true).
   }
 
+  async function signOutReception() {
+    await fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" });
+    const next = `/display/${slug}/reception`;
+    if (window.location.pathname.replace(/\/$/, "") === next) {
+      window.location.reload();
+      return;
+    }
+    window.location.assign(next);
+  }
+
   const waiting = todayAppts.filter(
     (a) => a.status === "BOOKED" && (a.source || "ONLINE") !== "WALK_IN"
   ).length;
   const inChair = todayAppts.filter((a) => a.status === "CHECKED_IN").length;
+  const isReception = variant === "reception";
+  const { openHour, closeHour } = clampDisplayHours(salon?.openHour, salon?.closeHour);
+  const storeClosed = Boolean(salon?.todayClosed);
+  const selectedAppt = appointments.find((a) => a.id === selectedId) ?? null;
+  const floorStylists = (() => {
+    const booked = new Set(
+      todayAppts.flatMap((a) => [a.stylist.id, a.stylist.name].filter(Boolean) as string[])
+    );
+    const real = stylists.filter(
+      (s) => !isE2eFixtureStylist(s) || booked.has(s.id) || booked.has(s.name)
+    );
+    return real.length ? real : stylists;
+  })();
+  const floorAppts = (() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return todayAppts;
+    return todayAppts.filter(
+      (a) =>
+        a.client.name.toLowerCase().includes(q) ||
+        a.service.name.toLowerCase().includes(q) ||
+        a.stylist.name.toLowerCase().includes(q)
+    );
+  })();
+  const receptionClients = useMemo(
+    () => groupReceptionClients(appointments),
+    [appointments]
+  );
+  const dateLine = now.toLocaleDateString("en-CA", {
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+  });
+  const timeLine = now.toLocaleTimeString("en-CA", {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  const apptDay = now.toLocaleDateString("en-CA", { month: "short", day: "numeric" });
 
   if (!unlockChecked) {
     return (
@@ -745,7 +974,7 @@ export function DisplayBoard({
         <div className="app-splash app-splash--display" role="status" aria-live="polite" aria-busy="true">
           <div className="app-splash-inner">
             <p className="app-splash-brand">
-              {salon?.name || resolveSplashName({ slug })}
+              {salon?.name || humanizeSlug(slug)}
             </p>
             <p className="app-splash-label">Salon Display</p>
             <div className="app-splash-spinner" aria-hidden />
@@ -757,16 +986,18 @@ export function DisplayBoard({
 
   if (needsPin && !embedded) {
     return (
-      <DisplayPinPad
-        slug={slug}
-        salonName={salon?.name}
-        onUnlocked={(token) => {
-          setUnlockToken(token);
-          setNeedsPin(false);
-          setPinSet(true);
-          setUnlockChecked(true);
-        }}
-      />
+      <CustomerThemeRoot className="min-h-dvh">
+        <DisplayPinPad
+          slug={slug}
+          salonName={salon?.name}
+          onUnlocked={(token) => {
+            setUnlockToken(token);
+            setNeedsPin(false);
+            setPinSet(true);
+            setUnlockChecked(true);
+          }}
+        />
+      </CustomerThemeRoot>
     );
   }
 
@@ -795,485 +1026,459 @@ export function DisplayBoard({
     );
   }
 
-  return (
-    <div
-      className={`flex flex-col ${
-        embedded
-          ? "min-h-[70vh] min-w-0 rounded-3xl border border-[#c9a87c]/25"
-          : "min-h-screen"
-      } bg-[#1c1714] text-[#fffaf6]`}
-      data-testid={embedded ? "manager-store-display-board" : "store-display-board"}
-    >
-      <header className={`border-b border-white/10 ${embedded ? "px-4 py-4 sm:px-5" : "px-6 py-5"}`}>
-        <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
-          <div className="min-w-0">
-            <p className="text-xs tracking-[0.2em] text-[#c9a87c] uppercase">
-              {embedded ? "Salon display" : "Salon floor"}
-            </p>
-            <h1 className="font-[family-name:var(--font-display)] text-3xl leading-tight sm:text-4xl">
-              {salon?.name || "Bookings"}
-            </h1>
-          </div>
-          <div className="flex flex-col items-end gap-2">
-            <div className="flex items-center gap-3">
-              <p className="text-xl text-white/70">
-                {now.toLocaleString("en-CA", {
-                  weekday: "short",
-                  month: "short",
-                  day: "numeric",
-                  hour: "numeric",
-                  minute: "2-digit",
-                })}
+  if (isReception) {
+    return (
+      <div
+        className={`flex ${
+          embedded
+            ? "min-h-[70vh] min-w-0 rounded-3xl border border-[color:var(--rx-line)]"
+            : "h-dvh min-h-dvh w-full overflow-hidden"
+        }`}
+        data-testid={embedded ? "manager-store-display-board" : "store-display-board"}
+      >
+        <ReceptionThemeRoot className="flex h-full min-h-0 min-w-0 flex-1 overflow-hidden">
+        {!embedded ? (
+          <ReceptionNav
+            salonName={salon?.name || "Salon"}
+            staffName={staffName}
+            staffRole={staffRole}
+            section={receptionSection}
+            onSection={setReceptionSection}
+            onSignOut={() => void signOutReception()}
+          />
+        ) : null}
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-[var(--rx-bg)] text-[color:var(--rx-text)]">
+          <header className={`flex shrink-0 flex-wrap items-center gap-3 border-b border-[color:var(--rx-line)] ${embedded ? "px-4 py-3" : "px-5 py-3.5"}`}>
+            <div className="shrink-0">
+              <p className="text-sm font-medium text-[color:var(--rx-text-80)]">Today, {apptDay}</p>
+              <p className="text-[11px] text-[color:var(--rx-faint)]" data-testid="display-store-hours">
+                {storeClosed
+                  ? "Closed today"
+                  : `${formatHourLabel(openHour)} – ${formatHourLabel(closeHour)}`}
               </p>
-              {pinSet || embedded ? (
-                <PadlockButton
-                  locked={false}
-                  onClick={() => void lockBoard()}
-                  label="Lock board"
-                  data-testid="display-padlock"
-                />
-              ) : null}
             </div>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="-mx-1 max-w-full overflow-x-auto px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <div className="flex w-max min-w-full rounded-full border border-white/15 bg-white/5 p-1 sm:min-w-0">
-              <button
-                type="button"
-                onClick={() => setTab("today")}
-                className={`shrink-0 rounded-full px-3.5 py-2 text-sm font-semibold transition sm:px-5 ${
-                  tab === "today"
-                    ? "bg-[#c9a87c] text-[#1c1714]"
-                    : "text-white/70 hover:text-white"
-                }`}
-              >
-                Today
-                <span className="ml-1.5 opacity-80 sm:ml-2">({todayAppts.length})</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setTab("future")}
-                className={`shrink-0 rounded-full px-3.5 py-2 text-sm font-semibold transition sm:px-5 ${
-                  tab === "future"
-                    ? "bg-[#c9a87c] text-[#1c1714]"
-                    : "text-white/70 hover:text-white"
-                }`}
-              >
-                Future
-                <span className="ml-1.5 opacity-80 sm:ml-2">({futureCount})</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setTab("services")}
-                data-testid="display-tab-services"
-                className={`shrink-0 rounded-full px-3.5 py-2 text-sm font-semibold transition sm:px-5 ${
-                  tab === "services"
-                    ? "bg-[#c9a87c] text-[#1c1714]"
-                    : "text-white/70 hover:text-white"
-                }`}
-              >
-                Services
-                <span className="ml-1.5 opacity-80 sm:ml-2">({services.length})</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setTab("products")}
-                data-testid="display-tab-products"
-                className={`shrink-0 rounded-full px-3.5 py-2 text-sm font-semibold transition sm:px-5 ${
-                  tab === "products"
-                    ? "bg-[#c9a87c] text-[#1c1714]"
-                    : "text-white/70 hover:text-white"
-                }`}
-              >
-                Products
-                <span className="ml-1.5 opacity-80 sm:ml-2">({products.length})</span>
-              </button>
-            </div>
-          </div>
-
-          {tab === "future" && (
-            <div className="flex items-center gap-2 text-sm text-white/60">
-              <span>Range</span>
-              <div className="flex rounded-full border border-white/20 p-0.5">
-                {[7, 14, 30].map((n) => (
-                  <button
-                    key={n}
-                    type="button"
-                    onClick={() => setDays(n)}
-                    className={`rounded-full px-3 py-1 ${
-                      days === n
-                        ? "bg-[#c9a87c] font-medium text-[#1c1714]"
-                        : "text-[#fffaf6]/80 hover:bg-white/10"
-                    }`}
-                  >
-                    {n}d
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </header>
-
-      {tab === "today" && (
-        <div className={embedded ? "px-4 py-4 sm:px-5 sm:py-5" : "px-6 py-6"}>
-          {/* Promo band */}
-          <section className="relative mb-6 overflow-hidden rounded-3xl border border-[#c9a87c]/35 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
-            <div className="absolute inset-0">
-              <img
-                src="/display-promo.jpg"
-                alt=""
-                className="h-full w-full object-cover"
+            {receptionSection !== "reports" ? (
+            <label className="relative min-w-[12rem] flex-1">
+              <span className="sr-only">Search</span>
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={
+                  receptionSection === "staff"
+                    ? "Search stylist..."
+                    : receptionSection === "services"
+                      ? "Search service..."
+                      : receptionSection === "products"
+                        ? "Search product..."
+                        : "Search client, booking, or service..."
+                }
+                className="w-full rounded-full border border-[color:var(--rx-line)] bg-[var(--rx-input)] py-2 pr-4 pl-4 text-sm text-[color:var(--rx-text)] placeholder:text-[color:var(--rx-faint)]"
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-[#1c1714]/95 via-[#1c1714]/75 to-[#6e4a38]/45" />
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(240,201,135,0.35),transparent_45%)]" />
-            </div>
-            <div className="relative grid gap-5 p-5 sm:gap-6 sm:p-6 md:grid-cols-[minmax(0,1.2fr)_auto] md:items-end md:p-8">
-              <div className="min-w-0">
-                <p className="text-xs font-semibold tracking-[0.22em] text-[#f0c987] uppercase">
-                  Prefer a set time?
-                </p>
-                <h2 className="mt-2 font-[family-name:var(--font-display)] text-3xl leading-none sm:text-4xl md:text-5xl">
-                  Book online
-                </h2>
-                <p className="mt-3 max-w-xl text-sm text-white/80 sm:text-base md:text-lg">
-                  Reserve your favourite stylist ahead of time at{" "}
-                  <span className="font-semibold text-[#f0c987]">www.fhsalon.ca</span>
-                </p>
-                <p className="mt-1.5 max-w-xl text-sm text-white/80 sm:text-base md:text-lg">
-                  Walk-ins welcome when a chair is open
-                </p>
-                {(salon?.phone || salon?.address) && (
-                  <p className="mt-3 text-sm text-[#f0c987]/90">
-                    {salon.phone}
-                    {salon.phone && salon.address ? " · " : ""}
-                    {salon.address}
+            </label>
+            ) : (
+              <div className="min-w-[12rem] flex-1" />
+            )}
+            <ReceptionThemeToggle />
+            {!embedded ? (
+              <div className="flex items-center gap-2 lg:hidden">
+                {staffName ? (
+                  <p className="hidden max-w-[9rem] truncate text-xs font-semibold text-[color:var(--rx-text)] sm:block">
+                    {staffName}
                   </p>
-                )}
-              </div>
-              <div
-                className="grid min-w-0 grid-cols-3 gap-2 sm:gap-3 md:min-w-[280px]"
-                data-testid="display-floor-counts"
-              >
-                <div className="rounded-2xl bg-[#f0c987] px-3 py-3 sm:px-4">
-                  <p className="text-[10px] font-bold uppercase tracking-wide !text-[#3d2b22]/85 sm:text-xs">
-                    Online
-                  </p>
-                  <p
-                    className="font-[family-name:var(--font-display)] text-3xl !text-[#1c1714]"
-                    data-testid="display-count-waiting"
-                  >
-                    {waiting}
-                  </p>
-                  <p className="mt-0.5 text-[10px] leading-tight !text-[#3d2b22]/75">
-                    Booked ahead
-                  </p>
-                </div>
-                <div className="rounded-2xl bg-[#e8c4a0] px-3 py-3 sm:px-4">
-                  <p className="text-[10px] font-bold uppercase tracking-wide !text-[#3d2b22]/85 sm:text-xs">
-                    Walk-in
-                  </p>
-                  <p
-                    className="font-[family-name:var(--font-display)] text-3xl !text-[#1c1714]"
-                    data-testid="display-count-walk-in"
-                  >
-                    {walkInWaiting}
-                  </p>
-                  <p className="mt-0.5 text-[10px] leading-tight !text-[#3d2b22]/75">
-                    On waitlist
-                  </p>
-                </div>
-                <div className="rounded-2xl bg-[#9fe3b8] px-3 py-3 sm:px-4">
-                  <p className="text-[10px] font-bold uppercase tracking-wide !text-[#0f2a1c]/85 sm:text-xs">
-                    In chair
-                  </p>
-                  <p
-                    className="font-[family-name:var(--font-display)] text-3xl !text-[#123022]"
-                    data-testid="display-count-in-chair"
-                  >
-                    {inChair}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* In-store waitlist — under welcome, until seated */}
-          <section
-            className="mb-6 rounded-3xl border border-[#c9a87c]/30 bg-[#241c18]/80 p-4 md:p-5"
-            data-testid="display-waitlist-section"
-          >
-            <WalkInPanel
-              mode="display"
-              slug={slug}
-              showForm={false}
-              showWaitlist
-              pollMs={15_000}
-              onCreated={load}
-              onWaitlistChange={onWaitlistChange}
-              requestHeaders={unlockHeaders}
-            />
-          </section>
-
-          <section className="mb-6 rounded-3xl border border-[#c9a87c]/30 bg-[#241c18]/80 p-4 md:p-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 className="font-[family-name:var(--font-display)] text-2xl">
-                  Walk-in desk
-                </h2>
-                <p className="text-sm text-white/65">
-                  Seat a guest now, or add them to the waitlist.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setWalkInOpen((v) => !v)}
-                className="rounded-full bg-[#c9a87c] px-4 py-2 text-sm font-semibold text-[#1c1714]"
-                data-testid="display-walk-in-toggle"
-              >
-                {walkInOpen ? "Hide form" : "Add walk-in"}
-              </button>
-            </div>
-            {walkInOpen ? (
-              <div className="mt-4">
-                <WalkInPanel
-                  mode="display"
-                  slug={slug}
-                  showForm
-                  showWaitlist={false}
-                  onCreated={load}
-                  requestHeaders={unlockHeaders}
-                />
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => void signOutReception()}
+                  className="rounded-full border border-[color:var(--rx-line)] px-3 py-2 text-xs font-semibold text-[color:var(--rx-muted)] hover:text-[color:var(--rx-text)]"
+                >
+                  Sign out
+                </button>
               </div>
             ) : null}
-          </section>
+            <button
+              type="button"
+              onClick={() => setWalkInOpen((v) => !v)}
+              className="rounded-full bg-[var(--rx-accent)] px-4 py-2 text-sm font-semibold text-white"
+              data-testid="reception-new-booking"
+            >
+              + New Booking
+            </button>
+            {embedded && (pinSet || embedded) ? (
+              <PadlockButton
+                locked={false}
+                onClick={() => void lockBoard()}
+                label="Lock board"
+                data-testid="display-padlock"
+              />
+            ) : null}
+          </header>
 
-          {/* Today bookings — colourful cards */}
-          <div className="grid gap-4">
-            {todayAppts.length === 0 && (
-              <p className="rounded-2xl border border-dashed border-[#c9a87c]/40 bg-gradient-to-br from-[#3d2b22]/80 to-[#1c1714] p-10 text-center text-white/70">
-                No bookings yet today — enjoy a quiet moment, or take a walk-in.
-              </p>
-            )}
-            {todayAppts.map((a, index) => {
-              const accents = [
-                "from-[#5a3a2a] to-[#2a1c16] border-[#c9a87c]/40",
-                "from-[#3a2f4a] to-[#1c1714] border-[#b8a0d8]/35",
-                "from-[#2a3f3a] to-[#1c1714] border-[#9fe3b8]/35",
-                "from-[#4a3520] to-[#1c1714] border-[#f0c987]/40",
-              ];
-              const accent = accents[index % accents.length];
+          <nav
+            className="flex shrink-0 gap-1 overflow-x-auto border-b border-[color:var(--rx-line)] px-4 py-2 lg:hidden"
+            aria-label="Reception"
+          >
+            {RECEPTION_NAV_ITEMS.map((item) => {
+              const active = receptionSection === item.id;
               return (
-                <article
-                  key={a.id}
-                  className={`grid gap-3 rounded-2xl border bg-gradient-to-r p-4 shadow-lg md:grid-cols-[160px_1fr_auto] md:items-center ${accent}`}
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setReceptionSection(item.id)}
+                  className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${
+                    active
+                      ? "bg-[var(--rx-accent)] text-white"
+                      : "text-[color:var(--rx-muted)]"
+                  }`}
                 >
-                  <div>
-                    <p className="text-3xl font-semibold tracking-tight">
-                      {new Date(a.startsAt).toLocaleTimeString("en-CA", {
-                        hour: "numeric",
-                        minute: "2-digit",
-                      })}
-                    </p>
-                    <p className="text-sm text-white/55">
-                      {new Date(a.endsAt).toLocaleTimeString("en-CA", {
-                        hour: "numeric",
-                        minute: "2-digit",
-                      })}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-2xl font-semibold">{a.client.name}</p>
-                    <StylistLine a={a} />
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      <span
-                        className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-semibold tracking-wide uppercase ${
-                          STATUS_STYLES[a.status] || STATUS_STYLES.BOOKED
-                        }`}
-                      >
-                        {a.status.replace("_", " ")}
-                      </span>
-                      {a.source === "WALK_IN" ? (
-                        <span
-                          data-testid="walk-in-badge"
-                          className="inline-block rounded-full bg-[#f0c987]/20 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide text-[#f0c987] uppercase"
-                        >
-                          Walk-in
-                        </span>
-                      ) : null}
-                    </div>
-                  </div>
-                  <AppointmentActions a={a} onStatus={setStatus} />
-                </article>
+                  {item.label}
+                </button>
               );
             })}
-          </div>
-        </div>
-      )}
+          </nav>
 
-      {tab === "future" && (
-        <div className="grid gap-8 px-6 py-6">
-          {futureGrouped.length === 0 && (
-            <p className="rounded-2xl border border-white/10 p-8 text-white/60">
-              No upcoming bookings in this range.
-            </p>
-          )}
-
-          {futureGrouped.map(([key, list]) => (
-            <section key={key} className="space-y-3">
-              <h2 className="text-sm tracking-[0.16em] text-[#c9a87c] uppercase">
-                {dayLabel(key, salon?.timezone, salon?.today)}
-              </h2>
-              <div className="grid gap-3">
-                {list.map((a) => (
-                  <article
-                    key={a.id}
-                    className="grid gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 md:grid-cols-[160px_1fr_auto] md:items-center"
-                  >
-                    <div>
-                      <p className="text-2xl font-medium">
-                        {new Date(a.startsAt).toLocaleTimeString("en-CA", {
-                          hour: "numeric",
-                          minute: "2-digit",
-                        })}
-                      </p>
-                      <p className="text-sm text-white/50">
-                        {new Date(a.endsAt).toLocaleTimeString("en-CA", {
-                          hour: "numeric",
-                          minute: "2-digit",
-                        })}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xl font-medium">{a.client.name}</p>
-                      <StylistLine a={a} />
-                      <p className="mt-1 text-xs tracking-wide text-[#c9a87c] uppercase">
-                        {a.status}
-                      </p>
-                    </div>
-                    <AppointmentActions a={a} onStatus={setStatus} />
-                  </article>
-                ))}
+          {walkInOpen ? (
+            <div className="border-b border-[color:var(--rx-line)] bg-[var(--rx-panel)] px-5 py-4">
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-[color:var(--rx-text)]">New booking</h2>
+                <button
+                  type="button"
+                  onClick={() => setWalkInOpen(false)}
+                  className="text-sm text-[color:var(--rx-muted)] hover:text-[color:var(--rx-text)]"
+                >
+                  Close
+                </button>
               </div>
-            </section>
-          ))}
-        </div>
-      )}
+              <WalkInPanel
+                mode="display"
+                slug={slug}
+                showForm
+                showWaitlist={false}
+                onCreated={() => {
+                  setWalkInOpen(false);
+                  void load();
+                }}
+                requestHeaders={unlockHeaders}
+              />
+            </div>
+          ) : null}
 
-      {tab === "services" && (
-        <div
-          className="relative flex min-h-[28rem] flex-1 flex-col overflow-hidden sm:min-h-[32rem]"
-          data-testid="display-services-section"
-        >
-          <div className="pointer-events-none absolute inset-0" aria-hidden>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/display-promo.jpg"
-              alt=""
-              className="h-full w-full scale-105 object-cover opacity-40"
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-[#1c1714]/92 via-[#1c1714]/88 to-[#1c1714]/96" />
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_20%_0%,rgba(240,201,135,0.16),transparent_50%)]" />
-          </div>
-
-          <div
-            className={`relative z-[1] flex min-h-0 flex-1 flex-col ${
-              embedded ? "px-4 py-4 sm:px-5" : "px-5 py-4 sm:px-8 sm:py-5"
-            }`}
-          >
-            <header className="mb-4 flex flex-wrap items-end justify-between gap-3 border-b border-[#c9a87c]/25 pb-3">
-              <div className="min-w-0">
-                <p className="text-[10px] font-semibold tracking-[0.28em] text-[#f0c987] uppercase">
-                  {salon?.name || "Salon"}
-                </p>
-                <h2 className="mt-1 font-[family-name:var(--font-display)] text-3xl leading-none tracking-tight sm:text-4xl">
-                  The menu
-                </h2>
-              </div>
-              <p className="max-w-sm text-right text-xs leading-relaxed text-white/60 sm:text-sm">
-                Ask your stylist what’s right for you.
-                <br className="hidden sm:block" />
-                Walk-ins welcome when a chair is open.
-              </p>
-            </header>
-
-            {servicesByCategory.length === 0 ? (
-              <p className="rounded-2xl border border-white/10 bg-black/20 p-6 text-white/60 backdrop-blur-sm">
-                No active services yet.
-              </p>
-            ) : (
-              <div className="grid min-h-0 flex-1 gap-5 lg:grid-cols-2 lg:gap-8">
-                {servicesByCategory.map((group) => (
-                  <ServiceMenuColumn
-                    key={group.key}
-                    label={group.label}
-                    items={group.items}
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col xl:flex-row">
+            {receptionSection === "calendar" ? (
+              <>
+            <div className="min-h-0 min-w-0 flex-1 overflow-hidden px-4 py-3 sm:px-5">
+              <ReceptionSchedule
+                appointments={floorAppts}
+                stylists={floorStylists}
+                openHour={openHour}
+                closeHour={closeHour}
+                timeZone={salon?.timezone}
+                selectedId={selectedId}
+                onSelect={(a) => setSelectedId(a.id)}
+                now={now}
+              />
+            </div>
+            <div className="w-full shrink-0 overflow-auto border-t border-[color:var(--rx-line)] xl:w-[22rem] xl:border-t-0 xl:border-l">
+              <ReceptionClientPanel
+                appt={
+                  selectedAppt &&
+                  (selectedAppt.status === "BOOKED" || selectedAppt.status === "CHECKED_IN")
+                    ? selectedAppt
+                    : null
+                }
+                onClose={() => setSelectedId(null)}
+                onStatus={setStatus}
+                onCheckout={presentCheckout}
+              />
+            </div>
+              </>
+            ) : receptionSection === "clients" ? (
+              <>
+                <div className="min-h-0 min-w-0 flex-1 overflow-hidden px-4 py-3 sm:px-5">
+                  <ReceptionClientsView
+                    clients={receptionClients}
+                    query={query}
+                    selectedId={selectedId}
+                    onSelect={(a) => setSelectedId(a.id)}
                   />
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {tab === "products" && (
-        <div
-          className="relative flex min-h-[28rem] flex-1 flex-col overflow-hidden sm:min-h-[32rem]"
-          data-testid="display-products-section"
-        >
-          <div className="pointer-events-none absolute inset-0" aria-hidden>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/display-promo.jpg"
-              alt=""
-              className="h-full w-full scale-105 object-cover opacity-40"
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-[#1c1714]/92 via-[#1c1714]/88 to-[#1c1714]/96" />
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_80%_0%,rgba(240,201,135,0.14),transparent_50%)]" />
-          </div>
-
-          <div
-            className={`relative z-[1] flex min-h-0 flex-1 flex-col ${
-              embedded ? "px-4 py-4 sm:px-5" : "px-5 py-4 sm:px-8 sm:py-5"
-            }`}
-          >
-            <header className="mb-4 flex flex-wrap items-end justify-between gap-3 border-b border-[#c9a87c]/25 pb-3">
-              <div className="min-w-0">
-                <p className="text-[10px] font-semibold tracking-[0.28em] text-[#f0c987] uppercase">
-                  {salon?.name || "Salon"}
-                </p>
-                <h2 className="mt-1 font-[family-name:var(--font-display)] text-3xl leading-none tracking-tight sm:text-4xl">
-                  Retail
-                </h2>
-              </div>
-              <p className="max-w-sm text-right text-xs leading-relaxed text-white/60 sm:text-sm">
-                Take home the same care we use in the chair.
-                <br className="hidden sm:block" />
-                Ask your stylist what’s best for your hair.
-              </p>
-            </header>
-
-            {products.length === 0 ? (
-              <p className="rounded-2xl border border-white/10 bg-black/20 p-6 text-white/60 backdrop-blur-sm">
-                No retail products listed yet.
-              </p>
+                </div>
+                <div className="w-full shrink-0 overflow-auto border-t border-[color:var(--rx-line)] xl:w-[22rem] xl:border-t-0 xl:border-l">
+                  <ReceptionClientPanel
+                    appt={
+                      selectedAppt &&
+                      (selectedAppt.status === "BOOKED" || selectedAppt.status === "CHECKED_IN")
+                        ? selectedAppt
+                        : null
+                    }
+                    onClose={() => setSelectedId(null)}
+                    onStatus={setStatus}
+                    onCheckout={presentCheckout}
+                  />
+                </div>
+              </>
             ) : (
-              <ProductMenuBoard items={products} />
+              <div className="min-h-0 min-w-0 flex-1 overflow-hidden px-4 py-3 sm:px-5">
+                {receptionSection === "staff" ? (
+                  <ReceptionStaffView
+                    stylists={floorStylists}
+                    appointments={todayAll}
+                    query={query}
+                    timeZone={salon?.timezone}
+                  />
+                ) : null}
+                {receptionSection === "services" ? (
+                  <ReceptionServicesView groups={servicesByCategory} query={query} />
+                ) : null}
+                {receptionSection === "products" ? (
+                  <ReceptionProductsView products={products} query={query} />
+                ) : null}
+                {receptionSection === "reports" ? (
+                  <ReceptionReportsView
+                    today={todayAll}
+                    waitlist={walkInWaiting}
+                    futureCount={futureCount}
+                  />
+                ) : null}
+              </div>
             )}
           </div>
         </div>
-      )}
+      {checkout && checkout.status !== "PAID" ? (
+        <ReceptionCheckoutDesk
+          bill={checkout}
+          busy={checkoutBusy}
+          services={services}
+          products={products}
+          onTip={(tipMode) => {
+            void checkoutAction({ action: "tip", tipMode });
+          }}
+          onAddLine={(kind, catalogId) => {
+            void checkoutAction({ action: "add-line", kind, catalogId });
+          }}
+          onRemoveLine={(lineId) => {
+            void checkoutAction({ action: "remove-line", lineId });
+          }}
+          onComplete={async () => {
+            setCheckoutBusy(true);
+            try {
+              await checkoutAction({ action: "complete" });
+              void load();
+            } finally {
+              setCheckoutBusy(false);
+            }
+          }}
+          onCancel={() => {
+            void checkoutAction({ action: "cancel" });
+          }}
+        />
+      ) : null}
+        </ReceptionThemeRoot>
+    </div>
+  );
+}
 
-      <ZentraLabFooter
-        compact={tab === "services" || tab === "products"}
-        className={
-          tab === "services" || tab === "products"
-            ? "relative z-[1] !mt-0 border-[#c9a87c]/15 !py-2.5 text-[11px] [&_.zentralab-footer-meta]:hidden"
+  return (
+    <div
+      className={`flex ${
+        embedded ? "min-h-[70vh] min-w-0" : "h-dvh min-h-dvh w-full overflow-hidden"
+      }`}
+      data-testid={embedded ? "manager-store-display-board" : "store-display-board"}
+    >
+      <CustomerThemeRoot
+        className={`flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[var(--cd-bg)] text-[color:var(--cd-text)] ${
+          embedded ? "rounded-3xl border border-[color:var(--cd-line)]" : ""
+        }`}
+      >
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <header
+        className={`shrink-0 border-b border-[color:var(--cd-line)] ${
+          embedded ? "px-4 py-4 sm:px-5" : "px-6 py-5"
+        }`}
+      >
+          <div className="mb-4 grid gap-4 lg:grid-cols-[1fr_auto_1fr] lg:items-center">
+            <div className="flex items-center gap-3">
+              <span className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[color:var(--cd-accent)] text-xl font-[family-name:var(--font-display)] text-[color:var(--cd-accent)]">
+                {(salon?.name || "S").trim().charAt(0).toUpperCase()}
+              </span>
+              <div>
+                <h1 className="font-[family-name:var(--font-display)] text-xl tracking-[0.14em] text-[color:var(--cd-heading)] uppercase sm:text-2xl">
+                  {salon?.name || "Salon"}
+                </h1>
+                <p className="text-[10px] tracking-[0.22em] text-[color:var(--cd-muted)] uppercase">
+                  Beauty. Relaxation. You.
+                </p>
+              </div>
+            </div>
+            <div className="text-center">
+              <h2 className="font-[family-name:var(--font-display)] text-2xl text-[color:var(--cd-heading)] sm:text-3xl">
+                Today’s Appointments – {apptDay}
+              </h2>
+              <p className="mt-1 text-xs tracking-wide text-[color:var(--cd-muted)]" data-testid="display-store-hours">
+                {storeClosed
+                  ? "Closed today"
+                  : `${formatHourLabel(openHour)} – ${formatHourLabel(closeHour)}`}
+              </p>
+            </div>
+            <div className="flex flex-col items-end gap-2">
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                {!embedded ? <DisplayViewSwitch slug={slug} variant="customer" /> : null}
+                <CustomerThemeToggle />
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="text-right">
+                  <p className="font-[family-name:var(--font-display)] text-2xl text-[color:var(--cd-heading)]">{timeLine}</p>
+                  <p className="text-xs text-[color:var(--cd-muted)]">{dateLine}</p>
+                </div>
+                {pinSet || embedded ? (
+                  <PadlockButton
+                    locked={false}
+                    onClick={() => void lockBoard()}
+                    label="Lock board"
+                    data-testid="display-padlock"
+                    className="!border-[color:var(--cd-line)] !bg-[var(--cd-input)] !text-[color:var(--cd-accent)] hover:!border-[color:var(--cd-accent)] hover:!bg-[var(--cd-input)] hover:!text-[color:var(--cd-accent)]"
+                  />
+                ) : null}
+              </div>
+            </div>
+          </div>
+      </header>
+
+      <div className={embedded ? "flex min-h-0 flex-1 flex-col px-4 py-4 sm:px-5 sm:py-5" : "flex min-h-0 flex-1 flex-col px-6 py-4"}>
+        <CustomerScheduleGrid
+          appointments={todayAppts}
+          stylists={floorStylists}
+          openHour={openHour}
+          closeHour={closeHour}
+          timeZone={salon?.timezone}
+          now={now}
+          storeClosed={storeClosed}
+        />
+      </div>
+
+      <ZentraLabFooter compact className="shrink-0 !mt-0 border-[color:var(--cd-line)] !py-2.5 text-[11px]" />
+      </div>
+      <CustomerCheckoutOverlay
+        bill={checkout}
+        thanks={null}
+        onTip={
+          checkout && checkout.status !== "PAID"
+            ? (tipMode) => {
+                void checkoutAction({ action: "tip", tipMode });
+              }
+            : undefined
+        }
+        onLooksGood={
+          checkout && checkout.status === "PENDING"
+            ? () => {
+                void checkoutAction({ action: "verify" });
+              }
             : undefined
         }
       />
+      </CustomerThemeRoot>
     </div>
+  );
+}
+
+function staffRoleLabel(role?: string) {
+  if (role === "STYLIST") return "Stylist";
+  if (role === "FRONT_DESK") return "Front desk";
+  if (role === "ADMIN" || role === "MANAGER") return "Manager";
+  return "Staff";
+}
+
+function staffInitials(name?: string) {
+  const parts = (name || "Front desk").trim().split(/\s+/).filter(Boolean);
+  const letters = (parts[0]?.[0] || "F") + (parts[1]?.[0] || parts[0]?.[1] || "D");
+  return letters.toUpperCase();
+}
+
+function ReceptionNav({
+  salonName,
+  staffName,
+  staffRole,
+  section,
+  onSection,
+  onSignOut,
+}: {
+  salonName: string;
+  staffName?: string;
+  staffRole?: string;
+  section: ReceptionSection;
+  onSection: (section: ReceptionSection) => void;
+  onSignOut?: () => void;
+}) {
+  return (
+    <aside className="hidden w-56 shrink-0 flex-col border-r border-[color:var(--rx-line)] bg-[var(--rx-nav)] px-4 py-6 lg:flex">
+      <div className="mb-8 flex items-start gap-2">
+        <span className="mt-0.5 text-[color:var(--rx-accent-soft)]" aria-hidden>
+          ❀
+        </span>
+        <div>
+          <p
+            className="text-[10px] font-bold tracking-[0.14em] leading-snug text-[color:var(--rx-accent-soft)] uppercase"
+            data-testid="reception-salon-name"
+          >
+            {salonName}
+          </p>
+          <p className="mt-1 text-sm font-semibold leading-snug text-[color:var(--rx-text)]">Reception dashboard</p>
+        </div>
+      </div>
+      <nav className="flex flex-1 flex-col gap-1" aria-label="Reception">
+        {RECEPTION_NAV_ITEMS.map((item) => {
+          const active = section === item.id;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => onSection(item.id)}
+              data-testid={`reception-nav-${item.id}`}
+              className={`rounded-xl px-3 py-2.5 text-left text-sm font-medium ${
+                active
+                  ? "bg-[var(--rx-accent)] text-white"
+                  : "text-[color:var(--rx-muted)] hover:text-[color:var(--rx-text)]"
+              }`}
+            >
+              {item.label}
+            </button>
+          );
+        })}
+      </nav>
+      <div className="mt-4 border-t border-[color:var(--rx-line)] pt-4" data-testid="reception-signed-in">
+        <div className="flex items-center gap-2">
+          <span className="relative flex h-9 w-9 items-center justify-center rounded-full bg-[var(--rx-accent)] text-xs font-bold text-white">
+            {staffInitials(staffName)}
+            <span className="absolute right-0 bottom-0 h-2 w-2 rounded-full bg-emerald-400 ring-2 ring-[color:var(--rx-nav)]" />
+          </span>
+          <div className="min-w-0">
+            <p
+              className="truncate text-xs font-semibold text-[color:var(--rx-text)]"
+              data-testid="reception-signed-in-name"
+            >
+              {staffName || staffRoleLabel(staffRole)}
+            </p>
+            <p
+              className="truncate text-[10px] text-[color:var(--rx-accent-soft)]"
+              data-testid="reception-signed-in-as"
+            >
+              Logged in as reception
+            </p>
+            <p className="truncate text-[10px] text-[color:var(--rx-faint)]">
+              {staffRoleLabel(staffRole)}
+              {salonName ? ` · ${salonName}` : ""}
+            </p>
+          </div>
+        </div>
+        {onSignOut ? (
+          <button
+            type="button"
+            onClick={onSignOut}
+            className="mt-3 w-full rounded-xl border border-[color:var(--rx-line)] px-3 py-2 text-xs font-semibold text-[color:var(--rx-muted)] hover:text-[color:var(--rx-text)]"
+            data-testid="reception-sign-out"
+          >
+            Sign out
+          </button>
+        ) : null}
+      </div>
+    </aside>
   );
 }

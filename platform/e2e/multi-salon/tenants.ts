@@ -1,7 +1,7 @@
 /** Seeded local-dev salons from prisma/seed.ts — do not create new tenants here. */
 
 export type Tenant = {
-  id: "fhsalon" | "demosalon";
+  id: "fhsalon" | "demosalon" | "aaraby";
   slug: string;
   name: string;
   managerEmail: string;
@@ -46,9 +46,23 @@ export const TENANTS: Tenant[] = [
     uniqueService: "Balayage",
     uniqueProduct: "QA-Demo",
   },
+  {
+    id: "aaraby",
+    slug: "aaraby-beauty",
+    name: "Aaraby's Beauty Parlor",
+    managerEmail: "aarabyherath@gmail.com",
+    stylistEmail: "ajeesh@gmail.com",
+    stylistName: "Ajeesh",
+    otherStylistName: "Lead Stylist",
+    password: "demo1234",
+    servicePattern: /\bmen'?s haircut\b|fade \/ taper/i,
+    uniqueService: "Men's haircut",
+    uniqueProduct: "QA-Aaraby",
+  },
 ];
 
 export const OTHER: Record<Tenant["id"], Tenant> = {
   fhsalon: TENANTS[1]!,
   demosalon: TENANTS[0]!,
+  aaraby: TENANTS[0]!,
 };

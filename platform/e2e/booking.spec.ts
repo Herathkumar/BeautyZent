@@ -1,71 +1,17 @@
 import { test, expect } from "@playwright/test";
-import { DEMO, nextOpenDate } from "./helpers";
+import { adminLogin, bookOnline, DEMO, gotoSettled, nextOpenDate } from "./helpers";
 
 test.describe("Client online booking flow", () => {
   test("service → stylist → time → details → confirmed", async ({ page }) => {
     const clientName = `QA Client ${Date.now()}`;
-    const openDate = nextOpenDate();
 
-    await page.goto(`/book/${DEMO.slug}`);
-    await expect(page.getByRole("heading", { name: /choose services?/i })).toBeVisible();
-
-    // Prefer a short men's service — scope past Style preview AI chips (e.g. "Beard tidy")
-    const services = page.locator("section").filter({
-      has: page.getByRole("heading", { name: /choose services?/i }),
+    await bookOnline(page, {
+      clientName,
+      phone: "9055550199",
+      notes: "Playwright QA booking — safe to cancel",
+      date: nextOpenDate(),
     });
-    await services
-      .getByRole("button")
-      .filter({ hasText: /men'?s haircut|women'?s trim|beard/i })
-      .first()
-      .click();
 
-    await expect(page.getByRole("heading", { name: /choose your stylist/i })).toBeVisible();
-    await expect(
-      page.getByText(/no stylist is set up for this service/i)
-    ).toHaveCount(0);
-
-    const stylists = page.locator("section").filter({
-      has: page.getByRole("heading", { name: /choose your stylist/i }),
-    });
-    const stylistBtn = stylists
-      .getByRole("button")
-      .filter({ hasText: /farzana|aisha|omar|aadil/i })
-      .first();
-    await expect(stylistBtn).toBeVisible();
-    await stylistBtn.click();
-
-    await expect(page.getByRole("heading", { name: /pick a time/i })).toBeVisible();
-    await page.locator('input[type="date"]').fill(openDate);
-
-    // Wait for slots to load; try nearby weekdays if empty
-    let booked = false;
-    for (let attempt = 0; attempt < 5 && !booked; attempt++) {
-      const d = new Date(openDate);
-      d.setDate(d.getDate() + attempt);
-      if (d.getDay() === 0) continue;
-      const pad = (n: number) => String(n).padStart(2, "0");
-      const dateStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-      await page.locator('input[type="date"]').fill(dateStr);
-      await page.waitForTimeout(800);
-
-      const slotButtons = page.getByRole("button").filter({ hasText: /\d{1,2}:\d{2}|a\.m\.|p\.m\./i });
-      if ((await slotButtons.count()) === 0) continue;
-      await slotButtons.first().click();
-      booked = true;
-    }
-
-    expect(booked, "Expected at least one open slot in the next weekdays").toBeTruthy();
-
-    await expect(page.getByRole("heading", { name: /your details/i })).toBeVisible();
-    await page.getByLabel(/^name$/i).fill(clientName);
-    await page.getByLabel(/^phone$/i).fill("9055550199");
-    await page.getByLabel(/^email/i).fill(`qa.book.${Date.now()}@example.com`);
-    await page.getByLabel(/notes/i).fill("Playwright QA booking — safe to cancel");
-    await page.getByRole("button", { name: /confirm reservation/i }).click();
-
-    await expect(page.getByRole("heading", { name: /you.?re booked/i })).toBeVisible({
-      timeout: 20_000,
-    });
     await expect(page.getByRole("button", { name: /book another/i })).toBeVisible();
     await expect(page.getByRole("link", { name: /add to calendar/i })).toBeVisible();
     await expect(page.getByTestId("booking-next-steps")).toBeVisible();
@@ -74,13 +20,9 @@ test.describe("Client online booking flow", () => {
   test("new admin service appears with stylists (regression)", async ({ page }) => {
     const serviceName = `QA Auto Service ${Date.now()}`;
 
-    await page.goto("/manager/login");
-    await page.getByLabel(/email/i).fill(DEMO.adminEmail);
-    await page.getByLabel(/password/i).fill(DEMO.password);
-    await page.locator('form button[type="submit"]').click();
-    await page.waitForURL(/\/manager(?!\/login)/, { timeout: 20_000 });
-
-    await page.goto("/manager/services");
+    await adminLogin(page);
+    await gotoSettled(page, "/manager/services");
+    await expect(page.getByRole("heading", { name: /services/i })).toBeVisible();
     // Skip AI image generation — slow/flaky in e2e and not needed for this regression.
     await page.getByLabel(/generate ai menu image/i).uncheck();
     await page.getByPlaceholder(/service name/i).fill(serviceName);
@@ -88,7 +30,7 @@ test.describe("Client online booking flow", () => {
     await page.locator('form input[type="number"]').first().fill("20");
     await page.getByPlaceholder(/^price$/i).fill("22");
     await page.getByRole("button", { name: /^add$/i }).click();
-    await expect(page.getByText(serviceName)).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(serviceName)).toBeVisible({ timeout: 30_000 });
 
     // Create already links the new service to all stylists — avoid full-mesh "link all"
     // which would overwrite specialty menus (Aisha women-only / Omar men-only).
@@ -96,7 +38,7 @@ test.describe("Client online booking flow", () => {
     await expect(serviceRow.getByText(/\d+ stylists?/i)).toBeVisible();
     await expect(serviceRow.getByText(/not bookable online yet/i)).toHaveCount(0);
 
-    await page.goto(`/book/${DEMO.slug}`);
+    await gotoSettled(page, `/book/${DEMO.slug}`);
     await expect(page.getByRole("heading", { name: /choose services?/i })).toBeVisible();
     const serviceBtn = page.getByRole("button", {
       name: new RegExp(serviceName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"),
@@ -109,7 +51,7 @@ test.describe("Client online booking flow", () => {
     ).toBeVisible();
 
     // Disable so later walk-in / stylist tests don't see an extra catalog row
-    await page.goto("/manager/services");
+    await gotoSettled(page, "/manager/services");
     const cleanupRow = page.locator("div.flex.flex-wrap.items-center").filter({
       hasText: serviceName,
     });

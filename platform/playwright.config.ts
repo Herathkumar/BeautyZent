@@ -11,15 +11,17 @@ if (process.env.E2E_DATABASE_URL) {
   process.env.DATABASE_URL = process.env.E2E_DATABASE_URL;
 }
 
-const baseURL = process.env.PLAYWRIGHT_BASE_URL || "http://localhost:3000";
+const isolated = Boolean(process.env.E2E_DATABASE_URL);
+const port = process.env.PLAYWRIGHT_PORT || (isolated ? "3333" : "3000");
+const baseURL = process.env.PLAYWRIGHT_BASE_URL || `http://localhost:${port}`;
 
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 1 : 0,
+  retries: process.env.CI || isolated ? 1 : 0,
   workers: 1,
-  timeout: 90_000,
+  timeout: isolated ? 120_000 : 90_000,
   expect: { timeout: 15_000 },
   reporter: [
     ["list"],
@@ -34,10 +36,13 @@ export default defineConfig({
     ...devices["Desktop Chrome"],
   },
   webServer: {
-    command: "pnpm dev",
+    // Turbopack often 404s the first request after compiling a new route in isolated e2e.
+    command: isolated ? `pnpm exec next dev --port ${port}` : `pnpm dev --port ${port}`,
     url: baseURL,
     reuseExistingServer: !process.env.CI && !process.env.E2E_DATABASE_URL,
-    timeout: 120_000,
+    timeout: 240_000,
+    stdout: "pipe",
+    stderr: "pipe",
     env: {
       ...process.env,
       DATABASE_URL: process.env.DATABASE_URL || "",

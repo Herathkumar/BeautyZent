@@ -7,6 +7,40 @@ import {
   verifyDisplayPin,
 } from "@/lib/display-pin";
 import { prisma } from "@/lib/prisma";
+import { calendarDateInTz, dayOfWeekInTz } from "@/lib/salon-time";
+
+const salonHoursSelect = {
+  id: true,
+  slug: true,
+  name: true,
+  timezone: true,
+  openHour: true,
+  closeHour: true,
+  closedDays: true,
+  displayPinHash: true,
+  displayPinSetAt: true,
+} as const;
+
+function publicSalon(salon: {
+  name: string;
+  slug: string;
+  timezone?: string | null;
+  openHour: number;
+  closeHour: number;
+  closedDays: number[];
+}) {
+  const timeZone = salon.timezone || "America/Toronto";
+  const today = calendarDateInTz(timeZone);
+  return {
+    name: salon.name,
+    slug: salon.slug,
+    timezone: timeZone,
+    openHour: salon.openHour,
+    closeHour: salon.closeHour,
+    closedDays: salon.closedDays || [],
+    todayClosed: (salon.closedDays || []).includes(dayOfWeekInTz(today, timeZone)),
+  };
+}
 
 /**
  * Check whether this tablet needs PIN unlock.
@@ -21,13 +55,7 @@ export async function GET(
   const { slug } = await params;
   const salon = await prisma.salon.findUnique({
     where: { slug },
-    select: {
-      id: true,
-      slug: true,
-      name: true,
-      displayPinHash: true,
-      displayPinSetAt: true,
-    },
+    select: salonHoursSelect,
   });
   if (!salon) return NextResponse.json({ error: "Salon not found" }, { status: 404 });
 
@@ -37,7 +65,7 @@ export async function GET(
       pinSet: false,
       needsPin: false,
       unlocked: true,
-      salon: { name: salon.name, slug: salon.slug },
+      salon: publicSalon(salon),
     });
   }
 
@@ -49,7 +77,7 @@ export async function GET(
     pinSet: true,
     needsPin: !unlockedBySession,
     unlocked: unlockedBySession,
-    salon: { name: salon.name, slug: salon.slug },
+    salon: publicSalon(salon),
   });
   // Drop any legacy unlock cookies so refresh never auto-unlocks the tablet.
   if (mode !== "embedded") clearDisplayUnlockCookieOn(res);
@@ -64,13 +92,7 @@ export async function POST(
   const { slug } = await params;
   const salon = await prisma.salon.findUnique({
     where: { slug },
-    select: {
-      id: true,
-      slug: true,
-      name: true,
-      displayPinHash: true,
-      displayPinSetAt: true,
-    },
+    select: salonHoursSelect,
   });
   if (!salon) return NextResponse.json({ error: "Salon not found" }, { status: 404 });
 
@@ -80,7 +102,7 @@ export async function POST(
       unlocked: true,
       needsPin: false,
       unlockToken: null,
-      salon: { name: salon.name, slug: salon.slug },
+      salon: publicSalon(salon),
     });
   }
 
@@ -112,7 +134,7 @@ export async function POST(
     unlocked: true,
     needsPin: false,
     unlockToken,
-    salon: { name: salon.name, slug: salon.slug },
+    salon: publicSalon(salon),
     message: "Salon display unlocked.",
   });
   // Do not set a persistent cookie — refresh must ask for PIN again.

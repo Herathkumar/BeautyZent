@@ -114,7 +114,10 @@ export function TabletPinCard() {
             : "No PIN yet — the tablet URL is open to anyone with the link. Set a 4–6 digit PIN to lock it."}
         </p>
         {tabletUrl ? (
-          <p className="mt-2 break-all text-sm font-medium text-[#7d6154]">{tabletUrl}</p>
+          <div className="mt-2 space-y-1 text-sm font-medium text-[#7d6154]">
+            <p className="break-all">Customer: {tabletUrl}</p>
+            <p className="break-all">Reception: {tabletUrl}/reception</p>
+          </div>
         ) : null}
 
         <form onSubmit={savePin} className="mt-4 grid gap-3 sm:grid-cols-2">

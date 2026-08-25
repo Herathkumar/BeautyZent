@@ -83,22 +83,33 @@ export default function StylistSchedulePage() {
   }, [id]);
 
   function updateDay(dayOfWeek: number, patch: Partial<WeekHour>) {
-    setWeekHours((rows) =>
-      rows.map((r) => (r.dayOfWeek === dayOfWeek ? { ...r, ...patch } : r))
-    );
+    setWeekHours((rows) => {
+      const next = rows.map((r) => (r.dayOfWeek === dayOfWeek ? { ...r, ...patch } : r));
+      void persistHours(next);
+      return next;
+    });
   }
 
-  async function saveHours(e: React.FormEvent) {
-    e.preventDefault();
+  async function persistHours(rows: WeekHour[]) {
     setSaving(true);
     setMessage("");
     const res = await fetch(`/api/admin/stylists/${id}/schedule`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ weekHours }),
+      body: JSON.stringify({ weekHours: rows }),
     });
+    const data = await res.json().catch(() => ({}));
     setSaving(false);
-    setMessage(res.ok ? "Weekly hours saved. Clients will only see open slots." : "Save failed");
+    setMessage(
+      res.ok
+        ? "Weekly hours saved. Clients will only see open slots."
+        : data.error || "Save failed"
+    );
+  }
+
+  async function saveHours(e: React.FormEvent) {
+    e.preventDefault();
+    await persistHours(weekHours);
   }
 
   function startEdit(b: Block) {

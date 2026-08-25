@@ -10,7 +10,7 @@ import {
 } from "@/lib/client-auth";
 import { getAvailableSlots } from "@/lib/slots";
 import { calendarDateInTz } from "@/lib/salon-time";
-import { decodeStylePhoto, normalizeStylePrompt } from "@/lib/style-prefs";
+import { isE2eFixtureStylist } from "@/lib/display-schedule";
 
 const stylePrefSchema = z.object({
   imageBase64: z.string().min(20),
@@ -44,7 +44,13 @@ export async function POST(
   const salon = await prisma.salon.findUnique({ where: { slug } });
   if (!salon) return NextResponse.json({ error: "Salon not found" }, { status: 404 });
 
-  const parsed = bodySchema.safeParse(await req.json());
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+  const parsed = bodySchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
@@ -88,9 +94,14 @@ export async function POST(
       set.add(link.serviceId);
       byStylist.set(link.stylistId, set);
     }
-    const eligible = [...byStylist.entries()]
+    const eligibleIds = [...byStylist.entries()]
       .filter(([, set]) => serviceIds.every((id) => set.has(id)))
       .map(([id]) => id);
+    const real = await prisma.stylist.findMany({
+      where: { salonId: salon.id, id: { in: eligibleIds } },
+      select: { id: true, name: true, bio: true },
+    });
+    const eligible = real.filter((s) => !isE2eFixtureStylist(s)).map((s) => s.id);
 
     const startMs = startsAt.getTime();
     let matched: string | null = null;

@@ -4,8 +4,10 @@ import { prisma } from "@/lib/prisma";
 import {
   addCalendarDays,
   calendarDateInTz,
+  dayOfWeekInTz,
   zonedStartOfDay,
 } from "@/lib/salon-time";
+import { stylistPhotoUrl } from "@/lib/stylist-photo";
 
 function toDate(d: { getTime: () => number }) {
   return new Date(d.getTime());
@@ -25,6 +27,9 @@ export async function GET(
       phone: true,
       address: true,
       timezone: true,
+      openHour: true,
+      closeHour: true,
+      closedDays: true,
       displayPinHash: true,
       displayPinSetAt: true,
     },
@@ -43,27 +48,87 @@ export async function GET(
     zonedStartOfDay(addCalendarDays(todayYmd, days, timeZone), timeZone)
   );
 
-  const appointments = await prisma.appointment.findMany({
-    where: {
-      salonId: salon.id,
-      startsAt: { gte: from, lt: toExclusive },
-      status: { not: "CANCELLED" },
-    },
-    select: {
-      id: true,
-      startsAt: true,
-      endsAt: true,
-      status: true,
-      source: true,
-      notes: true,
-      client: { select: { name: true, phone: true } },
-      chargedCents: true,
-      tipCents: true,
-      service: { select: { name: true, priceCents: true } },
-      stylist: { select: { name: true, color: true } },
-    },
-    orderBy: { startsAt: "asc" },
-  });
+  const [appointments, stylists] = await Promise.all([
+    prisma.appointment.findMany({
+      where: {
+        salonId: salon.id,
+        startsAt: { gte: from, lt: toExclusive },
+        status: { not: "CANCELLED" },
+      },
+      select: {
+        id: true,
+        startsAt: true,
+        endsAt: true,
+        status: true,
+        source: true,
+        notes: true,
+        clientId: true,
+        chargedCents: true,
+        tipCents: true,
+        client: {
+          select: { id: true, name: true, phone: true, email: true, notes: true, createdAt: true },
+        },
+        service: { select: { name: true, priceCents: true, category: true } },
+        stylist: {
+          select: {
+            id: true,
+            name: true,
+            color: true,
+            bio: true,
+            gender: true,
+            photoMime: true,
+            photoUpdatedAt: true,
+          },
+        },
+      },
+      orderBy: { startsAt: "asc" },
+    }),
+    prisma.stylist.findMany({
+      where: { salonId: salon.id, active: true, removedAt: null },
+      select: {
+        id: true,
+        name: true,
+        bio: true,
+        color: true,
+        gender: true,
+        photoMime: true,
+        photoUpdatedAt: true,
+      },
+      orderBy: { name: "asc" },
+    }),
+  ]);
+
+  const clientIds = [...new Set(appointments.map((a) => a.clientId))];
+  const visitRows = clientIds.length
+    ? await prisma.appointment.groupBy({
+        by: ["clientId"],
+        where: { salonId: salon.id, clientId: { in: clientIds }, status: "COMPLETED" },
+        _count: { _all: true },
+      })
+    : [];
+  const visits = new Map(visitRows.map((row) => [row.clientId, row._count._all]));
+
+  const recentRows = clientIds.length
+    ? await prisma.appointment.findMany({
+        where: { salonId: salon.id, clientId: { in: clientIds }, status: "COMPLETED" },
+        select: {
+          clientId: true,
+          startsAt: true,
+          service: { select: { name: true } },
+        },
+        orderBy: { startsAt: "desc" },
+      })
+    : [];
+  const recentByClient = new Map<string, { serviceName: string; date: string }[]>();
+  for (const row of recentRows) {
+    const list = recentByClient.get(row.clientId) || [];
+    if (list.length >= 3) continue;
+    list.push({
+      serviceName: row.service.name,
+      date: row.startsAt.toISOString(),
+    });
+    recentByClient.set(row.clientId, list);
+  }
 
   return NextResponse.json({
     salon: {
@@ -73,6 +138,10 @@ export async function GET(
       address: salon.address,
       timezone: timeZone,
       today: todayYmd,
+      openHour: salon.openHour,
+      closeHour: salon.closeHour,
+      closedDays: salon.closedDays || [],
+      todayClosed: (salon.closedDays || []).includes(dayOfWeekInTz(todayYmd, timeZone)),
     },
     range: {
       from: from.toISOString(),
@@ -81,6 +150,50 @@ export async function GET(
       today: todayYmd,
       timezone: timeZone,
     },
-    appointments,
+    stylists: stylists.map((s) => ({
+      id: s.id,
+      name: s.name,
+      bio: s.bio,
+      color: s.color,
+      photoUrl: stylistPhotoUrl({
+        id: s.id,
+        gender: s.gender,
+        photoUpdatedAt: s.photoUpdatedAt,
+        hasPhoto: Boolean(s.photoMime && s.photoUpdatedAt),
+      }),
+    })),
+    appointments: appointments.map((a) => ({
+      id: a.id,
+      startsAt: a.startsAt,
+      endsAt: a.endsAt,
+      status: a.status,
+      source: a.source,
+      notes: a.notes,
+      chargedCents: a.chargedCents,
+      tipCents: a.tipCents,
+      client: {
+        id: a.client.id,
+        name: a.client.name,
+        phone: a.client.phone,
+        email: a.client.email,
+        notes: a.client.notes,
+        createdAt: a.client.createdAt,
+        visitCount: visits.get(a.clientId) || 0,
+        recentVisits: recentByClient.get(a.clientId) || [],
+      },
+      service: a.service,
+      stylist: {
+        id: a.stylist.id,
+        name: a.stylist.name,
+        color: a.stylist.color,
+        bio: a.stylist.bio,
+        photoUrl: stylistPhotoUrl({
+          id: a.stylist.id,
+          gender: a.stylist.gender,
+          photoUpdatedAt: a.stylist.photoUpdatedAt,
+          hasPhoto: Boolean(a.stylist.photoMime && a.stylist.photoUpdatedAt),
+        }),
+      },
+    })),
   });
 }

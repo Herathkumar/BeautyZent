@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { bookOnlineForTenant } from "./helpers";
+import { bookOnlineForTenant, managerLogin } from "./helpers";
 import { TENANTS } from "./tenants";
 
 test.describe("Public booking + display", () => {
@@ -21,24 +21,30 @@ test.describe("Public booking + display", () => {
       await expect(page.getByText(new RegExp(tenant.stylistName, "i")).first()).toBeVisible();
     });
 
-    test(`${tenant.slug} floor display loads floor, services, and products tabs`, async ({
-      page,
-    }) => {
+    test(`${tenant.slug} customer display shows today's board`, async ({ page }) => {
       await page.goto(`/display/${tenant.slug}`);
       const pin = page.getByTestId("display-pin-pad");
       if (await pin.isVisible({ timeout: 3_000 }).catch(() => false)) {
         test.info().annotations.push({
           type: "note",
-          description: `${tenant.slug} display is PIN-locked; skipping tab checks`,
+          description: `${tenant.slug} display is PIN-locked; skipping board checks`,
         });
         await expect(pin).toBeVisible();
         return;
       }
       await expect(page.getByTestId("store-display-board")).toBeVisible({ timeout: 20_000 });
-      await page.getByTestId("display-tab-services").click();
-      await expect(page.getByTestId("display-services-section")).toBeVisible();
-      await page.getByTestId("display-tab-products").click();
-      await expect(page.getByTestId("display-products-section")).toBeVisible();
+      await expect(page.getByTestId("display-tab-services")).toHaveCount(0);
+      await expect(page.getByTestId("display-tab-products")).toHaveCount(0);
+    });
+
+    test(`${tenant.slug} reception display shows schedule and client panel`, async ({
+      page,
+    }) => {
+      await managerLogin(page, tenant);
+      await page.goto(`/display/${tenant.slug}/reception`);
+      await expect(page.getByTestId("store-display-board")).toBeVisible({ timeout: 20_000 });
+      await expect(page.getByTestId("reception-client-panel")).toBeVisible();
+      await expect(page.getByTestId("reception-new-booking")).toBeVisible();
     });
   }
 });

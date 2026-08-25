@@ -6,5 +6,5 @@ export default async function DisplayPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  return <DisplayBoard slug={slug} />;
+  return <DisplayBoard slug={slug} variant="customer" />;
 }

@@ -303,15 +303,22 @@ export function BookingWizard({ slug }: { slug: string }) {
       setSlots([]);
       return;
     }
+    const ac = new AbortController();
+    setSlots([]);
     const q = new URLSearchParams({
       serviceIds: serviceIds.join(","),
       stylistId,
       date,
     });
-    fetch(`/api/public/${slug}/slots?${q}`)
+    fetch(`/api/public/${slug}/slots?${q}`, { signal: ac.signal, cache: "no-store" })
       .then((r) => r.json())
-      .then((data) => setSlots(data.slots || []))
-      .catch(() => setSlots([]));
+      .then((data) => {
+        if (!ac.signal.aborted) setSlots(data.slots || []);
+      })
+      .catch(() => {
+        if (!ac.signal.aborted) setSlots([]);
+      });
+    return () => ac.abort();
   }, [slug, serviceIds, stylistId, date]);
 
   // Tab-bar badges: upcoming visits and saved look-book photos.
@@ -936,6 +943,10 @@ export function BookingWizard({ slug }: { slug: string }) {
                 <button
                   key={slot}
                   type="button"
+                  data-slot-day={calendarDateInTz(
+                    salon?.timezone || "America/Toronto",
+                    new Date(slot)
+                  )}
                   onClick={() => setStartsAt(slot)}
                   className={`book-slot rounded-full px-4 py-2.5 text-sm ${
                     startsAt === slot ? "is-selected" : ""
