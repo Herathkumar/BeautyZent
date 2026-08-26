@@ -25,7 +25,8 @@ export async function GET(
   const locked = await assertDisplayAccess(salon, req);
   if (locked) return locked;
 
-  const waitlist = await listWaitlistWithOptions(salon.id);
+  const includeOptions = new URL(req.url).searchParams.get("options") === "1";
+  const waitlist = await listWaitlistWithOptions(salon.id, { includeOptions });
   return NextResponse.json({ waitlist });
 }
 

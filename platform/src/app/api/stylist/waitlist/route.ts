@@ -7,13 +7,14 @@ import {
   seatWaitlistGuest,
 } from "@/lib/walk-in";
 
-export async function GET() {
+export async function GET(req: Request) {
   const session = await getStylistSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const waitlist = await listWaitlistWithOptions(session.salonId);
+  const includeOptions = new URL(req.url).searchParams.get("options") === "1";
+  const waitlist = await listWaitlistWithOptions(session.salonId, { includeOptions });
   return NextResponse.json({
     waitlist,
     stylistId: session.stylistId,

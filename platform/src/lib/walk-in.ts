@@ -1,4 +1,4 @@
-import { addMinutes, isBefore } from "date-fns";
+import { addMinutes } from "date-fns";
 import { syncAppointmentToGoogle } from "@/lib/calendar";
 import { prisma } from "@/lib/prisma";
 import {
@@ -7,7 +7,6 @@ import {
   nowInTz,
   zonedDateTime,
 } from "@/lib/salon-time";
-import { getAvailableSlots } from "@/lib/slots";
 import { isE2eFixtureStylist } from "@/lib/display-schedule";
 
 function ceilToMinutes(d: Date, stepMin: number) {
@@ -15,63 +14,26 @@ function ceilToMinutes(d: Date, stepMin: number) {
   return new Date(Math.ceil(d.getTime() / ms) * ms);
 }
 
-async function isFreeWindow(opts: {
-  stylistId: string;
-  startsAt: Date;
-  endsAt: Date;
-  open: Date;
-  close: Date;
-}) {
-  if (opts.startsAt < opts.open || opts.endsAt > opts.close) return false;
-  const [conflict, block] = await Promise.all([
-    prisma.appointment.findFirst({
-      where: {
-        stylistId: opts.stylistId,
-        // Completed frees the chair for the next walk-in
-        status: { notIn: ["CANCELLED", "NO_SHOW", "COMPLETED"] },
-        startsAt: { lt: opts.endsAt },
-        endsAt: { gt: opts.startsAt },
-      },
-      select: { id: true },
-    }),
-    prisma.stylistBlock.findFirst({
-      where: {
-        stylistId: opts.stylistId,
-        status: { in: ["PENDING", "APPROVED"] },
-        startsAt: { lt: opts.endsAt },
-        endsAt: { gt: opts.startsAt },
-      },
-      select: { id: true },
-    }),
-  ]);
-  return !conflict && !block;
-}
-
-async function dayHours(
-  salon: { openHour: number; closeHour: number; timezone: string },
-  stylistId: string,
-  ymd: string
+function nextFreeStart(
+  immediate: Date,
+  durationMin: number,
+  step: number,
+  open: Date | null,
+  latestStart: Date,
+  busy: { startsAt: Date; endsAt: Date }[]
 ) {
-  const timeZone = salon.timezone || "America/Toronto";
-  const dayOfWeek = dayOfWeekInTz(ymd, timeZone);
-  const weekHour = await prisma.stylistWeekHour.findUnique({
-    where: { stylistId_dayOfWeek: { stylistId, dayOfWeek } },
-  });
-  if (weekHour?.isOff) return null;
-  const open = zonedDateTime(
-    ymd,
-    weekHour?.startHour ?? salon.openHour,
-    weekHour?.startMinute ?? 0,
-    timeZone
-  );
-  const close = zonedDateTime(
-    ymd,
-    weekHour?.endHour ?? salon.closeHour,
-    weekHour?.endMinute ?? 0,
-    timeZone
-  );
-  if (!isBefore(open, close)) return null;
-  return { open: new Date(open.getTime()), close: new Date(close.getTime()), timeZone };
+  let gapStart = immediate;
+  if (open && gapStart < open) gapStart = ceilToMinutes(open, step);
+  const intervals = [...busy].sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
+  for (const job of intervals) {
+    if (gapStart >= latestStart) return null;
+    const trialEnd = addMinutes(gapStart, durationMin);
+    if (trialEnd <= job.startsAt) break;
+    if (job.endsAt > gapStart) {
+      gapStart = ceilToMinutes(job.endsAt, step);
+    }
+  }
+  return gapStart < latestStart ? gapStart : null;
 }
 
 export type NextAvailableOption = {
@@ -88,7 +50,16 @@ export async function findNextAvailableWalkIns(opts: {
   serviceId: string;
   stylistId?: string | null;
 }): Promise<NextAvailableOption[]> {
-  const salon = await prisma.salon.findUniqueOrThrow({ where: { id: opts.salonId } });
+  const salon = await prisma.salon.findUniqueOrThrow({
+    where: { id: opts.salonId },
+    select: {
+      id: true,
+      timezone: true,
+      openHour: true,
+      closeHour: true,
+      slotMinutes: true,
+    },
+  });
   const service = await prisma.service.findFirst({
     where: { id: opts.serviceId, salonId: opts.salonId, active: true },
     select: { id: true, durationMin: true },
@@ -98,6 +69,9 @@ export async function findNextAvailableWalkIns(opts: {
   const timeZone = salon.timezone || "America/Toronto";
   const today = calendarDateInTz(timeZone);
   const now = new Date(nowInTz(timeZone).getTime());
+  const dayOfWeek = dayOfWeekInTz(today, timeZone);
+  const step = Math.min(5, salon.slotMinutes || 30);
+  const immediate = ceilToMinutes(now, step);
 
   const stylists = await prisma.stylist.findMany({
     where: {
@@ -109,75 +83,76 @@ export async function findNextAvailableWalkIns(opts: {
     select: { id: true, name: true, bio: true },
     orderBy: { name: "asc" },
   });
+  const floor = stylists.filter((row) => !isE2eFixtureStylist(row));
+  if (floor.length === 0) return [];
+  const stylistIds = floor.map((s) => s.id);
+
+  const [weekHours, busyJobs, blocks] = await Promise.all([
+    prisma.stylistWeekHour.findMany({
+      where: { stylistId: { in: stylistIds }, dayOfWeek },
+    }),
+    prisma.appointment.findMany({
+      where: {
+        stylistId: { in: stylistIds },
+        status: { notIn: ["CANCELLED", "NO_SHOW", "COMPLETED"] },
+        endsAt: { gt: immediate },
+      },
+      select: { stylistId: true, startsAt: true, endsAt: true },
+      orderBy: { startsAt: "asc" },
+    }),
+    prisma.stylistBlock.findMany({
+      where: {
+        stylistId: { in: stylistIds },
+        status: { in: ["PENDING", "APPROVED"] },
+        endsAt: { gt: immediate },
+      },
+      select: { stylistId: true, startsAt: true, endsAt: true },
+    }),
+  ]);
+
+  const weekByStylist = new Map(weekHours.map((row) => [row.stylistId, row]));
+  const busyByStylist = new Map<string, { startsAt: Date; endsAt: Date }[]>();
+  for (const id of stylistIds) busyByStylist.set(id, []);
+  for (const job of busyJobs) busyByStylist.get(job.stylistId)?.push(job);
+  for (const block of blocks) busyByStylist.get(block.stylistId)?.push(block);
 
   const options: NextAvailableOption[] = [];
+  const endOfDay = zonedDateTime(today, 23, 55, timeZone);
 
-  for (const s of stylists.filter((row) => !isE2eFixtureStylist(row))) {
-    const hours = await dayHours(salon, s.id, today);
-    const step = Math.min(5, salon.slotMinutes || 30);
-    const immediate = ceilToMinutes(now, step);
-    // Floor override: seat walk-ins for the rest of the salon calendar day
-    // (posted close+1h alone fails evening e2e / late desk seating).
-    const endOfDay = zonedDateTime(today, 23, 55, timeZone);
+  for (const s of floor) {
+    const weekHour = weekByStylist.get(s.id);
+    const hours =
+      weekHour?.isOff
+        ? null
+        : (() => {
+            const open = zonedDateTime(
+              today,
+              weekHour?.startHour ?? salon.openHour,
+              weekHour?.startMinute ?? 0,
+              timeZone
+            );
+            const close = zonedDateTime(
+              today,
+              weekHour?.endHour ?? salon.closeHour,
+              weekHour?.endMinute ?? 0,
+              timeZone
+            );
+            if (!(open.getTime() < close.getTime())) return null;
+            return { open: new Date(open.getTime()), close: new Date(close.getTime()) };
+          })();
     const postedLatest = hours
       ? addMinutes(hours.close, 60)
       : addMinutes(immediate, 60);
     const latestStart =
       endOfDay.getTime() > postedLatest.getTime() ? endOfDay : postedLatest;
-
-    const candidates: Date[] = [immediate];
-
-    // Walk active jobs to find the next gap (online grid alone misses late-day chairs)
-    const busyJobs = await prisma.appointment.findMany({
-      where: {
-        stylistId: s.id,
-        status: { notIn: ["CANCELLED", "NO_SHOW", "COMPLETED"] },
-        endsAt: { gt: immediate },
-      },
-      orderBy: { startsAt: "asc" },
-      select: { startsAt: true, endsAt: true },
-    });
-    let gapStart = immediate;
-    for (const job of busyJobs) {
-      const trialEnd = addMinutes(gapStart, service.durationMin);
-      if (trialEnd <= job.startsAt) break;
-      if (job.endsAt > gapStart) {
-        gapStart = ceilToMinutes(job.endsAt, step);
-      }
-    }
-    candidates.push(gapStart);
-
-    if (hours) {
-      const slots = await getAvailableSlots({
-        salonId: opts.salonId,
-        stylistId: s.id,
-        serviceId: opts.serviceId,
-        date: today,
-      });
-      for (const iso of slots) candidates.push(new Date(iso));
-    }
-
-    candidates.sort((a, b) => a.getTime() - b.getTime());
-
-    let chosen: Date | null = null;
-    for (const start of candidates) {
-      if (start < now || start >= latestStart) continue;
-      if (hours && start < hours.open) continue;
-      const end = addMinutes(start, service.durationMin);
-      const free = await isFreeWindow({
-        stylistId: s.id,
-        startsAt: start,
-        endsAt: end,
-        open: hours?.open ?? start,
-        // Allow finishing past close for late walk-ins
-        close: addMinutes(end, 1),
-      });
-      if (free) {
-        chosen = start;
-        break;
-      }
-    }
-
+    const chosen = nextFreeStart(
+      immediate,
+      service.durationMin,
+      step,
+      hours?.open ?? null,
+      latestStart,
+      busyByStylist.get(s.id) || []
+    );
     if (!chosen) continue;
     const endsAt = addMinutes(chosen, service.durationMin);
     const waitMinutes = Math.max(0, Math.round((chosen.getTime() - now.getTime()) / 60_000));
@@ -313,7 +288,10 @@ export async function createWalkInAppointment(opts: {
 }
 
 /** Waitlist rows with all seatable stylists for the service (for Seat now picker). */
-export async function listWaitlistWithOptions(salonId: string) {
+export async function listWaitlistWithOptions(
+  salonId: string,
+  opts?: { includeOptions?: boolean }
+) {
   const entries = await prisma.walkInWaitlist.findMany({
     where: { salonId, status: "WAITING" },
     include: {
@@ -322,6 +300,24 @@ export async function listWaitlistWithOptions(salonId: string) {
     },
     orderBy: { createdAt: "asc" },
   });
+
+  if (!opts?.includeOptions) {
+    return entries.map((e) => ({
+      ...e,
+      nextAvailable: null,
+      availableOptions: [] as NextAvailableOption[],
+    }));
+  }
+
+  const optionsByService = new Map<string, Promise<NextAvailableOption[]>>();
+  const optionsFor = (serviceId: string) => {
+    let pending = optionsByService.get(serviceId);
+    if (!pending) {
+      pending = findNextAvailableWalkIns({ salonId, serviceId });
+      optionsByService.set(serviceId, pending);
+    }
+    return pending;
+  };
 
   return Promise.all(
     entries.map(async (e) => {
@@ -333,21 +329,12 @@ export async function listWaitlistWithOptions(salonId: string) {
           availableOptions: [] as NextAvailableOption[],
         };
       }
-      const availableOptions = await findNextAvailableWalkIns({
-        salonId,
-        serviceId: e.serviceId,
-      });
+      const availableOptions = await optionsFor(e.serviceId);
       const preferred = e.stylistId
         ? availableOptions.find((o) => o.stylistId === e.stylistId) || null
         : null;
       const nextAvailable = preferred || availableOptions[0] || null;
       const wait = nextAvailable?.waitMinutes ?? e.estimatedWaitMin;
-      if (wait != null && wait !== e.estimatedWaitMin) {
-        await prisma.walkInWaitlist.update({
-          where: { id: e.id },
-          data: { estimatedWaitMin: wait },
-        });
-      }
       return {
         ...e,
         estimatedWaitMin: wait,

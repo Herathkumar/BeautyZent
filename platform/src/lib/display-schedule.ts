@@ -97,6 +97,14 @@ export function serviceKind(name: string): "cut" | "color" | "style" {
   return "cut";
 }
 
+/** Same cut / color / style chips on reception and the customer TV. */
+export function serviceCardTone(name: string) {
+  const kind = serviceKind(name);
+  if (kind === "color") return "bg-[#5b3d7a] text-[#f3e8ff]";
+  if (kind === "style") return "bg-[#2f6b55] text-[#e8fff4]";
+  return "bg-[#c45b7a] text-white";
+}
+
 export function specialtyFromBio(bio: string | null | undefined, name: string) {
   const line = (bio || "").split(/[.\n]/)[0]?.trim();
   if (line && line.length < 48) return line;
@@ -119,6 +127,9 @@ const CHAIR_BUSY = new Set(["BOOKED", "CHECKED_IN"]);
 
 export type StylistWaitKind = "available" | "waiting" | "opens" | "closed" | "done";
 
+/** Photo-ring tones: free / in chair / not taking guests. */
+export type StylistFloorTone = "available" | "busy" | "off";
+
 export type StylistWaitInfo = {
   kind: StylistWaitKind;
   waitMs: number;
@@ -126,6 +137,26 @@ export type StylistWaitInfo = {
   label: string;
   sublabel: string | null;
 };
+
+export function stylistFloorTone(kind: StylistWaitKind): StylistFloorTone {
+  if (kind === "available") return "available";
+  if (kind === "waiting") return "busy";
+  return "off";
+}
+
+export function stylistStatusRingClass(kind: StylistWaitKind) {
+  const tone = stylistFloorTone(kind);
+  if (tone === "available") return "ring-[3px] ring-[#22c55e]";
+  if (tone === "busy") return "ring-[3px] ring-[#ef4444]";
+  return "ring-[3px] ring-[#f59e0b]";
+}
+
+export function stylistStatusDotClass(kind: StylistWaitKind) {
+  const tone = stylistFloorTone(kind);
+  if (tone === "available") return "bg-[#22c55e]";
+  if (tone === "busy") return "bg-[#ef4444]";
+  return "bg-[#f59e0b]";
+}
 
 export function formatMinutesClock(totalMin: number) {
   const wrapped = ((totalMin % (24 * 60)) + 24 * 60) % (24 * 60);

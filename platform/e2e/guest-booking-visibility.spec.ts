@@ -55,10 +55,11 @@ test.describe("Guest booking visibility across apps", () => {
 
     if (bookedDate === todayDate()) {
       await expect(
-        page.getByText(/nothing on the book for today/i)
-      ).toHaveCount(0);
-      const card = page.locator("article").filter({ hasText: clientName }).first();
-      await expect(card).toBeVisible();
+        page
+          .getByTestId("stylist-day-timeline")
+          .locator("article")
+          .filter({ hasText: clientName })
+      ).toBeVisible();
     } else {
       await expect(page.getByText(/coming up/i).first()).toBeVisible();
     }

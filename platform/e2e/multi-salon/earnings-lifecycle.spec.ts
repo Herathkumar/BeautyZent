@@ -71,7 +71,6 @@ test.describe("Job lifecycle, check-in, and earnings math", () => {
       });
 
       await stylistLogin(page, tenant);
-      const card = page.locator("article").filter({ hasText: clientName }).first();
       if (!created.isToday) {
         test.info().annotations.push({
           type: "note",
@@ -79,9 +78,17 @@ test.describe("Job lifecycle, check-in, and earnings math", () => {
         });
         return;
       }
-      await expect(card).toBeVisible({ timeout: 15_000 });
-      await card.getByRole("button", { name: /^check in$/i }).click();
-      await expect(card.getByText(/checked in/i)).toBeVisible({ timeout: 15_000 });
+      const block = page
+        .getByTestId("stylist-day-timeline")
+        .locator("article")
+        .filter({ hasText: clientName })
+        .first();
+      await expect(block).toBeVisible({ timeout: 15_000 });
+      await block.click();
+      const sheet = page.getByTestId("stylist-checkin-sheet");
+      await expect(sheet).toBeVisible();
+      await sheet.getByRole("button", { name: /^check in$/i }).click();
+      await expect(sheet.getByText(/checked in/i)).toBeVisible({ timeout: 15_000 });
     });
   }
 });

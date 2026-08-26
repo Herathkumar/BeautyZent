@@ -32,6 +32,8 @@ export async function GET() {
           managerThemeId: true,
           stylistThemeId: true,
           timezone: true,
+          openHour: true,
+          closeHour: true,
         },
       },
     },

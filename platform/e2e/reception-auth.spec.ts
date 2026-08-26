@@ -102,5 +102,8 @@ test.describe("Customer display theme", () => {
     const waits = page.getByTestId("customer-stylist-wait");
     await expect(waits.first()).toBeVisible({ timeout: 20_000 });
     await expect(waits.first()).toHaveText(/Available now|Wait |Opens |Closed|Done for today/i);
+    const rings = page.getByTestId("stylist-status-ring");
+    await expect(rings.first()).toBeVisible();
+    await expect(rings.first()).toHaveAttribute("data-status-tone", /available|busy|off/);
   });
 });

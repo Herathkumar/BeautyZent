@@ -6,6 +6,9 @@ import {
   initials,
   specialtyFromBio,
   statusLabel,
+  stylistFloorTone,
+  stylistStatusRingClass,
+  stylistWaitInfo,
   type DisplayAppt,
   type DisplayStylist,
 } from "@/lib/display-schedule";
@@ -163,11 +166,19 @@ export function ReceptionStaffView({
   appointments,
   query,
   timeZone,
+  now,
+  openHour,
+  closeHour,
+  storeClosed,
 }: {
   stylists: DisplayStylist[];
   appointments: DisplayAppt[];
   query: string;
   timeZone?: string | null;
+  now: Date;
+  openHour: number;
+  closeHour: number;
+  storeClosed?: boolean;
 }) {
   const q = query.trim().toLowerCase();
   const rows = (q ? stylists.filter((s) => s.name.toLowerCase().includes(q)) : stylists).map(
@@ -180,7 +191,15 @@ export function ReceptionStaffView({
           .filter((a) => a.status === "BOOKED" || a.status === "CHECKED_IN")
           .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())[0] ||
         null;
-      return { stylist: s, jobs, next };
+      const wait = stylistWaitInfo(
+        jobs,
+        now,
+        openHour,
+        closeHour,
+        timeZone,
+        storeClosed
+      );
+      return { stylist: s, jobs, next, wait };
     }
   );
 
@@ -198,7 +217,7 @@ export function ReceptionStaffView({
         </p>
       ) : (
         <ul className="grid min-h-0 flex-1 content-start gap-3 overflow-auto sm:grid-cols-2 xl:grid-cols-3">
-          {rows.map(({ stylist, jobs, next }) => (
+          {rows.map(({ stylist, jobs, next, wait }) => (
             <li
               key={stylist.id}
               className="rounded-2xl border border-[color:var(--rx-line)] bg-[var(--rx-panel)] p-4"
@@ -208,7 +227,12 @@ export function ReceptionStaffView({
                 <img
                   src={stylist.photoUrl || "/avatars/stylist-neutral.svg"}
                   alt=""
-                  className="h-12 w-12 rounded-full object-cover ring-2 ring-[color:var(--rx-line)]"
+                  className={`h-12 w-12 rounded-full object-cover ring-offset-2 ring-offset-[var(--rx-panel)] ${stylistStatusRingClass(
+                    wait.kind
+                  )}`}
+                  data-testid="stylist-status-ring"
+                  data-status-tone={stylistFloorTone(wait.kind)}
+                  title={wait.label}
                 />
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-[color:var(--rx-text)]">

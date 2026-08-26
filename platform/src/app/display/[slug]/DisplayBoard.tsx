@@ -536,8 +536,12 @@ export function DisplayBoard({
   const [boardLocked, setBoardLocked] = useState(false);
   const [checkout, setCheckout] = useState<CheckoutBill | null>(null);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
+  const [statusBusyId, setStatusBusyId] = useState<string | null>(null);
   const checkoutInFlight = useRef(false);
   const checkoutWriteSeq = useRef(0);
+  const checkoutLiveRef = useRef(false);
+  checkoutLiveRef.current = Boolean(checkout && checkout.status !== "PAID") || checkoutBusy;
+  const boardDataSeq = useRef(0);
 
   const onWaitlistChange = useCallback((count: number) => {
     setWalkInWaiting(count);
@@ -603,12 +607,14 @@ export function DisplayBoard({
   }, [skipPinLock]);
 
   const load = useCallback(async () => {
+    const seq = ++boardDataSeq.current;
     try {
       const r = await fetch(`/api/display/${slug}/today?days=${days}`, {
         credentials: "same-origin",
         headers: unlockHeaders,
       });
       const data = await r.json();
+      if (seq !== boardDataSeq.current) return;
       if (r.status === 401 && data.needsPin) {
         lockToPin();
         return;
@@ -720,11 +726,20 @@ export function DisplayBoard({
   loadCheckoutRef.current = loadCheckout;
 
   const pollEnabledRef = useRef(false);
-  pollEnabledRef.current = unlockChecked && !needsPin;
   const variantRef = useRef(variant);
   variantRef.current = variant;
   const receptionSectionRef = useRef(receptionSection);
   receptionSectionRef.current = receptionSection;
+
+  useEffect(() => {
+    const sync = () => {
+      pollEnabledRef.current =
+        unlockChecked && !needsPin && document.visibilityState === "visible";
+    };
+    sync();
+    document.addEventListener("visibilitychange", sync);
+    return () => document.removeEventListener("visibilitychange", sync);
+  }, [unlockChecked, needsPin]);
 
   useEffect(() => {
     let cancelled = false;
@@ -767,9 +782,9 @@ export function DisplayBoard({
     const tick = () => {
       if (cancelled) return;
       if (pollEnabledRef.current) setNow(new Date());
-      timeout = setTimeout(tick, 1000);
+      timeout = setTimeout(tick, 5_000);
     };
-    timeout = setTimeout(tick, 1000);
+    timeout = setTimeout(tick, 5_000);
     return () => {
       cancelled = true;
       if (timeout) clearTimeout(timeout);
@@ -790,13 +805,18 @@ export function DisplayBoard({
       }
       while (!cancelled) {
         if (pollEnabledRef.current) {
-          const now = Date.now();
-          if (now - displayPollAt.checkout >= CHECKOUT_POLL_MS) {
-            displayPollAt.checkout = now;
-            await loadCheckoutRef.current();
+          const needsCheckout =
+            variantRef.current === "customer" || checkoutLiveRef.current;
+          if (needsCheckout) {
+            const now = Date.now();
+            const delay = checkoutLiveRef.current ? CHECKOUT_POLL_MS : TODAY_POLL_MS;
+            if (now - displayPollAt.checkout >= delay) {
+              displayPollAt.checkout = now;
+              await loadCheckoutRef.current();
+            }
           }
         }
-        await sleep(CHECKOUT_POLL_MS);
+        await sleep(checkoutLiveRef.current ? CHECKOUT_POLL_MS : TODAY_POLL_MS);
       }
     };
     void loop();
@@ -864,17 +884,34 @@ export function DisplayBoard({
     chargedCents?: number,
     tipCents?: number
   ) {
-    const res = await fetch(`/api/display/${slug}/appointments/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", ...unlockHeaders },
-      body: JSON.stringify({ status, chargedCents, tipCents }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (res.status === 401 && data.needsPin) {
-      lockToPin();
-      return;
+    const previous = appointments;
+    boardDataSeq.current += 1;
+    setStatusBusyId(id);
+    setAppointments((list) =>
+      list.map((a) =>
+        a.id === id ? { ...a, status, chargedCents: chargedCents ?? a.chargedCents, tipCents: tipCents ?? a.tipCents } : a
+      )
+    );
+    try {
+      const res = await fetch(`/api/display/${slug}/appointments/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...unlockHeaders },
+        body: JSON.stringify({ status, chargedCents, tipCents }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 401 && data.needsPin) {
+        setAppointments(previous);
+        lockToPin();
+        return;
+      }
+      if (!res.ok) {
+        setAppointments(previous);
+      }
+    } catch {
+      setAppointments(previous);
+    } finally {
+      setStatusBusyId(null);
     }
-    void load();
   }
 
   async function presentCheckout(appt: DisplayAppt) {
@@ -1153,6 +1190,12 @@ export function DisplayBoard({
                 slug={slug}
                 showForm
                 showWaitlist={false}
+                catalogServices={services.map((s) => ({
+                  id: s.id,
+                  name: s.name,
+                  durationMin: s.durationMin,
+                  priceCents: s.priceCents,
+                }))}
                 onCreated={() => {
                   setWalkInOpen(false);
                   void load();
@@ -1175,6 +1218,7 @@ export function DisplayBoard({
                 selectedId={selectedId}
                 onSelect={(a) => setSelectedId(a.id)}
                 now={now}
+                storeClosed={storeClosed}
               />
             </div>
             <div className="w-full shrink-0 overflow-auto border-t border-[color:var(--rx-line)] xl:w-[22rem] xl:border-t-0 xl:border-l">
@@ -1188,6 +1232,7 @@ export function DisplayBoard({
                 onClose={() => setSelectedId(null)}
                 onStatus={setStatus}
                 onCheckout={presentCheckout}
+                busyId={statusBusyId}
               />
             </div>
               </>
@@ -1212,6 +1257,7 @@ export function DisplayBoard({
                     onClose={() => setSelectedId(null)}
                     onStatus={setStatus}
                     onCheckout={presentCheckout}
+                    busyId={statusBusyId}
                   />
                 </div>
               </>
@@ -1223,6 +1269,10 @@ export function DisplayBoard({
                     appointments={todayAll}
                     query={query}
                     timeZone={salon?.timezone}
+                    now={now}
+                    openHour={openHour}
+                    closeHour={closeHour}
+                    storeClosed={storeClosed}
                   />
                 ) : null}
                 {receptionSection === "services" ? (

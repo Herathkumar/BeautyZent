@@ -3,9 +3,15 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { WalkInPanel } from "@/components/WalkInPanel";
+import { ReceptionSchedule } from "@/components/display/ReceptionSchedule";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { calendarDateInTz } from "@/lib/salon-time";
 import { centsToDollars, promptCompleteAmounts } from "@/lib/pay";
+import {
+  clampDisplayHours,
+  type DisplayAppt,
+  type DisplayStylist,
+} from "@/lib/display-schedule";
 
 type Appt = {
   id: string;
@@ -71,13 +77,18 @@ function phoneHref(phone: string) {
 export default function StylistHomePage() {
   const [name, setName] = useState("");
   const [stylistId, setStylistId] = useState("");
+  const [stylistColor, setStylistColor] = useState("#c9a87c");
   const [salonTz, setSalonTz] = useState("America/Toronto");
+  const [openHour, setOpenHour] = useState(9);
+  const [closeHour, setCloseHour] = useState(18);
   const [photoUrl, setPhotoUrl] = useState("/avatars/stylist-neutral.svg");
   const [hasPhoto, setHasPhoto] = useState(false);
   const [appointments, setAppointments] = useState<Appt[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [actionError, setActionError] = useState("");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [now, setNow] = useState(() => new Date());
   const confirm = useConfirm();
   const [walkInOpen, setWalkInOpen] = useState(false);
   const [styleViewer, setStyleViewer] = useState<{
@@ -97,7 +108,14 @@ export default function StylistHomePage() {
     const [meData, data] = await Promise.all([me.json(), res.json()]);
     setName(meData.stylist?.name || meData.user?.name || "");
     setStylistId(meData.stylist?.id || "");
+    setStylistColor(meData.stylist?.color || "#c9a87c");
     setSalonTz(meData.stylist?.salon?.timezone || "America/Toronto");
+    const hours = clampDisplayHours(
+      meData.stylist?.salon?.openHour,
+      meData.stylist?.salon?.closeHour
+    );
+    setOpenHour(hours.openHour);
+    setCloseHour(hours.closeHour);
     if (meData.stylist?.photoUrl) setPhotoUrl(meData.stylist.photoUrl);
     setHasPhoto(Boolean(meData.stylist?.hasPhoto));
     setAppointments(data.appointments || []);
@@ -109,6 +127,11 @@ export default function StylistHomePage() {
     const id = window.setInterval(load, 60_000);
     return () => window.clearInterval(id);
   }, [load]);
+
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(new Date()), 15_000);
+    return () => window.clearInterval(id);
+  }, []);
 
   const { today, upcoming, doneToday } = useMemo(() => {
     const now = new Date();
@@ -133,7 +156,58 @@ export default function StylistHomePage() {
     return { today: todayList, upcoming: upcomingList, doneToday: done };
   }, [appointments, salonTz]);
 
+  const doneTodayList = useMemo(
+    () =>
+      today
+        .filter((a) => a.status === "COMPLETED")
+        .sort(
+          (a, b) => new Date(b.endsAt).getTime() - new Date(a.endsAt).getTime()
+        ),
+    [today]
+  );
+
+  const meChair: DisplayStylist = useMemo(
+    () => ({
+      id: stylistId || "me",
+      name: name || "Chair",
+      bio: null,
+      color: stylistColor,
+      photoUrl,
+    }),
+    [stylistId, name, stylistColor, photoUrl]
+  );
+
+  const todayTimeline: DisplayAppt[] = useMemo(
+    () =>
+      today
+        .filter((a) => a.status === "BOOKED" || a.status === "CHECKED_IN")
+        .map((a) => ({
+          id: a.id,
+          startsAt: a.startsAt,
+          endsAt: a.endsAt,
+          status: a.status,
+          source: a.source,
+          notes: a.notes,
+          chargedCents: a.chargedCents,
+          tipCents: a.tipCents,
+          client: a.client,
+          service: a.service,
+          stylist: {
+            id: meChair.id,
+            name: meChair.name,
+            color: meChair.color,
+            photoUrl: meChair.photoUrl,
+          },
+        })),
+    [today, meChair]
+  );
+
   const nextOpen = today.find((a) => ["BOOKED", "CHECKED_IN"].includes(a.status));
+  const selectedAppt =
+    appointments.find(
+      (a) =>
+        a.id === selectedId && ["BOOKED", "CHECKED_IN"].includes(a.status)
+    ) || null;
 
   async function setStatus(id: string, status: string, defaultPriceCents = 0) {
     if (status === "CANCELLED") {
@@ -172,7 +246,7 @@ export default function StylistHomePage() {
         setActionError(data.error || "Could not update this booking. Try again.");
         return;
       }
-      await load();
+      if (status === "COMPLETED" || status === "CANCELLED") setSelectedId(null);
     } catch {
       setAppointments(previous);
       setActionError("Could not reach the server. Check your connection and try again.");
@@ -185,6 +259,7 @@ export default function StylistHomePage() {
     const active = ["BOOKED", "CHECKED_IN"].includes(a.status);
     return (
       <article
+        id={`stylist-appt-${a.id}`}
         className={`stylist-appt-card rounded-2xl border p-4 ${
           emphasize ? "stylist-appt-card--focus" : ""
         }`}
@@ -417,22 +492,77 @@ export default function StylistHomePage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">Today</h2>
-        {actionError ? (
-          <p className="rounded-xl border border-[color:color-mix(in_srgb,var(--t-danger)_35%,transparent)] px-3 py-2 text-sm text-[color:var(--t-danger)]">
-            {actionError}
+        <div>
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">Today on the floor</h2>
+          <p className="text-sm text-muted">
+            Open bookings only — tap a block to check in. Finished jobs move to Done today.
           </p>
-        ) : null}
-        {today.length === 0 ? (
-          <div className="stylist-appt-card rounded-2xl border px-4 py-8 text-center text-muted">
-            Nothing on the book for today.
-          </div>
-        ) : (
-          today.map((a) => (
-            <AppointmentCard key={a.id} a={a} emphasize={a.id === nextOpen?.id} />
-          ))
-        )}
+        </div>
+        <div
+          className="stylist-day-timeline h-[min(70vh,36rem)] overflow-hidden rounded-2xl border"
+          data-testid="stylist-day-timeline"
+        >
+          <ReceptionSchedule
+            compact
+            appointments={todayTimeline}
+            stylists={[meChair]}
+            openHour={openHour}
+            closeHour={closeHour}
+            timeZone={salonTz}
+            selectedId={selectedId}
+            now={now}
+            onSelect={(a) => setSelectedId(a.id)}
+          />
+        </div>
       </section>
+
+      {selectedAppt ? (
+        <>
+          <button
+            type="button"
+            className="fixed inset-0 z-[105] bg-black/50"
+            aria-label="Dismiss check in"
+            onClick={() => setSelectedId(null)}
+          />
+          <div
+            className="fixed inset-x-0 bottom-0 z-[110] max-h-[min(82vh,40rem)] overflow-auto border-t border-[color:rgb(var(--t-accent-rgb)/0.28)] bg-[color:var(--t-bg-2)] px-4 pt-3 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] shadow-[0_-16px_40px_rgba(0,0,0,0.35)]"
+            data-testid="stylist-checkin-sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Check in ${selectedAppt.client.name}`}
+          >
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <p className="text-sm font-semibold uppercase tracking-wider text-muted">Check in</p>
+              <button
+                type="button"
+                onClick={() => setSelectedId(null)}
+                className="rounded-full border border-ink/20 px-3 py-1.5 text-sm font-semibold text-champagne"
+              >
+                Close
+              </button>
+            </div>
+            {actionError ? (
+              <p className="mb-3 rounded-xl border border-[color:color-mix(in_srgb,var(--t-danger)_35%,transparent)] px-3 py-2 text-sm text-[color:var(--t-danger)]">
+                {actionError}
+              </p>
+            ) : null}
+            <AppointmentCard a={selectedAppt} emphasize />
+          </div>
+        </>
+      ) : null}
+
+      {doneTodayList.length > 0 ? (
+        <section className="space-y-3" data-testid="stylist-done-today">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">
+            Done today
+          </h2>
+          <div className="space-y-3">
+            {doneTodayList.map((a) => (
+              <AppointmentCard key={a.id} a={a} />
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {upcoming.length > 0 ? (
         <section className="space-y-3">

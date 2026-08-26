@@ -34,13 +34,20 @@ test.describe("Salon day — full path", () => {
     await stylistLogin(page);
     await expect(page.getByText(clientName).first()).toBeVisible({ timeout: 15_000 });
 
-    const card = page.locator("article").filter({ hasText: clientName }).first();
-    if (isToday && (await card.count()) > 0) {
-      if (await card.getByRole("button", { name: /client is here/i }).count()) {
-        await card.getByRole("button", { name: /client is here/i }).click();
-        await page.waitForTimeout(500);
+    const block = page
+      .getByTestId("stylist-day-timeline")
+      .locator("article")
+      .filter({ hasText: clientName })
+      .first();
+    if (isToday && (await block.count()) > 0) {
+      await block.click();
+      const sheet = page.getByTestId("stylist-checkin-sheet");
+      await expect(sheet).toBeVisible();
+      if (await sheet.getByRole("button", { name: /^check in$/i }).count()) {
+        await sheet.getByRole("button", { name: /^check in$/i }).click();
+        await expect(sheet.getByText(/checked in/i)).toBeVisible({ timeout: 15_000 });
       }
-      if (await card.getByRole("button", { name: /^done$/i }).count()) {
+      if (await sheet.getByRole("button", { name: /^done$/i }).count()) {
         // Done prompts: service charge, then tip
         page.on("dialog", async (d) => {
           const msg = d.message().toLowerCase();
@@ -48,14 +55,25 @@ test.describe("Salon day — full path", () => {
           else if (msg.includes("charge") || msg.includes("$")) await d.accept("45.00");
           else await d.accept("0");
         });
-        await card.getByRole("button", { name: /^done$/i }).click();
-        await expect(card.getByText(/^done$/i).first()).toBeVisible({ timeout: 10_000 });
+        await sheet.getByRole("button", { name: /^done$/i }).click();
+        await expect(page.getByTestId("stylist-checkin-sheet")).toHaveCount(0, {
+          timeout: 10_000,
+        });
+        await expect(
+          page
+            .getByTestId("stylist-day-timeline")
+            .locator("article")
+            .filter({ hasText: clientName })
+        ).toHaveCount(0);
+        await expect(
+          page.getByTestId("stylist-done-today").getByText(clientName)
+        ).toBeVisible();
       }
       await adminLogin(page);
       await page.goto(`/display/${DEMO.slug}/reception`);
       await expect(page.getByText(clientName).first()).toBeVisible({ timeout: 15_000 });
     } else {
-      await expect(page.getByText(/coming up|today/i).first()).toBeVisible();
+      await expect(page.getByText(/coming up|today on the floor/i).first()).toBeVisible();
     }
   });
 });

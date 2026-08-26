@@ -49,6 +49,8 @@ type Props = {
   onWaitlistChange?: (count: number) => void;
   /** Extra headers (e.g. tablet unlock token for public display APIs) */
   requestHeaders?: Record<string, string>;
+  /** Services already loaded by the parent board — fills the dropdown if walk-in catalog fails. */
+  catalogServices?: Service[];
 };
 
 function formatWait(min: number | null | undefined) {
@@ -72,6 +74,7 @@ export function WalkInPanel({
   onCreated,
   onWaitlistChange,
   requestHeaders,
+  catalogServices,
 }: Props) {
   const includeWaitlist = showWaitlist;
   const extraHeaders = useMemo(
@@ -80,7 +83,7 @@ export function WalkInPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [JSON.stringify(requestHeaders ?? {})]
   );
-  const [services, setServices] = useState<Service[]>([]);
+  const [services, setServices] = useState<Service[]>(() => catalogServices ?? []);
   const [stylists, setStylists] = useState<Stylist[]>([]);
   const [serviceId, setServiceId] = useState("");
   const [stylistId, setStylistId] = useState(lockedStylistId || "");
@@ -113,29 +116,63 @@ export function WalkInPanel({
 
   const loadCatalog = useCallback(async () => {
     if (!showForm) return;
-    const res = await fetch(walkInBase, { headers: extraHeaders });
-    if (res.status === 401) {
-      if (mode === "display") return;
-      window.location.href =
-        mode === "stylist" ? "/stylist/login" : "/manager/login";
-      return;
-    }
-    if (!res.ok) return;
-    const data = await res.json();
-    setServices(data.services || []);
-    if (mode === "stylist") {
-      const id = lockedStylistId || data.stylistId || "";
-      setStylists([{ id, name: lockedStylistName || "You" }]);
-      setStylistId(id);
-      setUseNextAvailable(false);
-    } else {
-      setStylists(data.stylists || []);
-    }
-  }, [walkInBase, mode, lockedStylistId, lockedStylistName, showForm, extraHeaders]);
+    const apply = (data: { services?: Service[]; stylists?: Stylist[]; stylistId?: string }) => {
+      if (data.services?.length) setServices(data.services);
+      if (mode === "stylist") {
+        const id = lockedStylistId || data.stylistId || "";
+        setStylists([{ id, name: lockedStylistName || "You" }]);
+        setStylistId(id);
+        setUseNextAvailable(false);
+      } else if (data.stylists?.length) {
+        setStylists(data.stylists);
+      }
+    };
 
-  const loadWaitlist = useCallback(async () => {
+    const res = await fetch(walkInBase, {
+      credentials: "same-origin",
+      headers: extraHeaders,
+    });
+    if (res.status === 401) {
+      if (mode === "display") {
+        setError("Unlock the display to load services.");
+        return;
+      }
+      window.location.href =
+        mode === "stylist" ? "/stylist/login" : "/manager/login";
+      return;
+    }
+    if (res.ok) {
+      apply(await res.json());
+      return;
+    }
+
+    if (mode === "display" && slug) {
+      const fallback = await fetch(`/api/display/${slug}/services`, {
+        credentials: "same-origin",
+        headers: extraHeaders,
+      });
+      if (fallback.ok) {
+        const data = await fallback.json();
+        apply({
+          services: (data.services || []).map(
+            (s: { id: string; name: string; durationMin: number; priceCents: number }) => ({
+              id: s.id,
+              name: s.name,
+              durationMin: s.durationMin,
+              priceCents: s.priceCents,
+            })
+          ),
+        });
+        return;
+      }
+    }
+    setError("Could not load services. Close New Booking and try again.");
+  }, [walkInBase, mode, lockedStylistId, lockedStylistName, showForm, extraHeaders, slug]);
+
+  const loadWaitlist = useCallback(async (includeOptions = true) => {
     if (!includeWaitlist) return;
-    const res = await fetch(waitlistBase, { headers: extraHeaders });
+    const url = includeOptions ? `${waitlistBase}?options=1` : waitlistBase;
+    const res = await fetch(url, { headers: extraHeaders });
     if (res.status === 401) {
       if (mode === "display") return;
       window.location.href =
@@ -144,7 +181,20 @@ export function WalkInPanel({
     }
     if (!res.ok) return;
     const data = await res.json();
-    setWaitlist(data.waitlist || []);
+    const incoming = (data.waitlist || []) as WaitEntry[];
+    setWaitlist((prev) => {
+      if (includeOptions) return incoming;
+      return incoming.map((row) => {
+        const old = prev.find((p) => p.id === row.id);
+        if (!old) return row;
+        return {
+          ...row,
+          availableOptions: old.availableOptions,
+          nextAvailable: old.nextAvailable,
+          estimatedWaitMin: row.estimatedWaitMin ?? old.estimatedWaitMin,
+        };
+      });
+    });
   }, [includeWaitlist, waitlistBase, mode, extraHeaders]);
 
   const loadNext = useCallback(async () => {
@@ -183,13 +233,30 @@ export function WalkInPanel({
   }, [loadCatalog, loadWaitlist]);
 
   useEffect(() => {
+    if (!catalogServices?.length) return;
+    setServices((prev) => (prev.length ? prev : catalogServices));
+  }, [catalogServices]);
+
+  useEffect(() => {
     void loadNext();
   }, [loadNext]);
 
   useEffect(() => {
     if (!pollMs || !includeWaitlist) return;
-    const id = window.setInterval(() => void loadWaitlist(), pollMs);
-    return () => window.clearInterval(id);
+    let cancelled = false;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    const tick = async () => {
+      if (cancelled) return;
+      if (typeof document === "undefined" || document.visibilityState === "visible") {
+        await loadWaitlist(false);
+      }
+      if (!cancelled) timeout = setTimeout(tick, pollMs);
+    };
+    timeout = setTimeout(tick, pollMs);
+    return () => {
+      cancelled = true;
+      if (timeout) clearTimeout(timeout);
+    };
   }, [pollMs, includeWaitlist, loadWaitlist]);
 
   useEffect(() => {
@@ -398,7 +465,7 @@ export function WalkInPanel({
               value={serviceId}
               onChange={(e) => setServiceId(e.target.value)}
               aria-label="Walk-in service"
-              className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+              className="reception-catalog-select rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
             >
               <option value="">Choose service</option>
               {services.map((s) => (
@@ -427,7 +494,7 @@ export function WalkInPanel({
                     value={stylistId}
                     onChange={(e) => setStylistId(e.target.value)}
                     aria-label="Walk-in stylist"
-                    className="rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
+                    className="reception-catalog-select rounded-xl border border-[#c9a87c]/35 bg-[#1c1714] px-3 py-2 text-[#fffaf6]"
                   >
                     <option value="">Choose stylist</option>
                     {filteredStylists.map((s) => (

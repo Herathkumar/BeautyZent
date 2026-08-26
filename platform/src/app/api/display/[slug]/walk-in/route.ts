@@ -3,6 +3,7 @@ import { assertDisplayAccess } from "@/lib/display-pin";
 import { prisma } from "@/lib/prisma";
 import { createWalkInAppointment, findNextAvailableWalkIns } from "@/lib/walk-in";
 
+/** Display walk-in catalog + seating. */
 async function loadSalon(slug: string) {
   return prisma.salon.findUnique({
     where: { slug },

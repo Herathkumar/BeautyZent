@@ -8,8 +8,11 @@ import {
   formatHourLabel,
   hourMarks,
   HOUR_PX,
+  serviceCardTone,
   serviceKind,
   specialtyFromBio,
+  stylistFloorTone,
+  stylistStatusRingClass,
   stylistWaitInfo,
   type DisplayAppt,
   type DisplayStylist,
@@ -24,7 +27,7 @@ function waitStatusClass(kind: StylistWaitKind) {
 }
 
 function Glyph({ kind }: { kind: "cut" | "color" | "style" }) {
-  const common = "h-4 w-4 text-[color:var(--cd-glyph)]";
+  const common = "h-4 w-4";
   if (kind === "color") {
     return (
       <svg className={common} viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -104,7 +107,14 @@ export function CustomerScheduleGrid({
             const wait = stylistWaitInfo(items, now, openHour, closeHour, timeZone, storeClosed);
             return (
               <div key={s.id} className="border-l border-[color:var(--cd-line-soft)] px-2 pb-3 text-center">
-                <div className="mx-auto h-16 w-16 overflow-hidden rounded-full ring-2 ring-[color:var(--cd-accent-soft)]">
+                <div
+                  className={`mx-auto h-16 w-16 overflow-hidden rounded-full ring-offset-2 ring-offset-[var(--cd-panel)] ${stylistStatusRingClass(
+                    wait.kind
+                  )}`}
+                  data-testid="stylist-status-ring"
+                  data-status-tone={stylistFloorTone(wait.kind)}
+                  title={wait.label}
+                >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={s.photoUrl || "/avatars/stylist-neutral.svg"} alt="" className="h-full w-full object-cover" />
                 </div>
@@ -178,12 +188,15 @@ export function CustomerScheduleGrid({
                 return (
                   <div
                     key={a.id}
-                    className="absolute inset-x-2 flex flex-col items-center justify-center rounded-2xl bg-[var(--cd-card)] px-2 py-1 text-center shadow-sm"
+                    data-service-kind={kind}
+                    className={`absolute inset-x-2 flex flex-col items-center justify-center rounded-2xl px-2 py-1 text-center shadow-sm ${serviceCardTone(
+                      a.service.name
+                    )}`}
                     style={{ top, height: h }}
                     title={`${formatClock(a.startsAt, timeZone)} · ${a.service.name}`}
                   >
                     <Glyph kind={kind} />
-                    <p className="mt-0.5 text-sm font-medium text-[color:var(--cd-card-text)]">{firstName(a.client.name)}</p>
+                    <p className="mt-0.5 text-sm font-medium">{firstName(a.client.name)}</p>
                   </div>
                 );
               })}

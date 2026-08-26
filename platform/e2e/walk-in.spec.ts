@@ -460,7 +460,10 @@ test.describe("Walk-in appointments", () => {
       })
     ).toHaveCount(0, { timeout: 15_000 });
     await expect(
-      page.locator("article").filter({ hasText: clientName })
+      page
+        .getByTestId("stylist-day-timeline")
+        .locator("article")
+        .filter({ hasText: clientName })
     ).toBeVisible({ timeout: 15_000 });
   });
 });

@@ -99,10 +99,17 @@ export async function GET(
   ]);
 
   const clientIds = [...new Set(appointments.map((a) => a.clientId))];
+  // Bound history so reception/TV polls do not scan a client's entire lifetime.
+  const historyFrom = new Date(from.getTime() - 548 * 24 * 60 * 60 * 1000);
   const visitRows = clientIds.length
     ? await prisma.appointment.groupBy({
         by: ["clientId"],
-        where: { salonId: salon.id, clientId: { in: clientIds }, status: "COMPLETED" },
+        where: {
+          salonId: salon.id,
+          clientId: { in: clientIds },
+          status: "COMPLETED",
+          startsAt: { gte: historyFrom },
+        },
         _count: { _all: true },
       })
     : [];
@@ -110,13 +117,19 @@ export async function GET(
 
   const recentRows = clientIds.length
     ? await prisma.appointment.findMany({
-        where: { salonId: salon.id, clientId: { in: clientIds }, status: "COMPLETED" },
+        where: {
+          salonId: salon.id,
+          clientId: { in: clientIds },
+          status: "COMPLETED",
+          startsAt: { gte: historyFrom },
+        },
         select: {
           clientId: true,
           startsAt: true,
           service: { select: { name: true } },
         },
         orderBy: { startsAt: "desc" },
+        take: Math.min(Math.max(clientIds.length * 3, 9), 90),
       })
     : [];
   const recentByClient = new Map<string, { serviceName: string; date: string }[]>();

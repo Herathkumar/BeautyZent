@@ -8,18 +8,16 @@ import {
   hourMarks,
   HOUR_PX,
   initials,
+  serviceCardTone,
   serviceKind,
   statusLabel,
+  stylistFloorTone,
+  stylistStatusDotClass,
+  stylistStatusRingClass,
+  stylistWaitInfo,
   type DisplayAppt,
   type DisplayStylist,
 } from "@/lib/display-schedule";
-
-function cardTone(serviceName: string) {
-  const kind = serviceKind(serviceName);
-  if (kind === "color") return "bg-[#5b3d7a] text-[#f3e8ff]";
-  if (kind === "style") return "bg-[#2f6b55] text-[#e8fff4]";
-  return "bg-[#c45b7a] text-white";
-}
 
 function ServiceGlyph({ name }: { name: string }) {
   const kind = serviceKind(name);
@@ -60,6 +58,8 @@ export function ReceptionSchedule({
   selectedId,
   onSelect,
   now,
+  compact = false,
+  storeClosed = false,
 }: {
   appointments: DisplayAppt[];
   stylists: DisplayStylist[];
@@ -69,6 +69,9 @@ export function ReceptionSchedule({
   selectedId: string | null;
   onSelect: (appt: DisplayAppt) => void;
   now: Date;
+  /** One-column layout for the stylist phone app (no 720px floor). */
+  compact?: boolean;
+  storeClosed?: boolean;
 }) {
   const hours = hourMarks(openHour, closeHour);
   const spanMin = Math.max(60, (closeHour - openHour) * 60);
@@ -92,27 +95,52 @@ export function ReceptionSchedule({
     scrolled.current = true;
   }, [showNow, nowMin, nowTop, columns.length]);
 
-  const cols = `3.5rem repeat(${columns.length}, minmax(9rem, 1fr))`;
+  const cols = compact
+    ? "3.25rem minmax(0, 1fr)"
+    : `3.5rem repeat(${columns.length}, minmax(9rem, 1fr))`;
+  const minW = compact ? "min-w-0" : "min-w-[720px]";
 
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div ref={headerRef} className="shrink-0 overflow-x-hidden bg-[var(--rx-bg)]">
-        <div className="grid min-w-[720px]" style={{ gridTemplateColumns: cols }}>
+        <div className={`grid ${minW}`} style={{ gridTemplateColumns: cols }}>
           <div />
-          {columns.map((s) => (
-            <div key={s.id} className="flex items-center gap-2 border-l border-[color:var(--rx-line)] px-3 py-3">
-              <div className="relative h-10 w-10 shrink-0">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={s.photoUrl || "/avatars/stylist-neutral.svg"}
-                  alt=""
-                  className="h-10 w-10 rounded-full object-cover ring-2 ring-[color:var(--rx-line)]"
-                />
-                <span className="absolute right-0 bottom-0 h-2.5 w-2.5 rounded-full bg-emerald-400 ring-2 ring-[color:var(--rx-nav)]" />
+          {columns.map((s) => {
+            const items = appointments.filter(
+              (a) => a.stylist.id === s.id || a.stylist.name === s.name
+            );
+            const wait = stylistWaitInfo(
+              items,
+              now,
+              openHour,
+              closeHour,
+              timeZone,
+              storeClosed
+            );
+            return (
+              <div key={s.id} className="flex items-center gap-2 border-l border-[color:var(--rx-line)] px-3 py-3">
+                <div className="relative h-10 w-10 shrink-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={s.photoUrl || "/avatars/stylist-neutral.svg"}
+                    alt=""
+                    className={`h-10 w-10 rounded-full object-cover ring-offset-2 ring-offset-[var(--rx-bg)] ${stylistStatusRingClass(
+                      wait.kind
+                    )}`}
+                    data-testid="stylist-status-ring"
+                    data-status-tone={stylistFloorTone(wait.kind)}
+                    title={wait.label}
+                  />
+                  <span
+                    className={`absolute right-0 bottom-0 h-2.5 w-2.5 rounded-full ring-2 ring-[color:var(--rx-nav)] ${stylistStatusDotClass(
+                      wait.kind
+                    )}`}
+                  />
+                </div>
+                <p className="truncate text-sm font-semibold text-[color:var(--rx-text)]">{s.name}</p>
               </div>
-              <p className="truncate text-sm font-semibold text-[color:var(--rx-text)]">{s.name}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -123,7 +151,7 @@ export function ReceptionSchedule({
           if (headerRef.current) headerRef.current.scrollLeft = e.currentTarget.scrollLeft;
         }}
       >
-        <div className="relative grid min-w-[720px]" style={{ gridTemplateColumns: cols, height }}>
+        <div className={`relative grid ${minW}`} style={{ gridTemplateColumns: cols, height }}>
         <div className="relative">
           {hours.map((h, i) => (
             <p
@@ -163,7 +191,7 @@ export function ReceptionSchedule({
                 return (
                   <article
                     key={a.id}
-                    className={`absolute inset-x-1.5 overflow-hidden rounded-xl px-2.5 py-1.5 text-left shadow-md ${cardTone(
+                    className={`absolute inset-x-1.5 overflow-hidden rounded-xl px-2.5 py-1.5 text-left shadow-md ${serviceCardTone(
                       a.service.name
                     )} ${selected ? "ring-2 ring-[color:var(--rx-accent)]" : ""}`}
                     style={{ top, height: h }}
@@ -207,11 +235,13 @@ export function ReceptionClientPanel({
   onClose,
   onStatus,
   onCheckout,
+  busyId,
 }: {
   appt: DisplayAppt | null;
   onClose: () => void;
   onStatus: (id: string, status: string, chargedCents?: number, tipCents?: number) => void;
   onCheckout?: (appt: DisplayAppt) => void;
+  busyId?: string | null;
 }) {
   if (!appt) {
     return (
@@ -315,10 +345,11 @@ export function ReceptionClientPanel({
         {appt.status === "BOOKED" ? (
           <button
             type="button"
+            disabled={busyId === appt.id}
             onClick={() => onStatus(appt.id, "CHECKED_IN")}
-            className="rounded-2xl bg-[#c45b7a] py-3 text-sm font-semibold text-white"
+            className="rounded-2xl bg-[#c45b7a] py-3 text-sm font-semibold text-white disabled:opacity-60"
           >
-            Check-in
+            {busyId === appt.id ? "Checking in…" : "Check-in"}
           </button>
         ) : null}
         <a
