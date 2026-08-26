@@ -30,6 +30,8 @@ model Salon {
   /// Days the store is closed by default (0=Sun … 6=Sat). Used for new stylist schedules.
   closedDays   Int[]    @default([0])
   slotMinutes  Int      @default(30)
+  /// Sales tax on services and products (Ontario HST is 13). Tip is not taxed.
+  taxPercent   Int      @default(13)
   /// Weekly store profit goal for manager Store Earnings ring (cents)
   weeklyProfitGoalCents Int? @default(200000)
   /// bcrypt hash of the store-display tablet PIN (null = board unlocked / no PIN)

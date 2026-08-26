@@ -136,6 +136,12 @@ export function CustomerCheckoutOverlay({
                   <span className="tabular-nums">{formatCad(bill.productCents)}</span>
                 </div>
               ) : null}
+              {bill.taxCents > 0 ? (
+                <div className="flex justify-between" data-testid="customer-checkout-tax">
+                  <span>HST {bill.taxPercent}%</span>
+                  <span className="tabular-nums">{formatCad(bill.taxCents)}</span>
+                </div>
+              ) : null}
             </div>
 
             {onTip && bill.status !== "PAID" ? (

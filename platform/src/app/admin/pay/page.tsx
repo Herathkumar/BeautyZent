@@ -180,6 +180,10 @@ export default function AdminPayPage() {
   const [hoursMsg, setHoursMsg] = useState("");
   const [hoursError, setHoursError] = useState("");
   const [savingHours, setSavingHours] = useState(false);
+  const [taxPercent, setTaxPercent] = useState(13);
+  const [taxMsg, setTaxMsg] = useState("");
+  const [taxError, setTaxError] = useState("");
+  const [savingTax, setSavingTax] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -215,6 +219,7 @@ export default function AdminPayPage() {
             ? data.salon.closedDays
             : [0]
         );
+        if (Number.isFinite(data.salon.taxPercent)) setTaxPercent(data.salon.taxPercent);
       });
   }, []);
 
@@ -247,6 +252,31 @@ export default function AdminPayPage() {
     }
     if (data.salon?.closedDays) setClosedDays(data.salon.closedDays);
     setHoursMsg(data.message || "Store hours saved.");
+  }
+
+  async function onSaveTax(e: React.FormEvent) {
+    e.preventDefault();
+    setTaxError("");
+    setTaxMsg("");
+    const next = Math.round(Number(taxPercent));
+    if (!Number.isFinite(next) || next < 0 || next > 50) {
+      setTaxError("Enter a tax rate between 0 and 50.");
+      return;
+    }
+    setSavingTax(true);
+    const res = await fetch("/api/admin/salon", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ taxPercent: next }),
+    });
+    const data = await res.json();
+    setSavingTax(false);
+    if (!res.ok) {
+      setTaxError(data.error || "Could not save sales tax");
+      return;
+    }
+    if (Number.isFinite(data.salon?.taxPercent)) setTaxPercent(data.salon.taxPercent);
+    setTaxMsg(data.message || "Sales tax saved.");
   }
 
   async function reviewLeave(
@@ -424,6 +454,42 @@ export default function AdminPayPage() {
           className="btn-solid rounded-full px-5 py-3"
         >
           {savingHours ? "Saving…" : "Save store hours"}
+        </button>
+      </form>
+
+      <form
+        onSubmit={onSaveTax}
+        className="grid gap-4 rounded-2xl border border-[#7d6154]/30 bg-[#ffffff] p-5"
+        data-testid="store-tax-form"
+      >
+        <div>
+          <h2 className="font-[family-name:var(--font-display)] text-xl text-[#2b2521]">
+            Sales tax
+          </h2>
+          <p className="mt-1 text-sm text-[#6b5b52]">
+            Added on services and products at checkout. Tips are not taxed. Ontario HST is 13%.
+          </p>
+        </div>
+        <label className="grid max-w-xs gap-1.5 text-sm text-[#6b5b52]">
+          Tax rate
+          <span className="flex items-center gap-2">
+            <input
+              type="number"
+              min={0}
+              max={50}
+              step={1}
+              value={taxPercent}
+              onChange={(e) => setTaxPercent(Number(e.target.value))}
+              aria-label="Sales tax percent"
+              className="w-full rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-[#2b2521]"
+            />
+            <span className="shrink-0 text-[#2b2521]">%</span>
+          </span>
+        </label>
+        {taxError ? <p className="text-sm text-[#f5a8a8]">{taxError}</p> : null}
+        {taxMsg ? <p className="text-sm text-[#9fe3b8]">{taxMsg}</p> : null}
+        <button type="submit" disabled={savingTax} className="btn-solid rounded-full px-5 py-3">
+          {savingTax ? "Saving…" : "Save sales tax"}
         </button>
       </form>
 

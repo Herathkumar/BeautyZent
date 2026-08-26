@@ -55,64 +55,69 @@ export async function POST(
   const action = String(body.action || "");
 
   if (action === "present") {
-    const appointmentId = String(body.appointmentId || "");
-    const appt = await prisma.appointment.findFirst({
-      where: { id: appointmentId, salonId: salon.id },
-      select: {
-        id: true,
-        status: true,
-        bookingGroupId: true,
-        service: { select: { priceCents: true } },
-      },
-    });
-    if (!appt) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    if (!["BOOKED", "CHECKED_IN"].includes(appt.status)) {
-      return NextResponse.json({ error: "Visit is not open" }, { status: 400 });
+    try {
+      const appointmentId = String(body.appointmentId || "");
+      const appt = await prisma.appointment.findFirst({
+        where: { id: appointmentId, salonId: salon.id },
+        select: {
+          id: true,
+          status: true,
+          bookingGroupId: true,
+          service: { select: { priceCents: true } },
+        },
+      });
+      if (!appt) return NextResponse.json({ error: "Not found" }, { status: 404 });
+      if (!["BOOKED", "CHECKED_IN"].includes(appt.status)) {
+        return NextResponse.json({ error: "Visit is not open" }, { status: 400 });
+      }
+
+      const siblings = appt.bookingGroupId
+        ? await prisma.appointment.findMany({
+            where: {
+              salonId: salon.id,
+              bookingGroupId: appt.bookingGroupId,
+              status: { in: ["BOOKED", "CHECKED_IN"] },
+            },
+            select: { service: { select: { priceCents: true } } },
+          })
+        : [appt];
+      const catalogCents = siblings.reduce((sum, s) => sum + (s.service?.priceCents || 0), 0);
+      const chargedCents =
+        Number.isFinite(body.chargedCents) && body.chargedCents >= 0
+          ? Math.round(body.chargedCents)
+          : catalogCents;
+      const tipCents =
+        Number.isFinite(body.tipCents) && body.tipCents >= 0 ? Math.round(body.tipCents) : 0;
+
+      const bill = await buildCheckoutBill(
+        salon.id,
+        appt.id,
+        chargedCents,
+        tipCents,
+        "PENDING",
+        salon.timezone
+      );
+      if (!bill) return NextResponse.json({ error: "Could not build bill" }, { status: 400 });
+
+      const now = new Date();
+      upsertCheckout({
+        salonId: salon.id,
+        appointmentId: appt.id,
+        chargedCents,
+        tipCents,
+        status: "PENDING",
+        presentedAt: now,
+        updatedAt: now,
+        bill: { ...bill, presentedAt: now.toISOString() },
+      });
+
+      return NextResponse.json({
+        checkout: await loadCheckoutBill(salon.id),
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Could not open checkout";
+      return NextResponse.json({ error: message }, { status: 500 });
     }
-
-    const siblings = appt.bookingGroupId
-      ? await prisma.appointment.findMany({
-          where: {
-            salonId: salon.id,
-            bookingGroupId: appt.bookingGroupId,
-            status: { in: ["BOOKED", "CHECKED_IN"] },
-          },
-          select: { service: { select: { priceCents: true } } },
-        })
-      : [appt];
-    const catalogCents = siblings.reduce((sum, s) => sum + s.service.priceCents, 0);
-    const chargedCents =
-      Number.isFinite(body.chargedCents) && body.chargedCents >= 0
-        ? Math.round(body.chargedCents)
-        : catalogCents;
-    const tipCents =
-      Number.isFinite(body.tipCents) && body.tipCents >= 0 ? Math.round(body.tipCents) : 0;
-
-    const bill = await buildCheckoutBill(
-      salon.id,
-      appt.id,
-      chargedCents,
-      tipCents,
-      "PENDING",
-      salon.timezone
-    );
-    if (!bill) return NextResponse.json({ error: "Could not build bill" }, { status: 400 });
-
-    const now = new Date();
-    upsertCheckout({
-      salonId: salon.id,
-      appointmentId: appt.id,
-      chargedCents,
-      tipCents,
-      status: "PENDING",
-      presentedAt: now,
-      updatedAt: now,
-      bill: { ...bill, presentedAt: now.toISOString() },
-    });
-
-    return NextResponse.json({
-      checkout: await loadCheckoutBill(salon.id),
-    });
   }
 
   const current = getCheckoutRow(salon.id);

@@ -288,8 +288,12 @@ test.describe("Walk-in appointments", () => {
     const desk = page.getByTestId("reception-checkout-desk");
     await expect(desk).toBeVisible({ timeout: 10_000 });
     await expect(desk.getByText(service.name, { exact: true })).toBeVisible();
-    await expect(desk.getByTestId("reception-checkout-tip-picker")).toBeVisible();
-    await page.getByTestId("reception-tip-pct-20").click();
+    await expect(desk.getByTestId("reception-quick-services")).toBeVisible();
+    await expect(desk.getByTestId("reception-checkout-tax")).toBeVisible();
+    const quick = desk.getByTestId("reception-quick-service").first();
+    if (await quick.count()) {
+      await quick.click();
+    }
     const productSelect = page.getByTestId("reception-add-product");
     const productOptions = await productSelect.locator("option").all();
     if (productOptions.length > 1) {
@@ -342,6 +346,7 @@ test.describe("Walk-in appointments", () => {
     await expect(overlay).toContainText(/please review your visit/i);
     await expect(overlay.getByText(service.name)).toBeVisible();
     await expect(overlay).toContainText(/amount due/i);
+    await expect(overlay.getByTestId("customer-checkout-tax")).toBeVisible();
     await expect(customer.getByTestId("customer-checkout-tip-picker")).toBeVisible();
     await expect(overlay.locator("input")).toHaveCount(0);
     await expect(customer.getByTestId("customer-tip-other")).toBeVisible();

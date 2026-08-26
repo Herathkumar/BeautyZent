@@ -93,6 +93,25 @@ test.describe("Manager store earnings", () => {
     });
   });
 
+  test("manager can update sales tax on Payroll", async ({ page }) => {
+    await adminLogin(page);
+    await gotoSettled(page, "/manager/pay");
+    const form = page.getByTestId("store-tax-form");
+    await expect(form).toBeVisible({ timeout: 15_000 });
+    await form.getByLabel(/sales tax percent/i).fill("15");
+    const saved = page.waitForResponse(
+      (r) => r.url().includes("/api/admin/salon") && r.request().method() === "PATCH"
+    );
+    await form.getByRole("button", { name: /save sales tax/i }).click();
+    const savedRes = await saved;
+    expect(savedRes.ok(), await savedRes.text()).toBeTruthy();
+    await expect(form.getByText(/sales tax saved/i)).toBeVisible({ timeout: 10_000 });
+
+    await form.getByLabel(/sales tax percent/i).fill("13");
+    await form.getByRole("button", { name: /save sales tax/i }).click();
+    await expect(form.getByText(/sales tax saved/i)).toBeVisible({ timeout: 10_000 });
+  });
+
   test("void and restore a completed job from store earnings", async ({ page }) => {
     const clientName = `StoreEarn ${Date.now()}`;
     await adminLogin(page);

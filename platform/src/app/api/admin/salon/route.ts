@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession, isSalonStaff } from "@/lib/auth";
+import { clampTaxPercent } from "@/lib/display-checkout";
 import { prisma } from "@/lib/prisma";
 import { validateHours } from "@/lib/platform-salons";
 
@@ -18,6 +19,7 @@ const SALON_SELECT = {
   closeHour: true,
   closedDays: true,
   slotMinutes: true,
+  taxPercent: true,
 } as const;
 
 /** Signed-in manager salon branding for chrome / splash / store hours. */
@@ -57,10 +59,20 @@ export async function PATCH(req: Request) {
 
   const current = await prisma.salon.findUnique({
     where: { id: session.salonId },
-    select: { openHour: true, closeHour: true, closedDays: true, slotMinutes: true },
+    select: { openHour: true, closeHour: true, closedDays: true, slotMinutes: true, taxPercent: true },
   });
   if (!current) {
     return NextResponse.json({ error: "Salon not found" }, { status: 404 });
+  }
+
+  const taxOnly = body.taxPercent != null && body.openHour == null && body.closeHour == null;
+  if (taxOnly) {
+    const salon = await prisma.salon.update({
+      where: { id: session.salonId },
+      data: { taxPercent: clampTaxPercent(body.taxPercent, current.taxPercent) },
+      select: SALON_SELECT,
+    });
+    return NextResponse.json({ salon, message: "Sales tax saved." });
   }
 
   const openHour = Math.round(Number(body.openHour ?? current.openHour));
@@ -84,7 +96,14 @@ export async function PATCH(req: Request) {
 
   const salon = await prisma.salon.update({
     where: { id: session.salonId },
-    data: { openHour, closeHour, closedDays },
+    data: {
+      openHour,
+      closeHour,
+      closedDays,
+      ...(body.taxPercent != null
+        ? { taxPercent: clampTaxPercent(body.taxPercent, current.taxPercent) }
+        : {}),
+    },
     select: SALON_SELECT,
   });
   return NextResponse.json({ salon, message: "Store hours saved." });

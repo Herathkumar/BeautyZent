@@ -83,7 +83,6 @@ export function ReceptionSchedule({
   const columns = stylists.length
     ? stylists
     : [{ id: "none", name: "Chair", bio: null, color: "#c9a87c", photoUrl: "" }];
-  const headerRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const scrolled = useRef(false);
 
@@ -102,12 +101,32 @@ export function ReceptionSchedule({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div ref={headerRef} className="shrink-0 overflow-x-hidden bg-[var(--rx-bg)]">
-        <div className={`grid ${minW}`} style={{ gridTemplateColumns: cols }}>
-          <div />
-          {columns.map((s) => {
+      <div ref={bodyRef} className="min-h-0 flex-1 overflow-auto">
+        <div
+          className={`relative grid ${minW}`}
+          style={{ gridTemplateColumns: cols, gridTemplateRows: "auto 1fr" }}
+        >
+          <div className="sticky top-0 z-20 col-start-1 row-start-1 bg-[var(--rx-bg)]" />
+          <div className="relative col-start-1 row-start-2" style={{ height }}>
+            {hours.map((h, i) => (
+              <p
+                key={h}
+                className="absolute right-2 text-[10px] text-[color:var(--rx-faint)] tabular-nums"
+                style={{ top: i * HOUR_PX - 5 }}
+              >
+                {formatHourLabel(h)}
+              </p>
+            ))}
+            <p
+              className="absolute right-2 text-[10px] text-[color:var(--rx-faint)] tabular-nums"
+              style={{ top: hours.length * HOUR_PX - 5 }}
+            >
+              {formatHourLabel(closeHour)}
+            </p>
+          </div>
+          {columns.map((stylist, index) => {
             const items = appointments.filter(
-              (a) => a.stylist.id === s.id || a.stylist.name === s.name
+              (a) => a.stylist.id === stylist.id || a.stylist.name === stylist.name
             );
             const wait = stylistWaitInfo(
               items,
@@ -118,112 +137,93 @@ export function ReceptionSchedule({
               storeClosed
             );
             return (
-              <div key={s.id} className="flex items-center gap-2 border-l border-[color:var(--rx-line)] px-3 py-3">
-                <div className="relative h-10 w-10 shrink-0">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={s.photoUrl || "/avatars/stylist-neutral.svg"}
-                    alt=""
-                    className={`h-10 w-10 rounded-full object-cover ring-offset-2 ring-offset-[var(--rx-bg)] ${stylistStatusRingClass(
-                      wait.kind
-                    )}`}
-                    data-testid="stylist-status-ring"
-                    data-status-tone={stylistFloorTone(wait.kind)}
-                    title={wait.label}
-                  />
-                  <span
-                    className={`absolute right-0 bottom-0 h-2.5 w-2.5 rounded-full ring-2 ring-[color:var(--rx-nav)] ${stylistStatusDotClass(
-                      wait.kind
-                    )}`}
-                  />
+              <div
+                key={stylist.id}
+                className="relative grid"
+                style={{
+                  gridColumn: index + 2,
+                  gridRow: "1 / -1",
+                  gridTemplateRows: "subgrid",
+                }}
+              >
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-y-0 left-0 z-30 w-px bg-[color:var(--rx-line)]"
+                />
+                <div className="sticky top-0 z-20 flex items-center gap-2 bg-[var(--rx-bg)] px-3 py-3">
+                  <div className="relative h-10 w-10 shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={stylist.photoUrl || "/avatars/stylist-neutral.svg"}
+                      alt=""
+                      className={`h-10 w-10 rounded-full object-cover ring-offset-2 ring-offset-[var(--rx-bg)] ${stylistStatusRingClass(
+                        wait.kind
+                      )}`}
+                      data-testid="stylist-status-ring"
+                      data-status-tone={stylistFloorTone(wait.kind)}
+                      title={wait.label}
+                    />
+                    <span
+                      className={`absolute right-0 bottom-0 h-2.5 w-2.5 rounded-full ring-2 ring-[color:var(--rx-nav)] ${stylistStatusDotClass(
+                        wait.kind
+                      )}`}
+                    />
+                  </div>
+                  <p className="truncate text-sm font-semibold text-[color:var(--rx-text)]">{stylist.name}</p>
                 </div>
-                <p className="truncate text-sm font-semibold text-[color:var(--rx-text)]">{s.name}</p>
+                <div className="relative" style={{ height }}>
+                  {hours.map((h, i) => (
+                    <div
+                      key={h}
+                      className="pointer-events-none absolute inset-x-0 border-t border-[color:var(--rx-line)]"
+                      style={{ top: i * HOUR_PX }}
+                    />
+                  ))}
+                  {showNow ? (
+                    <div
+                      className="pointer-events-none absolute inset-x-0 z-10 flex items-center"
+                      style={{ top: nowTop }}
+                    >
+                      <div className="h-px flex-1 bg-[#c45b7a]" />
+                      {index === columns.length - 1 ? (
+                        <span className="ml-2 flex items-center gap-1 text-[10px] font-bold tracking-[0.18em] text-[#c45b7a] uppercase">
+                          <span className="h-2 w-2 rounded-full bg-[#c45b7a]" />
+                          Now
+                        </span>
+                      ) : null}
+                    </div>
+                  ) : null}
+                  {items.map((a) => {
+                    const start = clockParts(a.startsAt, timeZone).minutes - openMin;
+                    const end = clockParts(a.endsAt, timeZone).minutes - openMin;
+                    const top = (start / spanMin) * height;
+                    const cardH = Math.max(72, ((end - start) / spanMin) * height - 6);
+                    const selected = selectedId === a.id;
+                    return (
+                      <article
+                        key={a.id}
+                        className={`absolute inset-x-1.5 z-20 overflow-hidden rounded-xl px-2.5 py-1.5 text-left shadow-md ${serviceCardTone(
+                          a.service.name
+                        )} ${selected ? "ring-2 ring-[color:var(--rx-accent)]" : ""}`}
+                        style={{ top, height: cardH }}
+                      >
+                        <button type="button" className="block h-full w-full text-left" onClick={() => onSelect(a)}>
+                          <p className="flex items-center gap-1.5 truncate text-sm font-semibold">
+                            <ServiceGlyph name={a.service.name} />
+                            {a.client.name}
+                          </p>
+                          <p className="truncate text-[11px] opacity-90">{a.service.name}</p>
+                          <span className="mt-1 inline-block rounded-full bg-white/20 px-1.5 py-0.5 text-[9px] font-bold tracking-wide uppercase">
+                            {statusLabel(a.status)}
+                          </span>
+                        </button>
+                      </article>
+                    );
+                  })}
+                </div>
               </div>
             );
           })}
-        </div>
-      </div>
-
-      <div
-        ref={bodyRef}
-        className="min-h-0 flex-1 overflow-auto"
-        onScroll={(e) => {
-          if (headerRef.current) headerRef.current.scrollLeft = e.currentTarget.scrollLeft;
-        }}
-      >
-        <div className={`relative grid ${minW}`} style={{ gridTemplateColumns: cols, height }}>
-        <div className="relative">
-          {hours.map((h, i) => (
-            <p
-              key={h}
-              className="absolute right-2 text-[10px] text-[color:var(--rx-faint)] tabular-nums"
-              style={{ top: i * HOUR_PX - 5 }}
-            >
-              {formatHourLabel(h)}
-            </p>
-          ))}
-          <p
-            className="absolute right-2 text-[10px] text-[color:var(--rx-faint)] tabular-nums"
-            style={{ top: hours.length * HOUR_PX - 5 }}
-          >
-            {formatHourLabel(closeHour)}
-          </p>
-        </div>
-        {columns.map((stylist) => {
-          const items = appointments.filter(
-            (a) => a.stylist.id === stylist.id || a.stylist.name === stylist.name
-          );
-          return (
-            <div key={stylist.id} className="relative border-l border-[color:var(--rx-line)]">
-              {hours.map((h, i) => (
-                <div
-                  key={h}
-                  className="absolute inset-x-0 border-t border-[color:var(--rx-line)]"
-                  style={{ top: i * HOUR_PX }}
-                />
-              ))}
-              {items.map((a) => {
-                const start = clockParts(a.startsAt, timeZone).minutes - openMin;
-                const end = clockParts(a.endsAt, timeZone).minutes - openMin;
-                const top = (start / spanMin) * height;
-                const h = Math.max(72, ((end - start) / spanMin) * height - 6);
-                const selected = selectedId === a.id;
-                return (
-                  <article
-                    key={a.id}
-                    className={`absolute inset-x-1.5 overflow-hidden rounded-xl px-2.5 py-1.5 text-left shadow-md ${serviceCardTone(
-                      a.service.name
-                    )} ${selected ? "ring-2 ring-[color:var(--rx-accent)]" : ""}`}
-                    style={{ top, height: h }}
-                  >
-                    <button type="button" className="block h-full w-full text-left" onClick={() => onSelect(a)}>
-                      <p className="flex items-center gap-1.5 truncate text-sm font-semibold">
-                        <ServiceGlyph name={a.service.name} />
-                        {a.client.name}
-                      </p>
-                      <p className="truncate text-[11px] opacity-90">{a.service.name}</p>
-                      <span className="mt-1 inline-block rounded-full bg-white/20 px-1.5 py-0.5 text-[9px] font-bold tracking-wide uppercase">
-                        {statusLabel(a.status)}
-                      </span>
-                    </button>
-                  </article>
-                );
-              })}
-            </div>
-          );
-        })}
-        {showNow ? (
-          <div
-            className="pointer-events-none absolute right-0 left-14 z-10 flex items-center"
-            style={{ top: nowTop }}
-          >
-            <div className="h-px flex-1 bg-[#c45b7a]" />
-            <span className="ml-2 flex items-center gap-1 text-[10px] font-bold tracking-[0.18em] text-[#c45b7a] uppercase">
-              <span className="h-2 w-2 rounded-full bg-[#c45b7a]" />
-              Now
-            </span>
-          </div>
-        ) : null}
         </div>
       </div>
     </div>
@@ -236,12 +236,16 @@ export function ReceptionClientPanel({
   onStatus,
   onCheckout,
   busyId,
+  checkoutBusy,
+  checkoutError,
 }: {
   appt: DisplayAppt | null;
   onClose: () => void;
   onStatus: (id: string, status: string, chargedCents?: number, tipCents?: number) => void;
   onCheckout?: (appt: DisplayAppt) => void;
   busyId?: string | null;
+  checkoutBusy?: boolean;
+  checkoutError?: string;
 }) {
   if (!appt) {
     return (
@@ -361,11 +365,18 @@ export function ReceptionClientPanel({
         {["BOOKED", "CHECKED_IN"].includes(appt.status) ? (
           <button
             type="button"
+            disabled={checkoutBusy}
             onClick={() => onCheckout?.(appt)}
-            className="rounded-2xl bg-[#1f6b5a] py-3 text-sm font-semibold text-white"
+            className="rounded-2xl bg-[#1f6b5a] py-3 text-sm font-semibold text-white disabled:opacity-60"
+            data-testid="reception-checkout"
           >
-            Checkout
+            {checkoutBusy ? "Opening…" : "Checkout"}
           </button>
+        ) : null}
+        {checkoutError ? (
+          <p className="text-center text-xs text-[#f5a8a8]" data-testid="reception-checkout-error">
+            {checkoutError}
+          </p>
         ) : null}
       </div>
     </aside>

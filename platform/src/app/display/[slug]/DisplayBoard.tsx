@@ -536,6 +536,7 @@ export function DisplayBoard({
   const [boardLocked, setBoardLocked] = useState(false);
   const [checkout, setCheckout] = useState<CheckoutBill | null>(null);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
+  const [checkoutError, setCheckoutError] = useState("");
   const [statusBusyId, setStatusBusyId] = useState<string | null>(null);
   const checkoutInFlight = useRef(false);
   const checkoutWriteSeq = useRef(0);
@@ -706,6 +707,9 @@ export function DisplayBoard({
     if (r.status === 401 && data.needsPin) {
       lockToPin();
       return null;
+    }
+    if (!r.ok) {
+      return { error: data.error || "Checkout failed" };
     }
     if (seq !== checkoutWriteSeq.current) return data;
     setCheckout(data.checkout || null);
@@ -915,11 +919,17 @@ export function DisplayBoard({
   }
 
   async function presentCheckout(appt: DisplayAppt) {
+    setCheckoutError("");
     setCheckoutBusy(true);
     try {
       void loadServices();
       void loadProducts();
-      await checkoutAction({ action: "present", appointmentId: appt.id });
+      const data = await checkoutAction({ action: "present", appointmentId: appt.id });
+      if (data && "error" in data && data.error) {
+        setCheckoutError(String(data.error));
+      }
+    } catch {
+      setCheckoutError("Could not open checkout. Try again.");
     } finally {
       setCheckoutBusy(false);
     }
@@ -1010,7 +1020,7 @@ export function DisplayBoard({
       <div className="app-splash-host">
         <div className="app-splash app-splash--display" role="status" aria-live="polite" aria-busy="true">
           <div className="app-splash-inner">
-            <p className="app-splash-brand">
+            <p className="app-splash-brand" suppressHydrationWarning>
               {salon?.name || humanizeSlug(slug)}
             </p>
             <p className="app-splash-label">Salon Display</p>
@@ -1233,6 +1243,8 @@ export function DisplayBoard({
                 onStatus={setStatus}
                 onCheckout={presentCheckout}
                 busyId={statusBusyId}
+                checkoutBusy={checkoutBusy}
+                checkoutError={checkoutError}
               />
             </div>
               </>
@@ -1258,6 +1270,8 @@ export function DisplayBoard({
                     onStatus={setStatus}
                     onCheckout={presentCheckout}
                     busyId={statusBusyId}
+                    checkoutBusy={checkoutBusy}
+                    checkoutError={checkoutError}
                   />
                 </div>
               </>
@@ -1296,11 +1310,9 @@ export function DisplayBoard({
         <ReceptionCheckoutDesk
           bill={checkout}
           busy={checkoutBusy}
+          slug={slug}
           services={services}
           products={products}
-          onTip={(tipMode) => {
-            void checkoutAction({ action: "tip", tipMode });
-          }}
           onAddLine={(kind, catalogId) => {
             void checkoutAction({ action: "add-line", kind, catalogId });
           }}

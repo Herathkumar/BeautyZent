@@ -1,17 +1,17 @@
 "use client";
 
 import { formatCad } from "@/lib/money";
-import type { CheckoutBill, CheckoutLineKind, CheckoutTipMode } from "@/lib/display-checkout-types";
-import { CheckoutTipPicker } from "@/components/display/CheckoutTipPicker";
+import type { CheckoutBill, CheckoutLineKind } from "@/lib/display-checkout-types";
+import { ReceptionQuickServices } from "@/components/display/ReceptionQuickServices";
 
 type CatalogItem = { id: string; name: string; priceCents: number; durationMin?: number };
 
 export function ReceptionCheckoutDesk({
   bill,
   busy,
+  slug,
   services,
   products,
-  onTip,
   onAddLine,
   onRemoveLine,
   onComplete,
@@ -19,15 +19,14 @@ export function ReceptionCheckoutDesk({
 }: {
   bill: CheckoutBill;
   busy?: boolean;
+  slug: string;
   services: CatalogItem[];
   products: CatalogItem[];
-  onTip: (mode: CheckoutTipMode) => void;
   onAddLine: (kind: CheckoutLineKind, catalogId: string) => void;
   onRemoveLine: (lineId: string) => void;
   onComplete: () => void;
   onCancel: () => void;
 }) {
-  const tipMode = bill.tipMode || { kind: "none" as const };
   const extraProducts = bill.products || [];
   const confirmed = bill.status === "VERIFIED";
 
@@ -48,7 +47,7 @@ export function ReceptionCheckoutDesk({
             Bill is on the waiting-room screen
           </h2>
           <p className="mt-1 text-sm text-white/50">
-            Add extras or a tip — {bill.clientFirstName} sees the same total.
+            Add extras here — {bill.clientFirstName} can add a tip on the waiting-room screen.
           </p>
         </div>
 
@@ -160,19 +159,36 @@ export function ReceptionCheckoutDesk({
           </div>
 
           <div className="mt-5">
-            <CheckoutTipPicker
-              chargedCents={bill.chargedCents}
-              tipMode={tipMode}
-              onChange={onTip}
-              variant="reception"
+            <ReceptionQuickServices
+              slug={slug}
+              services={services}
+              onAdd={(serviceId) => onAddLine("service", serviceId)}
             />
           </div>
 
-          <div className="mt-4 flex items-center justify-between border-t border-white/8 pt-4">
-            <span className="text-xs tracking-wide text-white/40 uppercase">Amount due</span>
-            <span className="text-2xl font-semibold tabular-nums text-white">
-              {formatCad(bill.totalCents)}
-            </span>
+          <div className="mt-4 space-y-1.5 border-t border-white/8 pt-4 text-sm text-white/50">
+            <div className="flex items-center justify-between">
+              <span>Subtotal</span>
+              <span className="tabular-nums">{formatCad(bill.chargedCents)}</span>
+            </div>
+            {bill.taxCents > 0 ? (
+              <div className="flex items-center justify-between" data-testid="reception-checkout-tax">
+                <span>HST {bill.taxPercent}%</span>
+                <span className="tabular-nums">{formatCad(bill.taxCents)}</span>
+              </div>
+            ) : null}
+            {bill.tipCents > 0 ? (
+              <div className="flex items-center justify-between">
+                <span>Tip</span>
+                <span className="tabular-nums">{formatCad(bill.tipCents)}</span>
+              </div>
+            ) : null}
+            <div className="flex items-center justify-between pt-1 text-white">
+              <span className="text-xs tracking-wide text-white/40 uppercase">Amount due</span>
+              <span className="text-2xl font-semibold tabular-nums">
+                {formatCad(bill.totalCents)}
+              </span>
+            </div>
           </div>
 
           {confirmed ? (

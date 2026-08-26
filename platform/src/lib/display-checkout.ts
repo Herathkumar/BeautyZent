@@ -42,6 +42,19 @@ export function clearCheckout(salonId: string) {
   sessions.delete(salonId);
 }
 
+export const DEFAULT_TAX_PERCENT = 13;
+
+export function clampTaxPercent(raw: unknown, fallback = DEFAULT_TAX_PERCENT) {
+  const value = Math.round(Number(raw));
+  if (!Number.isFinite(value)) return fallback;
+  return Math.max(0, Math.min(50, value));
+}
+
+export function taxCentsFor(chargedCents: number, taxPercent: number) {
+  if (taxPercent <= 0 || chargedCents <= 0) return 0;
+  return Math.round((chargedCents * taxPercent) / 100);
+}
+
 export function tipCentsFor(chargedCents: number, mode: CheckoutTipMode) {
   if (mode.kind === "none") return 0;
   if (mode.kind === "percent") return Math.round((chargedCents * mode.pct) / 100);
@@ -66,6 +79,8 @@ export function settleBill(
   const productCents = products.reduce((sum, s) => sum + s.priceCents, 0);
   const chargedCents = serviceCents + productCents;
   const catalogCents = services.filter((s) => !s.added).reduce((sum, s) => sum + s.priceCents, 0);
+  const taxPercent = clampTaxPercent(bill.taxPercent);
+  const taxCents = taxCentsFor(chargedCents, taxPercent);
   const tipCents = tipCentsFor(chargedCents, tipMode);
   return {
     ...bill,
@@ -76,9 +91,11 @@ export function settleBill(
     serviceCents,
     productCents,
     chargedCents,
+    taxPercent,
+    taxCents,
     tipCents,
     adjustmentCents: 0,
-    totalCents: chargedCents + tipCents,
+    totalCents: chargedCents + taxCents + tipCents,
   };
 }
 
@@ -108,10 +125,18 @@ export async function buildCheckoutBill(
   status: CheckoutBill["status"],
   timeZone?: string | null
 ): Promise<CheckoutBill | null> {
-  const salon = await prisma.salon.findUnique({
-    where: { id: salonId },
-    select: { name: true, timezone: true },
-  });
+  let salon: { name: string; timezone: string; taxPercent?: number } | null = null;
+  try {
+    salon = await prisma.salon.findUnique({
+      where: { id: salonId },
+      select: { name: true, timezone: true, taxPercent: true },
+    });
+  } catch {
+    salon = await prisma.salon.findUnique({
+      where: { id: salonId },
+      select: { name: true, timezone: true },
+    });
+  }
   if (!salon) return null;
 
   const appt = await prisma.appointment.findFirst({
@@ -174,6 +199,8 @@ export async function buildCheckoutBill(
     appointmentId: appt.id,
     status,
     chargedCents,
+    taxPercent: clampTaxPercent(salon.taxPercent),
+    taxCents: 0,
     tipCents,
     tipMode,
     catalogCents: 0,

@@ -19,6 +19,8 @@ export type CheckoutBill = {
   appointmentId: string;
   status: "PENDING" | "VERIFIED" | "PAID";
   chargedCents: number;
+  taxPercent: number;
+  taxCents: number;
   tipCents: number;
   tipMode: CheckoutTipMode;
   catalogCents: number;
