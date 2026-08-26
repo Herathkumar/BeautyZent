@@ -7,6 +7,12 @@ export const metadata: Metadata = {
   title: "SalonBook — Online salon booking",
   description:
     "Multi-tenant salon booking with stylist calendars, tablet floor display, and admin portal.",
+  formatDetection: {
+    telephone: false,
+    date: false,
+    email: false,
+    address: false,
+  },
 };
 
 /** Paints shell before CSS/JS so cold starts don't flash the wrong theme. */

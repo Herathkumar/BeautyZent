@@ -11,6 +11,12 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Stylist App",
   description: "Today's bookings, check-in, and time off — phone-friendly stylist portal.",
+  formatDetection: {
+    telephone: false,
+    date: false,
+    email: false,
+    address: false,
+  },
   manifest: "/stylist-manifest.webmanifest",
   appleWebApp: {
     capable: true,

@@ -37,6 +37,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       ],
       apple: [{ url: "/book-icon-180.png", sizes: "180x180", type: "image/png" }],
     },
+    formatDetection: {
+      telephone: false,
+      date: false,
+      email: false,
+      address: false,
+    },
   };
 }
 

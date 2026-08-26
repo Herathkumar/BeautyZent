@@ -3,6 +3,10 @@ import { prisma } from "@/lib/prisma";
 import { ZentraLabFooter } from "@/components/ZentraLabFooter";
 import { BookingWizard } from "./BookingWizard";
 
+function telHref(phone: string) {
+  return `tel:${phone.replace(/[^\d+]/g, "")}`;
+}
+
 export default async function BookPage({
   params,
 }: {
@@ -51,7 +55,11 @@ export default async function BookPage({
             </p>
             {(salon.phone || salon.address) && (
               <p className="book-hero-meta text-xs sm:text-sm">
-                {salon.phone}
+                {salon.phone ? (
+                  <a href={telHref(salon.phone)} className="underline-offset-2 hover:underline">
+                    {salon.phone}
+                  </a>
+                ) : null}
                 {salon.phone && salon.address ? " · " : ""}
                 {salon.address}
               </p>
