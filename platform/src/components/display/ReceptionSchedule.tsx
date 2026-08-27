@@ -178,7 +178,7 @@ export function ReceptionSchedule({
           className={`relative grid ${minW}`}
           style={{ gridTemplateColumns: cols, gridTemplateRows: "auto 1fr" }}
         >
-          <div className="sticky top-0 z-20 col-start-1 row-start-1 bg-[var(--rx-bg)]" />
+          <div className="sticky top-0 z-40 col-start-1 row-start-1 bg-[var(--rx-bg)]" />
           <div className="relative col-start-1 row-start-2" style={{ height }}>
             {hours.map((h, i) => (
               <p
@@ -231,7 +231,7 @@ export function ReceptionSchedule({
                 />
                 {showChairs ? (
                   <div
-                    className={`sticky top-0 z-20 bg-[var(--rx-bg)] px-2 pt-3 pb-2 ${customerWaitToneClass(visual.kind)}`}
+                    className={`sticky top-0 z-40 bg-[var(--rx-bg)] px-2 pt-3 pb-2 ${customerWaitToneClass(visual.kind)}`}
                   >
                     <div className="flex flex-col items-center text-center">
                       <div
@@ -269,7 +269,7 @@ export function ReceptionSchedule({
                     </div>
                   </div>
                 ) : (
-                  <div className="sticky top-0 z-20 flex items-center gap-2 bg-[var(--rx-bg)] px-3 py-3">
+                  <div className="sticky top-0 z-40 flex items-center gap-2 bg-[var(--rx-bg)] px-3 py-3">
                     <div className="relative h-10 w-10 shrink-0">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
@@ -291,7 +291,7 @@ export function ReceptionSchedule({
                     <p className="truncate text-sm font-semibold text-[color:var(--rx-text)]">{stylist.name}</p>
                   </div>
                 )}
-                <div className="relative" style={{ height }}>
+                <div className="relative overflow-hidden" style={{ height }}>
                   {hours.map((h, i) => (
                     <div
                       key={h}
@@ -309,7 +309,7 @@ export function ReceptionSchedule({
                         data-testid="reception-appt-card"
                         data-appt-status={a.status}
                         data-appt-id={a.id}
-                        className={`absolute inset-x-1.5 z-20 overflow-hidden rounded-xl px-2.5 py-1.5 text-left shadow-md ${serviceCardTone(
+                        className={`absolute inset-x-1.5 z-10 overflow-hidden rounded-xl px-2.5 py-1.5 text-left shadow-md ${serviceCardTone(
                           a.service.name
                         )} ${selected ? "ring-2 ring-[color:var(--rx-accent)]" : ""}${
                           checkIn ? " customer-appt-card--draggable" : ""

@@ -11,11 +11,14 @@ export type ChairDrag = {
 };
 
 export function hitChairDrop(x: number, y: number) {
-  const el = document.elementFromPoint(x, y);
-  const drop = el?.closest("[data-chair-drop]") as HTMLElement | null;
-  if (!drop) return null;
-  const kind = (drop.dataset.chairKind || "waiting") as StylistWaitKind;
-  return { id: drop.dataset.chairDrop || "", name: drop.dataset.chairName || "", kind };
+  const stack = document.elementsFromPoint(x, y);
+  for (const el of stack) {
+    const drop = (el as Element).closest?.("[data-chair-drop]") as HTMLElement | null;
+    if (!drop) continue;
+    const kind = (drop.dataset.chairKind || "waiting") as StylistWaitKind;
+    return { id: drop.dataset.chairDrop || "", name: drop.dataset.chairName || "", kind };
+  }
+  return null;
 }
 
 export function resolveDropTarget(

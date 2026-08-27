@@ -935,6 +935,7 @@ html.customer-shell--dark body {
 .customer-appt-card--dragging {
   opacity: 0.4;
   cursor: grabbing;
+  pointer-events: none;
 }
 .customer-appt-drag-ghost {
   position: fixed;

@@ -333,21 +333,25 @@ export function timelineCardBox(
   let endMin = clockParts(appt.endsAt, timeZone).minutes;
   if (endMin <= startMin) endMin += 24 * 60;
   const nowMin = clockParts(now.toISOString(), timeZone).minutes;
+  const closeMin = openMin + spanMin;
   const onChair = appt.status === "CHECKED_IN";
   const toY = (min: number) => ((min - openMin) / spanMin) * columnHeight;
+  const clampTop = (y: number) => Math.max(0, Math.min(y, Math.max(0, columnHeight - minHeight)));
 
   let visStart = startMin;
   let visEnd = endMin;
   if (onChair) {
-    visStart = nowMin;
+    // Stay inside today's open hours so a late-night / early-morning check-in
+    // cannot paint a card above the stylist + chair header.
+    visStart = Math.min(Math.max(nowMin, openMin), closeMin);
     visEnd = endMin;
     if (visEnd <= visStart) {
-      return { top: toY(nowMin), height: minHeight, onChair: true };
+      return { top: clampTop(toY(visStart)), height: minHeight, onChair: true };
     }
   }
 
-  const top = toY(visStart);
-  const rawH = toY(visEnd) - top - 6;
+  const top = clampTop(toY(visStart));
+  const rawH = Math.min(toY(visEnd), columnHeight) - top - 6;
   return { top, height: Math.max(minHeight, rawH), onChair };
 }
 

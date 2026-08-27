@@ -160,7 +160,7 @@ export function CustomerScheduleGrid({
           className="relative grid min-w-[640px]"
           style={{ gridTemplateColumns: cols, gridTemplateRows: "auto 1fr" }}
         >
-          <div className="sticky top-0 z-20 col-start-1 row-start-1 bg-[var(--cd-panel)] pt-4 sm:pt-5" />
+          <div className="sticky top-0 z-40 col-start-1 row-start-1 bg-[var(--cd-panel)] pt-4 sm:pt-5" />
           <div className="relative col-start-1 row-start-2" style={{ height }}>
             {hours.map((h, i) => (
               <p
@@ -205,7 +205,7 @@ export function CustomerScheduleGrid({
                   aria-hidden
                   className="pointer-events-none absolute inset-y-0 left-0 z-30 w-px bg-[color:var(--cd-line)]"
                 />
-                <div className={`sticky top-0 z-20 bg-[var(--cd-panel)] px-2 pt-4 pb-3 sm:pt-5 ${customerWaitToneClass(visual.kind)}`}>
+                <div className={`sticky top-0 z-40 bg-[var(--cd-panel)] px-2 pt-4 pb-3 sm:pt-5 ${customerWaitToneClass(visual.kind)}`}>
                   <div className="customer-stylist-head">
                     <div className="flex min-w-0 flex-col items-center text-center">
                       <div
@@ -240,7 +240,7 @@ export function CustomerScheduleGrid({
                     </div>
                   </div>
                 </div>
-                <div className="relative" style={{ height }}>
+                <div className="relative overflow-hidden" style={{ height }}>
                   {hours.map((h, i) => (
                     <div
                       key={h}
@@ -260,7 +260,7 @@ export function CustomerScheduleGrid({
                         data-appt-id={a.id}
                         data-on-chair={box.onChair ? "true" : undefined}
                         data-service-kind={kind}
-                        className={`absolute inset-x-2 z-20 flex flex-col items-center justify-center rounded-2xl px-2 py-1 text-center shadow-sm ${serviceCardTone(
+                        className={`absolute inset-x-2 z-10 flex flex-col items-center justify-center rounded-2xl px-2 py-1 text-center shadow-sm ${serviceCardTone(
                           a.service.name
                         )}${checkIn ? " customer-appt-card--draggable" : ""}${drag?.apptId === a.id ? " customer-appt-card--dragging" : ""}`}
                         style={{ top: box.top, height: box.height, touchAction: checkIn ? "none" : undefined }}
