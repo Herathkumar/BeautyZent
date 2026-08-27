@@ -168,8 +168,8 @@ export function ReceptionSchedule({
 
   const cols = compact
     ? "3.25rem minmax(0, 1fr)"
-    : `3.5rem repeat(${columns.length}, minmax(${showChairs ? "10.75rem" : "9rem"}, 1fr))`;
-  const minW = compact ? "min-w-0" : showChairs ? "min-w-[880px]" : "min-w-[720px]";
+    : `3.5rem repeat(${columns.length}, minmax(${showChairs ? "9.5rem" : "9rem"}, 1fr))`;
+  const minW = compact ? "min-w-0" : showChairs ? "min-w-[780px]" : "min-w-[720px]";
 
   return (
     <div className="flex h-full min-h-0 flex-col">

@@ -896,16 +896,22 @@ html.customer-shell--dark body {
   text-shadow: 0 0 8px color-mix(in srgb, currentColor 40%, transparent);
 }
 .reception-board .customer-stylist-chair {
-  min-width: 4.4rem;
-  max-width: 6.2rem;
-  margin-top: 0.35rem;
+  min-width: 3rem;
+  max-width: 4.4rem;
+  margin-top: 0.2rem;
 }
 .reception-board .customer-stylist-chair__icon {
-  width: 4.15rem;
-  height: 5.95rem;
+  width: 2.75rem;
+  height: 3.9rem;
 }
 .reception-board .customer-stylist-chair__label {
-  font-size: 0.95rem;
+  font-size: 0.7rem;
+  margin-top: 0.1rem;
+}
+.reception-board .customer-stylist-chair__flare {
+  width: 2.4rem;
+  height: 0.45rem;
+  margin-top: -0.05rem;
 }
 .reception-board--light .customer-stylist-chair__icon,
 .reception-board[data-reception-theme="light"] .customer-stylist-chair__icon {
