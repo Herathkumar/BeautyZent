@@ -541,6 +541,7 @@ export function DisplayBoard({
   const checkoutInFlight = useRef(false);
   const checkoutWriteSeq = useRef(0);
   const checkoutLiveRef = useRef(false);
+  const hidePaidThanksRef = useRef(false);
   checkoutLiveRef.current = Boolean(checkout && checkout.status !== "PAID") || checkoutBusy;
   const boardDataSeq = useRef(0);
 
@@ -686,7 +687,9 @@ export function DisplayBoard({
         return;
       }
       if (seq !== checkoutWriteSeq.current) return;
-      const next = data.checkout || null;
+      let next = data.checkout || null;
+      if (next && next.status !== "PAID") hidePaidThanksRef.current = false;
+      if (hidePaidThanksRef.current && next?.status === "PAID") next = null;
       setCheckout((prev) => keepIfSame(prev, next));
     } catch {
       /* ignore */
@@ -712,7 +715,10 @@ export function DisplayBoard({
       return { error: data.error || "Checkout failed" };
     }
     if (seq !== checkoutWriteSeq.current) return data;
-    setCheckout(data.checkout || null);
+    let next = data.checkout || null;
+    if (next && next.status !== "PAID") hidePaidThanksRef.current = false;
+    if (hidePaidThanksRef.current && next?.status === "PAID") next = null;
+    setCheckout(next);
     return data;
   }
 
@@ -1491,6 +1497,15 @@ export function DisplayBoard({
           checkout && checkout.status === "PENDING"
             ? () => {
                 void checkoutAction({ action: "verify" });
+              }
+            : undefined
+        }
+        onDismissThanks={
+          checkout?.status === "PAID"
+            ? () => {
+                hidePaidThanksRef.current = true;
+                setCheckout(null);
+                void checkoutAction({ action: "cancel" });
               }
             : undefined
         }

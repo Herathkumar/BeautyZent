@@ -9,28 +9,45 @@ export function CustomerCheckoutOverlay({
   thanks,
   onLooksGood,
   onTip,
+  onDismissThanks,
 }: {
   bill: CheckoutBill | null;
   thanks: { firstName: string } | null;
   onLooksGood?: () => void;
   onTip?: (mode: CheckoutTipMode) => void;
+  onDismissThanks?: () => void;
 }) {
   if (!bill && !thanks) return null;
   const products = bill?.products || [];
   const tipMode = bill?.tipMode || { kind: "none" as const };
+  const showingThanks = Boolean((thanks && !bill) || bill?.status === "PAID");
 
   return (
     <div
-      className="fixed inset-0 z-[80] flex items-center justify-center bg-[color:var(--cd-overlay)] px-4 py-6 backdrop-blur-[6px]"
+      className={`fixed inset-0 z-[80] flex items-center justify-center bg-[color:var(--cd-overlay)] px-4 py-6 backdrop-blur-[6px]${
+        showingThanks ? " cursor-pointer" : ""
+      }`}
       data-testid="customer-checkout-overlay"
       role="dialog"
       aria-modal="true"
       aria-labelledby="customer-checkout-title"
+      onClick={showingThanks ? onDismissThanks : undefined}
+      onKeyDown={
+        showingThanks
+          ? (e) => {
+              if (e.key === "Escape" || e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onDismissThanks?.();
+              }
+            }
+          : undefined
+      }
+      tabIndex={showingThanks ? 0 : undefined}
     >
       <div className="relative max-h-[min(92vh,52rem)] w-full max-w-xl overflow-y-auto rounded-[2rem] border border-[color:var(--cd-line)] bg-[var(--cd-panel)] shadow-[var(--cd-shadow)]">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_50%_0%,color-mix(in_srgb,var(--cd-accent)_22%,transparent),transparent_70%)]" />
         {thanks && !bill ? (
-          <div className="px-8 py-16 text-center sm:px-12">
+          <div className="px-8 py-16 text-center sm:px-12" data-testid="customer-checkout-thanks">
             <p className="text-[11px] font-semibold tracking-[0.28em] text-[color:var(--cd-accent)] uppercase">
               Paid
             </p>
@@ -43,12 +60,15 @@ export function CustomerCheckoutOverlay({
             <p className="mt-4 text-base text-[color:var(--cd-muted)]">
               You’re all set. We hope to see you again soon.
             </p>
+            <p className="mt-6 text-xs tracking-[0.18em] text-[color:var(--cd-accent)] uppercase">
+              Tap anywhere to close
+            </p>
             <span className="mt-8 inline-block text-2xl text-[color:var(--cd-accent)]" aria-hidden>
               ✦
             </span>
           </div>
         ) : bill?.status === "PAID" ? (
-          <div className="px-8 py-16 text-center sm:px-12">
+          <div className="px-8 py-16 text-center sm:px-12" data-testid="customer-checkout-thanks">
             <p className="text-[11px] font-semibold tracking-[0.28em] text-[color:var(--cd-accent)] uppercase">
               Paid
             </p>
@@ -60,6 +80,9 @@ export function CustomerCheckoutOverlay({
             </h2>
             <p className="mt-4 text-base text-[color:var(--cd-muted)]">
               You’re all set. We hope to see you again soon.
+            </p>
+            <p className="mt-6 text-xs tracking-[0.18em] text-[color:var(--cd-accent)] uppercase">
+              Tap anywhere to close
             </p>
             <span className="mt-8 inline-block text-2xl text-[color:var(--cd-accent)]" aria-hidden>
               ✦

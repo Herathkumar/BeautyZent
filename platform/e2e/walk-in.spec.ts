@@ -372,6 +372,8 @@ test.describe("Walk-in appointments", () => {
 
     await page.getByTestId("reception-payment-received").click();
     await expect(overlay).toContainText(/thank you/i, { timeout: 10_000 });
+    await overlay.click({ position: { x: 16, y: 16 } });
+    await expect(overlay).toHaveCount(0, { timeout: 8_000 });
     await customer.close();
   });
 
