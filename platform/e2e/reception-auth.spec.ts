@@ -77,6 +77,56 @@ test.describe("Reception login and theme", () => {
   });
 });
 
+test.describe("Reception chairs", () => {
+  test("shows chair status beside each stylist", async ({ page }) => {
+    test.setTimeout(180_000);
+    await receptionLogin(page);
+    const waits = page.getByTestId("customer-stylist-wait");
+    await expect(waits.first()).toBeVisible({ timeout: 20_000 });
+    await expect(waits.first()).toHaveAttribute("data-wait-kind", /available|waiting|opens|closed|done/);
+    await expect(waits.first().locator("svg")).toBeVisible();
+    await expect(waits.first()).not.toHaveText(/Available now/i);
+    const kind = await waits.first().getAttribute("data-wait-kind");
+    if (kind === "available") {
+      await expect(waits.first()).toHaveText(/^Available$/);
+    } else if (kind === "opens") {
+      await expect(waits.first()).toHaveText(/Opens /i);
+    } else if (kind === "closed") {
+      await expect(waits.first()).toHaveText(/Closed/i);
+    } else if (kind === "done") {
+      await expect(waits.first()).toHaveText(/^Off$/);
+    }
+    const rings = page.getByTestId("stylist-status-ring");
+    await expect(rings.first()).toBeVisible();
+    await expect(rings.first()).toHaveAttribute("data-status-tone", /available|busy|off/);
+  });
+
+  test("booked cards drag onto that stylist's chair to check in", async ({ page }) => {
+    test.setTimeout(180_000);
+    await receptionLogin(page);
+    const drop = page.getByTestId("stylist-chair-drop").first();
+    await expect(drop).toBeVisible({ timeout: 20_000 });
+    const card = page.locator("[data-testid=reception-appt-card][data-appt-status=BOOKED]").first();
+    if ((await card.count()) === 0) {
+      test.info().annotations.push({ type: "skip", description: "no BOOKED card on the reception board" });
+      return;
+    }
+    const guest = ((await card.innerText()) || "").trim().split(/\s+/)[0];
+    const column = card.locator("xpath=ancestor::*[@data-stylist-column]");
+    const chair = column.getByTestId("stylist-chair-drop");
+    const box = await chair.boundingBox();
+    const from = await card.boundingBox();
+    expect(box && from).toBeTruthy();
+    await page.mouse.move(from!.x + from!.width / 2, from!.y + from!.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2, { steps: 16 });
+    await page.mouse.up();
+    const wait = chair.getByTestId("customer-stylist-wait");
+    await expect(wait).toHaveAttribute("data-wait-kind", "waiting", { timeout: 12_000 });
+    if (guest) await expect(wait).toContainText(new RegExp(guest, "i"));
+  });
+});
+
 test.describe("Customer display theme", () => {
   test("can switch light and dark", async ({ page }) => {
     await page.addInitScript(() => {
@@ -97,13 +147,49 @@ test.describe("Customer display theme", () => {
     await expect(page.locator(".customer-board")).toHaveAttribute("data-customer-theme", "light");
   });
 
-  test("shows a wait timer under each stylist", async ({ page }) => {
+  test("shows chair status beside each stylist", async ({ page }) => {
     await page.goto(`/display/${DEMO.slug}`);
     const waits = page.getByTestId("customer-stylist-wait");
     await expect(waits.first()).toBeVisible({ timeout: 20_000 });
-    await expect(waits.first()).toHaveText(/Available now|Wait |Opens |Closed|Done for today/i);
+    await expect(waits.first()).toHaveAttribute("data-wait-kind", /available|waiting|opens|closed|done/);
+    await expect(waits.first().locator("svg")).toBeVisible();
+    await expect(waits.first()).not.toHaveText(/Available now/i);
+    const kind = await waits.first().getAttribute("data-wait-kind");
+    if (kind === "available") {
+      await expect(waits.first()).toHaveText(/^Available$/);
+    } else if (kind === "opens") {
+      await expect(waits.first()).toHaveText(/Opens /i);
+    } else if (kind === "closed") {
+      await expect(waits.first()).toHaveText(/Closed/i);
+    } else if (kind === "done") {
+      await expect(waits.first()).toHaveText(/^Off$/);
+    }
     const rings = page.getByTestId("stylist-status-ring");
     await expect(rings.first()).toBeVisible();
     await expect(rings.first()).toHaveAttribute("data-status-tone", /available|busy|off/);
+  });
+
+  test("booked cards drag onto that stylist's chair to check in", async ({ page }) => {
+    await page.goto(`/display/${DEMO.slug}`);
+    const drop = page.getByTestId("stylist-chair-drop").first();
+    await expect(drop).toBeVisible({ timeout: 20_000 });
+    const card = page.locator("[data-testid=customer-appt-card][data-appt-status=BOOKED]").first();
+    if ((await card.count()) === 0) {
+      test.info().annotations.push({ type: "skip", description: "no BOOKED card on the demo board" });
+      return;
+    }
+    const guest = ((await card.innerText()) || "").trim().split(/\s+/)[0];
+    const column = card.locator("xpath=ancestor::*[@data-stylist-column]");
+    const chair = column.getByTestId("stylist-chair-drop");
+    const box = await chair.boundingBox();
+    const from = await card.boundingBox();
+    expect(box && from).toBeTruthy();
+    await page.mouse.move(from!.x + from!.width / 2, from!.y + from!.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2, { steps: 16 });
+    await page.mouse.up();
+    const wait = chair.getByTestId("customer-stylist-wait");
+    await expect(wait).toHaveAttribute("data-wait-kind", "waiting", { timeout: 12_000 });
+    if (guest) await expect(wait).toContainText(new RegExp(guest, "i"));
   });
 });

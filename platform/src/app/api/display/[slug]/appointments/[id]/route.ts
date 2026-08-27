@@ -30,6 +30,49 @@ export async function PATCH(
   });
   if (!appt) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+  const nextStylistId =
+    typeof body.stylistId === "string" && body.stylistId.trim()
+      ? body.stylistId.trim()
+      : null;
+
+  if (nextStylistId && nextStylistId !== appt.stylistId) {
+    if (!["BOOKED", "CHECKED_IN"].includes(appt.status)) {
+      return NextResponse.json(
+        { error: "Only open bookings can be reassigned" },
+        { status: 400 }
+      );
+    }
+
+    const target = await prisma.stylist.findFirst({
+      where: { id: nextStylistId, salonId: salon.id, active: true },
+      select: { id: true },
+    });
+    if (!target) {
+      return NextResponse.json({ error: "Stylist not found" }, { status: 404 });
+    }
+
+    const now = new Date();
+    const occupied = await prisma.appointment.findFirst({
+      where: {
+        salonId: salon.id,
+        stylistId: nextStylistId,
+        status: "CHECKED_IN",
+        id: { not: appt.id },
+        startsAt: { lte: now },
+        endsAt: { gt: now },
+      },
+      select: { id: true },
+    });
+    if (occupied) {
+      return NextResponse.json({ error: "Stylist chair is occupied" }, { status: 409 });
+    }
+
+    await prisma.appointment.update({
+      where: { id: appt.id },
+      data: { stylistId: nextStylistId },
+    });
+  }
+
   const result = await updateAppointmentStatus({
     appointmentId: appt.id,
     status,

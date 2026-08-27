@@ -279,9 +279,9 @@ test.describe("Walk-in appointments", () => {
     const checkIn = panel.getByRole("button", { name: /^check-in$/i });
     if (await checkIn.count()) {
       await checkIn.click();
-      await expect(row.getByText(/checked in/i)).toBeVisible({ timeout: 10_000 });
+      await expect(row.getByText(/on chair|checked in/i)).toBeVisible({ timeout: 10_000 });
     } else {
-      await expect(row.getByText(/checked in/i)).toBeVisible();
+      await expect(row.getByText(/on chair|checked in/i)).toBeVisible();
     }
 
     await panel.getByRole("button", { name: /^checkout$/i }).click();

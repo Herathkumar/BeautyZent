@@ -276,3 +276,88 @@ export function stylistWaitInfo(
     sublabel: formatMinutesClock(freeMin),
   };
 }
+
+/** Guest in the chair after check-in. BOOKED on the timeline is not seated yet. */
+export function stylistCurrentGuest(
+  appointments: Pick<DisplayAppt, "startsAt" | "endsAt" | "status" | "client">[],
+  now: Date,
+  timeZone?: string | null
+): string | null {
+  const nowMin = clockParts(now.toISOString(), timeZone).minutes;
+  const checkedIn = appointments.filter((a) => a.status === "CHECKED_IN");
+  if (!checkedIn.length) return null;
+
+  const withRange = checkedIn.map((a) => {
+    const start = clockParts(a.startsAt, timeZone).minutes;
+    let end = clockParts(a.endsAt, timeZone).minutes;
+    if (end <= start) end += 24 * 60;
+    return { start, end, name: a.client.name };
+  });
+  const overlapping = withRange.filter((a) => a.start <= nowMin && nowMin < a.end);
+  const pool = overlapping.length ? overlapping : withRange;
+  pool.sort((a, b) => a.start - b.start);
+  return pool[0]?.name ?? null;
+}
+
+/** Chair neon: seated (checked-in) is busy; a booked-but-not-seated slot stays Available. */
+export function stylistChairVisual(
+  wait: StylistWaitInfo,
+  seatedName: string | null
+): { kind: StylistWaitKind; guestName: string | null } {
+  if (seatedName) return { kind: "waiting", guestName: seatedName };
+  if (wait.kind === "waiting") return { kind: "available", guestName: null };
+  return { kind: wait.kind, guestName: null };
+}
+
+export function canChairCheckIn(status: string) {
+  return status === "BOOKED";
+}
+
+/** Own chair always accepts a booked card; other chairs only when Available. */
+export function chairAcceptsDrop(kind: StylistWaitKind, sameStylist: boolean) {
+  if (sameStylist) return true;
+  return kind === "available";
+}
+
+/** Pixel box for a timeline card. CHECKED_IN fills from Now to the booked end. */
+export function timelineCardBox(
+  appt: Pick<DisplayAppt, "startsAt" | "endsAt" | "status">,
+  now: Date,
+  openMin: number,
+  spanMin: number,
+  columnHeight: number,
+  minHeight: number,
+  timeZone?: string | null
+): { top: number; height: number; onChair: boolean } {
+  const startMin = clockParts(appt.startsAt, timeZone).minutes;
+  let endMin = clockParts(appt.endsAt, timeZone).minutes;
+  if (endMin <= startMin) endMin += 24 * 60;
+  const nowMin = clockParts(now.toISOString(), timeZone).minutes;
+  const onChair = appt.status === "CHECKED_IN";
+  const toY = (min: number) => ((min - openMin) / spanMin) * columnHeight;
+
+  let visStart = startMin;
+  let visEnd = endMin;
+  if (onChair) {
+    visStart = nowMin;
+    visEnd = endMin;
+    if (visEnd <= visStart) {
+      return { top: toY(nowMin), height: minHeight, onChair: true };
+    }
+  }
+
+  const top = toY(visStart);
+  const rawH = toY(visEnd) - top - 6;
+  return { top, height: Math.max(minHeight, rawH), onChair };
+}
+
+/** Compact chair caption: guest first name when seated, else a short wait/off label. */
+export function stylistChairCaption(wait: StylistWaitInfo, guestFullName?: string | null): string {
+  if (wait.kind === "available") return "Available";
+  if (wait.kind === "waiting") {
+    const name = guestFullName ? firstName(guestFullName) : null;
+    return name || "Busy";
+  }
+  if (wait.kind === "done") return "Off";
+  return wait.label;
+}

@@ -882,6 +882,59 @@ export function DisplayBoard({
     ].filter((g) => g.items.length > 0);
   }, [services]);
 
+  async function checkInFromDrag(appointmentId: string, targetStylistId: string) {
+    const appt = appointments.find((a) => a.id === appointmentId);
+    if (!appt) return;
+
+    const reassign = targetStylistId !== appt.stylist.id;
+    const targetStylist = reassign
+      ? stylists.find((s) => s.id === targetStylistId)
+      : null;
+    if (reassign && !targetStylist) return;
+
+    const previous = appointments;
+    boardDataSeq.current += 1;
+    setStatusBusyId(appointmentId);
+    setAppointments((list) =>
+      list.map((a) => {
+        if (a.id !== appointmentId) return a;
+        return {
+          ...a,
+          status: "CHECKED_IN",
+          stylist: reassign && targetStylist
+            ? {
+                id: targetStylist.id,
+                name: targetStylist.name,
+                color: targetStylist.color,
+              }
+            : a.stylist,
+        };
+      })
+    );
+    try {
+      const body: Record<string, unknown> = { status: "CHECKED_IN" };
+      if (reassign) body.stylistId = targetStylistId;
+      const res = await fetch(`/api/display/${slug}/appointments/${appointmentId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...unlockHeaders },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 401 && data.needsPin) {
+        setAppointments(previous);
+        lockToPin();
+        return;
+      }
+      if (!res.ok) {
+        setAppointments(previous);
+      }
+    } catch {
+      setAppointments(previous);
+    } finally {
+      setStatusBusyId(null);
+    }
+  }
+
   async function setStatus(
     id: string,
     status: string,
@@ -1229,6 +1282,9 @@ export function DisplayBoard({
                 onSelect={(a) => setSelectedId(a.id)}
                 now={now}
                 storeClosed={storeClosed}
+                onCheckIn={({ appointmentId, targetStylistId }) =>
+                  void checkInFromDrag(appointmentId, targetStylistId)
+                }
               />
             </div>
             <div className="w-full shrink-0 overflow-auto border-t border-[color:var(--rx-line)] xl:w-[22rem] xl:border-t-0 xl:border-l">
@@ -1413,6 +1469,9 @@ export function DisplayBoard({
           timeZone={salon?.timezone}
           now={now}
           storeClosed={storeClosed}
+          onCheckIn={({ appointmentId, targetStylistId }) =>
+            void checkInFromDrag(appointmentId, targetStylistId)
+          }
         />
       </div>
 

@@ -1,7 +1,11 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { hitChairDrop, resolveDropTarget, type ChairDrag } from "@/components/display/chair-drop";
+import { StylistChairStatus, StylistNeonArrow, customerWaitToneClass } from "@/components/display/StylistChairStatus";
 import {
+  canChairCheckIn,
+  chairAcceptsDrop,
   clockParts,
   firstName,
   formatClock,
@@ -11,20 +15,15 @@ import {
   serviceCardTone,
   serviceKind,
   specialtyFromBio,
+  stylistChairVisual,
+  stylistCurrentGuest,
   stylistFloorTone,
   stylistStatusRingClass,
   stylistWaitInfo,
+  timelineCardBox,
   type DisplayAppt,
   type DisplayStylist,
-  type StylistWaitKind,
 } from "@/lib/display-schedule";
-
-function waitStatusClass(kind: StylistWaitKind) {
-  if (kind === "available") return "customer-stylist-wait--ok";
-  if (kind === "waiting") return "customer-stylist-wait--busy";
-  if (kind === "opens") return "customer-stylist-wait--soon";
-  return "customer-stylist-wait--off";
-}
 
 function Glyph({ kind }: { kind: "cut" | "color" | "style" }) {
   const common = "h-4 w-4";
@@ -63,6 +62,7 @@ export function CustomerScheduleGrid({
   timeZone,
   now,
   storeClosed,
+  onCheckIn,
 }: {
   appointments: DisplayAppt[];
   stylists: DisplayStylist[];
@@ -71,6 +71,7 @@ export function CustomerScheduleGrid({
   timeZone?: string | null;
   now: Date;
   storeClosed?: boolean;
+  onCheckIn?: (payload: { appointmentId: string; targetStylistId: string }) => void;
 }) {
   const hours = hourMarks(openHour, closeHour);
   const spanMin = (closeHour - openHour) * 60;
@@ -83,6 +84,20 @@ export function CustomerScheduleGrid({
   const columns = stylists.length ? stylists : [{ id: "none", name: "Chair", bio: null, color: "#c9a87c", photoUrl: "" }];
   const bodyRef = useRef<HTMLDivElement>(null);
   const scrolled = useRef(false);
+  const pending = useRef<{
+    pointerId: number;
+    appt: DisplayAppt;
+    stylist: DisplayStylist;
+    x: number;
+    y: number;
+  } | null>(null);
+  const dragRef = useRef<ChairDrag | null>(null);
+  const [drag, setDrag] = useState<ChairDrag | null>(null);
+
+  function publishDrag(next: ChairDrag | null) {
+    dragRef.current = next;
+    setDrag(next);
+  }
 
   useEffect(() => {
     const el = bodyRef.current;
@@ -92,7 +107,51 @@ export function CustomerScheduleGrid({
     scrolled.current = true;
   }, [showNow, nowMin, nowTop, columns.length]);
 
-  const cols = `4.5rem repeat(${columns.length}, minmax(8.5rem, 1fr))`;
+  const cols = `4.5rem repeat(${columns.length}, minmax(12.5rem, 1fr))`;
+
+  function endDrag(clientX: number, clientY: number, commit: boolean) {
+    const current = dragRef.current;
+    pending.current = null;
+    publishDrag(null);
+    if (!commit || !current || !onCheckIn) return;
+    const hit = hitChairDrop(clientX, clientY);
+    const targetStylistId = resolveDropTarget(hit, current.stylistId);
+    if (targetStylistId) {
+      onCheckIn({ appointmentId: current.apptId, targetStylistId });
+    }
+  }
+
+  function onCardPointerDown(e: React.PointerEvent, appt: DisplayAppt, stylist: DisplayStylist) {
+    if (!onCheckIn || !canChairCheckIn(appt.status) || e.button !== 0) return;
+    pending.current = { pointerId: e.pointerId, appt, stylist, x: e.clientX, y: e.clientY };
+  }
+
+  function onCardPointerMove(e: React.PointerEvent) {
+    const start = pending.current;
+    if (!start || start.pointerId !== e.pointerId) return;
+    const dx = e.clientX - start.x;
+    const dy = e.clientY - start.y;
+    if (!dragRef.current && dx * dx + dy * dy < 64) return;
+    if (!dragRef.current) {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    }
+    const hit = hitChairDrop(e.clientX, e.clientY);
+    const over = resolveDropTarget(hit, start.stylist.id);
+    publishDrag({
+      apptId: start.appt.id,
+      stylistId: start.stylist.id,
+      stylistName: start.stylist.name,
+      label: firstName(start.appt.client.name),
+      x: e.clientX,
+      y: e.clientY,
+      overStylistId: over,
+    });
+  }
+
+  function onCardPointerUp(e: React.PointerEvent) {
+    if (pending.current?.pointerId !== e.pointerId && !dragRef.current) return;
+    endDrag(e.clientX, e.clientY, Boolean(dragRef.current));
+  }
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-[1.75rem] border border-[color:var(--cd-line)] bg-[var(--cd-panel)] shadow-[var(--cd-shadow)]">
@@ -125,9 +184,16 @@ export function CustomerScheduleGrid({
               (a) => a.stylist.id === stylist.id || a.stylist.name === stylist.name
             );
             const wait = stylistWaitInfo(items, now, openHour, closeHour, timeZone, storeClosed);
+            const visual = stylistChairVisual(wait, stylistCurrentGuest(items, now, timeZone));
+            const chairWait = { ...wait, kind: visual.kind };
+            const dropTarget = Boolean(
+              drag && chairAcceptsDrop(visual.kind, stylist.id === drag.stylistId)
+            );
+            const dropHot = Boolean(dropTarget && drag?.overStylistId === stylist.id);
             return (
               <div
                 key={stylist.id}
+                data-stylist-column={stylist.id}
                 className="relative grid"
                 style={{
                   gridColumn: index + 2,
@@ -139,31 +205,40 @@ export function CustomerScheduleGrid({
                   aria-hidden
                   className="pointer-events-none absolute inset-y-0 left-0 z-30 w-px bg-[color:var(--cd-line)]"
                 />
-                <div className="sticky top-0 z-20 bg-[var(--cd-panel)] px-2 pt-4 pb-3 text-center sm:pt-5">
-                  <div
-                    className={`mx-auto h-16 w-16 overflow-hidden rounded-full ring-offset-2 ring-offset-[var(--cd-panel)] ${stylistStatusRingClass(
-                      wait.kind
-                    )}`}
-                    data-testid="stylist-status-ring"
-                    data-status-tone={stylistFloorTone(wait.kind)}
-                    title={wait.label}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={stylist.photoUrl || "/avatars/stylist-neutral.svg"} alt="" className="h-full w-full object-cover" />
+                <div className={`sticky top-0 z-20 bg-[var(--cd-panel)] px-2 pt-4 pb-3 sm:pt-5 ${customerWaitToneClass(visual.kind)}`}>
+                  <div className="customer-stylist-head">
+                    <div className="flex min-w-0 flex-col items-center text-center">
+                      <div
+                        className={`customer-stylist-photo-ring h-16 w-16 shrink-0 overflow-hidden rounded-full ring-offset-2 ring-offset-[var(--cd-panel)] ${stylistStatusRingClass(
+                          visual.kind
+                        )}`}
+                        data-testid="stylist-status-ring"
+                        data-status-tone={stylistFloorTone(visual.kind)}
+                        title={wait.label}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={stylist.photoUrl || "/avatars/stylist-neutral.svg"} alt="" className="h-full w-full object-cover" />
+                      </div>
+                      <p className="mt-2 font-[family-name:var(--font-display)] text-lg text-[color:var(--cd-heading)]">{stylist.name}</p>
+                      <p className="text-[11px] tracking-wide text-[color:var(--cd-muted)]">{specialtyFromBio(stylist.bio, stylist.name)}</p>
+                      <span className="customer-stylist-head__rule" aria-hidden />
+                    </div>
+                    <StylistNeonArrow />
+                    <div
+                      data-testid="stylist-chair-drop"
+                      data-chair-drop={stylist.id}
+                      data-chair-name={stylist.name}
+                      data-chair-kind={visual.kind}
+                      className={`customer-stylist-chair-drop${dropTarget ? " is-drop-target" : ""}${dropHot ? " is-hot" : ""}`}
+                    >
+                      <StylistChairStatus
+                        wait={chairWait}
+                        guestName={visual.guestName}
+                        dropActive={dropHot}
+                        dropTarget={dropTarget && !dropHot}
+                      />
+                    </div>
                   </div>
-                  <p className="mt-2 font-[family-name:var(--font-display)] text-lg text-[color:var(--cd-heading)]">{stylist.name}</p>
-                  <p className="text-[11px] tracking-wide text-[color:var(--cd-muted)]">{specialtyFromBio(stylist.bio, stylist.name)}</p>
-                  <span className="mt-1 inline-block text-[color:var(--cd-accent)]" aria-hidden>
-                    ✦
-                  </span>
-                  <p
-                    data-testid="customer-stylist-wait"
-                    data-wait-kind={wait.kind}
-                    className={`customer-stylist-wait ${waitStatusClass(wait.kind)}`}
-                  >
-                    {wait.label}
-                    {wait.sublabel ? <span className="customer-stylist-wait__time">{wait.sublabel}</span> : null}
-                  </p>
                 </div>
                 <div className="relative" style={{ height }}>
                   {hours.map((h, i) => (
@@ -173,38 +248,37 @@ export function CustomerScheduleGrid({
                       style={{ top: i * HOUR_PX }}
                     />
                   ))}
-                  {showNow ? (
-                    <div
-                      className="pointer-events-none absolute inset-x-0 z-10 flex items-center"
-                      style={{ top: nowTop }}
-                    >
-                      <div className="h-px flex-1 bg-[var(--cd-accent)]" />
-                      {index === columns.length - 1 ? (
-                        <span className="ml-2 flex items-center gap-1 text-[10px] font-bold tracking-[0.18em] text-[color:var(--cd-accent)] uppercase">
-                          <span className="h-2 w-2 rounded-full bg-[var(--cd-accent)]" />
-                          Now
-                        </span>
-                      ) : null}
-                    </div>
-                  ) : null}
                   {items.map((a) => {
-                    const start = clockParts(a.startsAt, timeZone).minutes - openMin;
-                    const end = clockParts(a.endsAt, timeZone).minutes - openMin;
-                    const top = (start / spanMin) * height;
-                    const cardH = Math.max(48, ((end - start) / spanMin) * height - 6);
+                    const box = timelineCardBox(a, now, openMin, spanMin, height, 48, timeZone);
                     const kind = serviceKind(a.service.name);
+                    const checkIn = Boolean(onCheckIn && canChairCheckIn(a.status));
                     return (
                       <div
                         key={a.id}
+                        data-testid="customer-appt-card"
+                        data-appt-status={a.status}
+                        data-appt-id={a.id}
+                        data-on-chair={box.onChair ? "true" : undefined}
                         data-service-kind={kind}
-                        className={`absolute inset-x-2 flex flex-col items-center justify-center rounded-2xl px-2 py-1 text-center shadow-sm ${serviceCardTone(
+                        className={`absolute inset-x-2 z-20 flex flex-col items-center justify-center rounded-2xl px-2 py-1 text-center shadow-sm ${serviceCardTone(
                           a.service.name
-                        )}`}
-                        style={{ top, height: cardH }}
-                        title={`${formatClock(a.startsAt, timeZone)} · ${a.service.name}`}
+                        )}${checkIn ? " customer-appt-card--draggable" : ""}${drag?.apptId === a.id ? " customer-appt-card--dragging" : ""}`}
+                        style={{ top: box.top, height: box.height, touchAction: checkIn ? "none" : undefined }}
+                        title={`${formatClock(a.startsAt, timeZone)} · ${a.service.name}${checkIn ? " · Drag onto chair to check in" : ""}`}
+                        onPointerDown={checkIn ? (e) => onCardPointerDown(e, a, stylist) : undefined}
+                        onPointerMove={checkIn ? onCardPointerMove : undefined}
+                        onPointerUp={checkIn ? onCardPointerUp : undefined}
+                        onPointerCancel={checkIn ? onCardPointerUp : undefined}
                       >
                         <Glyph kind={kind} />
-                        <p className="mt-0.5 text-sm font-medium">{firstName(a.client.name)}</p>
+                        {box.onChair ? (
+                          <>
+                            <p className="mt-0.5 text-[10px] font-bold tracking-[0.14em] uppercase">On Chair</p>
+                            <p className="text-sm font-medium">{firstName(a.client.name)}</p>
+                          </>
+                        ) : (
+                          <p className="mt-0.5 text-sm font-medium">{firstName(a.client.name)}</p>
+                        )}
                       </div>
                     );
                   })}
@@ -213,8 +287,36 @@ export function CustomerScheduleGrid({
             );
           })}
 
+          {showNow ? (
+            <div
+              className="pointer-events-none relative z-10 col-start-2 col-end-[-1] row-start-2"
+              style={{ height }}
+            >
+              <div
+                className="absolute inset-x-0 h-px bg-[var(--cd-accent)]"
+                style={{ top: nowTop }}
+              />
+              <span
+                className="absolute right-2 flex items-center gap-1 text-[10px] font-bold tracking-[0.18em] text-[color:var(--cd-accent)] uppercase"
+                style={{ top: nowTop, transform: "translateY(-50%)" }}
+              >
+                <span className="h-2 w-2 rounded-full bg-[var(--cd-accent)]" />
+                Now
+              </span>
+            </div>
+          ) : null}
+
         </div>
       </div>
+      {drag ? (
+        <div
+          className="customer-appt-drag-ghost"
+          style={{ left: drag.x, top: drag.y }}
+          aria-hidden
+        >
+          {drag.label}
+        </div>
+      ) : null}
     </div>
   );
 }
