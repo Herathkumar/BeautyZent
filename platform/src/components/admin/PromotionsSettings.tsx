@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { centsToDollars } from "@/lib/pay";
-import type { PromotionRuleType } from "@/lib/promotions";
+import { PROMOTION_RULE_TYPES, type PromotionRuleType } from "@/lib/promotions";
 
 type PromoSettings = {
   loyaltyEnabled: boolean;
@@ -25,8 +25,6 @@ type Rule = {
   sortOrder: number;
 };
 
-type RuleTypeOption = { value: PromotionRuleType; label: string; hint: string };
-
 export function PromotionsSettings() {
   const [settings, setSettings] = useState<PromoSettings>({
     loyaltyEnabled: false,
@@ -36,7 +34,6 @@ export function PromotionsSettings() {
     loyaltyMaxRedeemPercent: 50,
   });
   const [rules, setRules] = useState<Rule[]>([]);
-  const [ruleTypes, setRuleTypes] = useState<RuleTypeOption[]>([]);
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
@@ -53,7 +50,6 @@ export function PromotionsSettings() {
     const data = await res.json();
     if (data.settings) setSettings(data.settings);
     setRules(data.rules || []);
-    setRuleTypes(data.ruleTypes || []);
   }, []);
 
   useEffect(() => {
@@ -278,7 +274,7 @@ export function PromotionsSettings() {
                 onChange={(e) => setDraftType(e.target.value as PromotionRuleType)}
                 className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-[#2b2521]"
               >
-                {ruleTypes.map((t) => (
+                {PROMOTION_RULE_TYPES.map((t) => (
                   <option key={t.value} value={t.value}>
                     {t.label}
                   </option>
