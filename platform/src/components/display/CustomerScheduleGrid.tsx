@@ -121,12 +121,6 @@ function LoungeBookingSpotlight({
       >
         {onChair && remaining ? (
           <div className="customer-lounge-feature__serving">
-            <div className="customer-lounge-feature__ring-wrap" data-testid="customer-appt-timer">
-              <LoungeProgressRing progress={remaining.progress} />
-              <span className="customer-lounge-feature__eta">
-                {remaining.remainingLabel.replace("~", "").replace(" left", "")}
-              </span>
-            </div>
             <div className="customer-lounge-feature__serving-copy">
               <p className="customer-lounge-feature__kicker">On Chair</p>
               <div className="customer-lounge-feature__row">
@@ -141,7 +135,12 @@ function LoungeBookingSpotlight({
               <p data-testid="customer-appt-service" className="customer-lounge-feature__meta">
                 {a.service.name}
               </p>
-              <p className="customer-lounge-feature__remain">{remaining.remainingLabel}</p>
+            </div>
+            <div className="customer-lounge-feature__ring-wrap" data-testid="customer-appt-timer">
+              <LoungeProgressRing progress={remaining.progress} />
+              <span className="customer-lounge-feature__eta">
+                {remaining.remainingLabel.replace("~", "").replace(" left", "")}
+              </span>
             </div>
           </div>
         ) : (
