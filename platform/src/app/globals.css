@@ -693,6 +693,7 @@ a {
   --rx-action-checkin: #22c55e;
   --rx-action-reschedule: #3b82f6;
   --rx-action-noshow: #f97316;
+  --rx-action-checkout: #14b8a6;
   --cd-wait-ok: #4ade80;
   --cd-wait-busy: #fb923c;
   --cd-wait-soon: #93c5fd;
@@ -1479,6 +1480,10 @@ html.customer-shell--dark body {
 .reception-quick__icon--noshow {
   background: color-mix(in srgb, var(--rx-action-noshow) 16%, transparent);
   color: var(--rx-action-noshow);
+}
+.reception-quick__icon--checkout {
+  background: color-mix(in srgb, var(--rx-action-checkout) 16%, transparent);
+  color: var(--rx-action-checkout);
 }
 .reception-quick__live {
   border-radius: 999px;

@@ -576,7 +576,7 @@ export function ReceptionSchedule({
   );
 }
 
-function QuickActionIcon({ kind }: { kind: "checkin" | "reschedule" | "noshow" }) {
+function QuickActionIcon({ kind }: { kind: "checkin" | "reschedule" | "noshow" | "checkout" }) {
   if (kind === "checkin") {
     return (
       <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -594,13 +594,25 @@ function QuickActionIcon({ kind }: { kind: "checkin" | "reschedule" | "noshow" }
       </svg>
     );
   }
-  return (
-    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <circle cx="10" cy="8" r="2.4" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M5.5 18c.5-2.6 2.4-4 4.5-4s4 1.4 4.5 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-      <path d="M16.2 8.2 20 12M20 8.2 16.2 12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    </svg>
-  );
+  if (kind === "checkout") {
+    return (
+      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <rect x="3" y="6.5" width="18" height="12" rx="2.2" stroke="currentColor" strokeWidth="1.6" />
+        <path d="M3 10.5h18" stroke="currentColor" strokeWidth="1.6" />
+        <path d="M7 15h4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (kind === "noshow") {
+    return (
+      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <circle cx="10" cy="8" r="2.4" stroke="currentColor" strokeWidth="1.6" />
+        <path d="M5.5 18c.5-2.6 2.4-4 4.5-4s4 1.4 4.5 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+        <path d="M16.2 8.2 20 12M20 8.2 16.2 12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  return null;
 }
 
 export function ReceptionClientPanel({
@@ -727,6 +739,9 @@ export function ReceptionClientPanel({
             className="reception-quick__btn reception-quick__btn--checkout"
             data-testid="reception-checkout"
           >
+            <span className="reception-quick__icon reception-quick__icon--checkout">
+              <QuickActionIcon kind="checkout" />
+            </span>
             <span>
               <strong>{checkoutBusy ? "Opening…" : "Checkout"}</strong>
               <span aria-hidden>Take payment at the desk</span>
@@ -739,6 +754,9 @@ export function ReceptionClientPanel({
             className="reception-quick__btn reception-quick__btn--checkout"
             data-testid="reception-checkout"
           >
+            <span className="reception-quick__icon reception-quick__icon--checkout">
+              <QuickActionIcon kind="checkout" />
+            </span>
             <span>
               <strong>Checkout</strong>
               <span aria-hidden>Select a booking on the calendar first</span>
