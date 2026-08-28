@@ -51,7 +51,7 @@ import {
   type CustomerDisplayView,
 } from "@/lib/customer-display-view";
 import type { CheckoutBill } from "@/lib/display-checkout-types";
-import type { PromotionBoardPayload } from "@/lib/promotion-slide-image";
+import type { PromotionBoardPayload } from "@/lib/promotion-board";
 import { addCalendarDays, dayOfWeekInTz } from "@/lib/salon-time";
 import { formatCad } from "@/lib/money";
 import { promptCompleteAmounts } from "@/lib/pay";

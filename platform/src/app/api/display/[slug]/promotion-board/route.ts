@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { assertDisplayAccess } from "@/lib/display-pin";
-import { promotionSlideImageUrl } from "@/lib/promotion-slide-image";
+import { buildPromotionBoardPayload } from "@/lib/promotion-board";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(
@@ -12,9 +12,11 @@ export async function GET(
     where: { slug },
     select: {
       id: true,
+      name: true,
       active: true,
       displayPinHash: true,
       displayPinSetAt: true,
+      discountsEnabled: true,
       promoBoardEnabled: true,
       promoBoardIntervalSec: true,
       promoBoardSlideSec: true,
@@ -27,46 +29,28 @@ export async function GET(
   const locked = await assertDisplayAccess(salon, req);
   if (locked) return locked;
 
-  const slidesRaw = await prisma.promotionSlide.findMany({
+  const rules = await prisma.promotionRule.findMany({
     where: { salonId: salon.id, enabled: true },
     orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
     select: {
       id: true,
-      title: true,
-      durationSec: true,
-      imageMime: true,
-      imageUpdatedAt: true,
+      type: true,
+      name: true,
+      enabled: true,
+      discountBps: true,
+      discountCents: true,
+      minVisits: true,
+      minSpendCents: true,
     },
   });
 
-  const defaultSlideSec = Math.min(60, Math.max(3, salon.promoBoardSlideSec || 8));
-  const intervalSec = Math.min(600, Math.max(30, salon.promoBoardIntervalSec || 90));
-
-  const slides = slidesRaw
-    .map((slide) => {
-      const hasImage = Boolean(slide.imageUpdatedAt && slide.imageMime);
-      const imageUrl = promotionSlideImageUrl({
-        id: slide.id,
-        hasImage,
-        imageUpdatedAt: slide.imageUpdatedAt,
-      });
-      if (!imageUrl) return null;
-      return {
-        id: slide.id,
-        title: slide.title,
-        imageUrl,
-        durationSec: Math.min(
-          60,
-          Math.max(3, slide.durationSec ?? defaultSlideSec)
-        ),
-      };
-    })
-    .filter(Boolean);
-
-  return NextResponse.json({
-    enabled: salon.promoBoardEnabled && slides.length > 0,
-    intervalSec,
-    defaultSlideSec,
-    slides,
+  const board = buildPromotionBoardPayload({
+    enabled: salon.promoBoardEnabled && salon.discountsEnabled,
+    intervalSec: salon.promoBoardIntervalSec || 90,
+    defaultSlideSec: salon.promoBoardSlideSec || 8,
+    salonName: salon.name,
+    rules,
   });
+
+  return NextResponse.json(board);
 }
