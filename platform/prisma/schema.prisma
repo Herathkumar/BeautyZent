@@ -46,6 +46,12 @@ model Salon {
   loyaltyPointsPerDollar  Int     @default(1)
   loyaltyCentsPerPoint    Int     @default(5)
   loyaltyMaxRedeemPercent Int     @default(50)
+  /// Customer TV promotion board — rotates uploaded promo slides.
+  promoBoardEnabled     Boolean @default(false)
+  /// Seconds between promotion board appearances on the customer display.
+  promoBoardIntervalSec Int     @default(90)
+  /// Default seconds each slide stays on screen during a board cycle.
+  promoBoardSlideSec    Int     @default(8)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -62,6 +68,7 @@ model Salon {
   stylePrefs   AppointmentStylePref[]
   styleAiUsage StyleAiUsage[]
   promotionRules PromotionRule[]
+  promotionSlides PromotionSlide[]
 }
 
 /// Platform operator login — separate from salon staff (User) so tenant auth is untouched.
@@ -311,6 +318,26 @@ model PromotionRule {
   sortOrder     Int      @default(0)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  salon Salon @relation(fields: [salonId], references: [id], onDelete: Cascade)
+
+  @@index([salonId, enabled, sortOrder])
+}
+
+/// Customer display promotion slides — manager uploads images shown on the store TV.
+model PromotionSlide {
+  id             String   @id @default(cuid())
+  salonId        String
+  title          String?
+  enabled        Boolean  @default(true)
+  sortOrder      Int      @default(0)
+  /// Override salon default slide duration (seconds).
+  durationSec    Int?
+  imageData      Bytes?
+  imageMime      String?
+  imageUpdatedAt DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   salon Salon @relation(fields: [salonId], references: [id], onDelete: Cascade)
 

@@ -2399,6 +2399,85 @@ html.customer-shell--dark body {
 .customer-lounge-footer p.text-xl {
   font-size: 1rem;
 }
+.customer-promo-board {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem;
+  background: color-mix(in srgb, var(--cd-bg) 92%, transparent);
+  backdrop-filter: blur(8px);
+  animation: customer-promo-board-in 0.45s ease;
+}
+.customer-promo-board__glow {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--cd-accent) 18%, transparent), transparent 62%);
+}
+.customer-promo-board__image {
+  position: relative;
+  z-index: 1;
+  max-height: min(72vh, 52rem);
+  max-width: min(92vw, 56rem);
+  width: auto;
+  height: auto;
+  border-radius: 1.5rem;
+  border: 1px solid var(--cd-line);
+  box-shadow: var(--cd-shadow);
+  object-fit: contain;
+  opacity: 0;
+  transform: scale(0.985);
+  transition: opacity 0.28s ease, transform 0.28s ease;
+}
+.customer-promo-board__image.is-visible {
+  opacity: 1;
+  transform: scale(1);
+}
+.customer-promo-board__title {
+  position: relative;
+  z-index: 1;
+  max-width: 42rem;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 2.4vw, 2rem);
+  color: var(--cd-heading);
+  opacity: 0;
+  transition: opacity 0.28s ease;
+}
+.customer-promo-board__title.is-visible {
+  opacity: 1;
+}
+.customer-promo-board__dots {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.customer-promo-board__dot {
+  width: 0.35rem;
+  height: 0.35rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--cd-heading) 28%, transparent);
+}
+.customer-promo-board__dot.is-on {
+  width: 0.75rem;
+  background: var(--cd-accent);
+}
+@keyframes customer-promo-board-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
 .customer-board--dark .customer-lounge-card,
 .customer-board--dark .customer-lounge-stat {
   box-shadow:

@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { centsToDollars } from "@/lib/pay";
+import { fileToJpegDataUrl } from "@/lib/photo-resize";
 import {
   generatePromotionRuleLabel,
   PROMOTION_RULE_TYPES,
@@ -15,6 +16,9 @@ type PromoSettings = {
   loyaltyPointsPerDollar: number;
   loyaltyCentsPerPoint: number;
   loyaltyMaxRedeemPercent: number;
+  promoBoardEnabled: boolean;
+  promoBoardIntervalSec: number;
+  promoBoardSlideSec: number;
 };
 
 type Rule = {
@@ -30,6 +34,16 @@ type Rule = {
   sortOrder: number;
 };
 
+type Slide = {
+  id: string;
+  title: string | null;
+  enabled: boolean;
+  sortOrder: number;
+  durationSec: number | null;
+  hasImage?: boolean;
+  imageUrl?: string | null;
+};
+
 export function PromotionsSettings() {
   const [settings, setSettings] = useState<PromoSettings>({
     loyaltyEnabled: false,
@@ -37,13 +51,23 @@ export function PromotionsSettings() {
     loyaltyPointsPerDollar: 1,
     loyaltyCentsPerPoint: 5,
     loyaltyMaxRedeemPercent: 50,
+    promoBoardEnabled: false,
+    promoBoardIntervalSec: 90,
+    promoBoardSlideSec: 8,
   });
   const [rules, setRules] = useState<Rule[]>([]);
+  const [slides, setSlides] = useState<Slide[]>([]);
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
   const [ruleMsg, setRuleMsg] = useState("");
   const [ruleErr, setRuleErr] = useState("");
+  const [boardMsg, setBoardMsg] = useState("");
+  const [boardErr, setBoardErr] = useState("");
   const [busy, setBusy] = useState(false);
+  const [boardBusy, setBoardBusy] = useState(false);
+  const [draftSlideTitle, setDraftSlideTitle] = useState("");
+  const uploadRef = useRef<HTMLInputElement>(null);
+  const uploadTargetRef = useRef<string | null>(null);
   const [draftType, setDraftType] = useState<PromotionRuleType>("MEMBER_PERCENT");
   const [draftBps, setDraftBps] = useState(1000);
   const [draftCents, setDraftCents] = useState(0);
@@ -69,6 +93,7 @@ export function PromotionsSettings() {
     }
     if (data.settings) setSettings(data.settings);
     setRules(data.rules || []);
+    setSlides(data.slides || []);
   }, []);
 
   async function persistSettings(next?: PromoSettings) {
@@ -95,6 +120,15 @@ export function PromotionsSettings() {
       loyaltyMaxRedeemPercent: Math.min(
         100,
         Math.max(0, Math.round(Number(next.loyaltyMaxRedeemPercent) || 0))
+      ),
+      promoBoardEnabled: Boolean(next.promoBoardEnabled),
+      promoBoardIntervalSec: Math.min(
+        600,
+        Math.max(30, Math.round(Number(next.promoBoardIntervalSec) || 90))
+      ),
+      promoBoardSlideSec: Math.min(
+        60,
+        Math.max(3, Math.round(Number(next.promoBoardSlideSec) || 8))
       ),
     };
   }
@@ -207,6 +241,100 @@ export function PromotionsSettings() {
 
   async function removeRule(id: string) {
     await fetch(`/api/admin/promotions?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    await load();
+  }
+
+  async function saveBoardSettings(e: React.FormEvent) {
+    e.preventDefault();
+    setBoardBusy(true);
+    setBoardErr("");
+    setBoardMsg("");
+    try {
+      await persistSettings();
+      setBoardMsg("Display board settings saved.");
+    } catch (error) {
+      setBoardErr(error instanceof Error ? error.message : "Could not save board settings");
+    } finally {
+      setBoardBusy(false);
+    }
+  }
+
+  async function addSlide(e: React.FormEvent) {
+    e.preventDefault();
+    setBoardBusy(true);
+    setBoardErr("");
+    setBoardMsg("");
+    try {
+      await persistSettings();
+      const res = await fetch("/api/admin/promotions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slide: { title: draftSlideTitle.trim() || null },
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setBoardErr(data.error || "Could not add slide");
+        return;
+      }
+      if (data.slide) {
+        setSlides((prev) => [...prev, data.slide]);
+        setDraftSlideTitle("");
+        setBoardMsg(data.message || "Slide added. Upload an image to show it on the customer TV.");
+      } else {
+        await load();
+      }
+    } catch (error) {
+      setBoardErr(error instanceof Error ? error.message : "Could not add slide");
+    } finally {
+      setBoardBusy(false);
+    }
+  }
+
+  async function uploadSlideImage(slideId: string, file: File) {
+    setBoardBusy(true);
+    setBoardErr("");
+    try {
+      const dataUrl = await fileToJpegDataUrl(file, 1200, 0.86);
+      const res = await fetch(`/api/admin/promotions/slides/${slideId}/image`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageBase64: dataUrl, mimeType: "image/jpeg" }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setBoardErr(data.error || "Could not upload image");
+        return;
+      }
+      if (data.slide) {
+        setSlides((prev) => prev.map((s) => (s.id === slideId ? data.slide : s)));
+        setBoardMsg("Promotion image uploaded.");
+      }
+    } catch (error) {
+      setBoardErr(error instanceof Error ? error.message : "Could not upload image");
+    } finally {
+      setBoardBusy(false);
+    }
+  }
+
+  function pickSlideImage(slideId: string) {
+    uploadTargetRef.current = slideId;
+    uploadRef.current?.click();
+  }
+
+  async function setSlideEnabled(slide: Slide, enabled: boolean) {
+    if (slide.enabled === enabled) return;
+    await fetch("/api/admin/promotions", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: slide.id, slide: { enabled } }),
+    });
+    await load();
+  }
+
+  async function removeSlide(id: string) {
+    await fetch(`/api/admin/promotions?slideId=${encodeURIComponent(id)}`, { method: "DELETE" });
     await load();
   }
 
@@ -450,6 +578,158 @@ export function PromotionsSettings() {
           </form>
         </>
       ) : null}
+
+      <form
+        onSubmit={saveBoardSettings}
+        className="grid gap-4 rounded-2xl border border-[#7d6154]/30 bg-[#ffffff] p-5"
+        data-testid="promotion-board-settings"
+      >
+        <div>
+          <h3 className="font-semibold text-[#2b2521]">Customer display board</h3>
+          <p className="mt-1 text-sm text-[#6b5b52]">
+            Upload promotion images that rotate on the customer TV. Only enabled slides with an
+            image are shown.
+          </p>
+        </div>
+
+        <SettingToggle
+          label="Show promotion board on customer display"
+          checked={settings.promoBoardEnabled}
+          onChange={(promoBoardEnabled) => setSettings((s) => ({ ...s, promoBoardEnabled }))}
+          testId="promo-board-enabled"
+        />
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="grid gap-1 text-sm text-[#6b5b52]">
+            Show every (seconds)
+            <input
+              type="number"
+              min={30}
+              max={600}
+              value={settings.promoBoardIntervalSec}
+              onChange={(e) =>
+                setSettings((s) => ({
+                  ...s,
+                  promoBoardIntervalSec: Number(e.target.value),
+                }))
+              }
+              className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-[#2b2521]"
+            />
+            <span className="text-xs text-[#9a8a80]">Time between board appearances</span>
+          </label>
+          <label className="grid gap-1 text-sm text-[#6b5b52]">
+            Seconds per slide
+            <input
+              type="number"
+              min={3}
+              max={60}
+              value={settings.promoBoardSlideSec}
+              onChange={(e) =>
+                setSettings((s) => ({
+                  ...s,
+                  promoBoardSlideSec: Number(e.target.value),
+                }))
+              }
+              className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-[#2b2521]"
+            />
+            <span className="text-xs text-[#9a8a80]">How long each image stays on screen</span>
+          </label>
+        </div>
+
+        {boardErr ? <p className="text-sm text-[#f5a8a8]">{boardErr}</p> : null}
+        {boardMsg ? <p className="text-sm text-[#9fe3b8]">{boardMsg}</p> : null}
+        <button type="submit" disabled={boardBusy} className="btn-solid w-fit rounded-full px-5 py-2.5">
+          Save display board settings
+        </button>
+      </form>
+
+      <input
+        ref={uploadRef}
+        type="file"
+        accept="image/*"
+        className="sr-only"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          const id = uploadTargetRef.current;
+          e.target.value = "";
+          if (file && id) void uploadSlideImage(id, file);
+        }}
+      />
+
+      <ul className="space-y-3" data-testid="promotion-slides-list">
+        {slides.map((slide) => (
+          <li
+            key={slide.id}
+            className="flex flex-wrap items-center gap-4 rounded-2xl border border-[#7d6154]/25 bg-[#fffcf9] px-4 py-3"
+          >
+            <div className="h-20 w-28 shrink-0 overflow-hidden rounded-xl border border-[#7d6154]/20 bg-[#fffaf6]">
+              {slide.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={slide.imageUrl} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full items-center justify-center text-xs text-[#9a8a80]">
+                  No image
+                </div>
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-[#2b2521]">{slide.title || "Promotion slide"}</p>
+              <p className="text-sm text-[#6b5b52]">
+                {slide.hasImage ? "Ready for customer display" : "Upload an image to publish"}
+                {slide.durationSec ? ` · ${slide.durationSec}s per slide` : ""}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                className="rounded-full border border-[#7d6154]/35 px-3 py-1.5 text-sm text-[#2b2521]"
+                onClick={() => pickSlideImage(slide.id)}
+                disabled={boardBusy}
+                data-testid={`promo-slide-upload-${slide.id}`}
+              >
+                {slide.hasImage ? "Replace image" : "Upload image"}
+              </button>
+              <SettingToggle
+                label={`${slide.title || "Slide"} ${slide.enabled ? "on" : "off"}`}
+                hideLabel
+                checked={slide.enabled}
+                onChange={(enabled) => void setSlideEnabled(slide, enabled)}
+                testId={`promo-slide-toggle-${slide.id}`}
+              />
+              <button
+                type="button"
+                className="text-xs text-[#f5a8a8] underline"
+                onClick={() => void removeSlide(slide.id)}
+              >
+                Remove
+              </button>
+            </div>
+          </li>
+        ))}
+        {!slides.length ? (
+          <li className="text-sm text-[#6b5b52]">No promotion slides yet.</li>
+        ) : null}
+      </ul>
+
+      <form
+        onSubmit={addSlide}
+        className="grid gap-3 rounded-2xl border border-[#7d6154]/25 bg-[#ffffff] p-5"
+        data-testid="promotion-slide-form"
+      >
+        <h3 className="font-semibold text-[#2b2521]">Add promotion slide</h3>
+        <label className="grid gap-1 text-sm text-[#6b5b52]">
+          Title (optional)
+          <input
+            value={draftSlideTitle}
+            onChange={(e) => setDraftSlideTitle(e.target.value)}
+            placeholder="e.g. Summer special 20% off"
+            className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-[#2b2521]"
+          />
+        </label>
+        <button type="submit" disabled={boardBusy} className="btn-solid w-fit rounded-full px-5 py-2.5">
+          {boardBusy ? "Adding…" : "Add slide"}
+        </button>
+      </form>
     </div>
   );
 }

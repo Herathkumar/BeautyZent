@@ -10,6 +10,10 @@ import {
 } from "@/components/display/ReceptionBookingModals";
 import { ZentraLabFooter } from "@/components/ZentraLabFooter";
 import { CustomerCheckoutOverlay } from "@/components/display/CustomerCheckoutOverlay";
+import {
+  CustomerPromotionBoard,
+  usePromotionBoardCycle,
+} from "@/components/display/CustomerPromotionBoard";
 import { CustomerScheduleGrid } from "@/components/display/CustomerScheduleGrid";
 import { ReceptionCheckoutDesk } from "@/components/display/ReceptionCheckoutDesk";
 import {
@@ -47,6 +51,7 @@ import {
   type CustomerDisplayView,
 } from "@/lib/customer-display-view";
 import type { CheckoutBill } from "@/lib/display-checkout-types";
+import type { PromotionBoardPayload } from "@/lib/promotion-slide-image";
 import { addCalendarDays, dayOfWeekInTz } from "@/lib/salon-time";
 import { formatCad } from "@/lib/money";
 import { promptCompleteAmounts } from "@/lib/pay";
@@ -561,6 +566,7 @@ export function DisplayBoard({
   /** Manager/stylist in-app lock — hides the board until padlock unlock. */
   const [boardLocked, setBoardLocked] = useState(false);
   const [checkout, setCheckout] = useState<CheckoutBill | null>(null);
+  const [promoBoard, setPromoBoard] = useState<PromotionBoardPayload | null>(null);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
   const [checkInError, setCheckInError] = useState("");
@@ -774,6 +780,24 @@ export function DisplayBoard({
     }
   }, [slug, unlockHeaders, lockToPin]);
 
+  const loadPromoBoard = useCallback(async () => {
+    try {
+      const r = await fetch(`/api/display/${slug}/promotion-board`, {
+        credentials: "same-origin",
+        headers: unlockHeaders,
+      });
+      const data = await r.json().catch(() => ({}));
+      if (r.status === 401 && data.needsPin) {
+        lockToPin();
+        return;
+      }
+      if (!r.ok) return;
+      setPromoBoard((prev) => keepIfSame(prev, data as PromotionBoardPayload));
+    } catch {
+      /* ignore */
+    }
+  }, [slug, unlockHeaders, lockToPin]);
+
   async function checkoutAction(body: Record<string, unknown>) {
     const seq = ++checkoutWriteSeq.current;
     const r = await fetch(`/api/display/${slug}/checkout`, {
@@ -801,6 +825,13 @@ export function DisplayBoard({
   useEffect(() => {
     void checkUnlock();
   }, [checkUnlock]);
+
+  useEffect(() => {
+    if (variant !== "customer" || !unlockChecked || needsPin) return;
+    void loadPromoBoard();
+    const timer = window.setInterval(() => void loadPromoBoard(), 60_000);
+    return () => window.clearInterval(timer);
+  }, [variant, unlockChecked, needsPin, loadPromoBoard]);
 
   const loadRef = useRef(load);
   const loadServicesRef = useRef(loadServices);
@@ -1321,6 +1352,10 @@ export function DisplayBoard({
     minute: "2-digit",
   });
   const apptDay = now.toLocaleDateString("en-CA", { month: "short", day: "numeric" });
+  const checkoutOverlayOpen = Boolean(checkout);
+  const showPromoBoard = usePromotionBoardCycle(promoBoard, {
+    paused: variant !== "customer" || checkoutOverlayOpen,
+  });
 
   if (!unlockChecked) {
     return (
@@ -1831,6 +1866,9 @@ export function DisplayBoard({
         )}
       </div>
       </div>
+      {showPromoBoard && promoBoard?.enabled && promoBoard.slides.length ? (
+        <CustomerPromotionBoard board={promoBoard} paused={checkoutOverlayOpen} />
+      ) : null}
       <CustomerCheckoutOverlay
         bill={checkout}
         thanks={null}

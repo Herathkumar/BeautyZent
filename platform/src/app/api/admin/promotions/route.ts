@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession, isSalonStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { promotionSlideImageUrl } from "@/lib/promotion-slide-image";
 import { PROMOTION_RULE_TYPES, type PromotionRuleType } from "@/lib/promotions";
 
 const RULE_TYPES = new Set(PROMOTION_RULE_TYPES.map((t) => t.value));
@@ -20,6 +21,18 @@ function ruleSelect() {
   } as const;
 }
 
+function slideSelect() {
+  return {
+    id: true,
+    title: true,
+    enabled: true,
+    sortOrder: true,
+    durationSec: true,
+    imageMime: true,
+    imageUpdatedAt: true,
+  } as const;
+}
+
 function settingsSelect() {
   return {
     loyaltyEnabled: true,
@@ -27,7 +40,31 @@ function settingsSelect() {
     loyaltyPointsPerDollar: true,
     loyaltyCentsPerPoint: true,
     loyaltyMaxRedeemPercent: true,
+    promoBoardEnabled: true,
+    promoBoardIntervalSec: true,
+    promoBoardSlideSec: true,
   } as const;
+}
+
+function mapSlide(slide: {
+  id: string;
+  title: string | null;
+  enabled: boolean;
+  sortOrder: number;
+  durationSec: number | null;
+  imageMime: string | null;
+  imageUpdatedAt: Date | null;
+}) {
+  const hasImage = Boolean(slide.imageUpdatedAt && slide.imageMime);
+  return {
+    ...slide,
+    hasImage,
+    imageUrl: promotionSlideImageUrl({
+      id: slide.id,
+      hasImage,
+      imageUpdatedAt: slide.imageUpdatedAt,
+    }),
+  };
 }
 
 function normalizeSettingsInput(raw: Record<string, unknown>) {
@@ -40,12 +77,21 @@ function normalizeSettingsInput(raw: Record<string, unknown>) {
       100,
       Math.max(0, Math.round(Number(raw.loyaltyMaxRedeemPercent ?? 50)))
     ),
+    promoBoardEnabled: Boolean(raw.promoBoardEnabled),
+    promoBoardIntervalSec: Math.min(
+      600,
+      Math.max(30, Math.round(Number(raw.promoBoardIntervalSec ?? 90)))
+    ),
+    promoBoardSlideSec: Math.min(
+      60,
+      Math.max(3, Math.round(Number(raw.promoBoardSlideSec ?? 8)))
+    ),
   };
 }
 
 function promoErrorMessage(err: unknown, fallback: string) {
   const message = err instanceof Error ? err.message : "";
-  if (/Unknown arg `loyaltyEnabled`|Unknown arg `discountsEnabled`/i.test(message)) {
+  if (/Unknown arg `loyaltyEnabled`|Unknown arg `discountsEnabled`|Unknown arg `promoBoardEnabled`/i.test(message)) {
     return "Prisma client is out of date. Stop the dev server, run pnpm db:generate, then restart with pnpm dev:local.";
   }
   if (err && typeof err === "object" && "code" in err) {
@@ -67,7 +113,7 @@ export async function GET() {
   }
 
   try {
-    const [salon, rules] = await Promise.all([
+    const [salon, rules, slides] = await Promise.all([
       prisma.salon.findUnique({
         where: { id: session.salonId },
         select: settingsSelect(),
@@ -77,11 +123,21 @@ export async function GET() {
         orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
         select: ruleSelect(),
       }),
+      prisma.promotionSlide.findMany({
+        where: { salonId: session.salonId },
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+        select: slideSelect(),
+      }),
     ]);
 
     if (!salon) return NextResponse.json({ error: "Salon not found" }, { status: 404 });
 
-    return NextResponse.json({ settings: salon, rules, ruleTypes: PROMOTION_RULE_TYPES });
+    return NextResponse.json({
+      settings: salon,
+      rules,
+      slides: slides.map(mapSlide),
+      ruleTypes: PROMOTION_RULE_TYPES,
+    });
   } catch (err) {
     console.error("[promotions GET]", err);
     return NextResponse.json(
@@ -111,6 +167,36 @@ export async function POST(req: Request) {
       console.error("[promotions POST settings]", err);
       return NextResponse.json(
         { error: promoErrorMessage(err, "Could not save settings") },
+        { status: 500 }
+      );
+    }
+  }
+
+  if (body.slide) {
+    try {
+      const maxOrder = await prisma.promotionSlide.aggregate({
+        where: { salonId: session.salonId },
+        _max: { sortOrder: true },
+      });
+      const title = String(body.slide.title || "").trim() || null;
+      const slide = await prisma.promotionSlide.create({
+        data: {
+          salonId: session.salonId,
+          title,
+          enabled: body.slide.enabled !== false,
+          durationSec:
+            body.slide.durationSec != null
+              ? Math.min(60, Math.max(3, Math.round(Number(body.slide.durationSec))))
+              : null,
+          sortOrder: (maxOrder._max.sortOrder ?? -1) + 1,
+        },
+        select: slideSelect(),
+      });
+      return NextResponse.json({ slide: mapSlide(slide), message: "Display slide added." });
+    } catch (err) {
+      console.error("[promotions POST slide]", err);
+      return NextResponse.json(
+        { error: promoErrorMessage(err, "Could not add display slide") },
         { status: 500 }
       );
     }
@@ -164,6 +250,30 @@ export async function PATCH(req: Request) {
   const id = String(body.id || "");
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
+  if (body.slide) {
+    const existing = await prisma.promotionSlide.findFirst({
+      where: { id, salonId: session.salonId },
+    });
+    if (!existing) return NextResponse.json({ error: "Slide not found" }, { status: 404 });
+
+    const slide = await prisma.promotionSlide.update({
+      where: { id },
+      data: {
+        ...(body.slide.title != null
+          ? { title: String(body.slide.title).trim() || null }
+          : {}),
+        ...(typeof body.slide.enabled === "boolean" ? { enabled: body.slide.enabled } : {}),
+        ...(body.slide.durationSec != null
+          ? {
+              durationSec: Math.min(60, Math.max(3, Math.round(Number(body.slide.durationSec)))),
+            }
+          : {}),
+      },
+      select: slideSelect(),
+    });
+    return NextResponse.json({ slide: mapSlide(slide), message: "Display slide updated." });
+  }
+
   const existing = await prisma.promotionRule.findFirst({
     where: { id, salonId: session.salonId },
   });
@@ -194,7 +304,18 @@ export async function DELETE(req: Request) {
 
   const url = new URL(req.url);
   const id = url.searchParams.get("id") || "";
-  if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+  const slideId = url.searchParams.get("slideId") || "";
+  const targetId = slideId || id;
+  if (!targetId) return NextResponse.json({ error: "id required" }, { status: 400 });
+
+  if (slideId) {
+    const existing = await prisma.promotionSlide.findFirst({
+      where: { id: slideId, salonId: session.salonId },
+    });
+    if (!existing) return NextResponse.json({ error: "Slide not found" }, { status: 404 });
+    await prisma.promotionSlide.delete({ where: { id: slideId } });
+    return NextResponse.json({ ok: true, message: "Display slide removed." });
+  }
 
   const existing = await prisma.promotionRule.findFirst({
     where: { id, salonId: session.salonId },
