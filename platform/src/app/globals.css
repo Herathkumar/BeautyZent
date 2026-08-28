@@ -1683,7 +1683,16 @@ html.customer-shell--dark body {
 .reception-modal__field + .reception-modal__field {
   margin-top: 1rem;
 }
-.reception-modal__label {
+.reception-modal__row .reception-modal__field + .reception-modal__field {
+  margin-top: 0;
+}
+.reception-modal__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  align-items: start;
+  margin-top: 1rem;
+}
   display: block;
   margin-bottom: 0.45rem;
   font-size: 0.64rem;
@@ -1722,13 +1731,7 @@ html.customer-shell--dark body {
 .reception-modal__search .reception-modal__input {
   padding-left: 2.25rem;
 }
-.reception-modal__row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-  margin-top: 1rem;
-}
-.reception-modal__toggle-row {
+.reception-modal__label {
   display: flex;
   align-items: center;
   justify-content: space-between;
