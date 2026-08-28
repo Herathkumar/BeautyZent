@@ -1639,6 +1639,7 @@ export function DisplayBoard({
                     today={todayAll}
                     waitlist={walkInWaiting}
                     futureCount={futureCount}
+                    timeZone={salon?.timezone}
                   />
                 ) : null}
               </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { formatCad } from "@/lib/money";
 import {
   formatClock,
@@ -489,16 +490,22 @@ export function ReceptionReportsView({
   today,
   waitlist,
   futureCount,
+  timeZone,
 }: {
   today: DisplayAppt[];
   waitlist: number;
   futureCount: number;
+  timeZone?: string | null;
 }) {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const online = today.filter((a) => (a.source || "ONLINE") !== "WALK_IN").length;
   const walkIn = today.filter((a) => a.source === "WALK_IN").length;
   const booked = today.filter((a) => a.status === "BOOKED").length;
   const inChair = today.filter((a) => a.status === "CHECKED_IN").length;
-  const completed = today.filter((a) => a.status === "COMPLETED");
+  const completed = [...today.filter((a) => a.status === "COMPLETED")].sort(
+    (a, b) => new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime()
+  );
+  const selected = completed.find((a) => a.id === selectedId) ?? null;
   const taken = completed.reduce((n, a) => n + (a.chargedCents || a.service.priceCents || 0), 0);
   const tips = completed.reduce((n, a) => n + (a.tipCents || 0), 0);
 
@@ -549,27 +556,155 @@ export function ReceptionReportsView({
         </p>
       </div>
       {completed.length > 0 ? (
-        <ul className="mt-4 space-y-2">
-          {completed.map((a) => (
-            <li
-              key={a.id}
-              className="flex items-center justify-between gap-3 rounded-2xl border border-[color:var(--rx-line)] bg-[var(--rx-panel)] px-4 py-3"
-            >
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-[color:var(--rx-text)]">
-                  {a.client.name}
-                </p>
-                <p className="truncate text-[11px] text-[color:var(--rx-muted)]">
-                  {a.service.name} · {a.stylist.name} · {statusLabel(a.status)}
-                </p>
-              </div>
-              <p className="shrink-0 text-sm tabular-nums text-[color:var(--rx-text-80)]">
-                {formatCad((a.chargedCents || a.service.priceCents || 0) + (a.tipCents || 0))}
-              </p>
-            </li>
-          ))}
-        </ul>
+        <>
+          <div className="mt-4 mb-2">
+            <h3 className="text-[11px] font-semibold tracking-wide text-[color:var(--rx-faint)] uppercase">
+              Completed today
+            </h3>
+            <p className="text-[11px] text-[color:var(--rx-faint)]">Tap a visit for details.</p>
+          </div>
+          <ul className="space-y-2">
+            {completed.map((a) => {
+              const active = selectedId === a.id;
+              const charged = a.chargedCents ?? a.service.priceCents ?? 0;
+              const tip = a.tipCents ?? 0;
+              return (
+                <li key={a.id}>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedId(active ? null : a.id)}
+                    data-testid="reception-report-row"
+                    data-appt-id={a.id}
+                    className={`flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition ${
+                      active
+                        ? "border-[color:var(--rx-accent)] bg-[var(--rx-panel)] ring-1 ring-[color:var(--rx-accent)]/35"
+                        : "border-[color:var(--rx-line)] bg-[var(--rx-panel)] hover:border-[color:var(--rx-accent)]"
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-[color:var(--rx-text)]">
+                        {a.client.name}
+                      </p>
+                      <p className="truncate text-[11px] text-[color:var(--rx-muted)]">
+                        {a.service.name} · {a.stylist.name} · {statusLabel(a.status)}
+                      </p>
+                    </div>
+                    <p className="shrink-0 text-sm tabular-nums text-[color:var(--rx-text-80)]">
+                      {formatCad(charged + tip)}
+                    </p>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          {selected ? (
+            <CompletedVisitDetail
+              appt={selected}
+              timeZone={timeZone}
+              onClose={() => setSelectedId(null)}
+            />
+          ) : null}
+        </>
       ) : null}
+    </div>
+  );
+}
+
+function reportSourceLabel(source?: string) {
+  return source === "WALK_IN" ? "Walk-in" : "Online";
+}
+
+function CompletedVisitDetail({
+  appt,
+  timeZone,
+  onClose,
+}: {
+  appt: DisplayAppt;
+  timeZone?: string | null;
+  onClose: () => void;
+}) {
+  const charged = appt.chargedCents ?? appt.service.priceCents ?? 0;
+  const tip = appt.tipCents ?? 0;
+  const when = new Date(appt.startsAt).toLocaleString("en-CA", {
+    timeZone: timeZone || undefined,
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+
+  return (
+    <section
+      className="mt-4 rounded-2xl border border-[color:var(--rx-accent)]/35 bg-[var(--rx-panel)] px-4 py-4"
+      data-testid="reception-report-detail"
+    >
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--rx-accent)] text-sm font-bold text-white">
+            {initials(appt.client.name)}
+          </span>
+          <div className="min-w-0">
+            <h3 className="truncate text-base font-semibold text-[color:var(--rx-text)]">
+              {appt.client.name}
+            </h3>
+            <p className="text-[11px] text-[color:var(--rx-muted)]">{when}</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="text-xl leading-none text-[color:var(--rx-faint)] hover:text-[color:var(--rx-text)]"
+          aria-label="Close visit details"
+        >
+          ×
+        </button>
+      </div>
+
+      <dl className="grid gap-2.5 text-sm">
+        <DetailRow label="Service" value={appt.service.name} />
+        <DetailRow label="Stylist" value={appt.stylist.name} />
+        {appt.service.durationMin ? (
+          <DetailRow label="Duration" value={`${appt.service.durationMin} min`} />
+        ) : null}
+        <DetailRow label="Source" value={reportSourceLabel(appt.source)} />
+        <DetailRow label="Status" value={statusLabel(appt.status)} />
+        {appt.client.phone ? <DetailRow label="Phone" value={appt.client.phone} /> : null}
+        {appt.client.email ? <DetailRow label="Email" value={appt.client.email} /> : null}
+        <DetailRow label="Service charge" value={formatCad(charged)} />
+        <DetailRow label="Tip" value={formatCad(tip)} />
+        <DetailRow label="Total collected" value={formatCad(charged + tip)} strong />
+      </dl>
+
+      {appt.notes ? (
+        <p className="mt-3 rounded-xl border border-[color:var(--rx-line)] bg-[var(--rx-input)] px-3 py-2 text-[11px] text-[color:var(--rx-muted)]">
+          <span className="font-semibold text-[color:var(--rx-text)]">Notes · </span>
+          {appt.notes}
+        </p>
+      ) : null}
+    </section>
+  );
+}
+
+function DetailRow({
+  label,
+  value,
+  strong,
+}: {
+  label: string;
+  value: string;
+  strong?: boolean;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4">
+      <dt className="text-[11px] font-semibold tracking-wide text-[color:var(--rx-faint)] uppercase">
+        {label}
+      </dt>
+      <dd
+        className={`text-right text-[color:var(--rx-text)] ${strong ? "font-semibold tabular-nums" : ""}`}
+      >
+        {value}
+      </dd>
     </div>
   );
 }
