@@ -75,6 +75,7 @@ export function ReceptionSchedule({
   onCheckIn,
   onCheckout,
   hideEmptyState = false,
+  audience = "reception",
 }: {
   appointments: DisplayAppt[];
   stylists: DisplayStylist[];
@@ -100,6 +101,8 @@ export function ReceptionSchedule({
   onCheckout?: (appt: DisplayAppt) => void;
   /** Hide the empty-day overlay (e.g. while the new-booking panel is open). */
   hideEmptyState?: boolean;
+  /** Customer TVs get lounge-friendly copy instead of reception desk actions. */
+  audience?: "reception" | "customer";
 }) {
   const guestName = (name: string) => (nameMode === "first" ? firstName(name) : name);
   const tz = timeZone || "America/Toronto";
@@ -122,6 +125,17 @@ export function ReceptionSchedule({
   const emptyAnchorTop = showNow
     ? Math.max(96, nowTop - emptyAboveNowGap)
     : height * 0.42;
+  const isCustomer = audience === "customer";
+  const emptyTitle = isCustomer
+    ? storeClosed
+      ? "Closed today"
+      : "Walk-ins welcome"
+    : "No bookings on this day";
+  const emptyHint = isCustomer
+    ? storeClosed
+      ? "We'll see you when we're open again."
+      : "No appointments on the floor right now. Check in at reception — our team will seat you shortly."
+    : null;
   const columns = stylists.length
     ? stylists
     : [{ id: "none", name: "Chair", bio: null, color: "#c9a87c", photoUrl: "" }];
@@ -512,14 +526,39 @@ export function ReceptionSchedule({
               className="pointer-events-none relative z-[4] col-start-2 col-end-[-1] row-start-2"
               style={{ height }}
             >
-              <div className="reception-cal-empty reception-cal-empty--timeline" style={{ top: emptyAnchorTop }}>
-                <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-                  <rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" strokeWidth="1.4" />
-                  <path d="M8 3v4M16 3v4M4 10h16" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-                </svg>
-                <p className="reception-cal-empty__title">No bookings on this day</p>
+              <div
+                className={`reception-cal-empty reception-cal-empty--timeline${isCustomer ? " reception-cal-empty--customer" : ""}`}
+                style={{ top: emptyAnchorTop }}
+                data-testid={isCustomer ? "customer-schedule-empty" : "reception-schedule-empty"}
+              >
+                {isCustomer ? (
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path
+                      d="M7 18h10M9 14h6M10 10V6.5a2 2 0 0 1 4 0V10"
+                      stroke="currentColor"
+                      strokeWidth="1.4"
+                      strokeLinecap="round"
+                    />
+                    <path
+                      d="M6 10h12l-1 8H7L6 10Z"
+                      stroke="currentColor"
+                      strokeWidth="1.4"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" strokeWidth="1.4" />
+                    <path d="M8 3v4M16 3v4M4 10h16" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                  </svg>
+                )}
+                <p className="reception-cal-empty__title">{emptyTitle}</p>
                 <p className="reception-cal-empty__hint">
-                  Use <strong>+ New</strong> or <strong>Walk-in</strong> to get started, or pick another date.
+                  {emptyHint ?? (
+                    <>
+                      Use <strong>+ New</strong> or <strong>Walk-in</strong> to get started, or pick another date.
+                    </>
+                  )}
                 </p>
               </div>
             </div>

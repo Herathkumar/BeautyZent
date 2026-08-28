@@ -1772,6 +1772,7 @@ export function DisplayBoard({
               now={now}
               storeClosed={storeClosed}
               nameMode="first"
+              audience="customer"
               onCheckIn={({ appointmentId, targetStylistId }) =>
                 void checkInFromDrag(appointmentId, targetStylistId)
               }
