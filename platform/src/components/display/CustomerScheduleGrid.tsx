@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { hitChairDrop, resolveDropTarget, type ChairDrag } from "@/components/display/chair-drop";
 import { StylistChairStatus } from "@/components/display/StylistChairStatus";
 import { ZentraLabFooter } from "@/components/ZentraLabFooter";
+import { ServiceGlyph } from "./ServiceGlyph";
 import {
   canChairCheckIn,
   chairAcceptsDrop,
@@ -14,7 +15,6 @@ import {
   loungeTimeWindow,
   seatedServiceProgress,
   serviceKind,
-  ServiceGlyph,
   stylistChairVisual,
   stylistCurrentGuest,
   stylistFloorTone,

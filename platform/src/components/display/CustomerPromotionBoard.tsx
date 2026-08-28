@@ -166,6 +166,28 @@ function PromoCard({
   );
 }
 
+function PromoGoldParticles() {
+  return (
+    <div className="customer-promo-board__particles" aria-hidden>
+      <div className="customer-promo-board__particle-layer is-far">
+        {Array.from({ length: 10 }, (_, i) => (
+          <span key={`far-${i}`} className="customer-promo-board__spark" />
+        ))}
+      </div>
+      <div className="customer-promo-board__particle-layer is-mid">
+        {Array.from({ length: 12 }, (_, i) => (
+          <span key={`mid-${i}`} className="customer-promo-board__spark" />
+        ))}
+      </div>
+      <div className="customer-promo-board__particle-layer is-near">
+        {Array.from({ length: 8 }, (_, i) => (
+          <span key={`near-${i}`} className="customer-promo-board__spark" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function CustomerPromotionBoard({
   board,
   paused,
@@ -197,6 +219,7 @@ export function CustomerPromotionBoard({
 
   return (
     <div className="customer-promo-board" data-testid="customer-promotion-board" aria-live="polite">
+      <PromoGoldParticles />
       <div className="customer-promo-board__stage">
         <p className="customer-promo-board__kicker">{active.thumbLabel}</p>
 

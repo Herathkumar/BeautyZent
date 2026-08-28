@@ -35,6 +35,9 @@ import { ReceptionThemeToggle } from "@/components/display/ReceptionThemeToggle"
 import { CustomerThemeRoot } from "@/components/display/CustomerThemeRoot";
 import { CustomerThemeToggle } from "@/components/display/CustomerThemeToggle";
 import { CustomerViewToggle } from "@/components/display/CustomerViewToggle";
+import { CustomerAmbientBackdrop } from "@/components/display/CustomerAmbientBackdrop";
+import { CustomerWeatherChip } from "@/components/display/CustomerWeatherChip";
+import { CustomerLoungeHeadlineStatus } from "@/components/display/CustomerLoungeHeadlineStatus";
 import {
   clampDisplayHours,
   earlySeatWindow,
@@ -1765,11 +1768,12 @@ export function DisplayBoard({
       data-testid={embedded ? "manager-store-display-board" : "store-display-board"}
     >
       <CustomerThemeRoot
-        className={`flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[var(--cd-bg)] text-[color:var(--cd-text)] ${
+        className={`relative flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[var(--cd-bg)] text-[color:var(--cd-text)] ${
           embedded ? "rounded-3xl border border-[color:var(--cd-line)]" : ""
         }`}
       >
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <CustomerAmbientBackdrop />
+      <div className="relative z-[1] flex min-h-0 min-w-0 flex-1 flex-col">
       <header className={`customer-lounge-header shrink-0 ${embedded ? "px-4 py-4 sm:px-5" : "px-8 py-6"}`}>
           <div className="grid gap-4 lg:grid-cols-[1fr_auto_1fr] lg:items-center">
             <div className="flex items-center gap-4">
@@ -1787,11 +1791,15 @@ export function DisplayBoard({
               <h2 className="font-[family-name:var(--font-display)] text-2xl text-[color:var(--cd-heading)] sm:text-[1.85rem]">
                 Today’s Appointments — {apptDay}
               </h2>
-              <p className="mt-1 text-xs tracking-wide text-[color:var(--cd-muted)]" data-testid="display-store-hours">
-                {storeClosed
-                  ? "Closed today"
-                  : `${formatHourLabel(openHour)} – ${formatHourLabel(closeHour)}`}
-              </p>
+              <CustomerLoungeHeadlineStatus
+                appointments={todayAppts}
+                stylists={floorStylists}
+                openHour={openHour}
+                closeHour={closeHour}
+                timeZone={salon?.timezone}
+                now={now}
+                storeClosed={storeClosed}
+              />
             </div>
             <div className="flex flex-col items-end gap-2">
               <div className="flex flex-wrap items-center justify-end gap-2">
@@ -1799,9 +1807,12 @@ export function DisplayBoard({
                 <CustomerThemeToggle />
               </div>
               <div className="flex items-center gap-3">
-                <div className="text-right">
-                  <p className="customer-lounge-clock">{timeLine}</p>
-                  <p className="text-sm text-[color:var(--cd-muted)]">{dateLine}</p>
+                <div className="flex items-center gap-2.5">
+                  <CustomerWeatherChip address={salon?.address} timezone={salon?.timezone} />
+                  <div className="text-right">
+                    <p className="customer-lounge-clock">{timeLine}</p>
+                    <p className="text-sm text-[color:var(--cd-muted)]">{dateLine}</p>
+                  </div>
                 </div>
                 {pinSet || embedded ? (
                   <PadlockButton

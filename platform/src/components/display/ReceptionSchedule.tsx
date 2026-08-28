@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { hitChairDrop, resolveDropTarget, type ChairDrag } from "@/components/display/chair-drop";
 import { StylistChairStatus } from "@/components/display/StylistChairStatus";
 import { useConfirm } from "@/components/ConfirmDialog";
+import { ServiceGlyph } from "./ServiceGlyph";
 import {
   canChairCheckIn,
   chairAcceptsDrop,
@@ -16,7 +17,6 @@ import {
   HOUR_PX,
   initials,
   serviceKind,
-  ServiceGlyph,
   statusLabel,
   stylistChairVisual,
   stylistCurrentGuest,
