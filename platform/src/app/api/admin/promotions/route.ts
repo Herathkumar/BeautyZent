@@ -20,33 +20,72 @@ function ruleSelect() {
   } as const;
 }
 
+function settingsSelect() {
+  return {
+    loyaltyEnabled: true,
+    discountsEnabled: true,
+    loyaltyPointsPerDollar: true,
+    loyaltyCentsPerPoint: true,
+    loyaltyMaxRedeemPercent: true,
+  } as const;
+}
+
+function normalizeSettingsInput(raw: Record<string, unknown>) {
+  return {
+    loyaltyEnabled: Boolean(raw.loyaltyEnabled),
+    discountsEnabled: Boolean(raw.discountsEnabled),
+    loyaltyPointsPerDollar: Math.max(0, Math.round(Number(raw.loyaltyPointsPerDollar ?? 1))),
+    loyaltyCentsPerPoint: Math.max(1, Math.round(Number(raw.loyaltyCentsPerPoint ?? 5))),
+    loyaltyMaxRedeemPercent: Math.min(
+      100,
+      Math.max(0, Math.round(Number(raw.loyaltyMaxRedeemPercent ?? 50)))
+    ),
+  };
+}
+
+function promoErrorMessage(err: unknown, fallback: string) {
+  if (err && typeof err === "object" && "code" in err) {
+    const code = String((err as { code?: string }).code || "");
+    if (code === "P2021" || code === "P2010" || code === "P2022") {
+      return "Database schema is out of date. Run pnpm db:local:push, then restart the dev server.";
+    }
+  }
+  const message = err instanceof Error ? err.message : "";
+  if (/Unknown arg|does not exist|column .* does not exist/i.test(message)) {
+    return "Database schema is out of date. Run pnpm db:local:push, then restart the dev server.";
+  }
+  return message || fallback;
+}
+
 export async function GET() {
   const session = await getSession();
   if (!session || !isSalonStaff(session.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const [salon, rules] = await Promise.all([
-    prisma.salon.findUnique({
-      where: { id: session.salonId },
-      select: {
-        loyaltyEnabled: true,
-        discountsEnabled: true,
-        loyaltyPointsPerDollar: true,
-        loyaltyCentsPerPoint: true,
-        loyaltyMaxRedeemPercent: true,
-      },
-    }),
-    prisma.promotionRule.findMany({
-      where: { salonId: session.salonId },
-      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-      select: ruleSelect(),
-    }),
-  ]);
+  try {
+    const [salon, rules] = await Promise.all([
+      prisma.salon.findUnique({
+        where: { id: session.salonId },
+        select: settingsSelect(),
+      }),
+      prisma.promotionRule.findMany({
+        where: { salonId: session.salonId },
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+        select: ruleSelect(),
+      }),
+    ]);
 
-  if (!salon) return NextResponse.json({ error: "Salon not found" }, { status: 404 });
+    if (!salon) return NextResponse.json({ error: "Salon not found" }, { status: 404 });
 
-  return NextResponse.json({ settings: salon, rules, ruleTypes: PROMOTION_RULE_TYPES });
+    return NextResponse.json({ settings: salon, rules, ruleTypes: PROMOTION_RULE_TYPES });
+  } catch (err) {
+    console.error("[promotions GET]", err);
+    return NextResponse.json(
+      { error: promoErrorMessage(err, "Could not load promotion settings") },
+      { status: 500 }
+    );
+  }
 }
 
 export async function POST(req: Request) {
@@ -58,36 +97,20 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
 
   if (body.settings) {
-    const s = body.settings as Record<string, unknown>;
-    const salon = await prisma.salon.update({
-      where: { id: session.salonId },
-      data: {
-        ...(typeof s.loyaltyEnabled === "boolean" ? { loyaltyEnabled: s.loyaltyEnabled } : {}),
-        ...(typeof s.discountsEnabled === "boolean" ? { discountsEnabled: s.discountsEnabled } : {}),
-        ...(Number.isFinite(Number(s.loyaltyPointsPerDollar))
-          ? { loyaltyPointsPerDollar: Math.max(0, Math.round(Number(s.loyaltyPointsPerDollar))) }
-          : {}),
-        ...(Number.isFinite(Number(s.loyaltyCentsPerPoint))
-          ? { loyaltyCentsPerPoint: Math.max(1, Math.round(Number(s.loyaltyCentsPerPoint))) }
-          : {}),
-        ...(Number.isFinite(Number(s.loyaltyMaxRedeemPercent))
-          ? {
-              loyaltyMaxRedeemPercent: Math.min(
-                100,
-                Math.max(0, Math.round(Number(s.loyaltyMaxRedeemPercent)))
-              ),
-            }
-          : {}),
-      },
-      select: {
-        loyaltyEnabled: true,
-        discountsEnabled: true,
-        loyaltyPointsPerDollar: true,
-        loyaltyCentsPerPoint: true,
-        loyaltyMaxRedeemPercent: true,
-      },
-    });
-    return NextResponse.json({ settings: salon, message: "Promotion settings saved." });
+    try {
+      const salon = await prisma.salon.update({
+        where: { id: session.salonId },
+        data: normalizeSettingsInput(body.settings as Record<string, unknown>),
+        select: settingsSelect(),
+      });
+      return NextResponse.json({ settings: salon, message: "Promotion settings saved." });
+    } catch (err) {
+      console.error("[promotions POST settings]", err);
+      return NextResponse.json(
+        { error: promoErrorMessage(err, "Could not save settings") },
+        { status: 500 }
+      );
+    }
   }
 
   const type = String(body.type || "") as PromotionRuleType;
@@ -96,28 +119,36 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Valid type and name required" }, { status: 400 });
   }
 
-  const maxOrder = await prisma.promotionRule.aggregate({
-    where: { salonId: session.salonId },
-    _max: { sortOrder: true },
-  });
+  try {
+    const maxOrder = await prisma.promotionRule.aggregate({
+      where: { salonId: session.salonId },
+      _max: { sortOrder: true },
+    });
 
-  const rule = await prisma.promotionRule.create({
-    data: {
-      salonId: session.salonId,
-      type,
-      name,
-      enabled: body.enabled !== false,
-      discountBps: body.discountBps != null ? Math.round(Number(body.discountBps)) : null,
-      discountCents: body.discountCents != null ? Math.round(Number(body.discountCents)) : null,
-      minVisits: body.minVisits != null ? Math.round(Number(body.minVisits)) : null,
-      minSpendCents: body.minSpendCents != null ? Math.round(Number(body.minSpendCents)) : null,
-      membersOnly: Boolean(body.membersOnly),
-      sortOrder: (maxOrder._max.sortOrder ?? -1) + 1,
-    },
-    select: ruleSelect(),
-  });
+    const rule = await prisma.promotionRule.create({
+      data: {
+        salonId: session.salonId,
+        type,
+        name,
+        enabled: body.enabled !== false,
+        discountBps: body.discountBps != null ? Math.round(Number(body.discountBps)) : null,
+        discountCents: body.discountCents != null ? Math.round(Number(body.discountCents)) : null,
+        minVisits: body.minVisits != null ? Math.round(Number(body.minVisits)) : null,
+        minSpendCents: body.minSpendCents != null ? Math.round(Number(body.minSpendCents)) : null,
+        membersOnly: Boolean(body.membersOnly),
+        sortOrder: (maxOrder._max.sortOrder ?? -1) + 1,
+      },
+      select: ruleSelect(),
+    });
 
-  return NextResponse.json({ rule, message: "Rule added." });
+    return NextResponse.json({ rule, message: "Rule added." });
+  } catch (err) {
+    console.error("[promotions POST rule]", err);
+    return NextResponse.json(
+      { error: promoErrorMessage(err, "Could not add rule") },
+      { status: 500 }
+    );
+  }
 }
 
 export async function PATCH(req: Request) {

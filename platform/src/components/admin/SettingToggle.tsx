@@ -29,7 +29,7 @@ export function SettingToggle({
         <input
           type="checkbox"
           role="switch"
-          className="peer sr-only"
+          className="peer absolute inset-0 z-10 m-0 h-full w-full cursor-pointer opacity-0"
           checked={checked}
           disabled={disabled}
           onChange={(e) => onChange(e.target.checked)}
@@ -37,7 +37,7 @@ export function SettingToggle({
           aria-label={label}
         />
         <span
-          className="absolute inset-0 rounded-full bg-[#7d6154]/22 transition-colors peer-checked:bg-[#7d6154] peer-focus-visible:ring-2 peer-focus-visible:ring-[#7d6154]/35 peer-disabled:opacity-60"
+          className="pointer-events-none absolute inset-0 rounded-full bg-[#7d6154]/22 transition-colors peer-checked:bg-[#7d6154] peer-focus-visible:ring-2 peer-focus-visible:ring-[#7d6154]/35 peer-disabled:opacity-60"
           aria-hidden
         />
         <span

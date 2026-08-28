@@ -59,7 +59,7 @@ export function PromotionsSettings() {
   }, []);
 
   async function persistSettings(next?: PromoSettings) {
-    const payload = next ?? settings;
+    const payload = normalizeSettings(next ?? settings);
     const res = await fetch("/api/admin/promotions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -67,10 +67,23 @@ export function PromotionsSettings() {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      throw new Error(data.error || "Could not save settings");
+      throw new Error(data.error || `Could not save settings (${res.status})`);
     }
     if (data.settings) setSettings(data.settings);
     return data.settings as PromoSettings;
+  }
+
+  function normalizeSettings(next: PromoSettings): PromoSettings {
+    return {
+      loyaltyEnabled: Boolean(next.loyaltyEnabled),
+      discountsEnabled: Boolean(next.discountsEnabled),
+      loyaltyPointsPerDollar: Math.max(0, Math.round(Number(next.loyaltyPointsPerDollar) || 0)),
+      loyaltyCentsPerPoint: Math.max(1, Math.round(Number(next.loyaltyCentsPerPoint) || 1)),
+      loyaltyMaxRedeemPercent: Math.min(
+        100,
+        Math.max(0, Math.round(Number(next.loyaltyMaxRedeemPercent) || 0))
+      ),
+    };
   }
 
   useEffect(() => {
