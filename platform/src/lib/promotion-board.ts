@@ -11,10 +11,12 @@ export type PromoBoardIcon =
 export type PromoBoardTemplate = {
   icon: PromoBoardIcon;
   eyebrow: string;
+  /** Primary white title line, e.g. "Member" or "Spend $80+" */
   headline: string;
+  /** Optional gold italic second line, e.g. "rewards" */
+  headlineAccent?: string;
   offer: string;
   description: string;
-  accent: "gold" | "rose" | "teal" | "champagne";
 };
 
 export type PromotionBoardSlide = {
@@ -82,21 +84,21 @@ export function buildPromotionBoardTemplate(rule: RuleLike): PromoBoardTemplate 
   switch (type) {
     case "MEMBER_PERCENT":
       return {
-        icon: "crown",
+        icon: "gift",
         eyebrow: "Members only",
-        headline: "Member rewards",
+        headline: "Member",
+        headlineAccent: "rewards",
         offer: `${pct}% OFF`,
         description: "Verified members save on every visit. Ask reception to join.",
-        accent: "gold",
       };
     case "FIRST_VISIT":
       return {
         icon: "handshake",
         eyebrow: "Welcome offer",
-        headline: "Welcome new guests!",
-        offer: bps > 0 ? `GET ${pct}% OFF` : `GET $${dollars} OFF`,
+        headline: "Welcome",
+        headlineAccent: "new guests",
+        offer: bps > 0 ? `${pct}% OFF` : `$${dollars} OFF`,
         description: "Your first visit is on us — a little welcome gift from our team.",
-        accent: "rose",
       };
     case "VISIT_MILESTONE":
       return {
@@ -105,7 +107,6 @@ export function buildPromotionBoardTemplate(rule: RuleLike): PromoBoardTemplate 
         headline: `Celebrate your ${visitOrdinal(visits)} visit`,
         offer: bps > 0 ? `${pct}% OFF` : `$${dollars} OFF`,
         description: `Book your ${visitOrdinal(visits)} visit and enjoy a special thank-you discount.`,
-        accent: "teal",
       };
     case "MIN_SPEND_PERCENT":
       return {
@@ -114,16 +115,14 @@ export function buildPromotionBoardTemplate(rule: RuleLike): PromoBoardTemplate 
         headline: `Spend $${spend}+`,
         offer: `${pct}% OFF`,
         description: `Enjoy ${pct}% off when your visit total reaches $${spend}.`,
-        accent: "champagne",
       };
     case "MIN_SPEND_FLAT":
       return {
-        icon: "gift",
+        icon: "spend",
         eyebrow: "Spend & save",
         headline: `Spend $${spend}+`,
         offer: `$${dollars} OFF`,
         description: `Take $${dollars} off when your visit total reaches $${spend}.`,
-        accent: "champagne",
       };
     default:
       return {
@@ -132,7 +131,6 @@ export function buildPromotionBoardTemplate(rule: RuleLike): PromoBoardTemplate 
         headline: rule.name || "Promotion",
         offer: "SAVE TODAY",
         description: "Ask reception about today’s specials.",
-        accent: "gold",
       };
   }
 }

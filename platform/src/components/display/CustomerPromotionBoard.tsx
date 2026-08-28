@@ -8,25 +8,18 @@ import type {
 } from "@/lib/promotion-board";
 
 function PromoIcon({ icon }: { icon: PromoBoardIcon }) {
-  if (icon === "crown") {
+  if (icon === "gift" || icon === "crown") {
     return (
       <svg viewBox="0 0 64 64" fill="none" aria-hidden>
+        <rect x="14" y="28" width="36" height="24" rx="3" stroke="currentColor" strokeWidth="2.2" />
+        <path d="M14 34h36" stroke="currentColor" strokeWidth="2.2" />
+        <path d="M32 28v24" stroke="currentColor" strokeWidth="2.2" />
         <path
-          d="M12 44h40l-4 10H16L12 44Z"
+          d="M32 28c-6-8-14-8-14-2 0 4 6 6 14 8 8-2 14-4 14-8 0-6-8-6-14 2Z"
           stroke="currentColor"
-          strokeWidth="2.4"
+          strokeWidth="2.2"
           strokeLinejoin="round"
         />
-        <path
-          d="M12 44 20 22l12 12 12-16 8 26"
-          stroke="currentColor"
-          strokeWidth="2.4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <circle cx="20" cy="20" r="3" fill="currentColor" />
-        <circle cx="32" cy="14" r="3" fill="currentColor" />
-        <circle cx="44" cy="18" r="3" fill="currentColor" />
       </svg>
     );
   }
@@ -34,65 +27,88 @@ function PromoIcon({ icon }: { icon: PromoBoardIcon }) {
     return (
       <svg viewBox="0 0 64 64" fill="none" aria-hidden>
         <path
-          d="M10 30c6-8 14-10 22-4l4 4c4-6 12-8 18-2"
-          stroke="currentColor"
-          strokeWidth="2.4"
-          strokeLinecap="round"
-        />
-        <path
-          d="M18 36c4 6 12 10 20 8 4-1 8-4 10-8"
-          stroke="currentColor"
-          strokeWidth="2.4"
-          strokeLinecap="round"
-        />
-        <path
-          d="M28 34c2 3 6 4 10 2"
+          d="M12 30c5-7 12-9 20-4l4 3c4-5 11-7 16-2"
           stroke="currentColor"
           strokeWidth="2.2"
           strokeLinecap="round"
         />
+        <path
+          d="M18 36c4 5 11 9 18 7 5-1 9-4 12-8"
+          stroke="currentColor"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+        />
+        <path d="M28 34c2 2.5 5.5 3.5 9 1.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       </svg>
     );
   }
   if (icon === "milestone") {
     return (
       <svg viewBox="0 0 64 64" fill="none" aria-hidden>
-        <circle cx="32" cy="32" r="18" stroke="currentColor" strokeWidth="2.4" />
+        <circle cx="32" cy="34" r="14" stroke="currentColor" strokeWidth="2.2" />
+        <path d="M32 34V24" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+        <path d="M32 34l8 5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+        <path d="M32 12v4M32 52v4M12 34h4M48 34h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
         <path
-          d="M32 18v14l9 5"
+          d="M20 18l2.5 2.5M44 18l-2.5 2.5M20 50l2.5-2.5M44 50l-2.5-2.5"
           stroke="currentColor"
-          strokeWidth="2.4"
+          strokeWidth="1.6"
           strokeLinecap="round"
-          strokeLinejoin="round"
         />
-      </svg>
-    );
-  }
-  if (icon === "spend") {
-    return (
-      <svg viewBox="0 0 64 64" fill="none" aria-hidden>
-        <rect x="14" y="18" width="36" height="28" rx="4" stroke="currentColor" strokeWidth="2.4" />
-        <path d="M14 28h36" stroke="currentColor" strokeWidth="2.4" />
-        <circle cx="32" cy="38" r="4" stroke="currentColor" strokeWidth="2.2" />
       </svg>
     );
   }
   return (
     <svg viewBox="0 0 64 64" fill="none" aria-hidden>
       <path
-        d="M20 26h24l-2 22H22L20 26Z"
+        d="M20 24h24l3 28H17l3-28Z"
         stroke="currentColor"
-        strokeWidth="2.4"
+        strokeWidth="2.2"
         strokeLinejoin="round"
       />
       <path
-        d="M24 26c0-6 4-10 8-10s8 4 8 10"
+        d="M24 24c0-6 3.5-10 8-10s8 4 8 10"
         stroke="currentColor"
-        strokeWidth="2.4"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M29 36h6M32 33v6"
+        stroke="currentColor"
+        strokeWidth="1.8"
         strokeLinecap="round"
       />
     </svg>
   );
+}
+
+function GoldRule({ variant = "diamond" }: { variant?: "diamond" | "dot" | "spark" }) {
+  return (
+    <div className={`customer-promo-card__rule customer-promo-card__rule--${variant}`} aria-hidden>
+      <span />
+      <i />
+      <span />
+    </div>
+  );
+}
+
+function splitSalonName(name: string) {
+  const trimmed = name.trim();
+  const parts = trimmed.split(/\s+/);
+  if (parts.length <= 1) return { primary: trimmed, secondary: "" };
+  if (/beauty|parlor|salon|studio|spa/i.test(parts[parts.length - 1])) {
+    return {
+      primary: parts.slice(0, -1).join(" "),
+      secondary: parts.slice(-1).join(" "),
+    };
+  }
+  if (parts.length >= 3) {
+    return {
+      primary: parts.slice(0, -2).join(" "),
+      secondary: parts.slice(-2).join(" "),
+    };
+  }
+  return { primary: parts[0], secondary: parts.slice(1).join(" ") };
 }
 
 function PromoCard({
@@ -105,23 +121,47 @@ function PromoCard({
   size?: "hero" | "side" | "thumb";
 }) {
   const t = slide.template;
+  const brand = splitSalonName(salonName);
+
   return (
     <article
-      className={`customer-promo-card customer-promo-card--${size} customer-promo-card--${t.accent}`}
+      className={`customer-promo-card customer-promo-card--${size}`}
       data-promo-type={slide.type}
     >
-      <div className="customer-promo-card__icon">
-        <PromoIcon icon={t.icon} />
+      <div className="customer-promo-card__frame">
+        <div className="customer-promo-card__icon">
+          <PromoIcon icon={t.icon} />
+        </div>
+
+        <p className="customer-promo-card__eyebrow">
+          <span>{t.eyebrow}</span>
+        </p>
+        <GoldRule variant="diamond" />
+
+        <h3 className="customer-promo-card__headline">
+          <span className="customer-promo-card__headline-main">{t.headline}</span>
+          {t.headlineAccent ? (
+            <span className="customer-promo-card__headline-accent">{t.headlineAccent}</span>
+          ) : null}
+        </h3>
+
+        <p className="customer-promo-card__offer">{t.offer}</p>
+
+        {size === "hero" && t.description ? (
+          <p className="customer-promo-card__desc">{t.description}</p>
+        ) : null}
+
+        <GoldRule variant="spark" />
+
+        <div className="customer-promo-card__brand">
+          <p className="customer-promo-card__brand-primary">{brand.primary}</p>
+          {brand.secondary ? (
+            <p className="customer-promo-card__brand-secondary">{brand.secondary}</p>
+          ) : null}
+        </div>
+
+        <span className="customer-promo-card__flourish" aria-hidden />
       </div>
-      {size !== "thumb" ? <p className="customer-promo-card__eyebrow">{t.eyebrow}</p> : null}
-      <h3 className="customer-promo-card__headline">{t.headline}</h3>
-      <p className="customer-promo-card__offer">{t.offer}</p>
-      {size === "hero" ? <p className="customer-promo-card__desc">{t.description}</p> : null}
-      {size !== "thumb" ? (
-        <p className="customer-promo-card__brand">{salonName}</p>
-      ) : (
-        <span className="customer-promo-card__thumb-label">{slide.thumbLabel}</span>
-      )}
     </article>
   );
 }
@@ -193,21 +233,13 @@ export function CustomerPromotionBoard({
         </div>
 
         <div className="customer-promo-board__nav">
-          <button
-            type="button"
-            onClick={() => setIndex((i) => i - 1)}
-            disabled={slides.length < 2}
-          >
+          <button type="button" onClick={() => setIndex((i) => i - 1)} disabled={slides.length < 2}>
             ‹ Previous
           </button>
           <p>
             This month’s specials <span>·</span> Slide {activeIndex + 1} of {slides.length}
           </p>
-          <button
-            type="button"
-            onClick={() => setIndex((i) => i + 1)}
-            disabled={slides.length < 2}
-          >
+          <button type="button" onClick={() => setIndex((i) => i + 1)} disabled={slides.length < 2}>
             Next ›
           </button>
         </div>

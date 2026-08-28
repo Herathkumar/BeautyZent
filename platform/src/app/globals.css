@@ -2405,12 +2405,12 @@ html.customer-shell--dark body {
   z-index: 60;
   display: flex;
   flex-direction: column;
-  gap: 1.1rem;
-  padding: 1.25rem 1.5rem 1.5rem;
+  gap: 1rem;
+  padding: 1.15rem 1.4rem 1.35rem;
   background:
-    radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--cd-accent) 16%, transparent), transparent 55%),
-    linear-gradient(180deg, #1a2428 0%, #12181b 100%);
-  color: #f5f1ea;
+    radial-gradient(circle at 50% 12%, rgba(201, 168, 124, 0.14), transparent 48%),
+    linear-gradient(180deg, #0b1018 0%, #070a10 100%);
+  color: #f7f1e6;
   animation: customer-promo-board-in 0.45s ease;
 }
 .customer-promo-board__stage {
@@ -2420,36 +2420,37 @@ html.customer-shell--dark body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.85rem;
+  gap: 0.75rem;
 }
 .customer-promo-board__kicker {
+  font-family: var(--font-display);
   font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.22em;
+  font-weight: 600;
+  letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: color-mix(in srgb, #fff 78%, transparent);
+  color: #d4b48a;
 }
 .customer-promo-board__carousel {
   display: grid;
   width: min(100%, 72rem);
-  grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(15rem, 21rem) minmax(0, 1fr);
   align-items: center;
   gap: 0.85rem;
 }
 .customer-promo-board__hero {
-  animation: customer-promo-board-card-in 0.35s ease;
+  animation: customer-promo-board-card-in 0.4s ease;
 }
 .customer-promo-board__side {
   border: 0;
   background: transparent;
   padding: 0;
   cursor: pointer;
-  opacity: 0.55;
-  transform: scale(0.88);
+  opacity: 0.48;
+  transform: scale(0.86);
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
 .customer-promo-board__side:hover {
-  opacity: 0.8;
+  opacity: 0.78;
 }
 .customer-promo-board__side.is-spacer {
   visibility: hidden;
@@ -2467,39 +2468,39 @@ html.customer-shell--dark body {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  color: color-mix(in srgb, #fff 70%, transparent);
-  font-size: 0.82rem;
-  letter-spacing: 0.04em;
+  color: rgba(247, 241, 230, 0.62);
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
 }
 .customer-promo-board__nav button {
   border: 0;
   background: transparent;
-  color: inherit;
+  color: #d4b48a;
   cursor: pointer;
   font: inherit;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 .customer-promo-board__nav button:disabled {
-  opacity: 0.35;
+  opacity: 0.3;
   cursor: default;
 }
 .customer-promo-board__nav p span {
   margin: 0 0.35rem;
-  opacity: 0.5;
+  opacity: 0.45;
 }
 .customer-promo-board__thumbs {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: minmax(8.5rem, 1fr);
-  gap: 0.75rem;
+  grid-auto-columns: minmax(8.2rem, 1fr);
+  gap: 0.7rem;
   overflow-x: auto;
-  padding-bottom: 0.15rem;
+  padding-bottom: 0.1rem;
 }
 .customer-promo-board__thumb {
   position: relative;
   display: grid;
-  gap: 0.4rem;
+  gap: 0.35rem;
   border: 0;
   background: transparent;
   padding: 0;
@@ -2514,135 +2515,231 @@ html.customer-shell--dark body {
   z-index: 2;
   display: grid;
   place-items: center;
-  width: 1.35rem;
-  height: 1.35rem;
-  border-radius: 0.35rem;
-  background: #1a2428;
-  color: #fff;
-  font-size: 0.72rem;
+  width: 1.3rem;
+  height: 1.3rem;
+  border-radius: 0.3rem;
+  background: #0b1018;
+  border: 1px solid rgba(212, 180, 138, 0.55);
+  color: #d4b48a;
+  font-size: 0.68rem;
   font-weight: 700;
 }
 .customer-promo-board__thumb .customer-promo-card {
-  border: 2px solid transparent;
-  transition: border-color 0.2s ease, transform 0.2s ease;
+  box-shadow: none;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 .customer-promo-board__thumb.is-on .customer-promo-card {
-  border-color: #ffffff;
+  box-shadow:
+    0 0 0 1px rgba(255, 236, 188, 0.85),
+    0 0 18px rgba(212, 180, 138, 0.35);
   transform: translateY(-2px);
 }
 .customer-promo-board__thumb-caption {
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   line-height: 1.25;
-  color: color-mix(in srgb, #fff 78%, transparent);
+  color: rgba(247, 241, 230, 0.72);
   text-align: center;
 }
 .customer-promo-card {
   position: relative;
   overflow: hidden;
+  border-radius: 1.55rem;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(212, 180, 138, 0.12), transparent 42%),
+    linear-gradient(180deg, #121826 0%, #0a0e18 100%);
+  color: #f7f1e6;
+  box-shadow:
+    0 0 0 1px rgba(212, 180, 138, 0.55),
+    0 0 24px rgba(212, 180, 138, 0.18),
+    0 22px 48px rgba(0, 0, 0, 0.45);
+  text-align: center;
+}
+.customer-promo-card__frame {
   display: flex;
+  height: 100%;
+  min-height: inherit;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.45rem;
-  border-radius: 1.35rem;
-  background:
-    radial-gradient(circle at 70% 20%, rgba(255, 255, 255, 0.35), transparent 42%),
-    linear-gradient(160deg, #f7f1e8 0%, #efe4d5 55%, #e7d8c5 100%);
-  color: #2b2521;
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
-  text-align: center;
+  gap: 0.35rem;
+  padding: inherit;
 }
 .customer-promo-card--hero {
-  min-height: min(52vh, 28rem);
-  padding: 2rem 1.6rem 1.4rem;
+  min-height: min(54vh, 30rem);
+  padding: 1.85rem 1.5rem 1.35rem;
 }
 .customer-promo-card--side {
-  min-height: 16rem;
-  padding: 1.2rem 1rem;
+  min-height: 16.5rem;
+  padding: 1.15rem 0.95rem 1rem;
   pointer-events: none;
 }
 .customer-promo-card--thumb {
-  min-height: 7.5rem;
-  padding: 1.4rem 0.7rem 0.7rem;
-  border-radius: 1rem;
-  box-shadow: none;
+  min-height: 7.4rem;
+  padding: 1.35rem 0.65rem 0.65rem;
+  border-radius: 1.05rem;
 }
 .customer-promo-card__icon {
-  color: #7d6154;
-  margin-bottom: 0.2rem;
+  color: #d4b48a;
+  filter: drop-shadow(0 0 8px rgba(212, 180, 138, 0.35));
+  margin-bottom: 0.15rem;
 }
 .customer-promo-card--hero .customer-promo-card__icon svg {
-  width: 3.4rem;
-  height: 3.4rem;
+  width: 2.9rem;
+  height: 2.9rem;
 }
 .customer-promo-card--side .customer-promo-card__icon svg,
 .customer-promo-card--thumb .customer-promo-card__icon svg {
-  width: 2.2rem;
-  height: 2.2rem;
+  width: 1.9rem;
+  height: 1.9rem;
 }
 .customer-promo-card__eyebrow {
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.16em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  width: 100%;
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: #7d6154;
+  color: #d4b48a;
+}
+.customer-promo-card__eyebrow::before,
+.customer-promo-card__eyebrow::after {
+  content: "";
+  height: 1px;
+  width: min(18%, 3.2rem);
+  background: linear-gradient(90deg, transparent, rgba(212, 180, 138, 0.85), transparent);
+}
+.customer-promo-card__rule {
+  display: flex;
+  width: min(70%, 12rem);
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0.15rem 0 0.25rem;
+}
+.customer-promo-card__rule span {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212, 180, 138, 0.75), transparent);
+}
+.customer-promo-card__rule i {
+  flex-shrink: 0;
+  width: 0.42rem;
+  height: 0.42rem;
+  border: 1px solid #d4b48a;
+  box-shadow: 0 0 8px rgba(212, 180, 138, 0.55);
+}
+.customer-promo-card__rule--diamond i {
+  transform: rotate(45deg);
+  background: rgba(212, 180, 138, 0.35);
+}
+.customer-promo-card__rule--dot i,
+.customer-promo-card__rule--spark i {
+  border-radius: 999px;
+  background: #d4b48a;
+  width: 0.28rem;
+  height: 0.28rem;
+}
+.customer-promo-card__rule--spark i {
+  box-shadow:
+    0 0 10px rgba(255, 236, 188, 0.95),
+    0 0 2px #fff;
 }
 .customer-promo-card__headline {
+  display: grid;
+  gap: 0.05rem;
+  margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(1.35rem, 2.4vw, 2.1rem);
-  line-height: 1.15;
-  color: #2b2521;
+  line-height: 1.05;
 }
-.customer-promo-card--thumb .customer-promo-card__headline {
+.customer-promo-card__headline-main {
+  font-size: clamp(1.45rem, 2.6vw, 2.35rem);
+  font-weight: 600;
+  color: #ffffff;
+}
+.customer-promo-card__headline-accent {
+  font-size: clamp(1.05rem, 1.8vw, 1.55rem);
+  font-style: italic;
+  font-weight: 500;
+  color: #d4b48a;
+}
+.customer-promo-card--thumb .customer-promo-card__eyebrow,
+.customer-promo-card--thumb .customer-promo-card__rule,
+.customer-promo-card--thumb .customer-promo-card__headline,
+.customer-promo-card--thumb .customer-promo-card__brand,
+.customer-promo-card--thumb .customer-promo-card__flourish,
+.customer-promo-card--thumb .customer-promo-card__desc {
   display: none;
 }
 .customer-promo-card__offer {
+  margin: 0.15rem 0 0.2rem;
   font-family: var(--font-display);
-  font-size: clamp(1.6rem, 3vw, 2.6rem);
+  font-size: clamp(1.85rem, 3.4vw, 3rem);
   font-weight: 700;
   letter-spacing: 0.04em;
-  color: #6e4a38;
+  color: #ffffff;
+  text-shadow: 0 0 18px rgba(212, 180, 138, 0.25);
+}
+.customer-promo-card--side .customer-promo-card__offer {
+  color: #f0d7aa;
 }
 .customer-promo-card--thumb .customer-promo-card__offer {
   font-size: 1.05rem;
+  color: #f0d7aa;
 }
 .customer-promo-card__desc {
-  max-width: 18rem;
-  font-size: 0.92rem;
+  max-width: 17rem;
+  margin: 0.15rem 0 0.35rem;
+  font-size: 0.82rem;
   line-height: 1.4;
-  color: #6b5b52;
+  color: rgba(247, 241, 230, 0.68);
 }
-.customer-promo-card__brand {
-  margin-top: auto;
-  padding-top: 0.75rem;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: #9a8a80;
-}
-.customer-promo-card__thumb-label {
+.customer-promo-card--side .customer-promo-card__desc {
   display: none;
 }
-.customer-promo-card--gold {
-  background:
-    radial-gradient(circle at 70% 18%, rgba(255, 236, 179, 0.55), transparent 40%),
-    linear-gradient(160deg, #fff8e8 0%, #f3e2c2 100%);
+.customer-promo-card__brand {
+  margin-top: 0.15rem;
+  display: grid;
+  gap: 0.12rem;
 }
-.customer-promo-card--rose {
-  background:
-    radial-gradient(circle at 70% 18%, rgba(255, 214, 214, 0.55), transparent 40%),
-    linear-gradient(160deg, #fff4f1 0%, #f3ddd4 100%);
+.customer-promo-card__brand-primary {
+  font-family: var(--font-display);
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #d4b48a;
 }
-.customer-promo-card--teal {
-  background:
-    radial-gradient(circle at 70% 18%, rgba(186, 232, 228, 0.55), transparent 40%),
-    linear-gradient(160deg, #f2fbfa 0%, #d7ebe8 100%);
+.customer-promo-card__brand-secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(247, 241, 230, 0.82);
 }
-.customer-promo-card--champagne {
+.customer-promo-card__brand-secondary::before,
+.customer-promo-card__brand-secondary::after {
+  content: "";
+  width: 1.6rem;
+  height: 1px;
+  background: rgba(212, 180, 138, 0.7);
+}
+.customer-promo-card__flourish {
+  margin-top: 0.45rem;
+  width: 1.6rem;
+  height: 0.85rem;
   background:
-    radial-gradient(circle at 70% 18%, rgba(240, 220, 180, 0.55), transparent 40%),
-    linear-gradient(160deg, #fbf6ec 0%, #ebe0cb 100%);
+    radial-gradient(circle at 50% 50%, #d4b48a 0 18%, transparent 19%),
+    linear-gradient(90deg, transparent 0 20%, #d4b48a 20% 28%, transparent 28% 72%, #d4b48a 72% 80%, transparent 80%),
+    radial-gradient(circle at 20% 50%, transparent 0 35%, #d4b48a 36% 42%, transparent 43%),
+    radial-gradient(circle at 80% 50%, transparent 0 35%, #d4b48a 36% 42%, transparent 43%);
+  opacity: 0.9;
 }
 @keyframes customer-promo-board-in {
   from {
@@ -2654,7 +2751,7 @@ html.customer-shell--dark body {
 }
 @keyframes customer-promo-board-card-in {
   from {
-    opacity: 0.55;
+    opacity: 0.45;
     transform: scale(0.97);
   }
   to {

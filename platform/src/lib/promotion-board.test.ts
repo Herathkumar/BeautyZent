@@ -14,7 +14,7 @@ describe("promotion board templates", () => {
       minSpendCents: null,
     });
     expect(template.icon).toBe("handshake");
-    expect(template.offer).toBe("GET 10% OFF");
+    expect(template.offer).toBe("10% OFF");
     expect(template.headline).toMatch(/welcome/i);
   });
 
