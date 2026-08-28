@@ -28,23 +28,29 @@ import {
 
 const BOOKING_SCAN_MS = 6_000;
 
-function LoungeProgressRing({ progress }: { progress: number }) {
-  const r = 22;
-  const c = 2 * Math.PI * r;
-  const pct = Math.max(0.02, Math.min(1, progress));
+export function ActiveProgressBar({ progress, label, colorVar = "--cd-accent" }: { progress: number; label: string; colorVar?: string }) {
+  const pct = Math.max(0, Math.min(100, progress * 100));
   return (
-    <svg className="customer-lounge-feature__ring" viewBox="0 0 52 52" aria-hidden>
-      <circle className="customer-lounge-feature__ring-track" cx="26" cy="26" r={r} />
-      <circle
-        className="customer-lounge-feature__ring-fill"
-        cx="26"
-        cy="26"
-        r={r}
-        strokeDasharray={`${c}`}
-        strokeDashoffset={`${c * (1 - pct)}`}
-        transform="rotate(-90 26 26)"
-      />
-    </svg>
+    <div className="mt-1.5 w-full">
+      <div className="mb-1 flex items-end justify-between">
+        <span
+          className="text-[9px] font-bold uppercase tracking-wider opacity-90"
+          style={{ color: `var(${colorVar})` }}
+        >
+          Progress
+        </span>
+        <span className="text-[10px] font-bold text-[color:var(--cd-heading)]">{label.replace("~", "").replace(" left", " left")}</span>
+      </div>
+      <div
+        className="h-[4px] w-full overflow-hidden rounded-full"
+        style={{ background: `color-mix(in srgb, var(${colorVar}) 20%, transparent)` }}
+      >
+        <div
+          className="h-full rounded-full transition-all duration-1000 ease-out"
+          style={{ width: `${pct}%`, background: `var(${colorVar})` }}
+        />
+      </div>
+    </div>
   );
 }
 
@@ -120,8 +126,8 @@ function LoungeBookingSpotlight({
         onPointerCancel={checkIn ? onCardPointerUp : undefined}
       >
         {onChair && remaining ? (
-          <div className="customer-lounge-feature__serving">
-            <div className="customer-lounge-feature__serving-copy">
+          <div className="customer-lounge-feature__serving w-full">
+            <div className="customer-lounge-feature__serving-copy w-full">
               <p className="customer-lounge-feature__kicker">On Chair</p>
               <div className="customer-lounge-feature__row">
                 {a.client.photoUrl ? (
@@ -135,12 +141,7 @@ function LoungeBookingSpotlight({
               <p data-testid="customer-appt-service" className="customer-lounge-feature__meta">
                 {a.service.name}
               </p>
-            </div>
-            <div className="customer-lounge-feature__ring-wrap" data-testid="customer-appt-timer">
-              <LoungeProgressRing progress={remaining.progress} />
-              <span className="customer-lounge-feature__eta">
-                {remaining.remainingLabel.replace("~", "").replace(" left", "")}
-              </span>
+              <ActiveProgressBar progress={remaining.progress} label={remaining.remainingLabel} />
             </div>
           </div>
         ) : (

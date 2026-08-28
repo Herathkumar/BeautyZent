@@ -16,8 +16,10 @@ import {
   hourMarks,
   HOUR_PX,
   initials,
+  seatedServiceProgress,
   serviceKind,
   statusLabel,
+  seatedServiceProgress,
   stylistChairVisual,
   stylistCurrentGuest,
   stylistFloorTone,
@@ -30,6 +32,7 @@ import {
 } from "@/lib/display-schedule";
 import { addCalendarDays } from "@/lib/salon-time";
 import { stylistUtilization } from "@/components/display/ReceptionDailyMetrics";
+import { ActiveProgressBar } from "./CustomerScheduleGrid";
 
 function StylistUtilRing({ pct }: { pct: number }) {
   const r = 30;
@@ -506,7 +509,11 @@ export function ReceptionSchedule({
                           <p className="mt-0.5 truncate text-[10px] text-[color:var(--rx-faint)]">
                             {formatClock(a.startsAt, timeZone)}–{formatClock(a.endsAt, timeZone)}
                           </p>
-                          {audience === "customer" ? <DurationBar startsAt={a.startsAt} endsAt={a.endsAt} /> : null}
+                          {a.status === "CHECKED_IN" ? (
+                            <ActiveProgressBar progress={seatedServiceProgress(a, now).progress} label={seatedServiceProgress(a, now).remainingLabel} colorVar="--rx-accent" />
+                          ) : audience === "customer" ? (
+                            <DurationBar startsAt={a.startsAt} endsAt={a.endsAt} />
+                          ) : null}
                         </button>
                         {showChairs && onCheckout && a.status === "CHECKED_IN" ? (
                           <button

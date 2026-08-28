@@ -21,6 +21,9 @@ export async function GET(
       promoBoardIntervalSec: true,
       promoBoardShowSec: true,
       promoBoardSlideSec: true,
+      loyaltyEnabled: true,
+      loyaltyPointsPerDollar: true,
+      loyaltyCentsPerPoint: true,
     },
   });
   if (!salon || !salon.active) {
@@ -52,6 +55,9 @@ export async function GET(
     defaultSlideSec: salon.promoBoardSlideSec || 8,
     salonName: salon.name,
     rules,
+    loyaltyEnabled: salon.loyaltyEnabled,
+    loyaltyPointsPerDollar: salon.loyaltyPointsPerDollar,
+    loyaltyCentsPerPoint: salon.loyaltyCentsPerPoint,
   });
 
   return NextResponse.json(board);

@@ -2400,47 +2400,16 @@ html.customer-shell--dark body {
 .customer-lounge-feature__serving {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 0.65rem;
   width: 100%;
   min-width: 0;
 }
-.customer-lounge-feature__ring-wrap {
-  position: relative;
-  width: 4.4rem;
-  height: 4.4rem;
-  flex-shrink: 0;
-  display: grid;
-  place-items: center;
-}
-.customer-lounge-feature__ring {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-.customer-lounge-feature__ring-track {
-  fill: none;
-  stroke: color-mix(in srgb, var(--cd-accent) 22%, transparent);
-  stroke-width: 2.75;
-}
-.customer-lounge-feature__ring-fill {
-  fill: none;
-  stroke: var(--cd-accent);
-  stroke-width: 2.75;
-  stroke-linecap: round;
-  transition: stroke-dashoffset 0.8s ease;
-}
+.customer-lounge-feature__ring-wrap,
+.customer-lounge-feature__ring,
+.customer-lounge-feature__ring-track,
+.customer-lounge-feature__ring-fill,
 .customer-lounge-feature__eta {
-  position: relative;
-  z-index: 1;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  color: var(--cd-heading);
-  text-align: center;
-  max-width: 3.4rem;
-  line-height: 1.05;
+  display: none;
 }
 .customer-lounge-feature__serving-copy {
   min-width: 0;

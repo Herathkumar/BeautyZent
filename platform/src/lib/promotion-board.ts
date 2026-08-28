@@ -166,10 +166,35 @@ export function buildPromotionBoardPayload(opts: {
   defaultSlideSec: number;
   salonName: string;
   rules: RuleLike[];
+  loyaltyEnabled?: boolean;
+  loyaltyPointsPerDollar?: number;
+  loyaltyCentsPerPoint?: number;
 }): PromotionBoardPayload {
   const slides = opts.rules
     .filter((r) => r.enabled)
     .map((r) => buildPromotionBoardSlide(r, opts.defaultSlideSec));
+
+  if (opts.loyaltyEnabled) {
+    const ptsPerDollar = opts.loyaltyPointsPerDollar || 1;
+    const centsPerPt = opts.loyaltyCentsPerPoint || 5;
+    const valuePer100Pts = formatDollar(100 * centsPerPt);
+    
+    slides.push({
+      id: "loyalty-program",
+      type: "LOYALTY",
+      name: "Loyalty Program",
+      thumbLabel: "Loyalty Rewards",
+      durationSec: Math.min(60, Math.max(3, opts.defaultSlideSec)),
+      template: {
+        icon: "crown",
+        eyebrow: "Earn as you spend",
+        headline: "Loyalty",
+        headlineAccent: "Points",
+        offer: `${ptsPerDollar} pt per $1`,
+        description: `Members earn points on every service. Redeem 100 pts for $${valuePer100Pts} off your next visit.`,
+      }
+    });
+  }
 
   return {
     enabled: opts.enabled && slides.length > 0,
