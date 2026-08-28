@@ -11,86 +11,47 @@ import {
   firstName,
   formatClock,
   formatMinutesClock,
-  formatWaitMinutes,
-  loungeFloorStats,
-  loungeStatusLine,
   loungeTimeWindow,
+  seatedServiceProgress,
   serviceKind,
-  specialtyFromBio,
+  ServiceGlyph,
   stylistChairVisual,
   stylistCurrentGuest,
   stylistFloorTone,
+  stylistSpecialtyBadges,
   stylistStatusRingClass,
   stylistWaitInfo,
   type DisplayAppt,
   type DisplayStylist,
 } from "@/lib/display-schedule";
 
-function Glyph({ kind, className = "h-3.5 w-3.5" }: { kind: "cut" | "color" | "style"; className?: string }) {
-  const common = className;
-  if (kind === "color") {
-    return (
-      <svg className={common} viewBox="0 0 24 24" fill="none" aria-hidden>
-        <path
-          d="M12 3c2 3.5 6 7 6 11a6 6 0 1 1-12 0c0-4 4-7.5 6-11Z"
-          stroke="currentColor"
-          strokeWidth="1.6"
-        />
-      </svg>
-    );
-  }
-  if (kind === "style") {
-    return (
-      <svg className={common} viewBox="0 0 24 24" fill="none" aria-hidden>
-        <path d="M4 7h16M6 12h12M8 17h8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-      </svg>
-    );
-  }
-  return (
-    <svg className={common} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <circle cx="6.5" cy="7" r="2.4" stroke="currentColor" strokeWidth="1.6" />
-      <circle cx="17.5" cy="7" r="2.4" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M8.4 8.6 12 14l3.6-5.4M12 14v6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function ScissorsMark() {
-  return (
-    <svg className="h-7 w-7 text-[color:var(--cd-accent)]" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <circle cx="6" cy="7" r="2.4" stroke="currentColor" strokeWidth="1.6" />
-      <circle cx="6" cy="17" r="2.4" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M8 8.2 20 19M8 15.8 20 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function ClockMark() {
-  return (
-    <svg className="h-8 w-8 text-[color:var(--cd-accent)]" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <circle cx="12" cy="12" r="8.25" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M12 8v4.4l3 1.8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function PeopleMark() {
-  return (
-    <svg className="h-8 w-8 text-[color:var(--cd-accent)]" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <circle cx="9" cy="8" r="2.4" stroke="currentColor" strokeWidth="1.6" />
-      <circle cx="16" cy="9" r="2.1" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M4.5 18c.6-2.6 2.6-4 4.5-4s3.9 1.4 4.5 4M13 14.2c1.6.2 3.3 1.3 3.9 3.8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 const BOOKING_SCAN_MS = 6_000;
-const LOUNGE_STATUS_SCAN_MS = 5_000;
+
+function LoungeProgressRing({ progress }: { progress: number }) {
+  const r = 16;
+  const c = 2 * Math.PI * r;
+  const pct = Math.max(0.02, Math.min(1, progress));
+  return (
+    <svg className="customer-lounge-feature__ring" viewBox="0 0 40 40" aria-hidden>
+      <circle className="customer-lounge-feature__ring-track" cx="20" cy="20" r={r} />
+      <circle
+        className="customer-lounge-feature__ring-fill"
+        cx="20"
+        cy="20"
+        r={r}
+        strokeDasharray={`${c}`}
+        strokeDashoffset={`${c * (1 - pct)}`}
+        transform="rotate(-90 20 20)"
+      />
+    </svg>
+  );
+}
 
 function LoungeBookingSpotlight({
   appointments,
   stylist,
   timeZone,
+  now,
   paused,
   onCheckIn,
   onCardPointerDown,
@@ -101,6 +62,7 @@ function LoungeBookingSpotlight({
   appointments: DisplayAppt[];
   stylist: DisplayStylist;
   timeZone?: string | null;
+  now: Date;
   paused?: boolean;
   onCheckIn?: (payload: { appointmentId: string; targetStylistId: string }) => void;
   onCardPointerDown: (e: React.PointerEvent, appt: DisplayAppt, stylist: DisplayStylist) => void;
@@ -133,9 +95,10 @@ function LoungeBookingSpotlight({
   const kind = serviceKind(a.service.name);
   const checkIn = Boolean(onCheckIn && canChairCheckIn(a.status));
   const onChair = a.status === "CHECKED_IN";
+  const remaining = onChair ? seatedServiceProgress(a, now) : null;
 
   return (
-    <div className="customer-lounge-spotlight">
+    <div className={`customer-lounge-spotlight${onChair ? " is-on-chair" : ""}`}>
       <div
         key={a.id}
         data-testid="customer-appt-card"
@@ -143,30 +106,63 @@ function LoungeBookingSpotlight({
         data-appt-id={a.id}
         data-on-chair={onChair ? "true" : undefined}
         data-service-kind={kind}
-        className={`customer-lounge-feature${checkIn ? " customer-appt-card--draggable" : ""}${
-          draggingId === a.id ? " customer-appt-card--dragging" : ""
-        }`}
+        className={`customer-lounge-feature${onChair ? " customer-lounge-feature--serving" : ""}${
+          checkIn ? " customer-appt-card--draggable" : ""
+        }${draggingId === a.id ? " customer-appt-card--dragging" : ""}`}
         style={{ touchAction: checkIn ? "none" : undefined }}
         title={`${formatClock(a.startsAt, timeZone)} · ${a.service.name}${
           checkIn ? " · Drag onto chair to check in" : ""
-        }`}
+        }${remaining ? ` · ${remaining.remainingLabel}` : ""}`}
         onPointerDown={checkIn ? (e) => onCardPointerDown(e, a, stylist) : undefined}
         onPointerMove={checkIn ? onCardPointerMove : undefined}
         onPointerUp={checkIn ? onCardPointerUp : undefined}
         onPointerCancel={checkIn ? onCardPointerUp : undefined}
       >
-        {onChair ? <p className="customer-lounge-feature__kicker">On Chair</p> : (
-          <p className="customer-lounge-feature__kicker is-empty" aria-hidden>
-            &nbsp;
-          </p>
+        {onChair && remaining ? (
+          <div className="customer-lounge-feature__serving">
+            <div className="customer-lounge-feature__ring-wrap" data-testid="customer-appt-timer">
+              <LoungeProgressRing progress={remaining.progress} />
+              <span className="customer-lounge-feature__eta">
+                {remaining.remainingLabel.replace("~", "").replace(" left", "")}
+              </span>
+            </div>
+            <div className="customer-lounge-feature__serving-copy">
+              <p className="customer-lounge-feature__kicker">On Chair</p>
+              <div className="customer-lounge-feature__row">
+                {a.client.photoUrl ? (
+                  <img src={a.client.photoUrl} alt="" className="customer-lounge-feature__avatar is-photo" />
+                ) : (
+                  <span className="customer-lounge-feature__avatar">{initials(a.client.name)}</span>
+                )}
+                <ServiceGlyph kind={kind} className="customer-lounge-feature__glyph" />
+                <p className="customer-lounge-feature__name">{firstName(a.client.name)}</p>
+              </div>
+              <p data-testid="customer-appt-service" className="customer-lounge-feature__meta">
+                {a.service.name}
+              </p>
+              <p className="customer-lounge-feature__remain">{remaining.remainingLabel}</p>
+            </div>
+          </div>
+        ) : (
+          <>
+            <p className="customer-lounge-feature__kicker is-empty" aria-hidden>
+              &nbsp;
+            </p>
+            <div className="customer-lounge-feature__row">
+              {a.client.photoUrl ? (
+                <img src={a.client.photoUrl} alt="" className="customer-lounge-feature__avatar is-photo" />
+              ) : (
+                <span className="customer-lounge-feature__avatar">{initials(a.client.name)}</span>
+              )}
+              <ServiceGlyph kind={kind} className="customer-lounge-feature__glyph" />
+              <p className="customer-lounge-feature__name">{firstName(a.client.name)}</p>
+            </div>
+            <p data-testid="customer-appt-service" className="customer-lounge-feature__meta">
+              {formatClock(a.startsAt, timeZone)} · {a.service.name}
+            </p>
+            <DurationBar startsAt={a.startsAt} endsAt={a.endsAt} />
+          </>
         )}
-        <div className="customer-lounge-feature__row">
-          <Glyph kind={kind} className="customer-lounge-feature__glyph" />
-          <p className="customer-lounge-feature__name">{firstName(a.client.name)}</p>
-        </div>
-        <p data-testid="customer-appt-service" className="customer-lounge-feature__meta">
-          {formatClock(a.startsAt, timeZone)} · {a.service.name}
-        </p>
       </div>
       <div className="customer-lounge-spotlight__dots" aria-hidden>
         {list.length > 1
@@ -182,102 +178,12 @@ function LoungeBookingSpotlight({
   );
 }
 
-function joinNames(names: string[]) {
-  if (names.length <= 1) return names[0] || "Chair";
-  if (names.length === 2) return `${names[0]} & ${names[1]}`;
-  return `${names[0]} +${names.length - 1}`;
-}
-
-type OpeningMark = {
-  key: string;
-  names: string[];
-  freeMin: number;
-};
-
-function loungeOpenings(
-  floor: {
-    stylist: DisplayStylist;
-    wait: { freeMin: number | null };
-    visual: { kind: string };
-  }[],
-  nowMin: number
-): OpeningMark[] {
-  const byMin = new Map<number, { ids: string[]; names: string[] }>();
-  for (const { stylist, wait, visual } of floor) {
-    if (visual.kind !== "waiting" && visual.kind !== "opens") continue;
-    const freeMin = wait.freeMin;
-    if (freeMin == null || freeMin <= nowMin) continue;
-    const group = byMin.get(freeMin) || { ids: [], names: [] };
-    group.ids.push(stylist.id);
-    group.names.push(firstName(stylist.name));
-    byMin.set(freeMin, group);
-  }
-  return [...byMin.entries()]
-    .sort((a, b) => a[0] - b[0])
-    .map(([freeMin, group]) => ({
-      key: group.ids.join("-"),
-      names: group.names,
-      freeMin,
-    }));
-}
-
-/** Cycles the walk-in line with each busy stylist's next free time. */
-function LoungeStatusRotator({
-  statusText,
-  openings,
-}: {
-  statusText: string;
-  openings: OpeningMark[];
-}) {
-  const keys = openings.map((o) => o.key).join(",");
-  const slides = openings.length + 1;
-  const [index, setIndex] = useState(0);
-
-  useEffect(() => {
-    setIndex(0);
-  }, [keys]);
-
-  useEffect(() => {
-    if (slides < 2) return;
-    const timer = window.setInterval(() => {
-      setIndex((i) => (i + 1) % slides);
-    }, LOUNGE_STATUS_SCAN_MS);
-    return () => window.clearInterval(timer);
-  }, [keys, slides]);
-
-  const active = Math.min(index, slides - 1);
-  const opening = active === 0 ? null : openings[active - 1];
-
+function DurationBar({ startsAt, endsAt }: { startsAt: string; endsAt: string }) {
+  const min = Math.max(0, (new Date(endsAt).getTime() - new Date(startsAt).getTime()) / 60000);
+  const pct = Math.min(100, (min / 180) * 100);
   return (
-    <div className="customer-lounge-status" data-testid="customer-lounge-banner">
-      {opening ? (
-        <p
-          key={opening.key}
-          className="customer-lounge-banner"
-          data-testid="customer-lounge-opening"
-        >
-          <ScissorsMark />
-          <span>
-            <strong>{joinNames(opening.names)}</strong> free at{" "}
-            {formatMinutesClock(opening.freeMin)}
-          </span>
-        </p>
-      ) : (
-        <p key="status" className="customer-lounge-banner">
-          <ScissorsMark />
-          <span>{statusText}</span>
-        </p>
-      )}
-      <div className="customer-lounge-spotlight__dots" aria-hidden>
-        {slides > 1
-          ? Array.from({ length: slides }, (_, i) => (
-              <span
-                key={i}
-                className={`customer-lounge-spotlight__dot${i === active ? " is-on" : ""}`}
-              />
-            ))
-          : null}
-      </div>
+    <div className="mt-1.5 h-[3px] w-[60%] rounded-full bg-[color-mix(in_srgb,var(--cd-accent)_15%,transparent)] overflow-hidden">
+      <div className="h-full rounded-full bg-[var(--cd-accent)]" style={{ width: `${pct}%`, opacity: 0.7 }} />
     </div>
   );
 }
@@ -379,13 +285,6 @@ export function CustomerScheduleGrid({
     const visual = stylistChairVisual(wait, stylistCurrentGuest(items, now, timeZone));
     return { stylist, items, wait, visual };
   });
-  const stats = loungeFloorStats(
-    floor.map(({ wait, visual }) => ({
-      kind: visual.kind,
-      waitMs: visual.kind === "available" ? 0 : wait.waitMs,
-    }))
-  );
-  const openings = loungeOpenings(floor, nowMin);
 
   const padClass = compactPad ? "px-4 py-4 sm:px-5 sm:py-5" : "px-8 py-5";
   const timeline = (
@@ -447,7 +346,13 @@ export function CustomerScheduleGrid({
                 <img src={stylist.photoUrl || "/avatars/stylist-neutral.svg"} alt="" className="h-full w-full object-cover" />
               </div>
               <h3 className="customer-lounge-name">{stylist.name}</h3>
-              <p className="customer-lounge-specialty">{specialtyFromBio(stylist.bio, stylist.name)}</p>
+              <div className="customer-lounge-badges" data-testid="customer-lounge-badges">
+                {stylistSpecialtyBadges(stylist.bio, stylist.name).map((badge) => (
+                  <span key={badge} className="customer-lounge-badge">
+                    {badge}
+                  </span>
+                ))}
+              </div>
               {visual.kind === "available" ? (
                 <p className="customer-lounge-ready">Ready for clients</p>
               ) : null}
@@ -471,6 +376,7 @@ export function CustomerScheduleGrid({
                   appointments={openAppts}
                   stylist={stylist}
                   timeZone={timeZone}
+                  now={now}
                   paused={Boolean(drag)}
                   onCheckIn={onCheckIn}
                   onCardPointerDown={onCardPointerDown}
@@ -482,33 +388,6 @@ export function CustomerScheduleGrid({
             </article>
           );
         })}
-      </div>
-
-      <div className="customer-lounge-stats">
-        <article className="customer-lounge-stat">
-          <ClockMark />
-          <div>
-            <p className="customer-lounge-stat__label">Next available in</p>
-            <p className="customer-lounge-stat__value" data-testid="customer-next-wait">
-              {storeClosed ? "—" : formatWaitMinutes(stats.nextWaitMs)}
-            </p>
-          </div>
-        </article>
-        <article className="customer-lounge-stat customer-lounge-stat--banner">
-          <LoungeStatusRotator
-            statusText={loungeStatusLine(Boolean(storeClosed), stats)}
-            openings={storeClosed ? [] : openings}
-          />
-        </article>
-        <article className="customer-lounge-stat">
-          <PeopleMark />
-          <div>
-            <p className="customer-lounge-stat__label">Average wait time</p>
-            <p className="customer-lounge-stat__value" data-testid="customer-avg-wait">
-              {storeClosed ? "—" : formatWaitMinutes(stats.avgWaitMs)}
-            </p>
-          </div>
-        </article>
       </div>
       </div>
 

@@ -15,6 +15,8 @@ import {
   hourMarks,
   HOUR_PX,
   initials,
+  serviceKind,
+  ServiceGlyph,
   statusLabel,
   stylistChairVisual,
   stylistCurrentGuest,
@@ -50,6 +52,16 @@ function StylistUtilRing({ pct }: { pct: number }) {
         />
       </svg>
       <span className="reception-stylist-util__pct">{pct}%</span>
+    </div>
+  );
+}
+
+function DurationBar({ startsAt, endsAt }: { startsAt: string; endsAt: string }) {
+  const min = Math.max(0, (new Date(endsAt).getTime() - new Date(startsAt).getTime()) / 60000);
+  const pct = Math.min(100, (min / 180) * 100);
+  return (
+    <div className="mt-1 h-[2px] w-[50%] rounded-full bg-[color-mix(in_srgb,var(--rx-accent)_15%,transparent)] overflow-hidden">
+      <div className="h-full rounded-full bg-[var(--rx-accent)]" style={{ width: `${pct}%`, opacity: 0.6 }} />
     </div>
   );
 }
@@ -440,6 +452,7 @@ export function ReceptionSchedule({
                         data-testid="reception-appt-card"
                         data-appt-status={a.status}
                         data-appt-id={a.id}
+                        data-service-kind={serviceKind(a.service.name)}
                         className={`reception-cal-card absolute inset-x-1.5 z-10 overflow-hidden text-left${
                           selected ? " is-selected" : ""
                         }${checkIn ? " customer-appt-card--draggable" : ""}${
@@ -472,7 +485,11 @@ export function ReceptionSchedule({
                           }}
                         >
                           <p className="flex items-center gap-1.5 text-sm font-semibold text-[color:var(--rx-text)]">
-                            <span className="reception-cal-card__avatar">{initials(a.client.name)}</span>
+                            {a.client.photoUrl ? (
+                              <img src={a.client.photoUrl} alt="" className="reception-cal-card__avatar is-photo" />
+                            ) : (
+                              <span className="reception-cal-card__avatar">{initials(a.client.name)}</span>
+                            )}
                             <span className="min-w-0 flex-1 truncate">{guestName(a.client.name)}</span>
                             <span
                               className={`reception-cal-card__status is-${a.status.toLowerCase()}`}
@@ -480,12 +497,16 @@ export function ReceptionSchedule({
                               {a.status === "CHECKED_IN" ? "Checked in" : statusLabel(a.status)}
                             </span>
                           </p>
-                          <p className="mt-0.5 truncate text-[11px] text-[color:var(--rx-muted)]">
+                          <p className="mt-0.5 flex items-center gap-1 truncate text-[11px] text-[color:var(--rx-muted)]">
+                            {audience === "customer" ? (
+                              <ServiceGlyph kind={serviceKind(a.service.name)} className="reception-cal-card__service-icon" />
+                            ) : null}
                             {a.service.name}
                           </p>
                           <p className="mt-0.5 truncate text-[10px] text-[color:var(--rx-faint)]">
                             {formatClock(a.startsAt, timeZone)}–{formatClock(a.endsAt, timeZone)}
                           </p>
+                          {audience === "customer" ? <DurationBar startsAt={a.startsAt} endsAt={a.endsAt} /> : null}
                         </button>
                         {showChairs && onCheckout && a.status === "CHECKED_IN" ? (
                           <button

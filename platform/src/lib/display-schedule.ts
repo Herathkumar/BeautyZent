@@ -21,6 +21,7 @@ export type DisplayAppt = {
     phone: string | null;
     email?: string | null;
     notes?: string | null;
+    photoUrl?: string | null;
     createdAt?: string | null;
     visitCount?: number;
     recentVisits?: { serviceName: string; date: string }[];
@@ -88,13 +89,16 @@ export function formatClock(iso: string, timeZone?: string | null) {
   });
 }
 
-export function serviceKind(name: string): "cut" | "color" | "style" {
+export function serviceKind(name: string): "cut" | "color" | "style" | "nail" | "facial" | "other" {
   const n = (name || "").toLowerCase();
+  if (/\b(mani|pedi|nail|polish|acrylic|gel)\b/.test(n)) return "nail";
+  if (/\b(facial|skin|peel|mask|wax|brow|lash)\b/.test(n)) return "facial";
   if (/\b(color|colour|balayage|bleach|highlight|gloss|dye|tint|root)\b/.test(n)) {
     return "color";
   }
   if (/\b(blowout|style|updo|comb|set|finish)\b/.test(n)) return "style";
-  return "cut";
+  if (/\b(cut|trim|barber|fade|bangs)\b/.test(n)) return "cut";
+  return "other";
 }
 
 /** Same cut / color / style chips on reception and the customer TV. */
@@ -110,6 +114,34 @@ export function specialtyFromBio(bio: string | null | undefined, name: string) {
   if (line && line.length < 48) return line;
   return `${firstName(name)}'s chair`;
 }
+
+/** Premium specialty tags for the customer lounge (max 2). */
+export function stylistSpecialtyBadges(bio: string | null | undefined, name: string): string[] {
+  const text = `${bio || ""}`.toLowerCase();
+  const badges: string[] = [];
+  if (/bridal|wedding|bride/.test(text)) badges.push("Bridal Expert");
+  if (/color|colour|balayage|highlight|bleach|toner/.test(text)) badges.push("Color Specialist");
+  if (/senior|lead|master|director/.test(text)) badges.push("Senior Stylist");
+  if (/cut|barber|fade|men'?s/.test(text) && !badges.includes("Color Specialist")) {
+    badges.push("Cut Specialist");
+  }
+  if (/extension|kerati/.test(text)) badges.push("Extensions");
+  if (!badges.length) {
+    const line = specialtyFromBio(bio, name);
+    if (line && !line.toLowerCase().endsWith("'s chair")) badges.push(line);
+    else badges.push("Stylist");
+  }
+  return badges.slice(0, 2);
+}
+
+/** Soft rotating lines when the floor is open and quiet. */
+export const LOUNGE_CALM_QUOTES = [
+  "Take a seat — beauty starts here.",
+  "Soft light. Soft music. You’re welcome.",
+  "Walk-ins welcome. Your chair is waiting.",
+  "Breathe in. Glow out.",
+  "Relax — we’re glad you’re here.",
+];
 
 export function statusLabel(status: string) {
   if (status === "CHECKED_IN") return "Checked In";
@@ -360,10 +392,122 @@ export function formatWaitMinutes(ms: number) {
   return `${Math.max(0, Math.ceil(ms / 60_000))} min`;
 }
 
+function joinOpeningNames(names: string[]) {
+  if (names.length <= 1) return names[0] || "Chair";
+  if (names.length === 2) return `${names[0]} & ${names[1]}`;
+  return `${names[0]} +${names.length - 1}`;
+}
+
+/** Rotating one-liners for the customer display header (hours, wait, availability). */
+export function loungeHeadlineSlides(input: {
+  appointments: DisplayAppt[];
+  stylists: DisplayStylist[];
+  openHour: number;
+  closeHour: number;
+  timeZone?: string | null;
+  now: Date;
+  storeClosed?: boolean;
+}): string[] {
+  const { appointments, openHour, closeHour, timeZone, now, storeClosed } = input;
+  if (storeClosed) return ["Closed today"];
+
+  const columns = input.stylists.length
+    ? input.stylists
+    : [{ id: "none", name: "Chair", bio: null, color: "#c9a87c", photoUrl: "" }];
+  const nowMin = clockParts(now.toISOString(), timeZone).minutes;
+  const floor = columns.map((stylist) => {
+    const items = appointments.filter(
+      (a) => a.stylist.id === stylist.id || a.stylist.name === stylist.name
+    );
+    const wait = stylistWaitInfo(items, now, openHour, closeHour, timeZone, storeClosed);
+    const visual = stylistChairVisual(wait, stylistCurrentGuest(items, now, timeZone));
+    return { stylist, wait, visual };
+  });
+  const stats = loungeFloorStats(
+    floor.map(({ wait, visual }) => ({
+      kind: visual.kind,
+      waitMs: visual.kind === "available" ? 0 : wait.waitMs,
+    }))
+  );
+
+  const slides: string[] = [
+    `${formatHourLabel(openHour)} – ${formatHourLabel(closeHour)}`,
+    loungeStatusLine(false, stats),
+  ];
+
+  if (stats.total > 0) {
+    slides.push(`Next available in ${formatWaitMinutes(stats.nextWaitMs)}`);
+    slides.push(`Average wait ${formatWaitMinutes(stats.avgWaitMs)}`);
+  }
+
+  const byMin = new Map<number, string[]>();
+  for (const { stylist, wait, visual } of floor) {
+    if (visual.kind !== "waiting" && visual.kind !== "opens") continue;
+    const freeMin = wait.freeMin;
+    if (freeMin == null || freeMin <= nowMin) continue;
+    const names = byMin.get(freeMin) || [];
+    names.push(firstName(stylist.name));
+    byMin.set(freeMin, names);
+  }
+  for (const [freeMin, names] of [...byMin.entries()].sort((a, b) => a[0] - b[0])) {
+    slides.push(`${joinOpeningNames(names)} free at ${formatMinutesClock(freeMin)}`);
+  }
+
+  return slides;
+}
+
 /**
  * If the guest sits before the booked start, slide the window so duration
  * stays the same (a 5–6pm cut seated at 4pm becomes 4–5pm, not 4–6pm).
  */
+export function ServiceGlyph({ kind, className = "h-3.5 w-3.5" }: { kind: "cut" | "color" | "style" | "nail" | "facial" | "other"; className?: string }) {
+  const common = className;
+  if (kind === "nail") {
+    return (
+      <svg className={common} viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path d="M7 16V8a5 5 0 0 1 10 0v8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+        <path d="M7 13h10" stroke="currentColor" strokeWidth="1.6" />
+        <path d="M12 4v4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (kind === "facial") {
+    return (
+      <svg className={common} viewBox="0 0 24 24" fill="none" aria-hidden>
+        <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.6" />
+        <path d="M9 10a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z" fill="currentColor" />
+        <path d="M18 10a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z" fill="currentColor" />
+        <path d="M10 15s1 2 2 2 2-2 2-2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (kind === "color") {
+    return (
+      <svg className={common} viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path
+          d="M12 3c2 3.5 6 7 6 11a6 6 0 1 1-12 0c0-4 4-7.5 6-11Z"
+          stroke="currentColor"
+          strokeWidth="1.6"
+        />
+      </svg>
+    );
+  }
+  if (kind === "style") {
+    return (
+      <svg className={common} viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path d="M4 7h16M6 12h12M8 17h8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  return (
+    <svg className={common} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="6.5" cy="7" r="2.4" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="17.5" cy="7" r="2.4" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M8.4 8.6 12 14l3.6-5.4M12 14v6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function earlySeatWindow(
   startsAt: Date | string,
   endsAt: Date | string,
@@ -377,6 +521,26 @@ export function earlySeatWindow(
   return {
     startsAt: now,
     endsAt: new Date(now.getTime() + durationMs),
+  };
+}
+
+/** Progress of a seated (CHECKED_IN) service for the Now Serving ring. */
+export function seatedServiceProgress(
+  appt: Pick<DisplayAppt, "startsAt" | "endsAt">,
+  now: Date = new Date()
+): { progress: number; remainingMs: number; remainingLabel: string } {
+  const early = earlySeatWindow(appt.startsAt, appt.endsAt, now);
+  const start = early?.startsAt ?? new Date(appt.startsAt);
+  const end = early?.endsAt ?? new Date(appt.endsAt);
+  const total = Math.max(1, end.getTime() - start.getTime());
+  const elapsed = Math.max(0, now.getTime() - start.getTime());
+  const progress = Math.min(1, elapsed / total);
+  const remainingMs = Math.max(0, end.getTime() - now.getTime());
+  const mins = Math.max(0, Math.ceil(remainingMs / 60_000));
+  return {
+    progress,
+    remainingMs,
+    remainingLabel: mins <= 0 ? "Wrapping up" : `~${mins} min left`,
   };
 }
 
