@@ -6,6 +6,7 @@ import { SelfieCamera } from "@/components/SelfieCamera";
 import { TabletPinCard } from "@/components/TabletPinCard";
 import { MANAGER_DEFAULT_AVATAR } from "@/lib/manager-photo";
 import { ManagerThemeToggle } from "../ManagerThemeToggle";
+import { SettingToggle } from "@/components/admin/SettingToggle";
 
 async function loadImageElement(file: File): Promise<HTMLImageElement> {
   const url = URL.createObjectURL(file);
@@ -435,22 +436,15 @@ export default function AdminAccountPage() {
                 className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-[#2b2521]"
               />
             </label>
-            <label className="flex items-start gap-3 rounded-xl border border-[#7d6154]/25 bg-[#fffcf9]/60 px-3 py-3 text-sm text-[#6b5b52]">
-              <input
-                type="checkbox"
+            <div className="rounded-xl border border-[#7d6154]/25 bg-[#fffcf9]/60 px-3 py-3">
+              <SettingToggle
+                label="I am also a stylist"
+                description="Adds you to the floor as a self-managed stylist (you set your own hours and leave). Use the same login on the Stylist App."
                 checked={alsoStylist}
-                onChange={(e) => setAlsoStylist(e.target.checked)}
-                className="mt-1 h-4 w-4 accent-[#7d6154]"
-                data-testid="manager-also-stylist"
+                onChange={setAlsoStylist}
+                testId="manager-also-stylist"
               />
-              <span>
-                <span className="font-semibold text-[#2b2521]">I am also a stylist</span>
-                <span className="mt-1 block text-xs text-[#6b5b52]/90">
-                  Adds you to the floor as a self-managed stylist (you set your own hours and leave).
-                  Use the same login on the Stylist App.
-                </span>
-              </span>
-            </label>
+            </div>
             {profileError ? <p className="text-sm text-[#f5a8a8]">{profileError}</p> : null}
             {profileMsg ? <p className="text-sm text-[#9fe3b8]">{profileMsg}</p> : null}
             <div className="flex flex-wrap gap-2 pt-1">

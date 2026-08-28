@@ -10,6 +10,7 @@ import { BookingMyBookings, MemberTab } from "./BookingMyBookings";
 import { BookingProfile } from "./BookingProfile";
 import { BookClient, ClientMemberBar } from "./ClientMemberBar";
 import { StylePreviewPanel, StylePrefDraft } from "./StylePreviewPanel";
+import { SettingToggle } from "@/components/admin/SettingToggle";
 
 type Service = {
   id: string;
@@ -1019,18 +1020,12 @@ export function BookingWizard({ slug }: { slug: string }) {
                 />
               </label>
               {!client ? (
-                <label className="flex items-start gap-2 text-sm text-muted sm:col-span-2">
-                  <input
-                    type="checkbox"
-                    checked={saveAsMember}
-                    onChange={(e) => setSaveAsMember(e.target.checked)}
-                    className="mt-1"
-                  />
-                  <span>
-                    Save my profile after booking (email code — no password). Cancel free until{" "}
-                    {CLIENT_CANCEL_HOURS}h before.
-                  </span>
-                </label>
+                <SettingToggle
+                  label="Save my profile after booking"
+                  description={`Email code — no password. Cancel free until ${CLIENT_CANCEL_HOURS}h before.`}
+                  checked={saveAsMember}
+                  onChange={setSaveAsMember}
+                />
               ) : null}
             </div>
           </section>

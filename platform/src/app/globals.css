@@ -1745,8 +1745,14 @@ html.customer-shell--dark body {
   font-size: 0.82rem;
   color: var(--rx-muted);
 }
-.reception-modal__toggle-row input {
-  accent-color: var(--rx-cta-walkin);
+.reception-modal__toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.82rem;
+  color: var(--rx-muted);
+  cursor: pointer;
 }
 .reception-modal__client-list {
   margin-top: 0.45rem;

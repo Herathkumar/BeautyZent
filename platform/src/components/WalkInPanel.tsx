@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { centsToDollars } from "@/lib/pay";
+import { ToggleSwitch } from "@/components/ToggleSwitch";
 
 type Service = {
   id: string;
@@ -478,13 +479,14 @@ export function WalkInPanel({
 
           {mode !== "stylist" ? (
             <div className="space-y-2">
-              <label className="flex items-center gap-2 text-sm text-[#d4c4b0]">
-                <input
-                  type="checkbox"
+              <label className="flex cursor-pointer items-center justify-between gap-3 text-sm text-[#d4c4b0]">
+                <span>Next available stylist</span>
+                <ToggleSwitch
+                  variant="reception"
                   checked={useNextAvailable}
-                  onChange={(e) => setUseNextAvailable(e.target.checked)}
+                  onChange={setUseNextAvailable}
+                  ariaLabel="Next available stylist"
                 />
-                Next available stylist
               </label>
               {!useNextAvailable ? (
                 <label className="grid gap-1 text-sm text-[#d4c4b0]">

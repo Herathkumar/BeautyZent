@@ -3,6 +3,7 @@
 import { formatCad } from "@/lib/money";
 import type { CheckoutBill, CheckoutLineKind } from "@/lib/display-checkout-types";
 import { ReceptionQuickServices } from "@/components/display/ReceptionQuickServices";
+import { ToggleSwitch } from "@/components/ToggleSwitch";
 
 type CatalogItem = { id: string; name: string; priceCents: number; durationMin?: number };
 
@@ -191,18 +192,19 @@ export function ReceptionCheckoutDesk({
               </div>
             ) : null}
             {bill.isMember && bill.loyaltyPointsBalance > 0 ? (
-              <label className="mt-2 flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-white/70">
+              <label className="mt-2 flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-white/70">
                 <span>
                   Redeem points
                   <span className="block text-[11px] text-white/40">
                     Balance: {bill.loyaltyPointsBalance} pts
                   </span>
                 </span>
-                <input
-                  type="checkbox"
+                <ToggleSwitch
+                  variant="reception"
                   checked={bill.redeemPointsEnabled}
-                  onChange={(e) => onRedeemPoints?.(e.target.checked)}
-                  data-testid="reception-redeem-points"
+                  onChange={(enabled) => onRedeemPoints?.(enabled)}
+                  testId="reception-redeem-points"
+                  ariaLabel="Redeem loyalty points"
                 />
               </label>
             ) : null}

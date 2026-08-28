@@ -13,6 +13,7 @@ import {
   DEFAULT_STYLIST_THEME_ID,
   normalizeThemeId,
 } from "@/lib/salon-themes";
+import { SettingToggle } from "@/components/admin/SettingToggle";
 import { DAY_LABELS, TIMEZONES, fieldClass, labelClass } from "../salon-form";
 import { THEME_PICKER_HINT, ThemePicker } from "../ThemePicker";
 
@@ -113,15 +114,11 @@ export function SalonEditor({ salon }: { salon: EditableSalon }) {
       <section className="grid gap-4 rounded-3xl border border-ink/12 bg-white/80 p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-cocoa">Details</h2>
-          <label className="flex items-center gap-2 text-sm text-ink-soft">
-            <input
-              type="checkbox"
-              checked={form.active}
-              onChange={(e) => set("active", e.target.checked)}
-              className="h-4 w-4"
-            />
-            Active (public booking page open)
-          </label>
+          <SettingToggle
+            label="Active (public booking page open)"
+            checked={form.active}
+            onChange={(active) => set("active", active)}
+          />
         </div>
 
         <label className={labelClass}>

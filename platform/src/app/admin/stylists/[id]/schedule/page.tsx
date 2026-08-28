@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { ToggleSwitch } from "@/components/ToggleSwitch";
 
 const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -202,13 +203,13 @@ export default function StylistSchedulePage() {
               key={row.dayOfWeek}
               className="grid items-center gap-3 px-4 py-3 sm:grid-cols-[140px_1fr_auto]"
             >
-              <label className="flex items-center gap-2 font-medium">
-                <input
-                  type="checkbox"
+              <label className="flex cursor-pointer items-center justify-between gap-3 font-medium sm:justify-start">
+                <span>{DAY_NAMES[row.dayOfWeek]}</span>
+                <ToggleSwitch
                   checked={!row.isOff}
-                  onChange={(e) => updateDay(row.dayOfWeek, { isOff: !e.target.checked })}
+                  onChange={(open) => updateDay(row.dayOfWeek, { isOff: !open })}
+                  ariaLabel={`${DAY_NAMES[row.dayOfWeek]} open for bookings`}
                 />
-                {DAY_NAMES[row.dayOfWeek]}
               </label>
               {row.isOff ? (
                 <p className="text-sm text-muted">Day off — no online slots</p>

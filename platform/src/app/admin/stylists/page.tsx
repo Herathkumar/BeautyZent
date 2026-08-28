@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useConfirm } from "@/components/ConfirmDialog";
+import { SettingToggle } from "@/components/admin/SettingToggle";
 
 type Stylist = {
   id: string;
@@ -403,14 +404,11 @@ export default function StylistsAdminPage() {
             onChange={(e) => setHourlyRate(e.target.value)}
             className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-[#2b2521]"
           />
-          <label className="flex items-center gap-2 text-sm text-[#6b5b52]">
-            <input
-              type="checkbox"
-              checked={selfManageSchedule}
-              onChange={(e) => setSelfManageSchedule(e.target.checked)}
-            />
-            Self-manage schedule (no leave approval)
-          </label>
+          <SettingToggle
+            label="Self-manage schedule (no leave approval)"
+            checked={selfManageSchedule}
+            onChange={setSelfManageSchedule}
+          />
           <button type="submit" disabled={saving} className="btn-solid rounded-full px-4 py-2">
             {saving ? "Creating…" : "Add stylist + login"}
           </button>
@@ -481,14 +479,11 @@ export default function StylistsAdminPage() {
                       <span className="text-[#6b5b52]"> · Needs leave approval</span>
                     )}
                   </p>
-                  <label className="mt-3 flex items-center gap-2 text-sm text-[#6b5b52]">
-                    <input
-                      type="checkbox"
-                      checked={Boolean(s.selfManageSchedule)}
-                      onChange={(e) => void toggleSelfManage(s, e.target.checked)}
-                    />
-                    Self-manage schedule (no leave approval)
-                  </label>
+                  <SettingToggle
+                    label="Self-manage schedule (no leave approval)"
+                    checked={Boolean(s.selfManageSchedule)}
+                    onChange={(enabled) => void toggleSelfManage(s, enabled)}
+                  />
                   <p className="mt-2 text-sm text-[#6b5b52]">
                     Login:{" "}
                     {s.loginEmail ? (

@@ -6,6 +6,7 @@ import { stylistUtilization } from "@/components/display/ReceptionDailyMetrics";
 import { formatClock, type DisplayAppt, type DisplayStylist } from "@/lib/display-schedule";
 import { formatCad } from "@/lib/money";
 import { calendarDateInTz } from "@/lib/salon-time";
+import { ToggleSwitch } from "@/components/ToggleSwitch";
 
 type CatalogService = {
   id: string;
@@ -677,11 +678,11 @@ export function ReceptionWalkInModal({
         </div>
         <label className="reception-modal__toggle-row mt-2">
           <span>Guest (no profile)</span>
-          <input
-            type="checkbox"
+          <ToggleSwitch
+            variant="reception"
             checked={guestMode}
-            onChange={(e) => setGuestMode(e.target.checked)}
-            aria-label="Guest no profile"
+            onChange={setGuestMode}
+            ariaLabel="Guest no profile"
           />
         </label>
         {!guestMode ? (
@@ -736,11 +737,11 @@ export function ReceptionWalkInModal({
         <span className="reception-modal__label">Assign to</span>
         <label className="reception-modal__toggle-row mb-2">
           <span>Next available stylist</span>
-          <input
-            type="checkbox"
+          <ToggleSwitch
+            variant="reception"
             checked={useNextAvailable}
-            onChange={(e) => setUseNextAvailable(e.target.checked)}
-            aria-label="Next available stylist"
+            onChange={setUseNextAvailable}
+            ariaLabel="Next available stylist"
           />
         </label>
         {!useNextAvailable ? (

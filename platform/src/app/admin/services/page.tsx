@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { formatCad } from "@/lib/money";
+import { SettingToggle } from "@/components/admin/SettingToggle";
 
 type Service = {
   id: string;
@@ -198,14 +199,11 @@ export default function ServicesAdminPage() {
             {adding ? "…" : "Add"}
           </button>
         </div>
-        <label className="flex items-center gap-2 text-sm text-muted sm:col-span-5">
-          <input
-            type="checkbox"
-            checked={generateImageOnAdd}
-            onChange={(e) => setGenerateImageOnAdd(e.target.checked)}
-          />
-          Generate AI menu image after adding (stored on this service)
-        </label>
+        <SettingToggle
+          label="Generate AI menu image after adding (stored on this service)"
+          checked={generateImageOnAdd}
+          onChange={setGenerateImageOnAdd}
+        />
       </form>
 
       <div className="divide-y divide-ink/10 rounded-2xl border border-ink/10 bg-cream">

@@ -10,6 +10,7 @@ import {
 } from "@/lib/salon-themes";
 import { TIMEZONES, fieldClass, labelClass } from "../salon-form";
 import { THEME_PICKER_HINT, ThemePicker } from "../ThemePicker";
+import { SettingToggle } from "@/components/admin/SettingToggle";
 
 function slugify(value: string) {
   return value
@@ -252,15 +253,11 @@ export default function NewSalonPage() {
               />
             </label>
           </div>
-          <label className="flex items-center gap-3 text-sm text-ink-soft">
-            <input
-              type="checkbox"
-              checked={starterMenu}
-              onChange={(e) => setStarterMenu(e.target.checked)}
-              className="h-4 w-4"
-            />
-            Add a starter stylist + 4 services so booking works immediately
-          </label>
+          <SettingToggle
+            label="Add a starter stylist + 4 services so booking works immediately"
+            checked={starterMenu}
+            onChange={setStarterMenu}
+          />
         </section>
 
         {error ? <p className="text-sm text-[#a4432f]">{error}</p> : null}
