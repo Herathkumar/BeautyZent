@@ -1115,17 +1115,21 @@ html.customer-shell--dark body {
   font-weight: 700;
 }
 .reception-cal-empty--customer svg {
+  height: 3.25rem;
+  width: 3.25rem;
+  margin-bottom: 0.85rem;
   color: var(--rx-accent);
   opacity: 0.85;
 }
 .reception-cal-empty--customer .reception-cal-empty__title {
   color: var(--rx-accent);
-  font-size: 1.15rem;
+  font-size: 1.5rem;
   letter-spacing: 0.02em;
 }
 .reception-cal-empty--customer .reception-cal-empty__hint {
-  max-width: 22rem;
-  font-size: 0.82rem;
+  max-width: 26rem;
+  font-size: 0.95rem;
+  line-height: 1.45;
   color: var(--rx-muted);
 }
 .reception-cal-toolbar {
