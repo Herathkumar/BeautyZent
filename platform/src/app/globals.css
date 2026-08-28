@@ -1081,15 +1081,17 @@ html.customer-shell--dark body {
 }
 .reception-cal-empty {
   pointer-events: none;
-  position: absolute;
-  inset: 6rem 1rem 2rem 4rem;
-  z-index: 5;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   text-align: center;
   color: var(--rx-faint);
+}
+.reception-cal-empty--timeline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  transform: translateY(-100%);
 }
 .reception-cal-empty svg {
   height: 2.4rem;
@@ -1165,6 +1167,7 @@ html.customer-shell--dark body {
   box-shadow: 0 12px 32px rgba(74, 55, 40, 0.06);
 }
 .reception-cal-scroll {
+  position: relative;
   min-height: 0;
   overflow-x: auto;
   overflow-y: scroll;

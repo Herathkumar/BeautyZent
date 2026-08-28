@@ -74,6 +74,7 @@ export function ReceptionSchedule({
   onScheduleDayChange,
   onCheckIn,
   onCheckout,
+  hideEmptyState = false,
 }: {
   appointments: DisplayAppt[];
   stylists: DisplayStylist[];
@@ -97,6 +98,8 @@ export function ReceptionSchedule({
   onScheduleDayChange?: (day: string) => void;
   onCheckIn?: (payload: { appointmentId: string; targetStylistId: string }) => void;
   onCheckout?: (appt: DisplayAppt) => void;
+  /** Hide the empty-day overlay (e.g. while the new-booking panel is open). */
+  hideEmptyState?: boolean;
 }) {
   const guestName = (name: string) => (nameMode === "first" ? firstName(name) : name);
   const tz = timeZone || "America/Toronto";
@@ -115,6 +118,10 @@ export function ReceptionSchedule({
   const nowMin = clockParts(now.toISOString(), timeZone).minutes;
   const nowTop = ((nowMin - openMin) / spanMin) * height;
   const showNow = viewingToday && nowMin >= openMin && nowMin <= closeHour * 60;
+  const emptyAboveNowGap = 56;
+  const emptyAnchorTop = showNow
+    ? Math.max(96, nowTop - emptyAboveNowGap)
+    : height * 0.42;
   const columns = stylists.length
     ? stylists
     : [{ id: "none", name: "Chair", bio: null, color: "#c9a87c", photoUrl: "" }];
@@ -500,19 +507,24 @@ export function ReceptionSchedule({
               </span>
             </div>
           ) : null}
+          {showChairs && appointments.length === 0 && !hideEmptyState ? (
+            <div
+              className="pointer-events-none relative z-[4] col-start-2 col-end-[-1] row-start-2"
+              style={{ height }}
+            >
+              <div className="reception-cal-empty reception-cal-empty--timeline" style={{ top: emptyAnchorTop }}>
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" strokeWidth="1.4" />
+                  <path d="M8 3v4M16 3v4M4 10h16" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                </svg>
+                <p className="reception-cal-empty__title">No bookings on this day</p>
+                <p className="reception-cal-empty__hint">
+                  Use <strong>+ New</strong> or <strong>Walk-in</strong> to get started, or pick another date.
+                </p>
+              </div>
+            </div>
+          ) : null}
         </div>
-        {showChairs && appointments.length === 0 ? (
-          <div className="reception-cal-empty">
-            <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-              <rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" strokeWidth="1.4" />
-              <path d="M8 3v4M16 3v4M4 10h16" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-            </svg>
-            <p className="reception-cal-empty__title">No bookings on this day</p>
-            <p className="reception-cal-empty__hint">
-              Use <strong>+ New</strong> or <strong>Walk-in</strong> to get started, or pick another date.
-            </p>
-          </div>
-        ) : null}
       </div>
       {drag ? (
         <div className="reception-drag-ghost" style={{ left: drag.x, top: drag.y }} aria-hidden>

@@ -1570,6 +1570,7 @@ export function DisplayBoard({
                     : undefined
                 }
                 onCheckout={viewingScheduleToday ? presentCheckout : undefined}
+                hideEmptyState={walkInOpen}
               />
               </>
               ) : null}
