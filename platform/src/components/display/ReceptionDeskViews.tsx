@@ -521,7 +521,8 @@ export function ReceptionReportsView({
   ];
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-auto" data-testid="reception-reports-view">
+    <div className="flex h-full min-h-0 flex-col" data-testid="reception-reports-view">
+      <div className="shrink-0 overflow-auto">
       <div className="mb-3">
         <h2 className="text-sm font-semibold text-[color:var(--rx-text)]">Today at a glance</h2>
         <p className="text-[11px] text-[color:var(--rx-faint)]">
@@ -555,56 +556,82 @@ export function ReceptionReportsView({
           {completed.length === 1 ? "completed visit" : "completed visits"}
         </p>
       </div>
+      </div>
       {completed.length > 0 ? (
-        <>
-          <div className="mt-4 mb-2">
+        <div className="mt-4 flex min-h-0 flex-1 flex-col">
+          <div className="mb-2 shrink-0">
             <h3 className="text-[11px] font-semibold tracking-wide text-[color:var(--rx-faint)] uppercase">
               Completed today
             </h3>
-            <p className="text-[11px] text-[color:var(--rx-faint)]">Tap a visit for details.</p>
+            <p className="text-[11px] text-[color:var(--rx-faint)]">
+              {selected ? "Details stay visible while you browse the list." : "Tap a visit for details."}
+            </p>
           </div>
-          <ul className="space-y-2">
-            {completed.map((a) => {
-              const active = selectedId === a.id;
-              const charged = a.chargedCents ?? a.service.priceCents ?? 0;
-              const tip = a.tipCents ?? 0;
-              return (
-                <li key={a.id}>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedId(active ? null : a.id)}
-                    data-testid="reception-report-row"
-                    data-appt-id={a.id}
-                    className={`flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition ${
-                      active
-                        ? "border-[color:var(--rx-accent)] bg-[var(--rx-panel)] ring-1 ring-[color:var(--rx-accent)]/35"
-                        : "border-[color:var(--rx-line)] bg-[var(--rx-panel)] hover:border-[color:var(--rx-accent)]"
-                    }`}
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-[color:var(--rx-text)]">
-                        {a.client.name}
+          <div
+            className={`grid min-h-0 flex-1 gap-3 ${
+              selected
+                ? "md:grid-cols-[minmax(0,1fr)_minmax(280px,380px)]"
+                : "grid-cols-1"
+            }`}
+          >
+            <ul className="min-h-0 space-y-2 overflow-auto pr-1">
+              {completed.map((a) => {
+                const active = selectedId === a.id;
+                const charged = a.chargedCents ?? a.service.priceCents ?? 0;
+                const tip = a.tipCents ?? 0;
+                return (
+                  <li key={a.id}>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedId(active ? null : a.id)}
+                      data-testid="reception-report-row"
+                      data-appt-id={a.id}
+                      className={`flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition ${
+                        active
+                          ? "border-[color:var(--rx-accent)] bg-[var(--rx-panel)] ring-1 ring-[color:var(--rx-accent)]/35"
+                          : "border-[color:var(--rx-line)] bg-[var(--rx-panel)] hover:border-[color:var(--rx-accent)]"
+                      }`}
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-[color:var(--rx-text)]">
+                          {a.client.name}
+                        </p>
+                        <p className="truncate text-[11px] text-[color:var(--rx-muted)]">
+                          {a.service.name} · {a.stylist.name} · {statusLabel(a.status)}
+                        </p>
+                      </div>
+                      <p className="shrink-0 text-sm tabular-nums text-[color:var(--rx-text-80)]">
+                        {formatCad(charged + tip)}
                       </p>
-                      <p className="truncate text-[11px] text-[color:var(--rx-muted)]">
-                        {a.service.name} · {a.stylist.name} · {statusLabel(a.status)}
-                      </p>
-                    </div>
-                    <p className="shrink-0 text-sm tabular-nums text-[color:var(--rx-text-80)]">
-                      {formatCad(charged + tip)}
-                    </p>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-          {selected ? (
-            <CompletedVisitDetail
-              appt={selected}
-              timeZone={timeZone}
-              onClose={() => setSelectedId(null)}
-            />
-          ) : null}
-        </>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            {selected ? (
+              <div
+                className="fixed inset-0 z-[70] flex items-end justify-center md:static md:z-auto md:block md:min-h-0 md:overflow-auto"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Visit details"
+              >
+                <button
+                  type="button"
+                  className="absolute inset-0 border-0 bg-[rgba(28,23,20,0.55)] md:hidden"
+                  aria-label="Close visit details"
+                  onClick={() => setSelectedId(null)}
+                />
+                <div className="relative z-10 max-h-[82dvh] w-full overflow-auto rounded-t-2xl border-t border-[color:var(--rx-line)] bg-[var(--rx-bg)] shadow-[0_-18px_40px_rgba(0,0,0,0.35)] md:max-h-none md:rounded-none md:border-0 md:bg-transparent md:shadow-none">
+                  <CompletedVisitDetail
+                    appt={selected}
+                    timeZone={timeZone}
+                    onClose={() => setSelectedId(null)}
+                  />
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </div>
       ) : null}
     </div>
   );
@@ -636,7 +663,7 @@ function CompletedVisitDetail({
 
   return (
     <section
-      className="mt-4 rounded-2xl border border-[color:var(--rx-accent)]/35 bg-[var(--rx-panel)] px-4 py-4"
+      className="rounded-2xl border border-[color:var(--rx-accent)]/35 bg-[var(--rx-panel)] px-4 py-4 md:sticky md:top-0"
       data-testid="reception-report-detail"
     >
       <div className="mb-3 flex items-start justify-between gap-3">
