@@ -147,7 +147,7 @@ export function ReceptionRescheduleSheet({
         <select
           value={stylistId}
           onChange={(e) => setStylistId(e.target.value)}
-          className="mt-1 w-full rounded-xl border border-[color:var(--rx-line)] bg-[var(--rx-input)] px-3 py-2 text-sm font-medium normal-case text-[color:var(--rx-text)]"
+          className="reception-catalog-select mt-1 w-full rounded-xl border border-[color:var(--rx-line)] bg-[var(--rx-input)] px-3 py-2 text-sm font-medium normal-case text-[color:var(--rx-text)]"
         >
           {chairs.map((s) => (
             <option key={s.id} value={s.id}>

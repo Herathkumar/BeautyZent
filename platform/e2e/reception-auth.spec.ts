@@ -78,6 +78,22 @@ test.describe("Reception login and theme", () => {
     await expect(page.getByTestId("reception-client-panel")).toBeVisible();
   });
 
+  test("calendar can browse upcoming days", async ({ page }) => {
+    test.setTimeout(180_000);
+    await receptionLogin(page);
+    const day = page.getByTestId("reception-cal-day");
+    await expect(day).toBeVisible({ timeout: 20_000 });
+    await expect(day).toContainText(/today/i);
+
+    const next = page.getByTestId("reception-cal-next");
+    await expect(next).toBeEnabled();
+    await next.click();
+    await expect(day).not.toContainText(/today/i);
+
+    await page.getByTestId("reception-cal-today").click();
+    await expect(day).toContainText(/today/i);
+  });
+
   test("reschedule stays on the reception desk", async ({ page }) => {
     test.setTimeout(180_000);
     await receptionLogin(page);

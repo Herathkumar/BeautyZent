@@ -3,6 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  CUSTOMER_VIEW_OPTIONS,
+  normalizeCustomerDisplayView,
+  type CustomerDisplayView,
+} from "@/lib/customer-display-view";
+import {
   DEFAULT_BOOKING_THEME_ID,
   DEFAULT_MANAGER_THEME_ID,
   DEFAULT_STYLIST_THEME_ID,
@@ -27,6 +32,7 @@ export type EditableSalon = {
   bookingThemeId: string;
   managerThemeId: string;
   stylistThemeId: string;
+  displayViewMode: string;
 };
 
 export function SalonEditor({ salon }: { salon: EditableSalon }) {
@@ -46,6 +52,7 @@ export function SalonEditor({ salon }: { salon: EditableSalon }) {
     bookingThemeId: normalizeThemeId(salon.bookingThemeId, DEFAULT_BOOKING_THEME_ID),
     managerThemeId: normalizeThemeId(salon.managerThemeId, DEFAULT_MANAGER_THEME_ID),
     stylistThemeId: normalizeThemeId(salon.stylistThemeId, DEFAULT_STYLIST_THEME_ID),
+    displayViewMode: normalizeCustomerDisplayView(salon.displayViewMode),
   });
   const [managerEmail, setManagerEmail] = useState("");
   const [managerPassword, setManagerPassword] = useState("");
@@ -219,6 +226,38 @@ export function SalonEditor({ salon }: { salon: EditableSalon }) {
               );
             })}
           </div>
+        </div>
+      </section>
+
+      <section className="grid gap-4 rounded-3xl border border-ink/12 bg-white/80 p-5">
+        <div>
+          <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-cocoa">
+            Customer display
+          </h2>
+          <p className="mt-1 text-xs text-muted">
+            Starting layout for the lounge TV. Staff can switch views on the tablet itself, and
+            that choice sticks on that device.
+          </p>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {CUSTOMER_VIEW_OPTIONS.map((option) => {
+            const on = form.displayViewMode === option.id;
+            return (
+              <button
+                key={option.id}
+                type="button"
+                aria-pressed={on}
+                data-testid={`salon-display-view-${option.id}`}
+                onClick={() => set("displayViewMode", option.id as CustomerDisplayView)}
+                className={`rounded-2xl border p-4 text-left ${
+                  on ? "border-ink bg-ink/5" : "border-ink/15 hover:border-ink/40"
+                }`}
+              >
+                <span className="block text-sm font-semibold text-ink">{option.label}</span>
+                <span className="mt-1 block text-xs text-muted">{option.hint}</span>
+              </button>
+            );
+          })}
         </div>
       </section>
 

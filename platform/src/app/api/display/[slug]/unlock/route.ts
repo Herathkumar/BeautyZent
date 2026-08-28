@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { normalizeCustomerDisplayView } from "@/lib/customer-display-view";
 import {
   clearDisplayUnlockCookieOn,
   createDisplayUnlockToken,
@@ -19,6 +20,7 @@ const salonHoursSelect = {
   closedDays: true,
   displayPinHash: true,
   displayPinSetAt: true,
+  displayViewMode: true,
 } as const;
 
 function publicSalon(salon: {
@@ -28,6 +30,7 @@ function publicSalon(salon: {
   openHour: number;
   closeHour: number;
   closedDays: number[];
+  displayViewMode?: string | null;
 }) {
   const timeZone = salon.timezone || "America/Toronto";
   const today = calendarDateInTz(timeZone);
@@ -39,6 +42,7 @@ function publicSalon(salon: {
     closeHour: salon.closeHour,
     closedDays: salon.closedDays || [],
     todayClosed: (salon.closedDays || []).includes(dayOfWeekInTz(today, timeZone)),
+    displayViewMode: normalizeCustomerDisplayView(salon.displayViewMode),
   };
 }
 

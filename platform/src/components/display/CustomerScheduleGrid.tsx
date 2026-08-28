@@ -55,15 +55,6 @@ function Glyph({ kind, className = "h-3.5 w-3.5" }: { kind: "cut" | "color" | "s
   );
 }
 
-export function CustomerLoungeBanner({ text }: { text: string }) {
-  return (
-    <p className="customer-lounge-banner" data-testid="customer-lounge-banner">
-      <ScissorsMark />
-      <span>{text}</span>
-    </p>
-  );
-}
-
 function ScissorsMark() {
   return (
     <svg className="h-7 w-7 text-[color:var(--cd-accent)]" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -94,6 +85,7 @@ function PeopleMark() {
 }
 
 const BOOKING_SCAN_MS = 6_000;
+const LOUNGE_STATUS_SCAN_MS = 5_000;
 
 function LoungeBookingSpotlight({
   appointments,
@@ -200,52 +192,94 @@ type OpeningMark = {
   key: string;
   names: string[];
   freeMin: number;
-  pct: number;
-  lane: number;
 };
 
-function loungeOpeningMarks(
+function loungeOpenings(
   floor: {
     stylist: DisplayStylist;
     wait: { freeMin: number | null };
     visual: { kind: string };
   }[],
-  window: { start: number; end: number },
-  span: number,
   nowMin: number
 ): OpeningMark[] {
-  const raw: { id: string; name: string; freeMin: number }[] = [];
+  const byMin = new Map<number, { ids: string[]; names: string[] }>();
   for (const { stylist, wait, visual } of floor) {
     if (visual.kind !== "waiting" && visual.kind !== "opens") continue;
     const freeMin = wait.freeMin;
     if (freeMin == null || freeMin <= nowMin) continue;
-    if (freeMin < window.start || freeMin > window.end) continue;
-    raw.push({ id: stylist.id, name: firstName(stylist.name), freeMin });
+    const group = byMin.get(freeMin) || { ids: [], names: [] };
+    group.ids.push(stylist.id);
+    group.names.push(firstName(stylist.name));
+    byMin.set(freeMin, group);
   }
-  const byMin = new Map<number, { ids: string[]; names: string[] }>();
-  for (const row of raw) {
-    const g = byMin.get(row.freeMin) || { ids: [], names: [] };
-    g.ids.push(row.id);
-    g.names.push(row.name);
-    byMin.set(row.freeMin, g);
-  }
-  const marks: OpeningMark[] = [...byMin.entries()]
+  return [...byMin.entries()]
     .sort((a, b) => a[0] - b[0])
-    .map(([freeMin, g]) => ({
-      key: g.ids.join("-"),
-      names: g.names,
+    .map(([freeMin, group]) => ({
+      key: group.ids.join("-"),
+      names: group.names,
       freeMin,
-      pct: ((freeMin - window.start) / span) * 100,
-      lane: 0,
     }));
-  const placed: { pct: number; lane: number }[] = [];
-  for (const mark of marks) {
-    let lane = 0;
-    while (placed.some((p) => p.lane === lane && Math.abs(p.pct - mark.pct) < 16)) lane += 1;
-    mark.lane = Math.min(lane, 2);
-    placed.push({ pct: mark.pct, lane: mark.lane });
-  }
-  return marks;
+}
+
+/** Cycles the walk-in line with each busy stylist's next free time. */
+function LoungeStatusRotator({
+  statusText,
+  openings,
+}: {
+  statusText: string;
+  openings: OpeningMark[];
+}) {
+  const keys = openings.map((o) => o.key).join(",");
+  const slides = openings.length + 1;
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    setIndex(0);
+  }, [keys]);
+
+  useEffect(() => {
+    if (slides < 2) return;
+    const timer = window.setInterval(() => {
+      setIndex((i) => (i + 1) % slides);
+    }, LOUNGE_STATUS_SCAN_MS);
+    return () => window.clearInterval(timer);
+  }, [keys, slides]);
+
+  const active = Math.min(index, slides - 1);
+  const opening = active === 0 ? null : openings[active - 1];
+
+  return (
+    <div className="customer-lounge-status" data-testid="customer-lounge-banner">
+      {opening ? (
+        <p
+          key={opening.key}
+          className="customer-lounge-banner"
+          data-testid="customer-lounge-opening"
+        >
+          <ScissorsMark />
+          <span>
+            <strong>{joinNames(opening.names)}</strong> free at{" "}
+            {formatMinutesClock(opening.freeMin)}
+          </span>
+        </p>
+      ) : (
+        <p key="status" className="customer-lounge-banner">
+          <ScissorsMark />
+          <span>{statusText}</span>
+        </p>
+      )}
+      <div className="customer-lounge-spotlight__dots" aria-hidden>
+        {slides > 1
+          ? Array.from({ length: slides }, (_, i) => (
+              <span
+                key={i}
+                className={`customer-lounge-spotlight__dot${i === active ? " is-on" : ""}`}
+              />
+            ))
+          : null}
+      </div>
+    </div>
+  );
 }
 
 export function CustomerScheduleGrid({
@@ -351,27 +385,19 @@ export function CustomerScheduleGrid({
       waitMs: visual.kind === "available" ? 0 : wait.waitMs,
     }))
   );
-  const openings = loungeOpeningMarks(floor, window, span, nowMin);
-  const openingLanes = openings.reduce((max, m) => Math.max(max, m.lane), 0);
-  const openingLift = showNow && openings.some((o) => Math.abs(o.pct - nowPct) < 12) ? 1 : 0;
+  const openings = loungeOpenings(floor, nowMin);
 
   const padClass = compactPad ? "px-4 py-4 sm:px-5 sm:py-5" : "px-8 py-5";
   const timeline = (
-    <section className="customer-lounge-timeline" aria-label="Now and next openings">
-      <div
-        className="customer-lounge-ruler"
-        style={{
-          paddingTop: `${1.45 + (openings.length ? (openingLanes + 1 + openingLift) * 1.1 : 0)}rem`,
-        }}
-      >
+    <section className="customer-lounge-timeline" aria-label="Salon hours and current time">
+      <div className="customer-lounge-ruler">
         {window.marks.map((mark) => {
           const pct = ((mark - window.start) / span) * 100;
           const nearNow = showNow && Math.abs(pct - nowPct) < 10;
-          const nearOpening = openings.some((o) => Math.abs(pct - o.pct) < 10);
           return (
             <span
               key={mark}
-              className={`customer-lounge-tick${nearNow || nearOpening ? " is-near-now" : ""}`}
+              className={`customer-lounge-tick${nearNow ? " is-near-now" : ""}`}
               style={{ left: `${pct}%` }}
             >
               {formatMinutesClock(mark)}
@@ -386,26 +412,6 @@ export function CustomerScheduleGrid({
             <span className="customer-lounge-now__dot" />
           </span>
         ) : null}
-        {openings.map((mark) => {
-          const left = Math.max(2, Math.min(98, mark.pct));
-          const edge = left < 14 ? "is-start" : left > 86 ? "is-end" : "";
-          const lift = showNow && Math.abs(mark.pct - nowPct) < 12 ? 1 : 0;
-          return (
-            <span
-              key={mark.key}
-              className={`customer-lounge-open ${edge}`}
-              style={{ left: `${left}%`, ["--lane" as string]: mark.lane + lift }}
-              data-testid="customer-lounge-opening"
-              title={`${joinNames(mark.names)} free at ${formatMinutesClock(mark.freeMin)}`}
-            >
-              <span className="customer-lounge-open__dot" />
-              <span className="customer-lounge-open__label">
-                <strong>{joinNames(mark.names)}</strong>
-                <span> free at {formatMinutesClock(mark.freeMin)}</span>
-              </span>
-            </span>
-          );
-        })}
       </div>
     </section>
   );
@@ -489,7 +495,10 @@ export function CustomerScheduleGrid({
           </div>
         </article>
         <article className="customer-lounge-stat customer-lounge-stat--banner">
-          <CustomerLoungeBanner text={loungeStatusLine(Boolean(storeClosed), stats)} />
+          <LoungeStatusRotator
+            statusText={loungeStatusLine(Boolean(storeClosed), stats)}
+            openings={storeClosed ? [] : openings}
+          />
         </article>
         <article className="customer-lounge-stat">
           <PeopleMark />

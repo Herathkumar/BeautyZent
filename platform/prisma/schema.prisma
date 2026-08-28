@@ -37,6 +37,9 @@ model Salon {
   /// bcrypt hash of the store-display tablet PIN (null = board unlocked / no PIN)
   displayPinHash   String?
   displayPinSetAt  DateTime?
+  /// Default customer TV layout: "lounge" chair cards or "timeline" day schedule.
+  /// A tablet can override this locally (see src/lib/customer-display-view.ts).
+  displayViewMode  String   @default("lounge")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

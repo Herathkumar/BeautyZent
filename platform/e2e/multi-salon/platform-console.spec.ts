@@ -33,7 +33,7 @@ test.describe("Platform operator console", () => {
       await expect(
         page.getByRole("link", { name: /client booking/i })
       ).toHaveAttribute("href", new RegExp(`/book/${tenant.slug}`));
-      await expect(page.getByRole("link", { name: /tablet display/i })).toHaveAttribute(
+      await expect(page.getByRole("link", { name: /customer display/i })).toHaveAttribute(
         "href",
         new RegExp(`/display/${tenant.slug}`)
       );
@@ -52,6 +52,30 @@ test.describe("Platform operator console", () => {
       await page.getByRole("link", { name: /all salons/i }).click();
       await expect(page.getByRole("heading", { name: /^salons$/i })).toBeVisible();
     }
+  });
+
+  test("salon detail picks the default customer display layout", async ({ page }) => {
+    await platformLogin(page);
+    const tenant = TENANTS[0];
+    await page
+      .locator("article")
+      .filter({ hasText: tenant.name })
+      .getByRole("link", { name: /^configure$/i })
+      .click();
+
+    const lounge = page.getByTestId("salon-display-view-lounge");
+    const timeline = page.getByTestId("salon-display-view-timeline");
+    await expect(lounge).toBeVisible();
+    await expect(timeline).toBeVisible();
+    await expect(lounge).toHaveAttribute("aria-pressed", "true");
+
+    await timeline.click();
+    await expect(timeline).toHaveAttribute("aria-pressed", "true");
+    await expect(lounge).toHaveAttribute("aria-pressed", "false");
+
+    // Leave the tenant on the lounge default for the other specs.
+    await lounge.click();
+    await expect(lounge).toHaveAttribute("aria-pressed", "true");
   });
 
   test("new salon form loads", async ({ page }) => {

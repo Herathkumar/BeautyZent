@@ -37,6 +37,41 @@ test.describe("Public booking + display", () => {
       await expect(page.getByTestId("display-tab-products")).toHaveCount(0);
     });
 
+    test(`${tenant.slug} customer display switches between lounge and schedule`, async ({
+      page,
+    }) => {
+      await page.goto(`/display/${tenant.slug}`);
+      const pin = page.getByTestId("display-pin-pad");
+      if (await pin.isVisible({ timeout: 3_000 }).catch(() => false)) {
+        test.info().annotations.push({
+          type: "note",
+          description: `${tenant.slug} display is PIN-locked; skipping view switch`,
+        });
+        await expect(pin).toBeVisible();
+        return;
+      }
+      const board = page.getByTestId("customer-view");
+      await expect(board).toHaveAttribute("data-customer-view", "lounge", { timeout: 20_000 });
+
+      await page.getByTestId("customer-view-timeline").click();
+      await expect(board).toHaveAttribute("data-customer-view", "timeline");
+      await expect(page.getByTestId("reception-cal-scroll")).toBeVisible();
+
+      // The tablet remembers the choice across a reload.
+      await page.reload();
+      await expect(page.getByTestId("customer-view")).toHaveAttribute(
+        "data-customer-view",
+        "timeline",
+        { timeout: 20_000 }
+      );
+
+      await page.getByTestId("customer-view-lounge").click();
+      await expect(page.getByTestId("customer-view")).toHaveAttribute(
+        "data-customer-view",
+        "lounge"
+      );
+    });
+
     test(`${tenant.slug} reception display shows schedule and client panel`, async ({
       page,
     }) => {

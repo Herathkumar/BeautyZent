@@ -686,6 +686,13 @@ a {
   --rx-input: rgba(255, 255, 255, 0.05);
   --rx-accent: #c45b7a;
   --rx-accent-soft: #f4a0b8;
+  --rx-nav-active: #8b5cf6;
+  --rx-util-ring: #a78bfa;
+  --rx-cta-new: #ec4899;
+  --rx-cta-walkin: #22c55e;
+  --rx-action-checkin: #22c55e;
+  --rx-action-reschedule: #3b82f6;
+  --rx-action-noshow: #f97316;
   --cd-wait-ok: #4ade80;
   --cd-wait-busy: #fb923c;
   --cd-wait-soon: #93c5fd;
@@ -932,8 +939,178 @@ html.customer-shell--dark body {
   background: var(--rx-input);
 }
 .reception-nav__item.is-active {
+  color: #fff;
+  background: color-mix(in srgb, var(--rx-nav-active) 72%, var(--rx-nav));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rx-nav-active) 45%, transparent);
+}
+.reception-search__kbd {
+  position: absolute;
+  right: 0.65rem;
+  top: 50%;
+  transform: translateY(-50%);
+  border-radius: 0.45rem;
+  border: 1px solid var(--rx-line);
+  background: var(--rx-panel);
+  padding: 0.1rem 0.35rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--rx-faint);
+}
+.reception-cta {
+  border-radius: 999px;
+  padding: 0.45rem 0.95rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+}
+.reception-cta--new {
+  background: linear-gradient(135deg, var(--rx-cta-new), var(--rx-accent));
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--rx-cta-new) 35%, transparent);
+}
+.reception-cta--walkin {
+  background: linear-gradient(135deg, var(--rx-cta-walkin), #16a34a);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--rx-cta-walkin) 30%, transparent);
+}
+.reception-daily-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: 0.55rem;
+  margin-bottom: 0.85rem;
+}
+.reception-metric {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  border-radius: 0.95rem;
+  border: 1px solid var(--rx-line);
+  background: var(--rx-panel);
+  padding: 0.55rem 0.7rem;
+}
+.reception-metric__icon {
+  display: flex;
+  height: 1.85rem;
+  width: 1.85rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.55rem;
+  flex-shrink: 0;
+}
+.reception-metric__icon svg {
+  height: 1rem;
+  width: 1rem;
+}
+.reception-metric__value {
+  font-size: 0.92rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--rx-text);
+}
+.reception-metric__label {
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--rx-faint);
+}
+.reception-metric--pink .reception-metric__icon {
+  background: color-mix(in srgb, var(--rx-accent) 18%, transparent);
   color: var(--rx-accent);
-  background: color-mix(in srgb, var(--rx-accent) 16%, var(--rx-nav));
+}
+.reception-metric--green .reception-metric__icon {
+  background: color-mix(in srgb, var(--rx-action-checkin) 18%, transparent);
+  color: var(--rx-action-checkin);
+}
+.reception-metric--blue .reception-metric__icon {
+  background: color-mix(in srgb, var(--rx-action-reschedule) 18%, transparent);
+  color: var(--rx-action-reschedule);
+}
+.reception-metric--orange .reception-metric__icon {
+  background: color-mix(in srgb, var(--rx-action-noshow) 18%, transparent);
+  color: var(--rx-action-noshow);
+}
+.reception-metric--purple .reception-metric__icon {
+  background: color-mix(in srgb, var(--rx-nav-active) 18%, transparent);
+  color: var(--rx-nav-active);
+}
+.reception-stylist-card__photo-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.reception-stylist-util {
+  position: absolute;
+  inset: -0.35rem;
+  pointer-events: none;
+}
+.reception-stylist-util svg {
+  width: 100%;
+  height: 100%;
+}
+.reception-stylist-util__pct {
+  position: absolute;
+  left: 50%;
+  bottom: -0.15rem;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: var(--rx-panel);
+  border: 1px solid var(--rx-line);
+  padding: 0.02rem 0.28rem;
+  font-size: 0.52rem;
+  font-weight: 800;
+  color: var(--rx-util-ring);
+  line-height: 1.2;
+}
+.reception-cal-now__line {
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--rx-accent), transparent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--rx-accent) 65%, transparent);
+}
+.reception-cal-now__dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: #fff;
+  animation: reception-now-pulse 1.6s ease infinite;
+}
+@keyframes reception-now-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.65; transform: scale(0.85); }
+}
+.reception-cal-empty {
+  pointer-events: none;
+  position: absolute;
+  inset: 6rem 1rem 2rem 4rem;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--rx-faint);
+}
+.reception-cal-empty svg {
+  height: 2.4rem;
+  width: 2.4rem;
+  margin-bottom: 0.65rem;
+  opacity: 0.45;
+}
+.reception-cal-empty__title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: var(--rx-muted);
+}
+.reception-cal-empty__hint {
+  margin-top: 0.35rem;
+  max-width: 18rem;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+.reception-cal-empty__hint strong {
+  color: var(--rx-text);
+  font-weight: 700;
 }
 .reception-cal-toolbar {
   display: flex;
@@ -942,12 +1119,38 @@ html.customer-shell--dark body {
   gap: 0.75rem;
   padding: 0.15rem 0.25rem 0.85rem;
 }
+.reception-cal-toolbar__nav {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: 0.55rem;
+}
 .reception-cal-toolbar__title {
+  min-width: 0;
+  flex: 1;
+  text-align: center;
   font-family: var(--font-display);
   font-size: 1.15rem;
   color: var(--rx-text);
 }
+.reception-cal-toolbar__arrow {
+  flex-shrink: 0;
+  border-radius: 999px;
+  border: 1px solid var(--rx-line);
+  background: var(--rx-panel);
+  width: 2rem;
+  height: 2rem;
+  font-size: 0.95rem;
+  line-height: 1;
+  color: var(--rx-accent);
+}
+.reception-cal-toolbar__arrow:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
 .reception-cal-toolbar__today {
+  flex-shrink: 0;
   border-radius: 999px;
   border: 1px solid var(--rx-line);
   background: var(--rx-panel);
@@ -1243,6 +1446,30 @@ html.customer-shell--dark body {
   background: color-mix(in srgb, var(--rx-accent) 14%, transparent);
   color: var(--rx-accent);
   flex-shrink: 0;
+}
+.reception-quick__icon--checkin {
+  background: color-mix(in srgb, var(--rx-action-checkin) 16%, transparent);
+  color: var(--rx-action-checkin);
+}
+.reception-quick__icon--reschedule {
+  background: color-mix(in srgb, var(--rx-action-reschedule) 16%, transparent);
+  color: var(--rx-action-reschedule);
+}
+.reception-quick__icon--noshow {
+  background: color-mix(in srgb, var(--rx-action-noshow) 16%, transparent);
+  color: var(--rx-action-noshow);
+}
+.reception-quick__live {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--rx-action-checkin) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--rx-action-checkin) 45%, transparent);
+  padding: 0.15rem 0.45rem;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rx-action-checkin);
+  animation: reception-now-pulse 1.6s ease infinite;
 }
 .reception-quick__btn--checkout {
   background: color-mix(in srgb, #1f6b5a 12%, var(--rx-panel));
@@ -1560,8 +1787,8 @@ html.customer-shell--dark body {
 }
 .customer-lounge-ruler {
   position: relative;
-  min-height: 1.85rem;
   margin: 0 0.35rem 0;
+  padding-top: 1.45rem;
   padding-bottom: 0.28rem;
   border-bottom: 1px solid color-mix(in srgb, var(--cd-accent) 55%, transparent);
 }
@@ -1613,64 +1840,31 @@ html.customer-shell--dark body {
     0 0 0 4px color-mix(in srgb, var(--cd-accent) 22%, transparent),
     0 0 16px var(--cd-accent);
 }
-.customer-lounge-open {
-  position: absolute;
-  bottom: -0.22rem;
-  transform: translateX(-50%);
-  z-index: 3;
+.customer-lounge-status {
   display: flex;
+  min-width: 0;
+  flex: 1;
   flex-direction: column;
   align-items: center;
-}
-.customer-lounge-open__dot {
-  width: 0.55rem;
-  height: 0.55rem;
-  border-radius: 999px;
-  background: var(--cd-accent);
-  box-shadow:
-    0 0 0 3px color-mix(in srgb, var(--cd-accent) 22%, transparent),
-    0 0 10px color-mix(in srgb, var(--cd-accent) 55%, transparent);
-}
-.customer-lounge-open__label {
-  position: absolute;
-  top: auto;
-  bottom: calc(0.82rem + (var(--lane, 0) * 1.1rem));
-  left: 50%;
-  transform: translateX(-50%);
-  width: max-content;
-  max-width: 12rem;
-  font-family: var(--font-display);
-  font-size: 0.78rem;
-  line-height: 1.2;
-  color: var(--cd-heading);
-  text-align: center;
-  white-space: nowrap;
-}
-.customer-lounge-open__label strong {
-  font-weight: 700;
-  color: var(--cd-accent);
-}
-.customer-lounge-open.is-start .customer-lounge-open__label {
-  left: 0;
-  transform: none;
-  text-align: left;
-}
-.customer-lounge-open.is-end .customer-lounge-open__label {
-  left: auto;
-  right: 0;
-  transform: none;
-  text-align: right;
+  justify-content: center;
+  gap: 0.1rem;
 }
 .customer-lounge-banner {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.7rem;
+  min-height: 2.4rem;
   font-family: var(--font-display);
   font-size: clamp(1.05rem, 1.7vw, 1.4rem);
   line-height: 1.2;
   color: var(--cd-heading);
   text-align: center;
+  animation: customer-lounge-feature-in 0.35s ease;
+}
+.customer-lounge-banner strong {
+  font-weight: 700;
+  color: var(--cd-accent);
 }
 .customer-lounge-banner svg {
   height: 1.7rem;
@@ -1706,6 +1900,21 @@ html.customer-shell--dark body {
   font-size: 1.85rem;
   line-height: 1.1;
   color: var(--cd-accent);
+}
+/* Day schedule on the customer TV: reuse the reception timeline, painted with
+   the customer palette so the light/dark toggle still rules the room. */
+.customer-schedule {
+  --rx-bg: var(--cd-bg);
+  --rx-nav: var(--cd-panel);
+  --rx-panel: var(--cd-panel);
+  --rx-text: var(--cd-heading);
+  --rx-muted: var(--cd-muted);
+  --rx-faint: var(--cd-faint);
+  --rx-line: var(--cd-line);
+  --rx-input: var(--cd-input);
+  --rx-accent: var(--cd-accent);
+  --rx-accent-soft: var(--cd-accent-soft);
+  min-width: 0;
 }
 .customer-lounge-footer {
   border-color: var(--cd-line) !important;

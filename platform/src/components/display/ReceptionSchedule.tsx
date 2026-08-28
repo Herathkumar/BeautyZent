@@ -8,8 +8,10 @@ import {
   canChairCheckIn,
   chairAcceptsDrop,
   clockParts,
+  firstName,
   formatClock,
   formatHourLabel,
+  formatMinutesClock,
   hourMarks,
   HOUR_PX,
   initials,
@@ -24,6 +26,33 @@ import {
   type DisplayAppt,
   type DisplayStylist,
 } from "@/lib/display-schedule";
+import { addCalendarDays } from "@/lib/salon-time";
+import { stylistUtilization } from "@/components/display/ReceptionDailyMetrics";
+
+function StylistUtilRing({ pct }: { pct: number }) {
+  const r = 30;
+  const c = 2 * Math.PI * r;
+  const dash = (pct / 100) * c;
+  return (
+    <div className="reception-stylist-util" aria-hidden>
+      <svg viewBox="0 0 72 72">
+        <circle cx="36" cy="36" r={r} fill="none" stroke="var(--rx-line)" strokeWidth="3.5" />
+        <circle
+          cx="36"
+          cy="36"
+          r={r}
+          fill="none"
+          stroke="var(--rx-util-ring)"
+          strokeWidth="3.5"
+          strokeLinecap="round"
+          strokeDasharray={`${dash} ${c}`}
+          transform="rotate(-90 36 36)"
+        />
+      </svg>
+      <span className="reception-stylist-util__pct">{pct}%</span>
+    </div>
+  );
+}
 
 export function ReceptionSchedule({
   appointments,
@@ -36,6 +65,13 @@ export function ReceptionSchedule({
   now,
   compact = false,
   storeClosed = false,
+  nameMode = "full",
+  scheduleDay,
+  todayKey,
+  scheduleDayLabel,
+  scheduleMinDay,
+  scheduleMaxDay,
+  onScheduleDayChange,
   onCheckIn,
   onCheckout,
 }: {
@@ -50,9 +86,27 @@ export function ReceptionSchedule({
   /** One-column layout for the stylist phone app (no 720px floor). */
   compact?: boolean;
   storeClosed?: boolean;
+  /** Customer-facing TVs show first names only. */
+  nameMode?: "full" | "first";
+  /** Reception desk can browse upcoming days loaded by the board poll. */
+  scheduleDay?: string;
+  todayKey?: string;
+  scheduleDayLabel?: string;
+  scheduleMinDay?: string;
+  scheduleMaxDay?: string;
+  onScheduleDayChange?: (day: string) => void;
   onCheckIn?: (payload: { appointmentId: string; targetStylistId: string }) => void;
   onCheckout?: (appt: DisplayAppt) => void;
 }) {
+  const guestName = (name: string) => (nameMode === "first" ? firstName(name) : name);
+  const tz = timeZone || "America/Toronto";
+  const showChairs = !compact;
+  const showDayNav = Boolean(
+    showChairs && scheduleDay && todayKey && scheduleMinDay && scheduleMaxDay && onScheduleDayChange
+  );
+  const viewingToday = !showDayNav || scheduleDay === todayKey;
+  const canPrevDay = showDayNav && scheduleDay! > scheduleMinDay!;
+  const canNextDay = showDayNav && scheduleDay! < scheduleMaxDay!;
   const hours = hourMarks(openHour, closeHour);
   const hourPx = compact ? HOUR_PX : 88;
   const spanMin = Math.max(60, (closeHour - openHour) * 60);
@@ -60,8 +114,7 @@ export function ReceptionSchedule({
   const openMin = openHour * 60;
   const nowMin = clockParts(now.toISOString(), timeZone).minutes;
   const nowTop = ((nowMin - openMin) / spanMin) * height;
-  const showNow = nowMin >= openMin && nowMin <= closeHour * 60;
-  const showChairs = !compact;
+  const showNow = viewingToday && nowMin >= openMin && nowMin <= closeHour * 60;
   const columns = stylists.length
     ? stylists
     : [{ id: "none", name: "Chair", bio: null, color: "#c9a87c", photoUrl: "" }];
@@ -115,7 +168,7 @@ export function ReceptionSchedule({
       apptId: start.appt.id,
       stylistId: start.stylist.id,
       stylistName: start.stylist.name,
-      label: start.appt.client.name,
+      label: guestName(start.appt.client.name),
       service: start.appt.service.name,
       time: `${formatClock(start.appt.startsAt, timeZone)}–${formatClock(start.appt.endsAt, timeZone)}`,
       x: e.clientX,
@@ -132,36 +185,89 @@ export function ReceptionSchedule({
   }
 
   useEffect(() => {
+    scrolled.current = false;
+  }, [scheduleDay]);
+
+  useEffect(() => {
     const el = bodyRef.current;
     if (!showNow || !el) return;
     const top = Math.max(0, nowTop - el.clientHeight * 0.35);
     el.scrollTo({ top, behavior: scrolled.current ? "smooth" : "auto" });
     scrolled.current = true;
-  }, [showNow, nowMin, nowTop, columns.length]);
+  }, [showNow, nowMin, nowTop, columns.length, scheduleDay]);
+
+  function scrollToNow() {
+    const el = bodyRef.current;
+    if (!el || !showNow) return;
+    el.scrollTo({ top: Math.max(0, nowTop - el.clientHeight * 0.35), behavior: "smooth" });
+  }
+
+  function jumpToday() {
+    if (!showDayNav || !todayKey || !onScheduleDayChange) {
+      scrollToNow();
+      return;
+    }
+    if (viewingToday) {
+      scrollToNow();
+      return;
+    }
+    onScheduleDayChange(todayKey);
+  }
 
   const cols = compact
     ? "3.25rem minmax(0, 1fr)"
     : `4.25rem repeat(${columns.length}, minmax(12rem, 1fr))`;
   const minW = compact ? "min-w-0" : "min-w-[920px]";
-  const dayTitle = now.toLocaleDateString("en-CA", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
+  const dayTitle =
+    scheduleDayLabel ||
+    now.toLocaleDateString("en-CA", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col">
       {showChairs ? (
         <div className="reception-cal-toolbar">
-          <h2 className="reception-cal-toolbar__title">Today · {dayTitle}</h2>
+          {showDayNav ? (
+            <div className="reception-cal-toolbar__nav">
+              <button
+                type="button"
+                className="reception-cal-toolbar__arrow"
+                data-testid="reception-cal-prev"
+                aria-label="Previous day"
+                disabled={!canPrevDay}
+                onClick={() =>
+                  onScheduleDayChange!(addCalendarDays(scheduleDay!, -1, tz))
+                }
+              >
+                ←
+              </button>
+              <h2 className="reception-cal-toolbar__title" data-testid="reception-cal-day">
+                {dayTitle}
+              </h2>
+              <button
+                type="button"
+                className="reception-cal-toolbar__arrow"
+                data-testid="reception-cal-next"
+                aria-label="Next day"
+                disabled={!canNextDay}
+                onClick={() =>
+                  onScheduleDayChange!(addCalendarDays(scheduleDay!, 1, tz))
+                }
+              >
+                →
+              </button>
+            </div>
+          ) : (
+            <h2 className="reception-cal-toolbar__title">{dayTitle}</h2>
+          )}
           <button
             type="button"
             className="reception-cal-toolbar__today"
-            onClick={() => {
-              const el = bodyRef.current;
-              if (!el || !showNow) return;
-              el.scrollTo({ top: Math.max(0, nowTop - el.clientHeight * 0.35), behavior: "smooth" });
-            }}
+            data-testid="reception-cal-today"
+            onClick={jumpToday}
           >
             Today
           </button>
@@ -212,6 +318,9 @@ export function ReceptionSchedule({
               showChairs && drag && chairAcceptsDrop(visual.kind, stylist.id === drag.stylistId)
             );
             const dropHot = Boolean(dropTarget && drag?.overStylistId === stylist.id);
+            const utilPct = showChairs
+              ? stylistUtilization(items, openHour, closeHour, timeZone)
+              : 0;
             return (
               <div
                 key={stylist.id}
@@ -237,20 +346,23 @@ export function ReceptionSchedule({
                       className={`reception-stylist-card customer-stylist-chair-drop${dropTarget ? " is-drop-target" : ""}${dropHot ? " is-hot" : ""}`}
                     >
                       {dropHot ? <span className="reception-stylist-card__drop">Drop here ↓</span> : null}
-                      <div
-                        className={`customer-stylist-photo-ring h-14 w-14 shrink-0 overflow-hidden rounded-full ring-offset-2 ring-offset-[var(--rx-panel)] ${stylistStatusRingClass(
-                          visual.kind
-                        )}`}
-                        data-testid="stylist-status-ring"
-                        data-status-tone={stylistFloorTone(visual.kind)}
-                        title={wait.label}
-                      >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={stylist.photoUrl || "/avatars/stylist-neutral.svg"}
-                          alt=""
-                          className="h-full w-full object-cover"
-                        />
+                      <div className="reception-stylist-card__photo-wrap">
+                        {showChairs ? <StylistUtilRing pct={utilPct} /> : null}
+                        <div
+                          className={`customer-stylist-photo-ring h-14 w-14 shrink-0 overflow-hidden rounded-full ring-offset-2 ring-offset-[var(--rx-panel)] ${stylistStatusRingClass(
+                            visual.kind
+                          )}`}
+                          data-testid="stylist-status-ring"
+                          data-status-tone={stylistFloorTone(visual.kind)}
+                          title={wait.label}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={stylist.photoUrl || "/avatars/stylist-neutral.svg"}
+                            alt=""
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
                       </div>
                       <p className="mt-2 max-w-full truncate text-sm font-semibold text-[color:var(--rx-text)]">
                         {stylist.name}
@@ -338,7 +450,7 @@ export function ReceptionSchedule({
                         >
                           <p className="flex items-center gap-1.5 text-sm font-semibold text-[color:var(--rx-text)]">
                             <span className="reception-cal-card__avatar">{initials(a.client.name)}</span>
-                            <span className="min-w-0 flex-1 truncate">{a.client.name}</span>
+                            <span className="min-w-0 flex-1 truncate">{guestName(a.client.name)}</span>
                             <span
                               className={`reception-cal-card__status is-${a.status.toLowerCase()}`}
                             >
@@ -375,20 +487,32 @@ export function ReceptionSchedule({
           })}
           {showNow ? (
             <div
-              className="pointer-events-none relative z-10 col-start-2 col-end-[-1] row-start-2"
+              className="pointer-events-none relative z-10 col-start-2 col-end-[-1] row-start-2 reception-cal-now"
               style={{ height }}
             >
-              <div className="absolute inset-x-0 h-px bg-[var(--rx-accent)]" style={{ top: nowTop }} />
+              <div className="absolute inset-x-0 reception-cal-now__line" style={{ top: nowTop }} />
               <span
-                className="absolute right-2 flex items-center gap-1 text-[10px] font-bold tracking-[0.18em] text-[color:var(--rx-accent)] uppercase"
+                className="absolute left-0 flex items-center gap-1.5 rounded-full bg-[var(--rx-accent)] px-2 py-0.5 text-[10px] font-bold tracking-[0.12em] text-white uppercase reception-cal-now__tag"
                 style={{ top: nowTop, transform: "translateY(-50%)" }}
               >
-                <span className="h-2 w-2 rounded-full bg-[var(--rx-accent)]" />
-                Now
+                <span className="reception-cal-now__dot" />
+                Now {formatMinutesClock(nowMin)}
               </span>
             </div>
           ) : null}
         </div>
+        {showChairs && appointments.length === 0 ? (
+          <div className="reception-cal-empty">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+              <rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" strokeWidth="1.4" />
+              <path d="M8 3v4M16 3v4M4 10h16" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+            </svg>
+            <p className="reception-cal-empty__title">No bookings on this day</p>
+            <p className="reception-cal-empty__hint">
+              Use <strong>+ New</strong> or <strong>Walk-in</strong> to get started, or pick another date.
+            </p>
+          </div>
+        ) : null}
       </div>
       {drag ? (
         <div className="reception-drag-ghost" style={{ left: drag.x, top: drag.y }} aria-hidden>
@@ -467,27 +591,44 @@ export function ReceptionClientPanel({
 
   return (
     <aside className="reception-quick" data-testid="reception-client-panel">
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between gap-2">
         <h2 className="reception-quick__title">Quick Actions</h2>
-        {appt ? (
-          <button type="button" onClick={onClose} className="text-lg leading-none text-[color:var(--rx-faint)] hover:text-[color:var(--rx-text)]" aria-label="Close">
-            ×
-          </button>
-        ) : null}
+        <div className="flex items-center gap-2">
+          {appt?.status === "CHECKED_IN" ? (
+            <span className="reception-quick__live" data-testid="reception-live-badge">
+              Live
+            </span>
+          ) : null}
+          {appt ? (
+            <button type="button" onClick={onClose} className="text-lg leading-none text-[color:var(--rx-faint)] hover:text-[color:var(--rx-text)]" aria-label="Close">
+              ×
+            </button>
+          ) : null}
+        </div>
       </div>
 
       {appt ? (
-        <div className="mb-4 flex items-center gap-3 rounded-2xl bg-[var(--rx-input)] px-3 py-2.5">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--rx-accent)] text-xs font-bold text-white">
-            {initials(appt.client.name)}
-          </span>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-[color:var(--rx-text)]">{appt.client.name}</p>
-            <p className="truncate text-[11px] text-[color:var(--rx-muted)]">{appt.service.name}</p>
+        <div className="mb-4 rounded-2xl border border-[color:var(--rx-line)] bg-[var(--rx-input)] px-3 py-2.5">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--rx-accent)] text-xs font-bold text-white">
+              {initials(appt.client.name)}
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-[color:var(--rx-text)]">{appt.client.name}</p>
+              <p className="truncate text-[11px] text-[color:var(--rx-muted)]">{appt.service.name}</p>
+            </div>
           </div>
+          <p className="mt-2 text-[11px] text-[color:var(--rx-faint)]">
+            {formatClock(appt.startsAt)} · {appt.stylist.name}
+          </p>
         </div>
       ) : (
-        <p className="mb-4 text-sm text-[color:var(--rx-faint)]">Select a booking, or drag it onto a stylist to check in.</p>
+        <div className="mb-4 rounded-2xl border border-dashed border-[color:var(--rx-line)] bg-[var(--rx-input)] px-3 py-4 text-center">
+          <p className="text-sm font-medium text-[color:var(--rx-muted)]">No booking selected</p>
+          <p className="mt-1 text-[11px] text-[color:var(--rx-faint)]">
+            Select a booking or drag onto an available stylist.
+          </p>
+        </div>
       )}
 
       <div className="grid gap-2.5">
@@ -497,7 +638,7 @@ export function ReceptionClientPanel({
           onClick={() => appt && onStatus(appt.id, "CHECKED_IN")}
           className="reception-quick__btn"
         >
-          <span className="reception-quick__icon"><QuickActionIcon kind="checkin" /></span>
+          <span className="reception-quick__icon reception-quick__icon--checkin"><QuickActionIcon kind="checkin" /></span>
           <span>
             <strong>Check-in</strong>
             <span aria-hidden>
@@ -514,14 +655,14 @@ export function ReceptionClientPanel({
           className="reception-quick__btn"
           data-testid="reception-reschedule-open"
         >
-          <span className="reception-quick__icon"><QuickActionIcon kind="reschedule" /></span>
+          <span className="reception-quick__icon reception-quick__icon--reschedule"><QuickActionIcon kind="reschedule" /></span>
           <span>
             <strong>Reschedule</strong>
             <span aria-hidden>Move booking to new time</span>
           </span>
         </button>
         <button type="button" disabled={!open} onClick={() => void markNoShow()} className="reception-quick__btn">
-          <span className="reception-quick__icon"><QuickActionIcon kind="noshow" /></span>
+          <span className="reception-quick__icon reception-quick__icon--noshow"><QuickActionIcon kind="noshow" /></span>
           <span>
             <strong>No-show</strong>
             <span aria-hidden>Mark client as no-show</span>

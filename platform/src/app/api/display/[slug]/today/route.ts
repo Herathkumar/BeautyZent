@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { normalizeCustomerDisplayView } from "@/lib/customer-display-view";
 import { assertDisplayAccess } from "@/lib/display-pin";
 import { prisma } from "@/lib/prisma";
 import {
@@ -32,6 +33,7 @@ export async function GET(
       closedDays: true,
       displayPinHash: true,
       displayPinSetAt: true,
+      displayViewMode: true,
     },
   });
   if (!salon) return NextResponse.json({ error: "Salon not found" }, { status: 404 });
@@ -155,6 +157,7 @@ export async function GET(
       closeHour: salon.closeHour,
       closedDays: salon.closedDays || [],
       todayClosed: (salon.closedDays || []).includes(dayOfWeekInTz(todayYmd, timeZone)),
+      displayViewMode: normalizeCustomerDisplayView(salon.displayViewMode),
     },
     range: {
       from: from.toISOString(),

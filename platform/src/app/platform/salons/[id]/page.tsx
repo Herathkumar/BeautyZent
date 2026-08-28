@@ -37,6 +37,7 @@ export default async function SalonDetailPage({
       bookingThemeId: true,
       managerThemeId: true,
       stylistThemeId: true,
+      displayViewMode: true,
     },
   });
   if (!salon) notFound();

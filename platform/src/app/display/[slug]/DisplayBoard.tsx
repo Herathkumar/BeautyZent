@@ -5,6 +5,7 @@ import { useConfirm } from "@/components/ConfirmDialog";
 import { DisplayPinPad } from "@/components/DisplayPinPad";
 import { PadlockButton } from "@/components/PadlockButton";
 import { WalkInPanel } from "@/components/WalkInPanel";
+import { ZentraLabFooter } from "@/components/ZentraLabFooter";
 import { CustomerCheckoutOverlay } from "@/components/display/CustomerCheckoutOverlay";
 import { CustomerScheduleGrid } from "@/components/display/CustomerScheduleGrid";
 import { ReceptionCheckoutDesk } from "@/components/display/ReceptionCheckoutDesk";
@@ -20,11 +21,13 @@ import {
   type ReceptionSection,
 } from "@/components/display/ReceptionDeskViews";
 import { ReceptionRescheduleSheet } from "@/components/display/ReceptionReschedule";
+import { ReceptionDailyMetrics } from "@/components/display/ReceptionDailyMetrics";
 import { ReceptionClientPanel, ReceptionSchedule } from "@/components/display/ReceptionSchedule";
 import { ReceptionThemeRoot } from "@/components/display/ReceptionThemeRoot";
 import { ReceptionThemeToggle } from "@/components/display/ReceptionThemeToggle";
 import { CustomerThemeRoot } from "@/components/display/CustomerThemeRoot";
 import { CustomerThemeToggle } from "@/components/display/CustomerThemeToggle";
+import { CustomerViewToggle } from "@/components/display/CustomerViewToggle";
 import {
   clampDisplayHours,
   earlySeatWindow,
@@ -33,7 +36,15 @@ import {
   type DisplayAppt,
   type DisplayStylist,
 } from "@/lib/display-schedule";
+import {
+  CUSTOMER_VIEW_EVENT,
+  customerViewKey,
+  normalizeCustomerDisplayView,
+  readCustomerDisplayView,
+  type CustomerDisplayView,
+} from "@/lib/customer-display-view";
 import type { CheckoutBill } from "@/lib/display-checkout-types";
+import { addCalendarDays, dayOfWeekInTz } from "@/lib/salon-time";
 import { formatCad } from "@/lib/money";
 import { promptCompleteAmounts } from "@/lib/pay";
 import { humanizeSlug, writeSalonBrand } from "@/lib/salon-branding";
@@ -51,6 +62,7 @@ type SalonInfo = {
   closeHour?: number;
   closedDays?: number[];
   todayClosed?: boolean;
+  displayViewMode?: string | null;
 };
 
 type Tab = "today" | "future" | "services" | "products";
@@ -534,7 +546,10 @@ export function DisplayBoard({
   const [walkInWaiting, setWalkInWaiting] = useState(0);
   const [query, setQuery] = useState("");
   const [receptionSection, setReceptionSection] = useState<ReceptionSection>("calendar");
+  const [scheduleDay, setScheduleDay] = useState("");
   const [rescheduleOpen, setRescheduleOpen] = useState(false);
+  /** null until this tablet picks a layout; then it wins over the salon default. */
+  const [viewOverride, setViewOverride] = useState<CustomerDisplayView | null>(null);
   const [needsPin, setNeedsPin] = useState(false);
   const [pinSet, setPinSet] = useState(false);
   const [unlockChecked, setUnlockChecked] = useState(false);
@@ -553,10 +568,44 @@ export function DisplayBoard({
   const hidePaidThanksRef = useRef(false);
   checkoutLiveRef.current = Boolean(checkout && checkout.status !== "PAID") || checkoutBusy;
   const boardDataSeq = useRef(0);
+  const receptionSearchRef = useRef<HTMLInputElement>(null);
 
   const onWaitlistChange = useCallback((count: number) => {
     setWalkInWaiting(count);
   }, []);
+
+  useEffect(() => {
+    setViewOverride(readCustomerDisplayView(slug));
+    function onViewChange(e: Event) {
+      const detail = (e as CustomEvent<{ slug: string; view: CustomerDisplayView }>).detail;
+      if (detail?.slug === slug) setViewOverride(detail.view);
+    }
+    function onStorage(e: StorageEvent) {
+      if (e.key !== customerViewKey(slug)) return;
+      setViewOverride(readCustomerDisplayView(slug));
+    }
+    window.addEventListener(CUSTOMER_VIEW_EVENT, onViewChange);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener(CUSTOMER_VIEW_EVENT, onViewChange);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [slug]);
+
+  useEffect(() => {
+    if (variant !== "reception") return;
+    function onKey(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        receptionSearchRef.current?.focus();
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [variant]);
+
+  const customerView =
+    viewOverride ?? normalizeCustomerDisplayView(salon?.displayViewMode);
 
   const unlockHeaders = useMemo(() => {
     if (!unlockToken) return {} as Record<string, string>;
@@ -573,7 +622,6 @@ export function DisplayBoard({
       if (data.salon) {
         const nextSalon = {
           name: "",
-          slug,
           ...data.salon,
           slug: data.salon.slug || slug,
         };
@@ -860,6 +908,19 @@ export function DisplayBoard({
   }, [tab, receptionSection, unlockChecked, needsPin, variant, loadServices, loadProducts]);
 
   const tKey = todayKey(salon?.timezone, salon?.today);
+  const scheduleMaxDay = useMemo(
+    () => addCalendarDays(tKey, days - 1, salon?.timezone || "America/Toronto"),
+    [tKey, days, salon?.timezone]
+  );
+
+  useEffect(() => {
+    if (!tKey) return;
+    setScheduleDay((prev) => {
+      if (!prev || prev < tKey || prev > scheduleMaxDay) return tKey;
+      return prev;
+    });
+  }, [tKey, scheduleMaxDay]);
+
   /** Floor list: open bookings only — hide completed / no-show / cancelled */
   const todayAppts = useMemo(
     () =>
@@ -874,6 +935,26 @@ export function DisplayBoard({
     () => appointments.filter((a) => dayKey(a.startsAt, salon?.timezone) === tKey),
     [appointments, tKey, salon?.timezone]
   );
+  const scheduleDayAll = useMemo(
+    () => appointments.filter((a) => dayKey(a.startsAt, salon?.timezone) === scheduleDay),
+    [appointments, scheduleDay, salon?.timezone]
+  );
+  const scheduleDayAppts = useMemo(
+    () =>
+      appointments.filter(
+        (a) =>
+          dayKey(a.startsAt, salon?.timezone) === scheduleDay &&
+          (a.status === "BOOKED" || a.status === "CHECKED_IN")
+      ),
+    [appointments, scheduleDay, salon?.timezone]
+  );
+  const viewingScheduleToday = scheduleDay === tKey;
+  const scheduleDayClosed = useMemo(() => {
+    if (!scheduleDay || !salon?.closedDays?.length) return false;
+    return salon.closedDays.includes(
+      dayOfWeekInTz(scheduleDay, salon.timezone || "America/Toronto")
+    );
+  }, [scheduleDay, salon?.closedDays, salon?.timezone]);
   const futureGrouped = useMemo(() => {
     const map = new Map<string, Appt[]>();
     for (const a of appointments) {
@@ -1182,8 +1263,9 @@ export function DisplayBoard({
       }
     : null;
   const floorStylists = (() => {
+    const source = isReception && receptionSection === "calendar" ? scheduleDayAppts : todayAppts;
     const booked = new Set(
-      todayAppts.flatMap((a) => [a.stylist.id, a.stylist.name].filter(Boolean) as string[])
+      source.flatMap((a) => [a.stylist.id, a.stylist.name].filter(Boolean) as string[])
     );
     const real = stylists.filter(
       (s) => !isE2eFixtureStylist(s) || booked.has(s.id) || booked.has(s.name)
@@ -1195,9 +1277,11 @@ export function DisplayBoard({
     return chairs.length ? chairs : floorStylists;
   })();
   const floorAppts = (() => {
+    const base =
+      isReception && receptionSection === "calendar" ? scheduleDayAppts : todayAppts;
     const q = query.trim().toLowerCase();
-    if (!q) return todayAppts;
-    return todayAppts.filter(
+    if (!q) return base;
+    return base.filter(
       (a) =>
         a.client.name.toLowerCase().includes(q) ||
         a.service.name.toLowerCase().includes(q) ||
@@ -1315,9 +1399,10 @@ export function DisplayBoard({
               </p>
             </div>
             {receptionSection !== "reports" ? (
-            <label className="relative min-w-[12rem] flex-1">
+            <label className="reception-search relative min-w-[12rem] flex-1">
               <span className="sr-only">Search</span>
               <input
+                ref={receptionSearchRef}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={
@@ -1329,8 +1414,12 @@ export function DisplayBoard({
                         ? "Search product..."
                         : "Search client, booking, or service..."
                 }
-                className="w-full rounded-full border border-[color:var(--rx-line)] bg-[var(--rx-input)] py-2 pr-4 pl-4 text-sm text-[color:var(--rx-text)] placeholder:text-[color:var(--rx-faint)]"
+                className="w-full rounded-full border border-[color:var(--rx-line)] bg-[var(--rx-input)] py-2 pr-14 pl-4 text-sm text-[color:var(--rx-text)] placeholder:text-[color:var(--rx-faint)]"
+                data-testid="reception-search"
               />
+              <kbd className="reception-search__kbd" aria-hidden>
+                ⌘K
+              </kbd>
             </label>
             ) : (
               <div className="min-w-[12rem] flex-1" />
@@ -1352,14 +1441,24 @@ export function DisplayBoard({
                 </button>
               </div>
             ) : null}
-            <button
-              type="button"
-              onClick={() => setWalkInOpen((v) => !v)}
-              className="rounded-full bg-[var(--rx-accent)] px-4 py-2 text-sm font-semibold text-white"
-              data-testid="reception-new-booking"
-            >
-              + New Booking
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setWalkInOpen(true)}
+                className="reception-cta reception-cta--new"
+                data-testid="reception-new-booking"
+              >
+                + New
+              </button>
+              <button
+                type="button"
+                onClick={() => setWalkInOpen(true)}
+                className="reception-cta reception-cta--walkin"
+                data-testid="reception-walk-in"
+              >
+                Walk-in
+              </button>
+            </div>
             {embedded && (pinSet || embedded) ? (
               <PadlockButton
                 locked={false}
@@ -1432,6 +1531,15 @@ export function DisplayBoard({
               <>
             <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden px-4 py-3 sm:px-5">
               {receptionSection === "calendar" ? (
+              <>
+              <ReceptionDailyMetrics
+                appointments={scheduleDayAll}
+                stylists={floorStylists}
+                openHour={openHour}
+                closeHour={closeHour}
+                timeZone={salon?.timezone}
+                walkInWaiting={viewingScheduleToday ? walkInWaiting : 0}
+              />
               <ReceptionSchedule
                 appointments={floorAppts}
                 stylists={floorStylists}
@@ -1441,12 +1549,29 @@ export function DisplayBoard({
                 selectedId={selectedId}
                 onSelect={(a) => setSelectedId(a.id)}
                 now={now}
-                storeClosed={storeClosed}
-                onCheckIn={({ appointmentId, targetStylistId }) =>
-                  void checkInFromDrag(appointmentId, targetStylistId)
+                storeClosed={scheduleDayClosed}
+                scheduleDay={scheduleDay}
+                todayKey={tKey}
+                scheduleDayLabel={dayLabel(scheduleDay, salon?.timezone, salon?.today)}
+                scheduleMinDay={tKey}
+                scheduleMaxDay={scheduleMaxDay}
+                onScheduleDayChange={(day) => {
+                  setScheduleDay(day);
+                  setSelectedId((id) => {
+                    if (!id) return id;
+                    const appt = appointments.find((a) => a.id === id);
+                    return appt && dayKey(appt.startsAt, salon?.timezone) === day ? id : null;
+                  });
+                }}
+                onCheckIn={
+                  viewingScheduleToday
+                    ? ({ appointmentId, targetStylistId }) =>
+                        void checkInFromDrag(appointmentId, targetStylistId)
+                    : undefined
                 }
-                onCheckout={presentCheckout}
+                onCheckout={viewingScheduleToday ? presentCheckout : undefined}
               />
+              </>
               ) : null}
               {receptionSection === "bookings" ? (
                 <ReceptionBookingsView
@@ -1602,6 +1727,7 @@ export function DisplayBoard({
             </div>
             <div className="flex flex-col items-end gap-2">
               <div className="flex flex-wrap items-center justify-end gap-2">
+                <CustomerViewToggle slug={slug} view={customerView} />
                 <CustomerThemeToggle />
               </div>
               <div className="flex items-center gap-3">
@@ -1623,20 +1749,52 @@ export function DisplayBoard({
           </div>
       </header>
 
-      <div className="flex min-h-0 flex-1 flex-col">
-        <CustomerScheduleGrid
-          appointments={todayAppts}
-          stylists={floorStylists}
-          openHour={openHour}
-          closeHour={closeHour}
-          timeZone={salon?.timezone}
-          now={now}
-          storeClosed={storeClosed}
-          compactPad={embedded}
-          onCheckIn={({ appointmentId, targetStylistId }) =>
-            void checkInFromDrag(appointmentId, targetStylistId)
-          }
-        />
+      <div
+        className="flex min-h-0 flex-1 flex-col"
+        data-testid="customer-view"
+        data-customer-view={customerView}
+      >
+        {customerView === "timeline" ? (
+          <div
+            className={`customer-schedule flex min-h-0 flex-1 flex-col ${
+              embedded ? "px-2 pb-2 sm:px-3" : "px-6 pb-4"
+            }`}
+          >
+            <ReceptionSchedule
+              appointments={todayAppts}
+              stylists={floorStylists}
+              openHour={openHour}
+              closeHour={closeHour}
+              timeZone={salon?.timezone}
+              selectedId={null}
+              onSelect={() => {}}
+              now={now}
+              storeClosed={storeClosed}
+              nameMode="first"
+              onCheckIn={({ appointmentId, targetStylistId }) =>
+                void checkInFromDrag(appointmentId, targetStylistId)
+              }
+            />
+            <ZentraLabFooter
+              compact
+              className="customer-lounge-footer shrink-0 !mt-0 !px-2 !py-1.5 text-[11px]"
+            />
+          </div>
+        ) : (
+          <CustomerScheduleGrid
+            appointments={todayAppts}
+            stylists={floorStylists}
+            openHour={openHour}
+            closeHour={closeHour}
+            timeZone={salon?.timezone}
+            now={now}
+            storeClosed={storeClosed}
+            compactPad={embedded}
+            onCheckIn={({ appointmentId, targetStylistId }) =>
+              void checkInFromDrag(appointmentId, targetStylistId)
+            }
+          />
+        )}
       </div>
       </div>
       <CustomerCheckoutOverlay
