@@ -196,7 +196,10 @@ export function CustomerPromotionBoard({
   paused?: boolean;
 }) {
   const slides = board.slides;
-  const [index, setIndex] = useState(0);
+  // Initialize with a random index so it doesn't always start on the same card
+  const [index, setIndex] = useState(() => {
+    return slides.length > 0 ? Math.floor(Math.random() * slides.length) : 0;
+  });
 
   const activeIndex = slides.length ? ((index % slides.length) + slides.length) % slides.length : 0;
   const active = slides[activeIndex];
@@ -204,7 +207,8 @@ export function CustomerPromotionBoard({
   const next = slides.length > 1 ? slides[(activeIndex + 1) % slides.length] : null;
 
   useEffect(() => {
-    setIndex(0);
+    // If the available promotions change, pick a new random starting point
+    setIndex(slides.length > 0 ? Math.floor(Math.random() * slides.length) : 0);
   }, [slides.map((s) => s.id).join(",")]);
 
   useEffect(() => {
