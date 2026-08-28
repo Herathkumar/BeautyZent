@@ -7,6 +7,7 @@ import { createPortal } from "react-dom";
 
 const MONEY_LINKS = [
   { href: "/manager/earnings", label: "Store Earnings", hint: "Revenue & activity" },
+  { href: "/manager/promotions", label: "Loyalty & discounts", hint: "Points & checkout rules" },
   { href: "/manager/pay", label: "Payroll", hint: "Pay, hours & leave" },
 ] as const;
 
@@ -122,7 +123,7 @@ export function AdminBottomNav() {
             <p className="text-xs font-semibold tracking-[0.18em] text-champagne uppercase">
               Money
             </p>
-            <p className="mt-1 text-sm text-muted">Store earnings and payroll</p>
+            <p className="mt-1 text-sm text-muted">Earnings, loyalty, and payroll</p>
             <ul className="mt-4 grid gap-2">
               {MONEY_LINKS.map((item) => (
                 <li key={item.href}>

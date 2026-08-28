@@ -7,7 +7,7 @@ import {
 } from "./helpers";
 
 async function enableMemberDiscountRule(page: import("@playwright/test").Page, ruleName: string) {
-  await gotoSettled(page, "/manager/pay");
+  await gotoSettled(page, "/manager/promotions");
   await page.getByTestId("promo-discounts-enabled").check();
   await page.getByTestId("promo-loyalty-enabled").check();
   const saveSettings = page.waitForResponse(

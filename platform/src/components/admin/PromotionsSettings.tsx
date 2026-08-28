@@ -168,10 +168,7 @@ export function PromotionsSettings() {
         className="grid gap-4 rounded-2xl border border-[#7d6154]/30 bg-[#ffffff] p-5"
       >
         <div>
-          <h2 className="font-[family-name:var(--font-display)] text-xl text-[#2b2521]">
-            Loyalty & discounts
-          </h2>
-          <p className="mt-1 text-sm text-[#6b5b52]">
+          <p className="text-sm text-[#6b5b52]">
             Rules auto-apply at checkout on the reception desk. Members earn and redeem points when
             loyalty is enabled.
           </p>
