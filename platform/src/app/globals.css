@@ -2400,6 +2400,28 @@ html.customer-shell--dark body {
   font-size: 1rem;
 }
 .customer-promo-board {
+  --promo-gold: var(--cd-accent);
+  --promo-gold-soft: var(--cd-accent-soft);
+  --promo-ink: var(--cd-heading);
+  --promo-muted: var(--cd-muted);
+  --promo-paper: var(--cd-panel);
+  --promo-board-bg: radial-gradient(
+      circle at 50% 12%,
+      color-mix(in srgb, var(--cd-accent) 18%, transparent),
+      transparent 48%
+    ),
+    linear-gradient(180deg, var(--cd-bg) 0%, color-mix(in srgb, var(--cd-bg) 92%, #fff) 100%);
+  --promo-card-bg: radial-gradient(
+      circle at 50% 0%,
+      color-mix(in srgb, var(--cd-accent) 16%, transparent),
+      transparent 42%
+    ),
+    linear-gradient(180deg, #fffdf8 0%, var(--cd-panel) 100%);
+  --promo-card-shadow: 0 0 0 1px color-mix(in srgb, var(--cd-accent) 45%, transparent),
+    0 18px 40px rgba(90, 60, 20, 0.1);
+  --promo-offer: var(--cd-heading);
+  --promo-nav: var(--cd-muted);
+  --promo-thumb-num-bg: var(--cd-panel);
   position: fixed;
   inset: 0;
   z-index: 60;
@@ -2407,11 +2429,25 @@ html.customer-shell--dark body {
   flex-direction: column;
   gap: 1rem;
   padding: 1.15rem 1.4rem 1.35rem;
-  background:
-    radial-gradient(circle at 50% 12%, rgba(201, 168, 124, 0.14), transparent 48%),
-    linear-gradient(180deg, #0b1018 0%, #070a10 100%);
-  color: #f7f1e6;
+  background: var(--promo-board-bg);
+  color: var(--promo-ink);
   animation: customer-promo-board-in 0.45s ease;
+}
+.customer-board--dark .customer-promo-board {
+  --promo-gold: #d4b48a;
+  --promo-gold-soft: #f0d7aa;
+  --promo-ink: #f7f1e6;
+  --promo-muted: rgba(247, 241, 230, 0.68);
+  --promo-paper: #0a0e18;
+  --promo-board-bg: radial-gradient(circle at 50% 12%, rgba(201, 168, 124, 0.14), transparent 48%),
+    linear-gradient(180deg, #0b1018 0%, #070a10 100%);
+  --promo-card-bg: radial-gradient(circle at 50% 0%, rgba(212, 180, 138, 0.12), transparent 42%),
+    linear-gradient(180deg, #121826 0%, #0a0e18 100%);
+  --promo-card-shadow: 0 0 0 1px rgba(212, 180, 138, 0.55), 0 0 24px rgba(212, 180, 138, 0.18),
+    0 22px 48px rgba(0, 0, 0, 0.45);
+  --promo-offer: #ffffff;
+  --promo-nav: rgba(247, 241, 230, 0.62);
+  --promo-thumb-num-bg: #0b1018;
 }
 .customer-promo-board__stage {
   display: flex;
@@ -2428,7 +2464,7 @@ html.customer-shell--dark body {
   font-weight: 600;
   letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: #d4b48a;
+  color: var(--promo-gold);
 }
 .customer-promo-board__carousel {
   display: grid;
@@ -2468,14 +2504,14 @@ html.customer-shell--dark body {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  color: rgba(247, 241, 230, 0.62);
+  color: var(--promo-nav);
   font-size: 0.8rem;
   letter-spacing: 0.08em;
 }
 .customer-promo-board__nav button {
   border: 0;
   background: transparent;
-  color: #d4b48a;
+  color: var(--promo-gold);
   cursor: pointer;
   font: inherit;
   letter-spacing: 0.12em;
@@ -2518,26 +2554,26 @@ html.customer-shell--dark body {
   width: 1.25rem;
   height: 1.25rem;
   border-radius: 0.28rem;
-  background: #0b1018;
-  border: 1px solid rgba(212, 180, 138, 0.55);
-  color: #d4b48a;
+  background: var(--promo-thumb-num-bg);
+  border: 1px solid color-mix(in srgb, var(--promo-gold) 55%, transparent);
+  color: var(--promo-gold);
   font-size: 0.66rem;
   font-weight: 700;
 }
 .customer-promo-board__thumb .customer-promo-card {
-  box-shadow: none;
+  box-shadow: var(--cd-shadow);
   transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 .customer-promo-board__thumb.is-on .customer-promo-card {
   box-shadow:
-    0 0 0 1px rgba(255, 236, 188, 0.85),
-    0 0 18px rgba(212, 180, 138, 0.35);
+    0 0 0 1.5px var(--promo-gold),
+    0 10px 24px color-mix(in srgb, var(--promo-gold) 28%, transparent);
   transform: translateY(-2px);
 }
 .customer-promo-board__thumb-caption {
   font-size: 0.74rem;
   line-height: 1.25;
-  color: rgba(247, 241, 230, 0.72);
+  color: var(--promo-muted);
   text-align: center;
 }
 .customer-promo-card--thumb {
@@ -2584,7 +2620,7 @@ html.customer-shell--dark body {
 .customer-promo-card--thumb .customer-promo-card__offer {
   margin: 0.05rem 0 0;
   font-size: 1.05rem;
-  color: #f0d7aa;
+  color: var(--promo-gold);
 }
 .customer-promo-card--thumb .customer-promo-card__desc,
 .customer-promo-card--thumb .customer-promo-card__brand,
@@ -2595,14 +2631,9 @@ html.customer-shell--dark body {
   position: relative;
   overflow: hidden;
   border-radius: 1.55rem;
-  background:
-    radial-gradient(circle at 50% 0%, rgba(212, 180, 138, 0.12), transparent 42%),
-    linear-gradient(180deg, #121826 0%, #0a0e18 100%);
-  color: #f7f1e6;
-  box-shadow:
-    0 0 0 1px rgba(212, 180, 138, 0.55),
-    0 0 24px rgba(212, 180, 138, 0.18),
-    0 22px 48px rgba(0, 0, 0, 0.45);
+  background: var(--promo-card-bg);
+  color: var(--promo-ink);
+  box-shadow: var(--promo-card-shadow);
   text-align: center;
 }
 .customer-promo-card__frame {
@@ -2625,8 +2656,8 @@ html.customer-shell--dark body {
   pointer-events: none;
 }
 .customer-promo-card__icon {
-  color: #d4b48a;
-  filter: drop-shadow(0 0 8px rgba(212, 180, 138, 0.35));
+  color: var(--promo-gold);
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--promo-gold) 35%, transparent));
   margin-bottom: 0.15rem;
 }
 .customer-promo-card--hero .customer-promo-card__icon svg {
@@ -2648,14 +2679,19 @@ html.customer-shell--dark body {
   font-weight: 600;
   letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: #d4b48a;
+  color: var(--promo-gold);
 }
 .customer-promo-card__eyebrow::before,
 .customer-promo-card__eyebrow::after {
   content: "";
   height: 1px;
   width: min(18%, 3.2rem);
-  background: linear-gradient(90deg, transparent, rgba(212, 180, 138, 0.85), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--promo-gold) 85%, transparent),
+    transparent
+  );
 }
 .customer-promo-card__rule {
   display: flex;
@@ -2667,29 +2703,34 @@ html.customer-shell--dark body {
 .customer-promo-card__rule span {
   flex: 1;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(212, 180, 138, 0.75), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--promo-gold) 75%, transparent),
+    transparent
+  );
 }
 .customer-promo-card__rule i {
   flex-shrink: 0;
   width: 0.42rem;
   height: 0.42rem;
-  border: 1px solid #d4b48a;
-  box-shadow: 0 0 8px rgba(212, 180, 138, 0.55);
+  border: 1px solid var(--promo-gold);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--promo-gold) 55%, transparent);
 }
 .customer-promo-card__rule--diamond i {
   transform: rotate(45deg);
-  background: rgba(212, 180, 138, 0.35);
+  background: color-mix(in srgb, var(--promo-gold) 35%, transparent);
 }
 .customer-promo-card__rule--dot i,
 .customer-promo-card__rule--spark i {
   border-radius: 999px;
-  background: #d4b48a;
+  background: var(--promo-gold);
   width: 0.28rem;
   height: 0.28rem;
 }
 .customer-promo-card__rule--spark i {
   box-shadow:
-    0 0 10px rgba(255, 236, 188, 0.95),
+    0 0 10px color-mix(in srgb, var(--promo-gold-soft) 95%, transparent),
     0 0 2px #fff;
 }
 .customer-promo-card__headline {
@@ -2702,13 +2743,13 @@ html.customer-shell--dark body {
 .customer-promo-card__headline-main {
   font-size: clamp(1.45rem, 2.6vw, 2.35rem);
   font-weight: 600;
-  color: #ffffff;
+  color: var(--promo-ink);
 }
 .customer-promo-card__headline-accent {
   font-size: clamp(1.05rem, 1.8vw, 1.55rem);
   font-style: italic;
   font-weight: 500;
-  color: #d4b48a;
+  color: var(--promo-gold);
 }
 .customer-promo-card__offer {
   margin: 0.15rem 0 0.2rem;
@@ -2716,18 +2757,18 @@ html.customer-shell--dark body {
   font-size: clamp(1.85rem, 3.4vw, 3rem);
   font-weight: 700;
   letter-spacing: 0.04em;
-  color: #ffffff;
-  text-shadow: 0 0 18px rgba(212, 180, 138, 0.25);
+  color: var(--promo-offer);
+  text-shadow: 0 0 18px color-mix(in srgb, var(--promo-gold) 25%, transparent);
 }
 .customer-promo-card--side .customer-promo-card__offer {
-  color: #f0d7aa;
+  color: var(--promo-gold);
 }
 .customer-promo-card__desc {
   max-width: 17rem;
   margin: 0.15rem 0 0.35rem;
   font-size: 0.82rem;
   line-height: 1.4;
-  color: rgba(247, 241, 230, 0.68);
+  color: var(--promo-muted);
 }
 .customer-promo-card--side .customer-promo-card__desc {
   display: none;
@@ -2743,7 +2784,7 @@ html.customer-shell--dark body {
   font-weight: 600;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: #d4b48a;
+  color: var(--promo-gold);
 }
 .customer-promo-card__brand-secondary {
   display: flex;
@@ -2754,25 +2795,40 @@ html.customer-shell--dark body {
   font-weight: 600;
   letter-spacing: 0.24em;
   text-transform: uppercase;
-  color: rgba(247, 241, 230, 0.82);
+  color: var(--promo-muted);
 }
 .customer-promo-card__brand-secondary::before,
 .customer-promo-card__brand-secondary::after {
   content: "";
   width: 1.6rem;
   height: 1px;
-  background: rgba(212, 180, 138, 0.7);
+  background: color-mix(in srgb, var(--promo-gold) 70%, transparent);
 }
 .customer-promo-card__flourish {
   margin-top: 0.45rem;
   width: 1.6rem;
   height: 0.85rem;
   background:
-    radial-gradient(circle at 50% 50%, #d4b48a 0 18%, transparent 19%),
-    linear-gradient(90deg, transparent 0 20%, #d4b48a 20% 28%, transparent 28% 72%, #d4b48a 72% 80%, transparent 80%),
-    radial-gradient(circle at 20% 50%, transparent 0 35%, #d4b48a 36% 42%, transparent 43%),
-    radial-gradient(circle at 80% 50%, transparent 0 35%, #d4b48a 36% 42%, transparent 43%);
+    radial-gradient(circle at 50% 50%, var(--promo-gold) 0 18%, transparent 19%),
+    linear-gradient(
+      90deg,
+      transparent 0 20%,
+      var(--promo-gold) 20% 28%,
+      transparent 28% 72%,
+      var(--promo-gold) 72% 80%,
+      transparent 80%
+    ),
+    radial-gradient(circle at 20% 50%, transparent 0 35%, var(--promo-gold) 36% 42%, transparent 43%),
+    radial-gradient(circle at 80% 50%, transparent 0 35%, var(--promo-gold) 36% 42%, transparent 43%);
   opacity: 0.9;
+}
+.customer-board--dark .customer-promo-card__headline-main,
+.customer-board--dark .customer-promo-card__offer {
+  color: #ffffff;
+}
+.customer-board--dark .customer-promo-card--side .customer-promo-card__offer,
+.customer-board--dark .customer-promo-card--thumb .customer-promo-card__offer {
+  color: #f0d7aa;
 }
 @keyframes customer-promo-board-in {
   from {
