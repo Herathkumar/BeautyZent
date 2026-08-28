@@ -1693,6 +1693,7 @@ html.customer-shell--dark body {
   align-items: start;
   margin-top: 1rem;
 }
+.reception-modal__label {
   display: block;
   margin-bottom: 0.45rem;
   font-size: 0.64rem;
