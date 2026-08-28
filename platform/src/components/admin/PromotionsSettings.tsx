@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { centsToDollars } from "@/lib/pay";
 import { PROMOTION_RULE_TYPES, type PromotionRuleType } from "@/lib/promotions";
+import { SettingToggle } from "@/components/admin/SettingToggle";
 
 type PromoSettings = {
   loyaltyEnabled: boolean;
@@ -147,11 +148,12 @@ export function PromotionsSettings() {
     }
   }
 
-  async function toggleRule(rule: Rule) {
+  async function setRuleEnabled(rule: Rule, enabled: boolean) {
+    if (rule.enabled === enabled) return;
     await fetch("/api/admin/promotions", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: rule.id, enabled: !rule.enabled }),
+      body: JSON.stringify({ id: rule.id, enabled }),
     });
     await load();
   }
@@ -174,24 +176,18 @@ export function PromotionsSettings() {
           </p>
         </div>
 
-        <label className="flex items-center justify-between gap-3 text-sm text-[#2b2521]">
-          <span>Enable loyalty points (members)</span>
-          <input
-            type="checkbox"
-            checked={settings.loyaltyEnabled}
-            onChange={(e) => setSettings((s) => ({ ...s, loyaltyEnabled: e.target.checked }))}
-            data-testid="promo-loyalty-enabled"
-          />
-        </label>
-        <label className="flex items-center justify-between gap-3 text-sm text-[#2b2521]">
-          <span>Enable automatic discounts</span>
-          <input
-            type="checkbox"
-            checked={settings.discountsEnabled}
-            onChange={(e) => setSettings((s) => ({ ...s, discountsEnabled: e.target.checked }))}
-            data-testid="promo-discounts-enabled"
-          />
-        </label>
+        <SettingToggle
+          label="Enable loyalty points (members)"
+          checked={settings.loyaltyEnabled}
+          onChange={(loyaltyEnabled) => setSettings((s) => ({ ...s, loyaltyEnabled }))}
+          testId="promo-loyalty-enabled"
+        />
+        <SettingToggle
+          label="Enable automatic discounts"
+          checked={settings.discountsEnabled}
+          onChange={(discountsEnabled) => setSettings((s) => ({ ...s, discountsEnabled }))}
+          testId="promo-discounts-enabled"
+        />
 
         {settings.loyaltyEnabled ? (
           <div className="grid gap-3 sm:grid-cols-3">
@@ -271,14 +267,14 @@ export function PromotionsSettings() {
                       : ""}
                   </p>
                 </div>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    className="rounded-full border border-[#7d6154]/35 px-3 py-1 text-xs"
-                    onClick={() => void toggleRule(rule)}
-                  >
-                    {rule.enabled ? "On" : "Off"}
-                  </button>
+                <div className="flex items-center gap-3">
+                  <SettingToggle
+                    label={`${rule.name} ${rule.enabled ? "on" : "off"}`}
+                    hideLabel
+                    checked={rule.enabled}
+                    onChange={(enabled) => void setRuleEnabled(rule, enabled)}
+                    testId={`promo-rule-toggle-${rule.id}`}
+                  />
                   <button
                     type="button"
                     className="text-xs text-[#f5a8a8] underline"
