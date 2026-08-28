@@ -2407,8 +2407,8 @@ html.customer-shell--dark body {
 }
 .customer-lounge-feature__ring-wrap {
   position: relative;
-  width: 3.25rem;
-  height: 3.25rem;
+  width: 4.4rem;
+  height: 4.4rem;
   flex-shrink: 0;
   display: grid;
   place-items: center;
@@ -2434,12 +2434,12 @@ html.customer-shell--dark body {
 .customer-lounge-feature__eta {
   position: relative;
   z-index: 1;
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
   color: var(--cd-heading);
   text-align: center;
-  max-width: 2.6rem;
+  max-width: 3.4rem;
   line-height: 1.05;
 }
 .customer-lounge-feature__serving-copy {

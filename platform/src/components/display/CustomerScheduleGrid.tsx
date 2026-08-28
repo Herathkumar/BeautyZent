@@ -29,20 +29,20 @@ import {
 const BOOKING_SCAN_MS = 6_000;
 
 function LoungeProgressRing({ progress }: { progress: number }) {
-  const r = 16;
+  const r = 22;
   const c = 2 * Math.PI * r;
   const pct = Math.max(0.02, Math.min(1, progress));
   return (
-    <svg className="customer-lounge-feature__ring" viewBox="0 0 40 40" aria-hidden>
-      <circle className="customer-lounge-feature__ring-track" cx="20" cy="20" r={r} />
+    <svg className="customer-lounge-feature__ring" viewBox="0 0 52 52" aria-hidden>
+      <circle className="customer-lounge-feature__ring-track" cx="26" cy="26" r={r} />
       <circle
         className="customer-lounge-feature__ring-fill"
-        cx="20"
-        cy="20"
+        cx="26"
+        cy="26"
         r={r}
         strokeDasharray={`${c}`}
         strokeDashoffset={`${c * (1 - pct)}`}
-        transform="rotate(-90 20 20)"
+        transform="rotate(-90 26 26)"
       />
     </svg>
   );
