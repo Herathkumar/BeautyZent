@@ -1,13 +1,13 @@
 import { test, expect } from "@playwright/test";
 import { adminLogin, gotoSettled } from "./helpers";
 
-test.describe("Manager loyalty & discounts", () => {
+test.describe("Manager promotions", () => {
   test("promotions page loads from money menu", async ({ page }) => {
     await adminLogin(page);
     await page.locator(".admin-header-nav").getByRole("button", { name: /money/i }).click();
-    await page.getByRole("menuitem", { name: /loyalty & discounts/i }).click();
+    await page.getByRole("menuitem", { name: /^promotions$/i }).click();
     await expect(page).toHaveURL(/\/manager\/promotions/);
-    await expect(page.getByRole("heading", { name: /loyalty & discounts/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /^promotions$/i })).toBeVisible();
     await expect(page.getByTestId("promotions-settings")).toBeVisible();
   });
 

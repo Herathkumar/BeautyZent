@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 
 const MONEY_LINKS = [
   { href: "/manager/earnings", label: "Store Earnings" },
-  { href: "/manager/promotions", label: "Loyalty & discounts" },
+  { href: "/manager/promotions", label: "Promotions" },
   { href: "/manager/pay", label: "Payroll" },
 ] as const;
 

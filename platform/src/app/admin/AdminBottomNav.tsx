@@ -7,7 +7,7 @@ import { createPortal } from "react-dom";
 
 const MONEY_LINKS = [
   { href: "/manager/earnings", label: "Store Earnings", hint: "Revenue & activity" },
-  { href: "/manager/promotions", label: "Loyalty & discounts", hint: "Points & checkout rules" },
+  { href: "/manager/promotions", label: "Promotions", hint: "Points & checkout rules" },
   { href: "/manager/pay", label: "Payroll", hint: "Pay, hours & leave" },
 ] as const;
 
