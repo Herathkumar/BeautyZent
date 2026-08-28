@@ -17,6 +17,7 @@ test.describe("Platform operator console", () => {
       await expect(card.getByRole("link", { name: /^configure$/i })).toBeVisible();
       await expect(card.getByRole("link", { name: /^book$/i })).toBeVisible();
       await expect(card.getByRole("link", { name: /^display$/i })).toBeVisible();
+      await expect(card.getByRole("link", { name: /^reception$/i })).toBeVisible();
     }
   });
 
@@ -35,6 +36,10 @@ test.describe("Platform operator console", () => {
       await expect(page.getByRole("link", { name: /tablet display/i })).toHaveAttribute(
         "href",
         new RegExp(`/display/${tenant.slug}`)
+      );
+      await expect(page.getByRole("link", { name: /reception desk/i })).toHaveAttribute(
+        "href",
+        new RegExp(`/display/${tenant.slug}/reception`)
       );
       await expect(page.getByRole("link", { name: /^manager$/i })).toHaveAttribute(
         "href",

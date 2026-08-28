@@ -68,7 +68,7 @@ export async function GET(
         client: {
           select: { id: true, name: true, phone: true, email: true, notes: true, createdAt: true },
         },
-        service: { select: { name: true, priceCents: true, category: true } },
+        service: { select: { id: true, name: true, priceCents: true, category: true, durationMin: true } },
         stylist: {
           select: {
             id: true,

@@ -5,13 +5,12 @@ import { useConfirm } from "@/components/ConfirmDialog";
 import { DisplayPinPad } from "@/components/DisplayPinPad";
 import { PadlockButton } from "@/components/PadlockButton";
 import { WalkInPanel } from "@/components/WalkInPanel";
-import { ZentraLabFooter } from "@/components/ZentraLabFooter";
 import { CustomerCheckoutOverlay } from "@/components/display/CustomerCheckoutOverlay";
 import { CustomerScheduleGrid } from "@/components/display/CustomerScheduleGrid";
-import { DisplayViewSwitch } from "@/components/display/DisplayViewSwitch";
 import { ReceptionCheckoutDesk } from "@/components/display/ReceptionCheckoutDesk";
 import {
   groupReceptionClients,
+  ReceptionBookingsView,
   ReceptionClientsView,
   ReceptionProductsView,
   ReceptionReportsView,
@@ -20,12 +19,20 @@ import {
   RECEPTION_NAV_ITEMS,
   type ReceptionSection,
 } from "@/components/display/ReceptionDeskViews";
+import { ReceptionRescheduleSheet } from "@/components/display/ReceptionReschedule";
 import { ReceptionClientPanel, ReceptionSchedule } from "@/components/display/ReceptionSchedule";
 import { ReceptionThemeRoot } from "@/components/display/ReceptionThemeRoot";
 import { ReceptionThemeToggle } from "@/components/display/ReceptionThemeToggle";
 import { CustomerThemeRoot } from "@/components/display/CustomerThemeRoot";
 import { CustomerThemeToggle } from "@/components/display/CustomerThemeToggle";
-import { clampDisplayHours, formatHourLabel, isE2eFixtureStylist, type DisplayAppt, type DisplayStylist } from "@/lib/display-schedule";
+import {
+  clampDisplayHours,
+  earlySeatWindow,
+  formatHourLabel,
+  isE2eFixtureStylist,
+  type DisplayAppt,
+  type DisplayStylist,
+} from "@/lib/display-schedule";
 import type { CheckoutBill } from "@/lib/display-checkout-types";
 import { formatCad } from "@/lib/money";
 import { promptCompleteAmounts } from "@/lib/pay";
@@ -527,6 +534,7 @@ export function DisplayBoard({
   const [walkInWaiting, setWalkInWaiting] = useState(0);
   const [query, setQuery] = useState("");
   const [receptionSection, setReceptionSection] = useState<ReceptionSection>("calendar");
+  const [rescheduleOpen, setRescheduleOpen] = useState(false);
   const [needsPin, setNeedsPin] = useState(false);
   const [pinSet, setPinSet] = useState(false);
   const [unlockChecked, setUnlockChecked] = useState(false);
@@ -537,6 +545,7 @@ export function DisplayBoard({
   const [checkout, setCheckout] = useState<CheckoutBill | null>(null);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
+  const [checkInError, setCheckInError] = useState("");
   const [statusBusyId, setStatusBusyId] = useState<string | null>(null);
   const checkoutInFlight = useRef(false);
   const checkoutWriteSeq = useRef(0);
@@ -752,6 +761,10 @@ export function DisplayBoard({
   }, [unlockChecked, needsPin]);
 
   useEffect(() => {
+    setRescheduleOpen(false);
+  }, [selectedId]);
+
+  useEffect(() => {
     let cancelled = false;
     let timeout: ReturnType<typeof setTimeout> | undefined;
     const sleep = (ms: number) =>
@@ -892,6 +905,19 @@ export function DisplayBoard({
     const appt = appointments.find((a) => a.id === appointmentId);
     if (!appt) return;
 
+    const occupied = appointments.some(
+      (a) =>
+        a.status === "CHECKED_IN" &&
+        a.stylist.id === targetStylistId &&
+        a.id !== appointmentId
+    );
+    if (occupied) {
+      setSelectedId(appointmentId);
+      setCheckInError("That stylist already has a client in the chair. Check in with an available stylist.");
+      return;
+    }
+    setCheckInError("");
+
     const reassign = targetStylistId !== appt.stylist.id;
     const targetStylist = reassign
       ? stylists.find((s) => s.id === targetStylistId)
@@ -904,9 +930,12 @@ export function DisplayBoard({
     setAppointments((list) =>
       list.map((a) => {
         if (a.id !== appointmentId) return a;
+        const shifted = earlySeatWindow(a.startsAt, a.endsAt);
         return {
           ...a,
           status: "CHECKED_IN",
+          startsAt: shifted ? shifted.startsAt.toISOString() : a.startsAt,
+          endsAt: shifted ? shifted.endsAt.toISOString() : a.endsAt,
           stylist: reassign && targetStylist
             ? {
                 id: targetStylist.id,
@@ -933,6 +962,20 @@ export function DisplayBoard({
       }
       if (!res.ok) {
         setAppointments(previous);
+        if (data.error) setCheckInError(String(data.error));
+      } else if (data.appointment?.startsAt && data.appointment?.endsAt) {
+        setAppointments((list) =>
+          list.map((a) =>
+            a.id === appointmentId
+              ? {
+                  ...a,
+                  status: data.appointment.status ?? a.status,
+                  startsAt: data.appointment.startsAt,
+                  endsAt: data.appointment.endsAt,
+                }
+              : a
+          )
+        );
       }
     } catch {
       setAppointments(previous);
@@ -947,13 +990,42 @@ export function DisplayBoard({
     chargedCents?: number,
     tipCents?: number
   ) {
+    if (status === "CHECKED_IN") {
+      const appt = appointments.find((a) => a.id === id);
+      const occupied = Boolean(
+        appt?.stylist.id &&
+          appointments.some(
+            (a) =>
+              a.status === "CHECKED_IN" &&
+              a.stylist.id === appt.stylist.id &&
+              a.id !== id
+          )
+      );
+      if (occupied) {
+        setCheckInError(
+          "That stylist already has a client in the chair. Check in with an available stylist."
+        );
+        return;
+      }
+      setCheckInError("");
+    }
+
     const previous = appointments;
     boardDataSeq.current += 1;
     setStatusBusyId(id);
     setAppointments((list) =>
-      list.map((a) =>
-        a.id === id ? { ...a, status, chargedCents: chargedCents ?? a.chargedCents, tipCents: tipCents ?? a.tipCents } : a
-      )
+      list.map((a) => {
+        if (a.id !== id) return a;
+        const shifted = status === "CHECKED_IN" ? earlySeatWindow(a.startsAt, a.endsAt) : null;
+        return {
+          ...a,
+          status,
+          startsAt: shifted ? shifted.startsAt.toISOString() : a.startsAt,
+          endsAt: shifted ? shifted.endsAt.toISOString() : a.endsAt,
+          chargedCents: chargedCents ?? a.chargedCents,
+          tipCents: tipCents ?? a.tipCents,
+        };
+      })
     );
     try {
       const res = await fetch(`/api/display/${slug}/appointments/${id}`, {
@@ -969,12 +1041,55 @@ export function DisplayBoard({
       }
       if (!res.ok) {
         setAppointments(previous);
+        if (status === "CHECKED_IN" && data.error) setCheckInError(String(data.error));
+      } else if (data.appointment?.startsAt && data.appointment?.endsAt) {
+        setAppointments((list) =>
+          list.map((a) =>
+            a.id === id
+              ? {
+                  ...a,
+                  status: data.appointment.status ?? a.status,
+                  startsAt: data.appointment.startsAt,
+                  endsAt: data.appointment.endsAt,
+                }
+              : a
+          )
+        );
       }
     } catch {
       setAppointments(previous);
     } finally {
       setStatusBusyId(null);
     }
+  }
+
+  function applyReschedule(next: { startsAt: string; endsAt: string; stylistId: string }) {
+    if (!selectedId) return;
+    const chair = stylists.find((s) => s.id === next.stylistId);
+    const future = new Date(next.startsAt).getTime() > Date.now();
+    boardDataSeq.current += 1;
+    setAppointments((list) =>
+      list.map((a) => {
+        if (a.id !== selectedId) return a;
+        return {
+          ...a,
+          startsAt: next.startsAt,
+          endsAt: next.endsAt,
+          status: a.status === "CHECKED_IN" && future ? "BOOKED" : a.status,
+          stylist: chair
+            ? {
+                ...a.stylist,
+                id: chair.id,
+                name: chair.name,
+                color: chair.color,
+                photoUrl: chair.photoUrl,
+              }
+            : a.stylist,
+        };
+      })
+    );
+    setRescheduleOpen(false);
+    void load();
   }
 
   async function presentCheckout(appt: DisplayAppt) {
@@ -1040,6 +1155,32 @@ export function DisplayBoard({
   const { openHour, closeHour } = clampDisplayHours(salon?.openHour, salon?.closeHour);
   const storeClosed = Boolean(salon?.todayClosed);
   const selectedAppt = appointments.find((a) => a.id === selectedId) ?? null;
+  const deskAppt =
+    selectedAppt &&
+    (selectedAppt.status === "BOOKED" || selectedAppt.status === "CHECKED_IN")
+      ? selectedAppt
+      : null;
+  const chairOccupied = Boolean(
+    deskAppt?.status === "BOOKED" &&
+      deskAppt.stylist.id &&
+      appointments.some(
+        (a) =>
+          a.status === "CHECKED_IN" &&
+          a.stylist.id === deskAppt.stylist.id &&
+          a.id !== deskAppt.id
+      )
+  );
+  const rescheduleAppt = deskAppt
+    ? {
+        ...deskAppt,
+        service: {
+          ...deskAppt.service,
+          id:
+            deskAppt.service.id ||
+            services.find((s) => s.name === deskAppt.service.name)?.id,
+        },
+      }
+    : null;
   const floorStylists = (() => {
     const booked = new Set(
       todayAppts.flatMap((a) => [a.stylist.id, a.stylist.name].filter(Boolean) as string[])
@@ -1048,6 +1189,10 @@ export function DisplayBoard({
       (s) => !isE2eFixtureStylist(s) || booked.has(s.id) || booked.has(s.name)
     );
     return real.length ? real : stylists;
+  })();
+  const rescheduleStylists = (() => {
+    const chairs = stylists.filter((s) => s.id && s.id !== "none" && !isE2eFixtureStylist(s));
+    return chairs.length ? chairs : floorStylists;
   })();
   const floorAppts = (() => {
     const q = query.trim().toLowerCase();
@@ -1156,11 +1301,17 @@ export function DisplayBoard({
         <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-[var(--rx-bg)] text-[color:var(--rx-text)]">
           <header className={`flex shrink-0 flex-wrap items-center gap-3 border-b border-[color:var(--rx-line)] ${embedded ? "px-4 py-3" : "px-5 py-3.5"}`}>
             <div className="shrink-0">
-              <p className="text-sm font-medium text-[color:var(--rx-text-80)]">Today, {apptDay}</p>
-              <p className="text-[11px] text-[color:var(--rx-faint)]" data-testid="display-store-hours">
-                {storeClosed
-                  ? "Closed today"
-                  : `${formatHourLabel(openHour)} – ${formatHourLabel(closeHour)}`}
+              <p className="text-sm font-medium text-[color:var(--rx-text-80)]">
+                Today, {apptDay}
+                <span className="text-[color:var(--rx-faint)]">
+                  {" "}
+                  |{" "}
+                  <span data-testid="display-store-hours">
+                    {storeClosed
+                      ? "Closed today"
+                      : `${formatHourLabel(openHour)} – ${formatHourLabel(closeHour)}`}
+                  </span>
+                </span>
               </p>
             </div>
             {receptionSection !== "reports" ? (
@@ -1186,7 +1337,7 @@ export function DisplayBoard({
             )}
             <ReceptionThemeToggle />
             {!embedded ? (
-              <div className="flex items-center gap-2 lg:hidden">
+              <div className="flex items-center gap-2 xl:hidden">
                 {staffName ? (
                   <p className="hidden max-w-[9rem] truncate text-xs font-semibold text-[color:var(--rx-text)] sm:block">
                     {staffName}
@@ -1220,7 +1371,7 @@ export function DisplayBoard({
           </header>
 
           <nav
-            className="flex shrink-0 gap-1 overflow-x-auto border-b border-[color:var(--rx-line)] px-4 py-2 lg:hidden"
+            className="flex shrink-0 gap-1 overflow-x-auto border-b border-[color:var(--rx-line)] px-4 py-2 xl:hidden"
             aria-label="Reception"
           >
             {RECEPTION_NAV_ITEMS.map((item) => {
@@ -1275,9 +1426,12 @@ export function DisplayBoard({
           ) : null}
 
           <div className="flex min-h-0 min-w-0 flex-1 flex-col xl:flex-row">
-            {receptionSection === "calendar" ? (
+            {receptionSection === "calendar" ||
+            receptionSection === "bookings" ||
+            receptionSection === "clients" ? (
               <>
-            <div className="min-h-0 min-w-0 flex-1 overflow-hidden px-4 py-3 sm:px-5">
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden px-4 py-3 sm:px-5">
+              {receptionSection === "calendar" ? (
               <ReceptionSchedule
                 appointments={floorAppts}
                 stylists={floorStylists}
@@ -1291,51 +1445,61 @@ export function DisplayBoard({
                 onCheckIn={({ appointmentId, targetStylistId }) =>
                   void checkInFromDrag(appointmentId, targetStylistId)
                 }
-              />
-            </div>
-            <div className="w-full shrink-0 overflow-auto border-t border-[color:var(--rx-line)] xl:w-[22rem] xl:border-t-0 xl:border-l">
-              <ReceptionClientPanel
-                appt={
-                  selectedAppt &&
-                  (selectedAppt.status === "BOOKED" || selectedAppt.status === "CHECKED_IN")
-                    ? selectedAppt
-                    : null
-                }
-                onClose={() => setSelectedId(null)}
-                onStatus={setStatus}
                 onCheckout={presentCheckout}
-                busyId={statusBusyId}
-                checkoutBusy={checkoutBusy}
-                checkoutError={checkoutError}
               />
-            </div>
-              </>
-            ) : receptionSection === "clients" ? (
-              <>
-                <div className="min-h-0 min-w-0 flex-1 overflow-hidden px-4 py-3 sm:px-5">
+              ) : null}
+              {receptionSection === "bookings" ? (
+                <ReceptionBookingsView
+                  appointments={appointments}
+                  query={query}
+                  selectedId={selectedId}
+                  onSelect={(a) => setSelectedId(a.id)}
+                  timeZone={salon?.timezone}
+                />
+              ) : null}
+              {receptionSection === "clients" ? (
                   <ReceptionClientsView
                     clients={receptionClients}
                     query={query}
                     selectedId={selectedId}
                     onSelect={(a) => setSelectedId(a.id)}
                   />
-                </div>
-                <div className="w-full shrink-0 overflow-auto border-t border-[color:var(--rx-line)] xl:w-[22rem] xl:border-t-0 xl:border-l">
-                  <ReceptionClientPanel
-                    appt={
-                      selectedAppt &&
-                      (selectedAppt.status === "BOOKED" || selectedAppt.status === "CHECKED_IN")
-                        ? selectedAppt
-                        : null
-                    }
-                    onClose={() => setSelectedId(null)}
-                    onStatus={setStatus}
-                    onCheckout={presentCheckout}
-                    busyId={statusBusyId}
-                    checkoutBusy={checkoutBusy}
-                    checkoutError={checkoutError}
-                  />
-                </div>
+              ) : null}
+            </div>
+            <div
+              className={`reception-actions${deskAppt ? " is-open" : ""}`}
+            >
+              <button
+                type="button"
+                className="reception-actions__backdrop"
+                aria-label="Close actions"
+                onClick={() => setSelectedId(null)}
+              />
+              {rescheduleOpen && rescheduleAppt ? (
+                <ReceptionRescheduleSheet
+                  appt={rescheduleAppt}
+                  stylists={rescheduleStylists}
+                  slug={slug}
+                  timeZone={salon?.timezone}
+                  unlockHeaders={unlockHeaders}
+                  onClose={() => setRescheduleOpen(false)}
+                  onSaved={applyReschedule}
+                />
+              ) : (
+              <ReceptionClientPanel
+                appt={deskAppt}
+                onClose={() => setSelectedId(null)}
+                onStatus={setStatus}
+                onCheckout={presentCheckout}
+                onReschedule={() => setRescheduleOpen(true)}
+                busyId={statusBusyId}
+                checkoutBusy={checkoutBusy}
+                checkoutError={checkoutError}
+                checkInError={checkInError}
+                chairOccupied={chairOccupied}
+              />
+              )}
+            </div>
               </>
             ) : (
               <div className="min-h-0 min-w-0 flex-1 overflow-hidden px-4 py-3 sm:px-5">
@@ -1413,28 +1577,22 @@ export function DisplayBoard({
         }`}
       >
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-      <header
-        className={`shrink-0 border-b border-[color:var(--cd-line)] ${
-          embedded ? "px-4 py-4 sm:px-5" : "px-6 py-5"
-        }`}
-      >
-          <div className="mb-4 grid gap-4 lg:grid-cols-[1fr_auto_1fr] lg:items-center">
-            <div className="flex items-center gap-3">
-              <span className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[color:var(--cd-accent)] text-xl font-[family-name:var(--font-display)] text-[color:var(--cd-accent)]">
+      <header className={`customer-lounge-header shrink-0 ${embedded ? "px-4 py-4 sm:px-5" : "px-8 py-6"}`}>
+          <div className="grid gap-4 lg:grid-cols-[1fr_auto_1fr] lg:items-center">
+            <div className="flex items-center gap-4">
+              <span className="customer-lounge-mark" aria-hidden>
                 {(salon?.name || "S").trim().charAt(0).toUpperCase()}
               </span>
               <div>
-                <h1 className="font-[family-name:var(--font-display)] text-xl tracking-[0.14em] text-[color:var(--cd-heading)] uppercase sm:text-2xl">
+                <h1 className="font-[family-name:var(--font-display)] text-2xl tracking-[0.12em] text-[color:var(--cd-accent)] uppercase sm:text-3xl">
                   {salon?.name || "Salon"}
                 </h1>
-                <p className="text-[10px] tracking-[0.22em] text-[color:var(--cd-muted)] uppercase">
-                  Beauty. Relaxation. You.
-                </p>
+                <p className="customer-lounge-tagline">Beauty. Relaxation. You.</p>
               </div>
             </div>
             <div className="text-center">
-              <h2 className="font-[family-name:var(--font-display)] text-2xl text-[color:var(--cd-heading)] sm:text-3xl">
-                Today’s Appointments – {apptDay}
+              <h2 className="font-[family-name:var(--font-display)] text-2xl text-[color:var(--cd-heading)] sm:text-[1.85rem]">
+                Today’s Appointments — {apptDay}
               </h2>
               <p className="mt-1 text-xs tracking-wide text-[color:var(--cd-muted)]" data-testid="display-store-hours">
                 {storeClosed
@@ -1444,13 +1602,12 @@ export function DisplayBoard({
             </div>
             <div className="flex flex-col items-end gap-2">
               <div className="flex flex-wrap items-center justify-end gap-2">
-                {!embedded ? <DisplayViewSwitch slug={slug} variant="customer" /> : null}
                 <CustomerThemeToggle />
               </div>
               <div className="flex items-center gap-3">
                 <div className="text-right">
-                  <p className="font-[family-name:var(--font-display)] text-2xl text-[color:var(--cd-heading)]">{timeLine}</p>
-                  <p className="text-xs text-[color:var(--cd-muted)]">{dateLine}</p>
+                  <p className="customer-lounge-clock">{timeLine}</p>
+                  <p className="text-sm text-[color:var(--cd-muted)]">{dateLine}</p>
                 </div>
                 {pinSet || embedded ? (
                   <PadlockButton
@@ -1466,7 +1623,7 @@ export function DisplayBoard({
           </div>
       </header>
 
-      <div className={embedded ? "flex min-h-0 flex-1 flex-col px-4 py-4 sm:px-5 sm:py-5" : "flex min-h-0 flex-1 flex-col px-6 py-4"}>
+      <div className="flex min-h-0 flex-1 flex-col">
         <CustomerScheduleGrid
           appointments={todayAppts}
           stylists={floorStylists}
@@ -1475,13 +1632,12 @@ export function DisplayBoard({
           timeZone={salon?.timezone}
           now={now}
           storeClosed={storeClosed}
+          compactPad={embedded}
           onCheckIn={({ appointmentId, targetStylistId }) =>
             void checkInFromDrag(appointmentId, targetStylistId)
           }
         />
       </div>
-
-      <ZentraLabFooter compact className="shrink-0 !mt-0 border-[color:var(--cd-line)] !py-2.5 text-[11px]" />
       </div>
       <CustomerCheckoutOverlay
         bill={checkout}
@@ -1528,6 +1684,67 @@ function staffInitials(name?: string) {
   return letters.toUpperCase();
 }
 
+function ReceptionNavIcon({ id }: { id: ReceptionSection }) {
+  const common = "h-4 w-4 shrink-0";
+  if (id === "calendar") {
+    return (
+      <svg className={common} viewBox="0 0 24 24" fill="none" aria-hidden>
+        <rect x="4" y="5.5" width="16" height="14" rx="2" stroke="currentColor" strokeWidth="1.6" />
+        <path d="M8 4v3M16 4v3M4 10h16" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (id === "bookings") {
+    return (
+      <svg className={common} viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path d="M6 5.5h12a1.5 1.5 0 0 1 1.5 1.5v12a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 19V7A1.5 1.5 0 0 1 6 5.5Z" stroke="currentColor" strokeWidth="1.6" />
+        <path d="M8 9.5h8M8 13h8M8 16.5h5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (id === "clients") {
+    return (
+      <svg className={common} viewBox="0 0 24 24" fill="none" aria-hidden>
+        <circle cx="9" cy="8" r="2.3" stroke="currentColor" strokeWidth="1.6" />
+        <path d="M4.8 18c.5-2.5 2.3-3.8 4.2-3.8S12.7 15.5 13.2 18" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+        <circle cx="16.2" cy="9" r="2" stroke="currentColor" strokeWidth="1.6" />
+        <path d="M15 14.4c1.6.2 3.2 1.3 3.8 3.6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (id === "staff") {
+    return (
+      <svg className={common} viewBox="0 0 24 24" fill="none" aria-hidden>
+        <circle cx="12" cy="8" r="2.4" stroke="currentColor" strokeWidth="1.6" />
+        <path d="M7 18c.6-2.8 2.6-4.2 5-4.2s4.4 1.4 5 4.2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (id === "services") {
+    return (
+      <svg className={common} viewBox="0 0 24 24" fill="none" aria-hidden>
+        <circle cx="6.5" cy="7" r="2.2" stroke="currentColor" strokeWidth="1.6" />
+        <circle cx="6.5" cy="17" r="2.2" stroke="currentColor" strokeWidth="1.6" />
+        <path d="M8.5 8.4 19 18M8.5 15.6 19 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (id === "products") {
+    return (
+      <svg className={common} viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path d="M5 8.5 12 5l7 3.5v7L12 19l-7-3.5v-7Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+        <path d="M12 19V12M5 8.5 12 12l7-3.5" stroke="currentColor" strokeWidth="1.6" />
+      </svg>
+    );
+  }
+  return (
+    <svg className={common} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path d="M5 18V8l7-3 7 3v10" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      <path d="M9 18v-5h6v5" stroke="currentColor" strokeWidth="1.6" />
+    </svg>
+  );
+}
+
 function ReceptionNav({
   salonName,
   staffName,
@@ -1544,19 +1761,19 @@ function ReceptionNav({
   onSignOut?: () => void;
 }) {
   return (
-    <aside className="hidden w-56 shrink-0 flex-col border-r border-[color:var(--rx-line)] bg-[var(--rx-nav)] px-4 py-6 lg:flex">
-      <div className="mb-8 flex items-start gap-2">
-        <span className="mt-0.5 text-[color:var(--rx-accent-soft)]" aria-hidden>
-          ❀
+    <aside className="reception-nav hidden w-[15.5rem] shrink-0 flex-col px-4 py-6 xl:flex">
+      <div className="mb-8 flex items-start gap-3">
+        <span className="reception-nav__mark" aria-hidden>
+          {(salonName || "S").trim().charAt(0).toUpperCase()}
         </span>
         <div>
           <p
-            className="text-[10px] font-bold tracking-[0.14em] leading-snug text-[color:var(--rx-accent-soft)] uppercase"
+            className="text-[10px] font-bold tracking-[0.14em] leading-snug text-[color:var(--rx-accent)] uppercase"
             data-testid="reception-salon-name"
           >
             {salonName}
           </p>
-          <p className="mt-1 text-sm font-semibold leading-snug text-[color:var(--rx-text)]">Reception dashboard</p>
+          <p className="mt-1 text-sm font-semibold leading-snug text-[color:var(--rx-text)]">Reception</p>
         </div>
       </div>
       <nav className="flex flex-1 flex-col gap-1" aria-label="Reception">
@@ -1568,12 +1785,9 @@ function ReceptionNav({
               type="button"
               onClick={() => onSection(item.id)}
               data-testid={`reception-nav-${item.id}`}
-              className={`rounded-xl px-3 py-2.5 text-left text-sm font-medium ${
-                active
-                  ? "bg-[var(--rx-accent)] text-white"
-                  : "text-[color:var(--rx-muted)] hover:text-[color:var(--rx-text)]"
-              }`}
+              className={`reception-nav__item ${active ? "is-active" : ""}`}
             >
+              <ReceptionNavIcon id={item.id} />
               {item.label}
             </button>
           );
@@ -1593,14 +1807,13 @@ function ReceptionNav({
               {staffName || staffRoleLabel(staffRole)}
             </p>
             <p
-              className="truncate text-[10px] text-[color:var(--rx-accent-soft)]"
+              className="truncate text-[10px] text-[color:var(--rx-muted)]"
               data-testid="reception-signed-in-as"
             >
               Logged in as reception
             </p>
             <p className="truncate text-[10px] text-[color:var(--rx-faint)]">
               {staffRoleLabel(staffRole)}
-              {salonName ? ` · ${salonName}` : ""}
             </p>
           </div>
         </div>

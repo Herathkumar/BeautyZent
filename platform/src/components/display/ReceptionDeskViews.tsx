@@ -15,6 +15,7 @@ import {
 
 export type ReceptionSection =
   | "calendar"
+  | "bookings"
   | "clients"
   | "staff"
   | "services"
@@ -23,10 +24,11 @@ export type ReceptionSection =
 
 export const RECEPTION_NAV_ITEMS: { id: ReceptionSection; label: string }[] = [
   { id: "calendar", label: "Calendar" },
+  { id: "bookings", label: "Bookings" },
   { id: "clients", label: "Clients" },
   { id: "staff", label: "Staff" },
   { id: "services", label: "Services" },
-  { id: "products", label: "Products" },
+  { id: "products", label: "Inventory" },
   { id: "reports", label: "Reports" },
 ];
 
@@ -84,6 +86,117 @@ export function groupReceptionClients(appointments: DisplayAppt[]): ClientRow[] 
     });
   }
   return rows.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export function ReceptionBookingsView({
+  appointments,
+  query,
+  selectedId,
+  onSelect,
+  timeZone,
+}: {
+  appointments: DisplayAppt[];
+  query: string;
+  selectedId: string | null;
+  onSelect: (appt: DisplayAppt) => void;
+  timeZone?: string | null;
+}) {
+  const q = query.trim().toLowerCase();
+  const rows = appointments
+    .filter((a) => a.status === "BOOKED" || a.status === "CHECKED_IN")
+    .filter((a) => {
+      if (!q) return true;
+      return (
+        a.client.name.toLowerCase().includes(q) ||
+        a.service.name.toLowerCase().includes(q) ||
+        a.stylist.name.toLowerCase().includes(q) ||
+        (a.client.phone || "").includes(q)
+      );
+    })
+    .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime());
+
+  const groups: { key: string; label: string; items: DisplayAppt[] }[] = [];
+  for (const a of rows) {
+    const key = new Date(a.startsAt).toLocaleDateString("en-CA", {
+      timeZone: timeZone || undefined,
+    });
+    const last = groups[groups.length - 1];
+    if (last && last.key === key) {
+      last.items.push(a);
+    } else {
+      groups.push({
+        key,
+        label: new Date(a.startsAt).toLocaleDateString("en-CA", {
+          timeZone: timeZone || undefined,
+          weekday: "long",
+          month: "short",
+          day: "numeric",
+        }),
+        items: [a],
+      });
+    }
+  }
+
+  return (
+    <div className="flex h-full min-h-0 flex-col" data-testid="reception-bookings-view">
+      <div className="mb-3">
+        <h2 className="text-sm font-semibold text-[color:var(--rx-text)]">Bookings</h2>
+        <p className="text-[11px] text-[color:var(--rx-faint)]">
+          Open visits on the book. Select one to check in, reschedule, or check out.
+        </p>
+      </div>
+      {rows.length === 0 ? (
+        <p className="rounded-2xl border border-[color:var(--rx-line)] bg-[var(--rx-panel)] px-4 py-8 text-center text-sm text-[color:var(--rx-faint)]">
+          {q ? "No bookings match that search." : "No open bookings in this range."}
+        </p>
+      ) : (
+        <div className="min-h-0 flex-1 space-y-4 overflow-auto pr-1">
+          {groups.map((g) => (
+            <section key={g.key}>
+              <h3 className="mb-2 text-[11px] font-semibold tracking-wide text-[color:var(--rx-faint)] uppercase">
+                {g.label}
+              </h3>
+              <ul className="space-y-2">
+                {g.items.map((a) => {
+                  const active = selectedId === a.id;
+                  return (
+                    <li key={a.id}>
+                      <button
+                        type="button"
+                        onClick={() => onSelect(a)}
+                        data-testid="reception-booking-row"
+                        data-appt-id={a.id}
+                        className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-3 text-left ${
+                          active
+                            ? "border-[color:var(--rx-accent)] bg-[var(--rx-panel)]"
+                            : "border-[color:var(--rx-line)] bg-[var(--rx-panel)] hover:border-[color:var(--rx-accent)]"
+                        }`}
+                      >
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--rx-accent)] text-xs font-bold text-white">
+                          {initials(a.client.name)}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-semibold text-[color:var(--rx-text)]">
+                            {a.client.name}
+                          </span>
+                          <span className="block truncate text-[11px] text-[color:var(--rx-muted)]">
+                            {formatClock(a.startsAt, timeZone)} · {a.service.name} · {a.stylist.name}
+                          </span>
+                        </span>
+                        <span className="shrink-0 text-[10px] font-semibold tracking-wide text-[color:var(--rx-faint)] uppercase">
+                          {statusLabel(a.status)}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function ReceptionClientsView({

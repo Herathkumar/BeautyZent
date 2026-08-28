@@ -62,6 +62,8 @@ test.describe("Reception login and theme", () => {
   test("sidebar menus open clients, staff, services, and reports", async ({ page }) => {
     test.setTimeout(180_000);
     await receptionLogin(page);
+    await page.getByTestId("reception-nav-bookings").click();
+    await expect(page.getByTestId("reception-bookings-view")).toBeVisible();
     await page.getByTestId("reception-nav-clients").click();
     await expect(page.getByTestId("reception-clients-view")).toBeVisible();
     await page.getByTestId("reception-nav-staff").click();
@@ -74,6 +76,24 @@ test.describe("Reception login and theme", () => {
     await expect(page.getByTestId("reception-reports-view")).toBeVisible();
     await page.getByTestId("reception-nav-calendar").click();
     await expect(page.getByTestId("reception-client-panel")).toBeVisible();
+  });
+
+  test("reschedule stays on the reception desk", async ({ page }) => {
+    test.setTimeout(180_000);
+    await receptionLogin(page);
+    const card = page.locator("[data-testid=reception-appt-card][data-appt-status=BOOKED]").first();
+    if ((await card.count()) === 0) {
+      test.info().annotations.push({
+        type: "skip",
+        description: "no BOOKED card on the reception board",
+      });
+      return;
+    }
+    await card.click();
+    await page.getByTestId("reception-reschedule-open").click();
+    await expect(page.getByTestId("reception-reschedule")).toBeVisible();
+    await expect(page).not.toHaveURL(/\/manager\/appointments/);
+    await expect(page.getByTestId("store-display-board")).toBeVisible();
   });
 });
 

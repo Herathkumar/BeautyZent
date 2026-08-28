@@ -134,6 +134,14 @@ export default async function PlatformHomePage() {
               >
                 Display
               </a>
+              <a
+                href={`/display/${salon.slug}/reception`}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-full border border-ink/12 px-4 py-2 text-muted hover:border-ink/30"
+              >
+                Reception
+              </a>
             </div>
           </article>
         ))}

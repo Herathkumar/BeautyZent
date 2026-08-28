@@ -1,11 +1,15 @@
+import type { ReactNode } from "react";
+
 type Props = {
   /** Extra classes on the footer element */
   className?: string;
   /** Compact spacing for login / booking pages */
   compact?: boolean;
+  /** Optional status line on the customer display bar */
+  lead?: ReactNode;
 };
 
-export function ZentraLabFooter({ className = "", compact = false }: Props) {
+export function ZentraLabFooter({ className = "", compact = false, lead }: Props) {
   return (
     <footer
       className={`zentralab-footer border-t border-[color:var(--line)] ${
@@ -13,8 +17,13 @@ export function ZentraLabFooter({ className = "", compact = false }: Props) {
       } ${className}`}
       data-testid="zentralab-footer"
     >
-      <div className="flex flex-col items-center gap-2 text-center sm:flex-row sm:items-end sm:justify-between sm:text-left">
-        <div>
+      <div
+        className={`flex flex-col items-center gap-3 text-center sm:flex-row sm:justify-between ${
+          lead ? "sm:items-center sm:text-left" : "sm:items-end sm:text-left"
+        }`}
+      >
+        {lead ? <div className="min-w-0 sm:flex-1">{lead}</div> : null}
+        <div className={lead ? "shrink-0 sm:text-right" : ""}>
           <p className="text-[10px] font-semibold tracking-[0.22em] text-champagne uppercase opacity-80">
             Powered by
           </p>
@@ -26,22 +35,24 @@ export function ZentraLabFooter({ className = "", compact = false }: Props) {
             © {new Date().getFullYear()} ZentraLab. All rights reserved.
           </p>
         </div>
-        <div className="flex flex-col items-center gap-1 text-sm sm:items-end">
-          <a
-            href="https://www.zentralab.ca"
-            target="_blank"
-            rel="noreferrer"
-            className="text-champagne transition hover:opacity-80"
-          >
-            www.zentralab.ca
-          </a>
-          <a
-            href="mailto:hello@zentralab.ca"
-            className="zentralab-footer-meta text-muted transition hover:text-champagne"
-          >
-            hello@zentralab.ca
-          </a>
-        </div>
+        {!lead ? (
+          <div className="flex flex-col items-center gap-1 text-sm sm:items-end">
+            <a
+              href="https://www.zentralab.ca"
+              target="_blank"
+              rel="noreferrer"
+              className="text-champagne transition hover:opacity-80"
+            >
+              www.zentralab.ca
+            </a>
+            <a
+              href="mailto:hello@zentralab.ca"
+              className="zentralab-footer-meta text-muted transition hover:text-champagne"
+            >
+              hello@zentralab.ca
+            </a>
+          </div>
+        ) : null}
       </div>
     </footer>
   );

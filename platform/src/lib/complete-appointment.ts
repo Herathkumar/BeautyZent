@@ -1,4 +1,21 @@
+import { earlySeatWindow } from "@/lib/display-schedule";
 import { prisma } from "@/lib/prisma";
+
+export async function stylistChairOccupied(opts: {
+  salonId: string;
+  stylistId: string;
+  exceptAppointmentId?: string;
+}) {
+  return prisma.appointment.findFirst({
+    where: {
+      salonId: opts.salonId,
+      stylistId: opts.stylistId,
+      status: "CHECKED_IN",
+      ...(opts.exceptAppointmentId ? { id: { not: opts.exceptAppointmentId } } : {}),
+    },
+    select: { id: true },
+  });
+}
 
 /** Shared status update with service charge + tip when completing. */
 export async function updateAppointmentStatus(opts: {
@@ -10,11 +27,38 @@ export async function updateAppointmentStatus(opts: {
 }) {
   const data: {
     status: string;
+    startsAt?: Date;
+    endsAt?: Date;
     chargedCents?: number;
     tipCents?: number;
     chargedAt?: Date;
     chargedByUserId?: string | null;
   } = { status: opts.status };
+
+  if (opts.status === "CHECKED_IN") {
+    const current = await prisma.appointment.findUnique({
+      where: { id: opts.appointmentId },
+      select: { status: true, startsAt: true, endsAt: true, stylistId: true, salonId: true },
+    });
+    if (current && current.status !== "CHECKED_IN") {
+      const occupied = await stylistChairOccupied({
+        salonId: current.salonId,
+        stylistId: current.stylistId,
+        exceptAppointmentId: opts.appointmentId,
+      });
+      if (occupied) {
+        return {
+          error: "That stylist already has a client in the chair",
+          status: 409 as const,
+        };
+      }
+      const shifted = earlySeatWindow(current.startsAt, current.endsAt);
+      if (shifted) {
+        data.startsAt = shifted.startsAt;
+        data.endsAt = shifted.endsAt;
+      }
+    }
+  }
 
   if (opts.status === "COMPLETED") {
     if (opts.chargedCents == null || !Number.isFinite(opts.chargedCents) || opts.chargedCents < 0) {

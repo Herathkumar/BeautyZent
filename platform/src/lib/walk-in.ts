@@ -8,6 +8,7 @@ import {
   zonedDateTime,
 } from "@/lib/salon-time";
 import { isE2eFixtureStylist } from "@/lib/display-schedule";
+import { stylistChairOccupied } from "@/lib/complete-appointment";
 
 function ceilToMinutes(d: Date, stepMin: number) {
   const ms = stepMin * 60_000;
@@ -225,6 +226,20 @@ export async function createWalkInAppointment(opts: {
     return { error: "Stylist already booked at that time", status: 409 as const };
   }
 
+  const status = opts.status === "BOOKED" ? "BOOKED" : "CHECKED_IN";
+  if (status === "CHECKED_IN") {
+    const seated = await stylistChairOccupied({
+      salonId: opts.salonId,
+      stylistId: stylist.id,
+    });
+    if (seated) {
+      return {
+        error: "That stylist already has a client in the chair",
+        status: 409 as const,
+      };
+    }
+  }
+
   const name = opts.clientName.trim() || "Walk-in";
   const phone = (opts.clientPhone || "").trim() || null;
 
@@ -248,8 +263,6 @@ export async function createWalkInAppointment(opts: {
       data: { name },
     });
   }
-
-  const status = opts.status === "BOOKED" ? "BOOKED" : "CHECKED_IN";
 
   // Never include image/photo Bytes — they balloon JSON and freeze the floor on "Seating…"
   const appointment = await prisma.appointment.create({

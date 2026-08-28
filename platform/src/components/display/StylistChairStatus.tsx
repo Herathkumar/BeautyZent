@@ -24,7 +24,7 @@ export function StylistNeonArrow() {
         </marker>
       </defs>
       <path
-        d="M2 42c14 2 26-8 36-24 5-8 12-15 22-16"
+        d="M4 24c16 1 28-4 56-4"
         stroke="currentColor"
         strokeWidth="2.4"
         strokeLinecap="round"
@@ -206,27 +206,32 @@ export function StylistChairStatus({
   guestName,
   dropActive,
   dropTarget,
+  variant = "portrait",
 }: {
   wait: StylistWaitInfo;
   guestName?: string | null;
   dropActive?: boolean;
   dropTarget?: boolean;
+  variant?: "portrait" | "lounge";
 }) {
   const caption = stylistChairCaption(wait, guestName);
   const seated = wait.kind === "waiting" && Boolean(guestName);
   const aria = seated ? `${caption} in chair` : caption;
+  const lounge = variant === "lounge";
 
   return (
     <div
       data-testid="customer-stylist-wait"
       data-wait-kind={wait.kind}
-      className={`customer-stylist-chair ${customerWaitToneClass(wait.kind)}${dropActive ? " customer-stylist-chair--drop-hot" : ""}${dropTarget ? " customer-stylist-chair--drop-target" : ""}`}
+      className={`customer-stylist-chair ${customerWaitToneClass(wait.kind)}${lounge ? " customer-stylist-chair--lounge" : ""}${dropActive ? " customer-stylist-chair--drop-hot" : ""}${dropTarget ? " customer-stylist-chair--drop-target" : ""}`}
       title={wait.label}
       aria-label={aria}
     >
+      {lounge ? <span className="customer-stylist-chair__dot" aria-hidden /> : null}
+      {lounge ? <span className="customer-stylist-chair__label">{caption}</span> : null}
       <BarberChairIllustration />
-      <span className="customer-stylist-chair__label">{caption}</span>
-      <span className="customer-stylist-chair__flare" aria-hidden />
+      {lounge ? null : <span className="customer-stylist-chair__label">{caption}</span>}
+      {lounge ? null : <span className="customer-stylist-chair__flare" aria-hidden />}
     </div>
   );
 }

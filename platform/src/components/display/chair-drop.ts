@@ -5,6 +5,8 @@ export type ChairDrag = {
   stylistId: string;
   stylistName: string;
   label: string;
+  service?: string;
+  time?: string;
   x: number;
   y: number;
   overStylistId: string | null;

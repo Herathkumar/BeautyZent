@@ -25,7 +25,7 @@ export type DisplayAppt = {
     visitCount?: number;
     recentVisits?: { serviceName: string; date: string }[];
   };
-  service: { name: string; priceCents?: number; category?: string };
+  service: { id?: string; name: string; priceCents?: number; category?: string; durationMin?: number };
   stylist: { id?: string; name: string; color: string; photoUrl?: string; bio?: string | null };
 };
 
@@ -313,13 +313,74 @@ export function canChairCheckIn(status: string) {
   return status === "BOOKED";
 }
 
-/** Own chair always accepts a booked card; other chairs only when Available. */
-export function chairAcceptsDrop(kind: StylistWaitKind, sameStylist: boolean) {
-  if (sameStylist) return true;
+/** A chair only accepts a booked card when it is Available. */
+export function chairAcceptsDrop(kind: StylistWaitKind, _sameStylist?: boolean) {
   return kind === "available";
 }
 
-/** Pixel box for a timeline card. CHECKED_IN fills from Now to the booked end. */
+/** ~3 hour window around now, snapped to :00 / :30, inside store hours. */
+export function loungeTimeWindow(nowMin: number, openMin: number, closeMin: number) {
+  const span = 180;
+  const aligned = Math.floor(nowMin / 30) * 30;
+  let start = Math.max(openMin, aligned - 60);
+  let end = start + span;
+  if (end > closeMin) {
+    end = closeMin;
+    start = Math.max(openMin, end - span);
+  }
+  if (end <= start) end = start + 30;
+  const marks: number[] = [];
+  for (let t = start; t <= end; t += 30) marks.push(t);
+  return { start, end, marks };
+}
+
+export function loungeFloorStats(waits: Pick<StylistWaitInfo, "kind" | "waitMs">[]) {
+  const active = waits.filter((w) => w.kind !== "closed" && w.kind !== "done");
+  const availableCount = waits.filter((w) => w.kind === "available").length;
+  const nextWaitMs = active.length ? Math.min(...active.map((w) => w.waitMs)) : 0;
+  const avgWaitMs = active.length
+    ? Math.round(active.reduce((sum, w) => sum + w.waitMs, 0) / active.length)
+    : 0;
+  return { availableCount, total: waits.length, nextWaitMs, avgWaitMs };
+}
+
+export function loungeStatusLine(
+  storeClosed: boolean,
+  stats: { availableCount: number; total: number }
+) {
+  if (storeClosed) return "Closed today";
+  if (stats.availableCount === stats.total && stats.total > 0) {
+    return "All stylists available • Walk-ins welcome";
+  }
+  if (stats.availableCount === 0) return "All chairs busy • Next opening soon";
+  return `${stats.availableCount} chair${stats.availableCount === 1 ? "" : "s"} open • Walk-ins welcome`;
+}
+
+export function formatWaitMinutes(ms: number) {
+  return `${Math.max(0, Math.ceil(ms / 60_000))} min`;
+}
+
+/**
+ * If the guest sits before the booked start, slide the window so duration
+ * stays the same (a 5–6pm cut seated at 4pm becomes 4–5pm, not 4–6pm).
+ */
+export function earlySeatWindow(
+  startsAt: Date | string,
+  endsAt: Date | string,
+  now: Date = new Date()
+): { startsAt: Date; endsAt: Date } | null {
+  const start = startsAt instanceof Date ? startsAt : new Date(startsAt);
+  const end = endsAt instanceof Date ? endsAt : new Date(endsAt);
+  const durationMs = end.getTime() - start.getTime();
+  if (!Number.isFinite(durationMs) || durationMs <= 0) return null;
+  if (now.getTime() >= start.getTime()) return null;
+  return {
+    startsAt: now,
+    endsAt: new Date(now.getTime() + durationMs),
+  };
+}
+
+/** Pixel box for a timeline card. CHECKED_IN fills from Now for the booked duration. */
 export function timelineCardBox(
   appt: Pick<DisplayAppt, "startsAt" | "endsAt" | "status">,
   now: Date,
@@ -332,6 +393,7 @@ export function timelineCardBox(
   const startMin = clockParts(appt.startsAt, timeZone).minutes;
   let endMin = clockParts(appt.endsAt, timeZone).minutes;
   if (endMin <= startMin) endMin += 24 * 60;
+  const durationMin = endMin - startMin;
   const nowMin = clockParts(now.toISOString(), timeZone).minutes;
   const closeMin = openMin + spanMin;
   const onChair = appt.status === "CHECKED_IN";
@@ -344,7 +406,8 @@ export function timelineCardBox(
     // Stay inside today's open hours so a late-night / early-morning check-in
     // cannot paint a card above the stylist + chair header.
     visStart = Math.min(Math.max(nowMin, openMin), closeMin);
-    visEnd = endMin;
+    // Early seat: keep the booked length. Late seat: remaining time to endsAt.
+    visEnd = visStart < startMin ? visStart + durationMin : endMin;
     if (visEnd <= visStart) {
       return { top: clampTop(toY(visStart)), height: minHeight, onChair: true };
     }

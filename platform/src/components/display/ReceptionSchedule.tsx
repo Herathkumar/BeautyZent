@@ -2,19 +2,17 @@
 
 import { useEffect, useRef, useState } from "react";
 import { hitChairDrop, resolveDropTarget, type ChairDrag } from "@/components/display/chair-drop";
-import { StylistChairStatus, customerWaitToneClass } from "@/components/display/StylistChairStatus";
+import { StylistChairStatus } from "@/components/display/StylistChairStatus";
+import { useConfirm } from "@/components/ConfirmDialog";
 import {
   canChairCheckIn,
   chairAcceptsDrop,
   clockParts,
-  firstName,
   formatClock,
   formatHourLabel,
   hourMarks,
   HOUR_PX,
   initials,
-  serviceCardTone,
-  serviceKind,
   statusLabel,
   stylistChairVisual,
   stylistCurrentGuest,
@@ -26,36 +24,6 @@ import {
   type DisplayAppt,
   type DisplayStylist,
 } from "@/lib/display-schedule";
-
-function ServiceGlyph({ name }: { name: string }) {
-  const kind = serviceKind(name);
-  const cls = "h-3.5 w-3.5 shrink-0 opacity-90";
-  if (kind === "color") {
-    return (
-      <svg className={cls} viewBox="0 0 24 24" fill="none" aria-hidden>
-        <path
-          d="M12 3c2 3.5 6 7 6 11a6 6 0 1 1-12 0c0-4 4-7.5 6-11Z"
-          stroke="currentColor"
-          strokeWidth="1.8"
-        />
-      </svg>
-    );
-  }
-  if (kind === "style") {
-    return (
-      <svg className={cls} viewBox="0 0 24 24" fill="none" aria-hidden>
-        <path d="M4 7h16M6 12h12M8 17h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      </svg>
-    );
-  }
-  return (
-    <svg className={cls} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <circle cx="6.5" cy="7" r="2.4" stroke="currentColor" strokeWidth="1.6" />
-      <circle cx="17.5" cy="7" r="2.4" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M8.4 8.6 12 14l3.6-5.4M12 14v6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    </svg>
-  );
-}
 
 export function ReceptionSchedule({
   appointments,
@@ -69,6 +37,7 @@ export function ReceptionSchedule({
   compact = false,
   storeClosed = false,
   onCheckIn,
+  onCheckout,
 }: {
   appointments: DisplayAppt[];
   stylists: DisplayStylist[];
@@ -82,10 +51,12 @@ export function ReceptionSchedule({
   compact?: boolean;
   storeClosed?: boolean;
   onCheckIn?: (payload: { appointmentId: string; targetStylistId: string }) => void;
+  onCheckout?: (appt: DisplayAppt) => void;
 }) {
   const hours = hourMarks(openHour, closeHour);
+  const hourPx = compact ? HOUR_PX : 88;
   const spanMin = Math.max(60, (closeHour - openHour) * 60);
-  const height = hours.length * HOUR_PX;
+  const height = hours.length * hourPx;
   const openMin = openHour * 60;
   const nowMin = clockParts(now.toISOString(), timeZone).minutes;
   const nowTop = ((nowMin - openMin) / spanMin) * height;
@@ -144,7 +115,9 @@ export function ReceptionSchedule({
       apptId: start.appt.id,
       stylistId: start.stylist.id,
       stylistName: start.stylist.name,
-      label: firstName(start.appt.client.name),
+      label: start.appt.client.name,
+      service: start.appt.service.name,
+      time: `${formatClock(start.appt.startsAt, timeZone)}–${formatClock(start.appt.endsAt, timeZone)}`,
       x: e.clientX,
       y: e.clientY,
       overStylistId: over,
@@ -168,15 +141,40 @@ export function ReceptionSchedule({
 
   const cols = compact
     ? "3.25rem minmax(0, 1fr)"
-    : `3.5rem repeat(${columns.length}, minmax(${showChairs ? "9.5rem" : "9rem"}, 1fr))`;
-  const minW = compact ? "min-w-0" : showChairs ? "min-w-[780px]" : "min-w-[720px]";
+    : `4.25rem repeat(${columns.length}, minmax(12rem, 1fr))`;
+  const minW = compact ? "min-w-0" : "min-w-[920px]";
+  const dayTitle = now.toLocaleDateString("en-CA", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <div ref={bodyRef} className="min-h-0 flex-1 overflow-auto">
+    <div className="flex h-full min-h-0 flex-1 flex-col">
+      {showChairs ? (
+        <div className="reception-cal-toolbar">
+          <h2 className="reception-cal-toolbar__title">Today · {dayTitle}</h2>
+          <button
+            type="button"
+            className="reception-cal-toolbar__today"
+            onClick={() => {
+              const el = bodyRef.current;
+              if (!el || !showNow) return;
+              el.scrollTo({ top: Math.max(0, nowTop - el.clientHeight * 0.35), behavior: "smooth" });
+            }}
+          >
+            Today
+          </button>
+        </div>
+      ) : null}
+      <div
+        ref={bodyRef}
+        data-testid="reception-cal-scroll"
+        className={`reception-cal-scroll min-h-0 flex-1 ${showChairs ? "reception-cal-body" : ""}`}
+      >
         <div
           className={`relative grid ${minW}`}
-          style={{ gridTemplateColumns: cols, gridTemplateRows: "auto 1fr" }}
+          style={{ gridTemplateColumns: cols, gridTemplateRows: "auto auto" }}
         >
           <div className="sticky top-0 z-40 col-start-1 row-start-1 bg-[var(--rx-bg)]" />
           <div className="relative col-start-1 row-start-2" style={{ height }}>
@@ -184,14 +182,14 @@ export function ReceptionSchedule({
               <p
                 key={h}
                 className="absolute right-2 text-[10px] text-[color:var(--rx-faint)] tabular-nums"
-                style={{ top: i * HOUR_PX - 5 }}
+                style={{ top: i * hourPx - 5 }}
               >
                 {formatHourLabel(h)}
               </p>
             ))}
             <p
               className="absolute right-2 text-[10px] text-[color:var(--rx-faint)] tabular-nums"
-              style={{ top: hours.length * HOUR_PX - 5 }}
+              style={{ top: hours.length * hourPx - 5 }}
             >
               {formatHourLabel(closeHour)}
             </p>
@@ -230,12 +228,17 @@ export function ReceptionSchedule({
                   className="pointer-events-none absolute inset-y-0 left-0 z-30 w-px bg-[color:var(--rx-line)]"
                 />
                 {showChairs ? (
-                  <div
-                    className={`sticky top-0 z-40 bg-[var(--rx-bg)] px-2 pt-3 pb-2 ${customerWaitToneClass(visual.kind)}`}
-                  >
-                    <div className="flex flex-col items-center text-center">
+                  <div className="sticky top-0 z-40 bg-[var(--rx-bg)] px-1.5 pt-2 pb-3">
+                    <div
+                      data-testid="stylist-chair-drop"
+                      data-chair-drop={stylist.id}
+                      data-chair-name={stylist.name}
+                      data-chair-kind={visual.kind}
+                      className={`reception-stylist-card customer-stylist-chair-drop${dropTarget ? " is-drop-target" : ""}${dropHot ? " is-hot" : ""}`}
+                    >
+                      {dropHot ? <span className="reception-stylist-card__drop">Drop here ↓</span> : null}
                       <div
-                        className={`customer-stylist-photo-ring h-12 w-12 shrink-0 overflow-hidden rounded-full ring-offset-2 ring-offset-[var(--rx-bg)] ${stylistStatusRingClass(
+                        className={`customer-stylist-photo-ring h-14 w-14 shrink-0 overflow-hidden rounded-full ring-offset-2 ring-offset-[var(--rx-panel)] ${stylistStatusRingClass(
                           visual.kind
                         )}`}
                         data-testid="stylist-status-ring"
@@ -249,23 +252,16 @@ export function ReceptionSchedule({
                           className="h-full w-full object-cover"
                         />
                       </div>
-                      <p className="mt-1.5 truncate text-sm font-semibold text-[color:var(--rx-text)]">
+                      <p className="mt-2 max-w-full truncate text-sm font-semibold text-[color:var(--rx-text)]">
                         {stylist.name}
                       </p>
-                      <div
-                        data-testid="stylist-chair-drop"
-                        data-chair-drop={stylist.id}
-                        data-chair-name={stylist.name}
-                        data-chair-kind={visual.kind}
-                        className={`customer-stylist-chair-drop${dropTarget ? " is-drop-target" : ""}${dropHot ? " is-hot" : ""}`}
-                      >
-                        <StylistChairStatus
-                          wait={chairWait}
-                          guestName={visual.guestName}
-                          dropActive={dropHot}
-                          dropTarget={dropTarget && !dropHot}
-                        />
-                      </div>
+                      <StylistChairStatus
+                        variant="lounge"
+                        wait={chairWait}
+                        guestName={visual.guestName}
+                        dropActive={dropHot}
+                        dropTarget={dropTarget && !dropHot}
+                      />
                     </div>
                   </div>
                 ) : (
@@ -291,12 +287,12 @@ export function ReceptionSchedule({
                     <p className="truncate text-sm font-semibold text-[color:var(--rx-text)]">{stylist.name}</p>
                   </div>
                 )}
-                <div className="relative overflow-hidden" style={{ height }}>
+                <div className="relative" style={{ height }}>
                   {hours.map((h, i) => (
                     <div
                       key={h}
                       className="pointer-events-none absolute inset-x-0 border-t border-[color:var(--rx-line)]"
-                      style={{ top: i * HOUR_PX }}
+                      style={{ top: i * hourPx }}
                     />
                   ))}
                   {items.map((a) => {
@@ -309,28 +305,29 @@ export function ReceptionSchedule({
                         data-testid="reception-appt-card"
                         data-appt-status={a.status}
                         data-appt-id={a.id}
-                        className={`absolute inset-x-1.5 z-10 overflow-hidden rounded-xl px-2.5 py-1.5 text-left shadow-md ${serviceCardTone(
-                          a.service.name
-                        )} ${selected ? "ring-2 ring-[color:var(--rx-accent)]" : ""}${
-                          checkIn ? " customer-appt-card--draggable" : ""
-                        }${drag?.apptId === a.id ? " customer-appt-card--dragging" : ""}`}
+                        className={`reception-cal-card absolute inset-x-1.5 z-10 overflow-hidden text-left${
+                          selected ? " is-selected" : ""
+                        }${checkIn ? " customer-appt-card--draggable" : ""}${
+                          drag?.apptId === a.id ? " customer-appt-card--dragging" : ""
+                        }${a.status === "CHECKED_IN" ? " is-checked-in" : " is-booked"}`}
                         style={{
                           top: box.top,
                           height: box.height,
-                          touchAction: checkIn ? "none" : undefined,
+                          touchAction: drag?.apptId === a.id ? "none" : "pan-x pan-y",
                         }}
                         data-on-chair={box.onChair ? "true" : undefined}
                         title={`${formatClock(a.startsAt, timeZone)} · ${a.service.name}${
-                          checkIn ? " · Drag onto chair to check in" : ""
+                          checkIn ? " · Drag onto a stylist to check in" : ""
                         }`}
                         onPointerDown={checkIn ? (e) => onCardPointerDown(e, a, stylist) : undefined}
                         onPointerMove={checkIn ? onCardPointerMove : undefined}
                         onPointerUp={checkIn ? onCardPointerUp : undefined}
                         onPointerCancel={checkIn ? onCardPointerUp : undefined}
                       >
+                        {drag?.apptId === a.id ? <span className="reception-cal-card__ghost" aria-hidden /> : null}
                         <button
                           type="button"
-                          className="block h-full w-full text-left"
+                          className="relative z-10 block h-full w-full px-2.5 py-1.5 text-left"
                           onClick={() => {
                             if (suppressClick.current) {
                               suppressClick.current = false;
@@ -339,15 +336,36 @@ export function ReceptionSchedule({
                             onSelect(a);
                           }}
                         >
-                          <p className="flex items-center gap-1.5 truncate text-sm font-semibold">
-                            <ServiceGlyph name={a.service.name} />
-                            {a.client.name}
+                          <p className="flex items-center gap-1.5 text-sm font-semibold text-[color:var(--rx-text)]">
+                            <span className="reception-cal-card__avatar">{initials(a.client.name)}</span>
+                            <span className="min-w-0 flex-1 truncate">{a.client.name}</span>
+                            <span
+                              className={`reception-cal-card__status is-${a.status.toLowerCase()}`}
+                            >
+                              {a.status === "CHECKED_IN" ? "Checked in" : statusLabel(a.status)}
+                            </span>
                           </p>
-                          <p className="truncate text-[11px] opacity-90">{a.service.name}</p>
-                          <span className="mt-1 inline-block rounded-full bg-white/20 px-1.5 py-0.5 text-[9px] font-bold tracking-wide uppercase">
-                            {box.onChair ? "On Chair" : statusLabel(a.status)}
-                          </span>
+                          <p className="mt-0.5 truncate text-[11px] text-[color:var(--rx-muted)]">
+                            {a.service.name}
+                          </p>
+                          <p className="mt-0.5 truncate text-[10px] text-[color:var(--rx-faint)]">
+                            {formatClock(a.startsAt, timeZone)}–{formatClock(a.endsAt, timeZone)}
+                          </p>
                         </button>
+                        {showChairs && onCheckout && a.status === "CHECKED_IN" ? (
+                          <button
+                            type="button"
+                            className="reception-cal-card__pay"
+                            data-testid="reception-card-checkout"
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onCheckout(a);
+                            }}
+                          >
+                            Checkout
+                          </button>
+                        ) : null}
                       </article>
                     );
                   })}
@@ -360,12 +378,12 @@ export function ReceptionSchedule({
               className="pointer-events-none relative z-10 col-start-2 col-end-[-1] row-start-2"
               style={{ height }}
             >
-              <div className="absolute inset-x-0 h-px bg-[#c45b7a]" style={{ top: nowTop }} />
+              <div className="absolute inset-x-0 h-px bg-[var(--rx-accent)]" style={{ top: nowTop }} />
               <span
-                className="absolute right-2 flex items-center gap-1 text-[10px] font-bold tracking-[0.18em] text-[#c45b7a] uppercase"
+                className="absolute right-2 flex items-center gap-1 text-[10px] font-bold tracking-[0.18em] text-[color:var(--rx-accent)] uppercase"
                 style={{ top: nowTop, transform: "translateY(-50%)" }}
               >
-                <span className="h-2 w-2 rounded-full bg-[#c45b7a]" />
+                <span className="h-2 w-2 rounded-full bg-[var(--rx-accent)]" />
                 Now
               </span>
             </div>
@@ -373,11 +391,40 @@ export function ReceptionSchedule({
         </div>
       </div>
       {drag ? (
-        <div className="customer-appt-drag-ghost" style={{ left: drag.x, top: drag.y }} aria-hidden>
-          {drag.label}
+        <div className="reception-drag-ghost" style={{ left: drag.x, top: drag.y }} aria-hidden>
+          <p className="font-semibold">{drag.label}</p>
+          {drag.service ? <p className="text-[11px] opacity-80">{drag.service}</p> : null}
+          {drag.time ? <p className="text-[10px] opacity-70">{drag.time}</p> : null}
         </div>
       ) : null}
     </div>
+  );
+}
+
+function QuickActionIcon({ kind }: { kind: "checkin" | "reschedule" | "noshow" }) {
+  if (kind === "checkin") {
+    return (
+      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <circle cx="12" cy="12" r="8.25" stroke="currentColor" strokeWidth="1.6" />
+        <path d="M8 12.2 10.6 15 16 9.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+  if (kind === "reschedule") {
+    return (
+      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <rect x="4" y="5.5" width="16" height="14" rx="2.2" stroke="currentColor" strokeWidth="1.6" />
+        <path d="M8 4v3.5M16 4v3.5M4 10h16" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+        <path d="M9 15h3.2M15.2 13.2 17 15l-1.8 1.8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+  return (
+    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="10" cy="8" r="2.4" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M5.5 18c.5-2.6 2.4-4 4.5-4s4 1.4 4.5 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M16.2 8.2 20 12M20 8.2 16.2 12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
   );
 }
 
@@ -386,149 +433,130 @@ export function ReceptionClientPanel({
   onClose,
   onStatus,
   onCheckout,
+  onReschedule,
   busyId,
   checkoutBusy,
   checkoutError,
+  checkInError,
+  chairOccupied,
 }: {
   appt: DisplayAppt | null;
   onClose: () => void;
   onStatus: (id: string, status: string, chargedCents?: number, tipCents?: number) => void;
   onCheckout?: (appt: DisplayAppt) => void;
+  onReschedule?: (appt: DisplayAppt) => void;
   busyId?: string | null;
   checkoutBusy?: boolean;
   checkoutError?: string;
+  checkInError?: string;
+  chairOccupied?: boolean;
 }) {
-  if (!appt) {
-    return (
-      <aside
-        className="flex h-full min-h-[24rem] flex-col justify-center bg-[var(--rx-panel)] px-6 text-center text-sm text-[color:var(--rx-faint)]"
-        data-testid="reception-client-panel"
-      >
-        Select a booking to see client details.
-      </aside>
-    );
+  const confirm = useConfirm();
+  const booked = appt?.status === "BOOKED";
+  const open = appt && ["BOOKED", "CHECKED_IN"].includes(appt.status);
+
+  async function markNoShow() {
+    if (!appt) return;
+    const ok = await confirm({
+      title: "Mark no-show?",
+      message: `${appt.client.name} will be marked as a no-show.`,
+      confirmLabel: "No-show",
+    });
+    if (ok) onStatus(appt.id, "NO_SHOW");
   }
-  const vip = (appt.client.visitCount || 0) >= 8;
-  const since = appt.client.createdAt
-    ? new Date(appt.client.createdAt).toLocaleDateString("en-CA", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })
-    : "—";
-  const visits = appt.client.recentVisits || [];
 
   return (
-    <aside
-      className="flex h-full min-h-[24rem] flex-col bg-[var(--rx-panel)] px-5 py-5"
-      data-testid="reception-client-panel"
-    >
-      <div className="mb-5 flex items-start justify-between">
-        <p className="text-sm font-semibold text-[color:var(--rx-text)]">Client Details</p>
-        <button type="button" onClick={onClose} className="text-lg leading-none text-[color:var(--rx-faint)] hover:text-[color:var(--rx-text)]" aria-label="Close">
-          ×
-        </button>
-      </div>
-
-      <div className="flex gap-3">
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#c45b7a] text-base font-bold text-white">
-          {initials(appt.client.name)}
-        </div>
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="truncate text-base font-semibold text-[color:var(--rx-text)]">{appt.client.name}</h3>
-            {vip ? (
-              <span className="rounded-full bg-[#6b4a9a] px-2 py-0.5 text-[10px] font-bold tracking-wide text-[#e9d5ff] uppercase">
-                VIP Client
-              </span>
-            ) : null}
-          </div>
-          {appt.client.email ? <p className="mt-1 truncate text-xs text-[color:var(--rx-muted)]">{appt.client.email}</p> : null}
-          {appt.client.phone ? <p className="truncate text-xs text-[color:var(--rx-muted)]">{appt.client.phone}</p> : null}
-        </div>
-      </div>
-
-      <div className="mt-5 grid grid-cols-2 gap-3 border-y border-[color:var(--rx-line)] py-4">
-        <div>
-          <p className="text-[10px] font-semibold tracking-wide text-[color:var(--rx-faint)] uppercase">Client Since</p>
-          <p className="mt-1 text-sm text-[color:var(--rx-text-80)]">{since}</p>
-        </div>
-        <div>
-          <p className="text-[10px] font-semibold tracking-wide text-[color:var(--rx-faint)] uppercase">Total Visits</p>
-          <p className="mt-1 text-sm text-[color:var(--rx-text-80)]">{appt.client.visitCount ?? 0}</p>
-        </div>
-      </div>
-
-      <div className="mt-4">
-        <p className="mb-1.5 flex items-center justify-between text-[10px] font-semibold tracking-wide text-[color:var(--rx-faint)] uppercase">
-          Notes
-          <span aria-hidden>✎</span>
-        </p>
-        <p className="rounded-2xl bg-[var(--rx-input)] p-3 text-sm leading-relaxed text-[color:var(--rx-text-80)]">
-          {appt.client.notes || appt.notes || "No notes yet."}
-        </p>
-      </div>
-
-      <div className="mt-5 min-h-0 flex-1">
-        <p className="mb-2 text-[10px] font-semibold tracking-wide text-[color:var(--rx-faint)] uppercase">Recent Visits</p>
-        {visits.length === 0 ? (
-          <p className="text-sm text-[color:var(--rx-faint)]">No completed visits yet.</p>
-        ) : (
-          <ul className="space-y-2">
-            {visits.map((v, i) => (
-              <li key={`${v.date}-${i}`} className="flex items-center justify-between gap-2 text-sm">
-                <div>
-                  <p className="text-[color:var(--rx-text-80)]">{v.serviceName}</p>
-                  <p className="text-[11px] text-[color:var(--rx-faint)]">
-                    {new Date(v.date).toLocaleDateString("en-CA", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                  </p>
-                </div>
-                <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold tracking-wide text-emerald-300 uppercase">
-                  Completed
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      <div className="mt-4 grid gap-2">
-        {appt.status === "BOOKED" ? (
-          <button
-            type="button"
-            disabled={busyId === appt.id}
-            onClick={() => onStatus(appt.id, "CHECKED_IN")}
-            className="rounded-2xl bg-[#c45b7a] py-3 text-sm font-semibold text-white disabled:opacity-60"
-          >
-            {busyId === appt.id ? "Checking in…" : "Check-in"}
+    <aside className="reception-quick" data-testid="reception-client-panel">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="reception-quick__title">Quick Actions</h2>
+        {appt ? (
+          <button type="button" onClick={onClose} className="text-lg leading-none text-[color:var(--rx-faint)] hover:text-[color:var(--rx-text)]" aria-label="Close">
+            ×
           </button>
         ) : null}
-        <a
-          href="/manager/appointments"
-          className="rounded-2xl border border-[color:var(--rx-line)] py-3 text-center text-sm font-semibold text-[color:var(--rx-text-80)]"
+      </div>
+
+      {appt ? (
+        <div className="mb-4 flex items-center gap-3 rounded-2xl bg-[var(--rx-input)] px-3 py-2.5">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--rx-accent)] text-xs font-bold text-white">
+            {initials(appt.client.name)}
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-[color:var(--rx-text)]">{appt.client.name}</p>
+            <p className="truncate text-[11px] text-[color:var(--rx-muted)]">{appt.service.name}</p>
+          </div>
+        </div>
+      ) : (
+        <p className="mb-4 text-sm text-[color:var(--rx-faint)]">Select a booking, or drag it onto a stylist to check in.</p>
+      )}
+
+      <div className="grid gap-2.5">
+        <button
+          type="button"
+          disabled={!booked || chairOccupied || busyId === appt?.id}
+          onClick={() => appt && onStatus(appt.id, "CHECKED_IN")}
+          className="reception-quick__btn"
         >
-          Reschedule
-        </a>
-        {["BOOKED", "CHECKED_IN"].includes(appt.status) ? (
+          <span className="reception-quick__icon"><QuickActionIcon kind="checkin" /></span>
+          <span>
+            <strong>Check-in</strong>
+            <span aria-hidden>
+              {chairOccupied
+                ? "Chair occupied — use an available stylist"
+                : "Mark client as arrived"}
+            </span>
+          </span>
+        </button>
+        <button
+          type="button"
+          disabled={!open}
+          onClick={() => appt && onReschedule?.(appt)}
+          className="reception-quick__btn"
+          data-testid="reception-reschedule-open"
+        >
+          <span className="reception-quick__icon"><QuickActionIcon kind="reschedule" /></span>
+          <span>
+            <strong>Reschedule</strong>
+            <span aria-hidden>Move booking to new time</span>
+          </span>
+        </button>
+        <button type="button" disabled={!open} onClick={() => void markNoShow()} className="reception-quick__btn">
+          <span className="reception-quick__icon"><QuickActionIcon kind="noshow" /></span>
+          <span>
+            <strong>No-show</strong>
+            <span aria-hidden>Mark client as no-show</span>
+          </span>
+        </button>
+        {open ? (
           <button
             type="button"
             disabled={checkoutBusy}
-            onClick={() => onCheckout?.(appt)}
-            className="rounded-2xl bg-[#1f6b5a] py-3 text-sm font-semibold text-white disabled:opacity-60"
+            onClick={() => appt && onCheckout?.(appt)}
+            className="reception-quick__btn reception-quick__btn--checkout"
             data-testid="reception-checkout"
           >
-            {checkoutBusy ? "Opening…" : "Checkout"}
+            <span>
+              <strong>{checkoutBusy ? "Opening…" : "Checkout"}</strong>
+              <span aria-hidden>Take payment at the desk</span>
+            </span>
           </button>
+        ) : (
+          <p className="text-sm text-[color:var(--rx-faint)]">Tap a booking on the calendar, then Checkout.</p>
+        )}
+        {checkInError ? (
+          <p className="text-center text-xs text-[#c45b7a]" data-testid="reception-checkin-error">
+            {checkInError}
+          </p>
         ) : null}
         {checkoutError ? (
-          <p className="text-center text-xs text-[#f5a8a8]" data-testid="reception-checkout-error">
+          <p className="text-center text-xs text-[#c45b7a]" data-testid="reception-checkout-error">
             {checkoutError}
           </p>
         ) : null}
+      </div>
+
+      <div className="reception-quick__tip">
+        <p>Drag bookings onto an available stylist to check in</p>
       </div>
     </aside>
   );

@@ -22,6 +22,7 @@ export async function GET(
   const stylistId = url.searchParams.get("stylistId");
   const serviceIds = parseServiceIds(url);
   const date = url.searchParams.get("date");
+  const exceptId = url.searchParams.get("exceptId")?.trim() || undefined;
   if (!stylistId || serviceIds.length === 0 || !date) {
     return NextResponse.json(
       { error: "stylistId, serviceId(s), date required" },
@@ -66,6 +67,7 @@ export async function GET(
         stylistId: sid,
         serviceIds,
         date,
+        ignoreAppointmentId: exceptId,
       });
       for (const start of slots) {
         if (!byStart.has(start)) byStart.set(start, sid);
@@ -85,6 +87,7 @@ export async function GET(
     stylistId,
     serviceIds,
     date,
+    ignoreAppointmentId: exceptId,
   });
 
   return NextResponse.json({ slots, timezone: salon.timezone, anyStylist: false });

@@ -82,7 +82,15 @@ export default async function SalonDetailPage({
             rel="noreferrer"
             className="rounded-full border border-ink/20 px-4 py-2 text-ink-soft hover:border-ink"
           >
-            Tablet display
+            Customer display
+          </a>
+          <a
+            href={`/display/${salon.slug}/reception`}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-full border border-ink/20 px-4 py-2 text-ink-soft hover:border-ink"
+          >
+            Reception desk
           </a>
           <a
             href={`/manager/login?salon=${encodeURIComponent(salon.slug)}`}
