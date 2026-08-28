@@ -1094,21 +1094,21 @@ html.customer-shell--dark body {
   transform: translateY(-100%);
 }
 .reception-cal-empty svg {
-  height: 2.4rem;
-  width: 2.4rem;
-  margin-bottom: 0.65rem;
+  height: 3.25rem;
+  width: 3.25rem;
+  margin-bottom: 0.85rem;
   opacity: 0.45;
 }
 .reception-cal-empty__title {
   font-family: var(--font-display);
-  font-size: 1rem;
+  font-size: 1.5rem;
   color: var(--rx-muted);
 }
 .reception-cal-empty__hint {
-  margin-top: 0.35rem;
-  max-width: 18rem;
-  font-size: 0.78rem;
-  line-height: 1.35;
+  margin-top: 0.45rem;
+  max-width: 26rem;
+  font-size: 0.95rem;
+  line-height: 1.45;
 }
 .reception-cal-empty__hint strong {
   color: var(--rx-text);
