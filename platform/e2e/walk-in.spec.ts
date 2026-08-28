@@ -197,13 +197,23 @@ test.describe("Walk-in appointments", () => {
     await expect(page.getByText(clientName).first()).toBeVisible({ timeout: 10_000 });
   });
 
-  test("reception new booking opens walk-in form", async ({ page }) => {
+  test("reception new booking opens booking modal", async ({ page }) => {
     await adminLogin(page);
     await page.goto("/display/fhsalon/reception");
     await expect(page.getByTestId("store-display-board")).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId("reception-client-panel")).toBeVisible();
     await page.getByTestId("reception-new-booking").click();
-    await expect(page.getByLabel("Walk-in service")).toBeVisible();
+    await expect(page.getByTestId("reception-new-booking-modal")).toBeVisible();
+    await expect(page.getByLabel("Booking service")).toBeVisible();
+  });
+
+  test("reception walk-in opens walk-in modal", async ({ page }) => {
+    await adminLogin(page);
+    await page.goto("/display/fhsalon/reception");
+    await expect(page.getByTestId("store-display-board")).toBeVisible({ timeout: 15_000 });
+    await page.getByTestId("reception-walk-in").click();
+    await expect(page.getByTestId("reception-walk-in-modal")).toBeVisible();
+    await expect(page.getByLabel("Walk-in service")).toBeAttached();
   });
 
   test("display today hides completed bookings", async ({ page }) => {

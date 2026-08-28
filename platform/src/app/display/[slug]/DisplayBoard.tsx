@@ -4,7 +4,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { DisplayPinPad } from "@/components/DisplayPinPad";
 import { PadlockButton } from "@/components/PadlockButton";
-import { WalkInPanel } from "@/components/WalkInPanel";
+import {
+  ReceptionNewBookingModal,
+  ReceptionWalkInModal,
+} from "@/components/display/ReceptionBookingModals";
 import { ZentraLabFooter } from "@/components/ZentraLabFooter";
 import { CustomerCheckoutOverlay } from "@/components/display/CustomerCheckoutOverlay";
 import { CustomerScheduleGrid } from "@/components/display/CustomerScheduleGrid";
@@ -542,7 +545,7 @@ export function DisplayBoard({
   const [days, setDays] = useState(14);
   const [tab, setTab] = useState<Tab>("today");
   const [now, setNow] = useState(() => new Date());
-  const [walkInOpen, setWalkInOpen] = useState(false);
+  const [bookingModal, setBookingModal] = useState<"new" | "walkin" | null>(null);
   const [walkInWaiting, setWalkInWaiting] = useState(0);
   const [query, setQuery] = useState("");
   const [receptionSection, setReceptionSection] = useState<ReceptionSection>("calendar");
@@ -569,10 +572,6 @@ export function DisplayBoard({
   checkoutLiveRef.current = Boolean(checkout && checkout.status !== "PAID") || checkoutBusy;
   const boardDataSeq = useRef(0);
   const receptionSearchRef = useRef<HTMLInputElement>(null);
-
-  const onWaitlistChange = useCallback((count: number) => {
-    setWalkInWaiting(count);
-  }, []);
 
   useEffect(() => {
     setViewOverride(readCustomerDisplayView(slug));
@@ -611,6 +610,26 @@ export function DisplayBoard({
     if (!unlockToken) return {} as Record<string, string>;
     return { "x-display-unlock": unlockToken };
   }, [unlockToken]);
+
+  useEffect(() => {
+    if (variant !== "reception") return;
+    let cancelled = false;
+    async function pollWaitlist() {
+      const res = await fetch(`/api/display/${slug}/waitlist`, {
+        credentials: "same-origin",
+        headers: unlockHeaders,
+      });
+      if (!res.ok || cancelled) return;
+      const data = await res.json().catch(() => ({}));
+      if (!cancelled) setWalkInWaiting((data.waitlist || []).length);
+    }
+    void pollWaitlist();
+    const timer = window.setInterval(pollWaitlist, TODAY_POLL_MS);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [variant, slug, unlockHeaders]);
 
   const checkUnlock = useCallback(async () => {
     try {
@@ -1444,7 +1463,7 @@ export function DisplayBoard({
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => setWalkInOpen(true)}
+                onClick={() => setBookingModal("new")}
                 className="reception-cta reception-cta--new"
                 data-testid="reception-new-booking"
               >
@@ -1452,7 +1471,7 @@ export function DisplayBoard({
               </button>
               <button
                 type="button"
-                onClick={() => setWalkInOpen(true)}
+                onClick={() => setBookingModal("walkin")}
                 className="reception-cta reception-cta--walkin"
                 data-testid="reception-walk-in"
               >
@@ -1491,38 +1510,6 @@ export function DisplayBoard({
               );
             })}
           </nav>
-
-          {walkInOpen ? (
-            <div className="border-b border-[color:var(--rx-line)] bg-[var(--rx-panel)] px-5 py-4">
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-[color:var(--rx-text)]">New booking</h2>
-                <button
-                  type="button"
-                  onClick={() => setWalkInOpen(false)}
-                  className="text-sm text-[color:var(--rx-muted)] hover:text-[color:var(--rx-text)]"
-                >
-                  Close
-                </button>
-              </div>
-              <WalkInPanel
-                mode="display"
-                slug={slug}
-                showForm
-                showWaitlist={false}
-                catalogServices={services.map((s) => ({
-                  id: s.id,
-                  name: s.name,
-                  durationMin: s.durationMin,
-                  priceCents: s.priceCents,
-                }))}
-                onCreated={() => {
-                  setWalkInOpen(false);
-                  void load();
-                }}
-                requestHeaders={unlockHeaders}
-              />
-            </div>
-          ) : null}
 
           <div className="flex min-h-0 min-w-0 flex-1 flex-col xl:flex-row">
             {receptionSection === "calendar" ||
@@ -1570,7 +1557,7 @@ export function DisplayBoard({
                     : undefined
                 }
                 onCheckout={viewingScheduleToday ? presentCheckout : undefined}
-                hideEmptyState={walkInOpen}
+                hideEmptyState={bookingModal !== null}
               />
               </>
               ) : null}
@@ -1685,6 +1672,47 @@ export function DisplayBoard({
           }}
         />
       ) : null}
+      <ReceptionNewBookingModal
+        open={bookingModal === "new"}
+        slug={slug}
+        stylists={floorStylists}
+        clients={receptionClients}
+        services={services.map((s) => ({
+          id: s.id,
+          name: s.name,
+          durationMin: s.durationMin,
+          priceCents: s.priceCents,
+        }))}
+        timeZone={salon?.timezone}
+        todayKey={tKey}
+        unlockHeaders={unlockHeaders}
+        onClose={() => setBookingModal(null)}
+        onCreated={() => {
+          setBookingModal(null);
+          void load();
+        }}
+      />
+      <ReceptionWalkInModal
+        open={bookingModal === "walkin"}
+        slug={slug}
+        stylists={floorStylists}
+        services={services.map((s) => ({
+          id: s.id,
+          name: s.name,
+          durationMin: s.durationMin,
+          priceCents: s.priceCents,
+        }))}
+        todayAppts={todayAppts}
+        openHour={openHour}
+        closeHour={closeHour}
+        timeZone={salon?.timezone}
+        unlockHeaders={unlockHeaders}
+        onClose={() => setBookingModal(null)}
+        onCreated={() => {
+          setBookingModal(null);
+          void load();
+        }}
+      />
         </ReceptionThemeRoot>
     </div>
   );
