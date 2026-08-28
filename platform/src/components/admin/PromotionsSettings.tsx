@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { centsToDollars } from "@/lib/pay";
-import { PROMOTION_RULE_TYPES, type PromotionRuleType } from "@/lib/promotions";
+import {
+  generatePromotionRuleLabel,
+  PROMOTION_RULE_TYPES,
+  type PromotionRuleType,
+} from "@/lib/promotions";
 import { SettingToggle } from "@/components/admin/SettingToggle";
 
 type PromoSettings = {
@@ -41,11 +45,20 @@ export function PromotionsSettings() {
   const [ruleErr, setRuleErr] = useState("");
   const [busy, setBusy] = useState(false);
   const [draftType, setDraftType] = useState<PromotionRuleType>("MEMBER_PERCENT");
-  const [draftName, setDraftName] = useState("Member 10% off");
   const [draftBps, setDraftBps] = useState(1000);
   const [draftCents, setDraftCents] = useState(0);
   const [draftMinVisits, setDraftMinVisits] = useState(5);
   const [draftMinSpend, setDraftMinSpend] = useState(8000);
+  const [draftName, setDraftName] = useState(() =>
+    generatePromotionRuleLabel({
+      type: "MEMBER_PERCENT",
+      discountBps: 1000,
+      discountCents: 0,
+      minVisits: 5,
+      minSpendCents: 8000,
+    })
+  );
+  const [labelCustomized, setLabelCustomized] = useState(false);
 
   const load = useCallback(async () => {
     const res = await fetch("/api/admin/promotions");
@@ -89,6 +102,26 @@ export function PromotionsSettings() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (labelCustomized) return;
+    setDraftName(
+      generatePromotionRuleLabel({
+        type: draftType,
+        discountBps: draftBps,
+        discountCents: draftCents,
+        minVisits: draftMinVisits,
+        minSpendCents: draftMinSpend,
+      })
+    );
+  }, [
+    draftType,
+    draftBps,
+    draftCents,
+    draftMinVisits,
+    draftMinSpend,
+    labelCustomized,
+  ]);
 
   async function saveSettings(e: React.FormEvent) {
     e.preventDefault();
@@ -154,6 +187,7 @@ export function PromotionsSettings() {
         await load();
       }
       setRuleMsg(data.message || "Rule added.");
+      setLabelCustomized(false);
     } catch (error) {
       setRuleErr(error instanceof Error ? error.message : "Could not add rule");
     } finally {
@@ -313,7 +347,10 @@ export function PromotionsSettings() {
               Type
               <select
                 value={draftType}
-                onChange={(e) => setDraftType(e.target.value as PromotionRuleType)}
+                onChange={(e) => {
+                  setDraftType(e.target.value as PromotionRuleType);
+                  setLabelCustomized(false);
+                }}
                 className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-[#2b2521]"
               >
                 {PROMOTION_RULE_TYPES.map((t) => (
@@ -324,12 +361,32 @@ export function PromotionsSettings() {
               </select>
             </label>
             <label className="grid gap-1 text-sm text-[#6b5b52]">
-              Label (shown at checkout)
+              <span className="flex flex-wrap items-center justify-between gap-2">
+                Label (shown at checkout)
+                {labelCustomized ? (
+                  <button
+                    type="button"
+                    className="text-xs text-[#7d6154] underline"
+                    onClick={() => setLabelCustomized(false)}
+                  >
+                    Use auto label
+                  </button>
+                ) : null}
+              </span>
               <input
                 value={draftName}
-                onChange={(e) => setDraftName(e.target.value)}
+                onChange={(e) => {
+                  setDraftName(e.target.value);
+                  setLabelCustomized(true);
+                }}
                 className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-[#2b2521]"
+                data-testid="promotion-rule-label"
               />
+              {!labelCustomized ? (
+                <span className="text-xs text-[#9a8a80]">
+                  Generated from type and discount settings
+                </span>
+              ) : null}
             </label>
             {(draftType === "MEMBER_PERCENT" ||
               draftType === "FIRST_VISIT" ||

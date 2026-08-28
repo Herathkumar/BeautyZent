@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   evaluateCheckoutPromotions,
+  generatePromotionRuleLabel,
   type PromotionRuleRecord,
   type SalonPromoSettings,
 } from "@/lib/promotions";
@@ -25,6 +26,44 @@ const memberRule: PromotionRuleRecord = {
   membersOnly: true,
   sortOrder: 0,
 };
+
+describe("generatePromotionRuleLabel", () => {
+  it("builds member percent label", () => {
+    expect(
+      generatePromotionRuleLabel({
+        type: "MEMBER_PERCENT",
+        discountBps: 1000,
+        discountCents: 0,
+        minVisits: 5,
+        minSpendCents: 8000,
+      })
+    ).toBe("Member 10% off");
+  });
+
+  it("builds visit milestone label", () => {
+    expect(
+      generatePromotionRuleLabel({
+        type: "VISIT_MILESTONE",
+        discountBps: 1500,
+        discountCents: 0,
+        minVisits: 5,
+        minSpendCents: 0,
+      })
+    ).toBe("5th visit 15% off");
+  });
+
+  it("builds min spend flat label", () => {
+    expect(
+      generatePromotionRuleLabel({
+        type: "MIN_SPEND_FLAT",
+        discountBps: 0,
+        discountCents: 500,
+        minVisits: 0,
+        minSpendCents: 8000,
+      })
+    ).toBe("$5 off on $80+ spend");
+  });
+});
 
 describe("evaluateCheckoutPromotions", () => {
   it("applies best member discount before tax base", () => {

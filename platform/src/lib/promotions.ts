@@ -174,6 +174,80 @@ export function evaluateCheckoutPromotions(
   };
 }
 
+export type PromotionRuleLabelInput = {
+  type: PromotionRuleType;
+  discountBps: number;
+  discountCents: number;
+  minVisits: number;
+  minSpendCents: number;
+};
+
+function formatPercent(bps: number) {
+  const pct = Math.max(0, bps) / 100;
+  if (Number.isInteger(pct)) return String(pct);
+  return pct.toFixed(1).replace(/\.0$/, "");
+}
+
+function formatDollarAmount(cents: number) {
+  const n = Math.max(0, Math.round(cents));
+  const dollars = n / 100;
+  return Number.isInteger(dollars) ? String(dollars) : (n / 100).toFixed(2);
+}
+
+function formatPercentOff(bps: number) {
+  return `${formatPercent(bps)}% off`;
+}
+
+function formatFlatOff(cents: number) {
+  return `$${formatDollarAmount(cents)} off`;
+}
+
+function formatMinSpendPhrase(cents: number) {
+  return `$${formatDollarAmount(cents)}+ spend`;
+}
+
+function visitMilestoneLabel(visitNumber: number) {
+  const n = Math.max(1, Math.round(visitNumber));
+  const mod100 = n % 100;
+  const mod10 = n % 10;
+  if (mod100 >= 11 && mod100 <= 13) return `${n}th visit`;
+  if (mod10 === 1) return `${n}st visit`;
+  if (mod10 === 2) return `${n}nd visit`;
+  if (mod10 === 3) return `${n}rd visit`;
+  return `${n}th visit`;
+}
+
+function primaryDiscountPhrase(bps: number, cents: number, preferPercent: boolean) {
+  if (preferPercent && bps > 0) return formatPercentOff(bps);
+  if (cents > 0) return formatFlatOff(cents);
+  if (bps > 0) return formatPercentOff(bps);
+  return "discount";
+}
+
+/** Customer-facing checkout label from rule draft fields. */
+export function generatePromotionRuleLabel(input: PromotionRuleLabelInput): string {
+  const { type, discountBps, discountCents, minVisits, minSpendCents } = input;
+
+  switch (type) {
+    case "MEMBER_PERCENT":
+      return `Member ${formatPercentOff(discountBps)}`;
+    case "FIRST_VISIT":
+      return `First visit ${primaryDiscountPhrase(discountBps, discountCents, discountBps > 0)}`;
+    case "VISIT_MILESTONE":
+      return `${visitMilestoneLabel(minVisits)} ${primaryDiscountPhrase(
+        discountBps,
+        discountCents,
+        true
+      )}`;
+    case "MIN_SPEND_PERCENT":
+      return `${formatPercentOff(discountBps)} on ${formatMinSpendPhrase(minSpendCents)}`;
+    case "MIN_SPEND_FLAT":
+      return `${formatFlatOff(discountCents)} on ${formatMinSpendPhrase(minSpendCents)}`;
+    default:
+      return "Discount";
+  }
+}
+
 export const PROMOTION_RULE_TYPES: {
   value: PromotionRuleType;
   label: string;
