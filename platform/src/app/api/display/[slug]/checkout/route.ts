@@ -5,6 +5,7 @@ import {
   clearCheckout,
   getCheckoutRow,
   loadCheckoutBill,
+  loadPromoBundle,
   settleBill,
   upsertCheckout,
   visitAppointmentIds,
@@ -139,7 +140,22 @@ export async function POST(
       current.bill.tipMode = cents === 0 ? { kind: "none" } : { kind: "custom", cents };
     }
     if (current.status === "VERIFIED") current.status = "PENDING";
-    current.bill = settleBill(current.bill);
+    const promo = await loadPromoBundle(salon.id);
+    current.bill = settleBill(current.bill, current.bill.tipMode, promo);
+    current.chargedCents = current.bill.chargedCents;
+    current.tipCents = current.bill.tipCents;
+    current.updatedAt = new Date();
+    upsertCheckout(current);
+    return NextResponse.json({
+      checkout: await loadCheckoutBill(salon.id),
+    });
+  }
+
+  if (action === "redeem-points") {
+    current.bill.redeemPointsEnabled = Boolean(body.enabled);
+    if (current.status === "VERIFIED") current.status = "PENDING";
+    const promo = await loadPromoBundle(salon.id);
+    current.bill = settleBill(current.bill, current.bill.tipMode, promo);
     current.chargedCents = current.bill.chargedCents;
     current.tipCents = current.bill.tipCents;
     current.updatedAt = new Date();
@@ -190,7 +206,8 @@ export async function POST(
       ];
     }
     if (current.status === "VERIFIED") current.status = "PENDING";
-    current.bill = settleBill(current.bill);
+    const promo = await loadPromoBundle(salon.id);
+    current.bill = settleBill(current.bill, current.bill.tipMode, promo);
     current.chargedCents = current.bill.chargedCents;
     current.tipCents = current.bill.tipCents;
     current.updatedAt = new Date();
@@ -205,7 +222,8 @@ export async function POST(
     current.bill.services = (current.bill.services || []).filter((l) => l.id !== lineId || !l.added);
     current.bill.products = (current.bill.products || []).filter((l) => l.id !== lineId);
     if (current.status === "VERIFIED") current.status = "PENDING";
-    current.bill = settleBill(current.bill);
+    const promo = await loadPromoBundle(salon.id);
+    current.bill = settleBill(current.bill, current.bill.tipMode, promo);
     current.chargedCents = current.bill.chargedCents;
     current.tipCents = current.bill.tipCents;
     current.updatedAt = new Date();
@@ -237,6 +255,7 @@ export async function POST(
     }
     const charged = current.bill.chargedCents;
     const tip = current.bill.tipCents;
+    const bill = current.bill;
 
     for (let i = 0; i < ids.length; i++) {
       const result = await updateAppointmentStatus({
@@ -245,17 +264,40 @@ export async function POST(
         chargedCents: i === 0 ? charged : 0,
         tipCents: i === 0 ? tip : 0,
         chargedByUserId: null,
+        discountCents: i === 0 ? bill.discountCents : 0,
+        discountLabel: i === 0 ? bill.discountLabel : null,
+        loyaltyPointsEarned: i === 0 ? bill.loyaltyPointsEarned : 0,
+        loyaltyPointsRedeemed: i === 0 ? bill.loyaltyPointsRedeemed : 0,
       });
       if ("error" in result) {
         return NextResponse.json({ error: result.error }, { status: result.status });
       }
       void syncAppointmentToGoogle(result.appointment.id).catch(() => null);
     }
+
+    if (bill.clientId && (bill.loyaltyPointsEarned > 0 || bill.loyaltyPointsRedeemed > 0)) {
+      const client = await prisma.client.findFirst({
+        where: { id: bill.clientId, salonId: salon.id },
+        select: { loyaltyPoints: true },
+      });
+      if (client) {
+        const next = Math.max(
+          0,
+          client.loyaltyPoints - bill.loyaltyPointsRedeemed + bill.loyaltyPointsEarned
+        );
+        await prisma.client.update({
+          where: { id: bill.clientId },
+          data: { loyaltyPoints: next },
+        });
+      }
+    }
+
     current.status = "PAID";
     current.chargedCents = charged;
     current.tipCents = tip;
     current.updatedAt = new Date();
-    current.bill = settleBill({ ...current.bill, status: "PAID" });
+    const promo = await loadPromoBundle(salon.id);
+    current.bill = settleBill({ ...current.bill, status: "PAID" }, current.bill.tipMode, promo);
     current.chargedCents = current.bill.chargedCents;
     current.tipCents = current.bill.tipCents;
     upsertCheckout(current);

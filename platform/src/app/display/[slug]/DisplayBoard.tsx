@@ -1670,6 +1670,9 @@ export function DisplayBoard({
           onCancel={() => {
             void checkoutAction({ action: "cancel" });
           }}
+          onRedeemPoints={(enabled) => {
+            void checkoutAction({ action: "redeem-points", enabled });
+          }}
         />
       ) : null}
       <ReceptionNewBookingModal

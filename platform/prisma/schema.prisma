@@ -40,6 +40,12 @@ model Salon {
   /// Default customer TV layout: "lounge" chair cards or "timeline" day schedule.
   /// A tablet can override this locally (see src/lib/customer-display-view.ts).
   displayViewMode  String   @default("lounge")
+  /// Loyalty points earn/redeem at checkout (members only).
+  loyaltyEnabled          Boolean @default(false)
+  discountsEnabled        Boolean @default(false)
+  loyaltyPointsPerDollar  Int     @default(1)
+  loyaltyCentsPerPoint    Int     @default(5)
+  loyaltyMaxRedeemPercent Int     @default(50)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -55,6 +61,7 @@ model Salon {
   lookPhotos   AppointmentPhoto[]
   stylePrefs   AppointmentStylePref[]
   styleAiUsage StyleAiUsage[]
+  promotionRules PromotionRule[]
 }
 
 /// Platform operator login — separate from salon staff (User) so tenant auth is untouched.
@@ -274,6 +281,8 @@ model Client {
   photoMime          String?
   photoUpdatedAt     DateTime?
   preferredStylistId String?
+  /// Redeemable loyalty balance (members only when loyaltyEnabled).
+  loyaltyPoints      Int       @default(0)
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
@@ -284,6 +293,28 @@ model Client {
 
   @@index([salonId, phone])
   @@index([salonId, email])
+}
+
+/// Salon discount rules — manager-configured, auto-applied at checkout.
+model PromotionRule {
+  id            String   @id @default(cuid())
+  salonId       String
+  /// MEMBER_PERCENT | FIRST_VISIT | VISIT_MILESTONE | MIN_SPEND_PERCENT | MIN_SPEND_FLAT
+  type          String
+  name          String
+  enabled       Boolean  @default(true)
+  discountBps   Int?
+  discountCents Int?
+  minVisits     Int?
+  minSpendCents Int?
+  membersOnly   Boolean  @default(false)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  salon Salon @relation(fields: [salonId], references: [id], onDelete: Cascade)
+
+  @@index([salonId, enabled, sortOrder])
 }
 
 /// Short-lived email OTP codes for public client membership.
@@ -327,6 +358,11 @@ model Appointment {
   excludedFromEarnings Boolean   @default(false)
   excludedAt           DateTime?
   excludedByUserId     String?
+  /// Auto discount applied at checkout (cents, before loyalty redeem).
+  discountCents        Int?
+  discountLabel        String?
+  loyaltyPointsEarned  Int?
+  loyaltyPointsRedeemed Int?
   /// Google Calendar event id for sync
   googleEventId    String?
   calendarSyncedAt DateTime?

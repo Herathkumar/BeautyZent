@@ -24,6 +24,10 @@ export async function updateAppointmentStatus(opts: {
   chargedCents?: number | null;
   tipCents?: number | null;
   chargedByUserId?: string | null;
+  discountCents?: number | null;
+  discountLabel?: string | null;
+  loyaltyPointsEarned?: number | null;
+  loyaltyPointsRedeemed?: number | null;
 }) {
   const data: {
     status: string;
@@ -33,6 +37,10 @@ export async function updateAppointmentStatus(opts: {
     tipCents?: number;
     chargedAt?: Date;
     chargedByUserId?: string | null;
+    discountCents?: number;
+    discountLabel?: string | null;
+    loyaltyPointsEarned?: number;
+    loyaltyPointsRedeemed?: number;
   } = { status: opts.status };
 
   if (opts.status === "CHECKED_IN") {
@@ -72,6 +80,16 @@ export async function updateAppointmentStatus(opts: {
     data.tipCents = tip;
     data.chargedAt = new Date();
     data.chargedByUserId = opts.chargedByUserId ?? null;
+    if (opts.discountCents != null && Number.isFinite(opts.discountCents)) {
+      data.discountCents = Math.max(0, Math.round(opts.discountCents));
+    }
+    if (opts.discountLabel != null) data.discountLabel = opts.discountLabel;
+    if (opts.loyaltyPointsEarned != null && Number.isFinite(opts.loyaltyPointsEarned)) {
+      data.loyaltyPointsEarned = Math.max(0, Math.round(opts.loyaltyPointsEarned));
+    }
+    if (opts.loyaltyPointsRedeemed != null && Number.isFinite(opts.loyaltyPointsRedeemed)) {
+      data.loyaltyPointsRedeemed = Math.max(0, Math.round(opts.loyaltyPointsRedeemed));
+    }
   }
 
   // Never include image/photo Bytes — they hang JSON responses (Bookings / seating).

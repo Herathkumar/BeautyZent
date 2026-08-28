@@ -16,6 +16,7 @@ export function ReceptionCheckoutDesk({
   onRemoveLine,
   onComplete,
   onCancel,
+  onRedeemPoints,
 }: {
   bill: CheckoutBill;
   busy?: boolean;
@@ -26,6 +27,7 @@ export function ReceptionCheckoutDesk({
   onRemoveLine: (lineId: string) => void;
   onComplete: () => void;
   onCancel: () => void;
+  onRedeemPoints?: (enabled: boolean) => void;
 }) {
   const extraProducts = bill.products || [];
   const confirmed = bill.status === "VERIFIED";
@@ -169,8 +171,46 @@ export function ReceptionCheckoutDesk({
           <div className="mt-4 space-y-1.5 border-t border-white/8 pt-4 text-sm text-white/50">
             <div className="flex items-center justify-between">
               <span>Subtotal</span>
-              <span className="tabular-nums">{formatCad(bill.chargedCents)}</span>
+              <span className="tabular-nums">
+                {formatCad(bill.catalogSubtotalCents ?? bill.chargedCents)}
+              </span>
             </div>
+            {bill.discountCents > 0 ? (
+              <div
+                className="flex items-center justify-between text-emerald-300"
+                data-testid="reception-checkout-discount"
+              >
+                <span>{bill.discountLabel || "Discount"}</span>
+                <span className="tabular-nums">−{formatCad(bill.discountCents)}</span>
+              </div>
+            ) : null}
+            {bill.loyaltyRedeemCents > 0 ? (
+              <div className="flex items-center justify-between text-emerald-300">
+                <span>Loyalty points ({bill.loyaltyPointsRedeemed} pts)</span>
+                <span className="tabular-nums">−{formatCad(bill.loyaltyRedeemCents)}</span>
+              </div>
+            ) : null}
+            {bill.isMember && bill.loyaltyPointsBalance > 0 ? (
+              <label className="mt-2 flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-white/70">
+                <span>
+                  Redeem points
+                  <span className="block text-[11px] text-white/40">
+                    Balance: {bill.loyaltyPointsBalance} pts
+                  </span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={bill.redeemPointsEnabled}
+                  onChange={(e) => onRedeemPoints?.(e.target.checked)}
+                  data-testid="reception-redeem-points"
+                />
+              </label>
+            ) : null}
+            {bill.isMember && bill.loyaltyPointsEarned > 0 ? (
+              <p className="text-xs text-emerald-300/90" data-testid="reception-loyalty-earn">
+                Earns {bill.loyaltyPointsEarned} points after payment
+              </p>
+            ) : null}
             {bill.taxCents > 0 ? (
               <div className="flex items-center justify-between" data-testid="reception-checkout-tax">
                 <span>HST {bill.taxPercent}%</span>

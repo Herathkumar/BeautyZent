@@ -6,6 +6,7 @@ test.describe("Manager payroll", () => {
     await adminLogin(page);
     await gotoSettled(page, "/manager/pay");
     await expect(page.getByRole("heading", { name: /^payroll$/i })).toBeVisible();
+    await expect(page.getByTestId("promotions-settings")).toBeVisible();
     await expect(page.getByRole("combobox", { name: /^year$/i })).toBeVisible();
     await expect(page.getByRole("combobox", { name: /^month$/i })).toBeVisible();
     await expect(page.getByRole("button", { name: /download csv/i })).toBeVisible();

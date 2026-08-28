@@ -159,6 +159,18 @@ export function CustomerCheckoutOverlay({
                   <span className="tabular-nums">{formatCad(bill.productCents)}</span>
                 </div>
               ) : null}
+              {bill.discountCents > 0 ? (
+                <div className="flex justify-between text-emerald-600" data-testid="customer-checkout-discount">
+                  <span>{bill.discountLabel || "Discount"}</span>
+                  <span className="tabular-nums">−{formatCad(bill.discountCents)}</span>
+                </div>
+              ) : null}
+              {bill.loyaltyRedeemCents > 0 ? (
+                <div className="flex justify-between text-emerald-600">
+                  <span>Loyalty points</span>
+                  <span className="tabular-nums">−{formatCad(bill.loyaltyRedeemCents)}</span>
+                </div>
+              ) : null}
               {bill.taxCents > 0 ? (
                 <div className="flex justify-between" data-testid="customer-checkout-tax">
                   <span>HST {bill.taxPercent}%</span>

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { centsToDollars } from "@/lib/pay";
+import { PromotionsSettings } from "@/components/admin/PromotionsSettings";
 
 type Job = {
   id: string;
@@ -492,6 +493,8 @@ export default function AdminPayPage() {
           {savingTax ? "Saving…" : "Save sales tax"}
         </button>
       </form>
+
+      <PromotionsSettings />
 
       <div className="grid gap-3 rounded-2xl border border-[#7d6154]/25 bg-[#ffffff] p-4 sm:grid-cols-3">
         <label className="grid gap-1 text-xs font-semibold tracking-wide text-[#7d6154] uppercase">

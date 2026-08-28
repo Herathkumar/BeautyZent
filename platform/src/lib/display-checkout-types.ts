@@ -17,6 +17,8 @@ export type CheckoutTipMode =
 
 export type CheckoutBill = {
   appointmentId: string;
+  clientId?: string;
+  visitCount?: number;
   status: "PENDING" | "VERIFIED" | "PAID";
   chargedCents: number;
   taxPercent: number;
@@ -28,6 +30,15 @@ export type CheckoutBill = {
   productCents: number;
   totalCents: number;
   adjustmentCents: number;
+  catalogSubtotalCents: number;
+  discountCents: number;
+  discountLabel: string | null;
+  loyaltyRedeemCents: number;
+  loyaltyPointsRedeemed: number;
+  loyaltyPointsEarned: number;
+  isMember: boolean;
+  loyaltyPointsBalance: number;
+  redeemPointsEnabled: boolean;
   clientFirstName: string;
   stylistName: string;
   stylistPhotoUrl: string;
