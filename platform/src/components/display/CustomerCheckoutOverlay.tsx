@@ -1,8 +1,66 @@
 "use client";
 
 import { formatCad } from "@/lib/money";
+import { buildCheckoutSavingsMessage } from "@/lib/display-checkout";
 import type { CheckoutBill, CheckoutTipMode } from "@/lib/display-checkout-types";
 import { CheckoutTipPicker } from "@/components/display/CheckoutTipPicker";
+
+type CheckoutThanks = {
+  firstName: string;
+  discountCents?: number;
+  discountLabel?: string | null;
+  loyaltyRedeemCents?: number;
+  loyaltyPointsEarned?: number;
+};
+
+function CheckoutThankYou({
+  firstName,
+  savingsMessage,
+  loyaltyPointsEarned,
+}: {
+  firstName: string;
+  savingsMessage: string | null;
+  loyaltyPointsEarned?: number;
+}) {
+  return (
+    <div className="px-8 py-16 text-center sm:px-12" data-testid="customer-checkout-thanks">
+      <p className="text-[11px] font-semibold tracking-[0.28em] text-[color:var(--cd-accent)] uppercase">
+        Paid
+      </p>
+      <h2
+        id="customer-checkout-title"
+        className="mt-3 font-[family-name:var(--font-display)] text-4xl text-[color:var(--cd-heading)] sm:text-5xl"
+      >
+        Thank you, {firstName}
+      </h2>
+      {savingsMessage ? (
+        <p
+          className="mt-4 text-lg font-medium text-[color:var(--cd-accent)]"
+          data-testid="customer-checkout-savings"
+        >
+          {savingsMessage}
+        </p>
+      ) : null}
+      {loyaltyPointsEarned && loyaltyPointsEarned > 0 ? (
+        <p
+          className="mt-2 text-sm text-[color:var(--cd-muted)]"
+          data-testid="customer-checkout-loyalty-earn-thanks"
+        >
+          You earned {loyaltyPointsEarned} loyalty points on this visit.
+        </p>
+      ) : null}
+      <p className="mt-4 text-base text-[color:var(--cd-muted)]">
+        You’re all set. We hope to see you again soon.
+      </p>
+      <p className="mt-6 text-xs tracking-[0.18em] text-[color:var(--cd-accent)] uppercase">
+        Tap anywhere to close
+      </p>
+      <span className="mt-8 inline-block text-2xl text-[color:var(--cd-accent)]" aria-hidden>
+        ✦
+      </span>
+    </div>
+  );
+}
 
 export function CustomerCheckoutOverlay({
   bill,
@@ -12,7 +70,7 @@ export function CustomerCheckoutOverlay({
   onDismissThanks,
 }: {
   bill: CheckoutBill | null;
-  thanks: { firstName: string } | null;
+  thanks: CheckoutThanks | null;
   onLooksGood?: () => void;
   onTip?: (mode: CheckoutTipMode) => void;
   onDismissThanks?: () => void;
@@ -21,6 +79,15 @@ export function CustomerCheckoutOverlay({
   const products = bill?.products || [];
   const tipMode = bill?.tipMode || { kind: "none" as const };
   const showingThanks = Boolean((thanks && !bill) || bill?.status === "PAID");
+  const savingsMessage = bill
+    ? buildCheckoutSavingsMessage(bill)
+    : thanks
+      ? buildCheckoutSavingsMessage({
+          discountCents: thanks.discountCents ?? 0,
+          discountLabel: thanks.discountLabel ?? null,
+          loyaltyRedeemCents: thanks.loyaltyRedeemCents ?? 0,
+        })
+      : null;
 
   return (
     <div
@@ -47,47 +114,17 @@ export function CustomerCheckoutOverlay({
       <div className="relative max-h-[min(92vh,52rem)] w-full max-w-xl overflow-y-auto rounded-[2rem] border border-[color:var(--cd-line)] bg-[var(--cd-panel)] shadow-[var(--cd-shadow)]">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_50%_0%,color-mix(in_srgb,var(--cd-accent)_22%,transparent),transparent_70%)]" />
         {thanks && !bill ? (
-          <div className="px-8 py-16 text-center sm:px-12" data-testid="customer-checkout-thanks">
-            <p className="text-[11px] font-semibold tracking-[0.28em] text-[color:var(--cd-accent)] uppercase">
-              Paid
-            </p>
-            <h2
-              id="customer-checkout-title"
-              className="mt-3 font-[family-name:var(--font-display)] text-4xl text-[color:var(--cd-heading)] sm:text-5xl"
-            >
-              Thank you, {thanks.firstName}
-            </h2>
-            <p className="mt-4 text-base text-[color:var(--cd-muted)]">
-              You’re all set. We hope to see you again soon.
-            </p>
-            <p className="mt-6 text-xs tracking-[0.18em] text-[color:var(--cd-accent)] uppercase">
-              Tap anywhere to close
-            </p>
-            <span className="mt-8 inline-block text-2xl text-[color:var(--cd-accent)]" aria-hidden>
-              ✦
-            </span>
-          </div>
+          <CheckoutThankYou
+            firstName={thanks.firstName}
+            savingsMessage={savingsMessage}
+            loyaltyPointsEarned={thanks.loyaltyPointsEarned}
+          />
         ) : bill?.status === "PAID" ? (
-          <div className="px-8 py-16 text-center sm:px-12" data-testid="customer-checkout-thanks">
-            <p className="text-[11px] font-semibold tracking-[0.28em] text-[color:var(--cd-accent)] uppercase">
-              Paid
-            </p>
-            <h2
-              id="customer-checkout-title"
-              className="mt-3 font-[family-name:var(--font-display)] text-4xl text-[color:var(--cd-heading)] sm:text-5xl"
-            >
-              Thank you, {bill.clientFirstName}
-            </h2>
-            <p className="mt-4 text-base text-[color:var(--cd-muted)]">
-              You’re all set. We hope to see you again soon.
-            </p>
-            <p className="mt-6 text-xs tracking-[0.18em] text-[color:var(--cd-accent)] uppercase">
-              Tap anywhere to close
-            </p>
-            <span className="mt-8 inline-block text-2xl text-[color:var(--cd-accent)]" aria-hidden>
-              ✦
-            </span>
-          </div>
+          <CheckoutThankYou
+            firstName={bill.clientFirstName}
+            savingsMessage={savingsMessage}
+            loyaltyPointsEarned={bill.loyaltyPointsEarned}
+          />
         ) : bill ? (
           <div className="relative px-6 py-8 sm:px-10 sm:py-10">
             <p className="text-center text-[11px] font-semibold tracking-[0.28em] text-[color:var(--cd-accent)] uppercase">

@@ -4,6 +4,7 @@ import type {
   CheckoutLine,
   CheckoutTipMode,
 } from "@/lib/display-checkout-types";
+import { formatCad } from "@/lib/money";
 import {
   evaluateCheckoutPromotions,
   type PromotionRuleRecord,
@@ -384,4 +385,26 @@ export async function checkoutClientId(salonId: string, appointmentId: string) {
     select: { clientId: true },
   });
   return appt?.clientId || null;
+}
+
+export function buildCheckoutSavingsMessage(bill: {
+  discountCents: number;
+  discountLabel: string | null;
+  loyaltyRedeemCents: number;
+}): string | null {
+  const totalSaved = bill.discountCents + bill.loyaltyRedeemCents;
+  if (totalSaved <= 0) return null;
+
+  const parts: string[] = [];
+  if (bill.discountCents > 0) {
+    parts.push(bill.discountLabel?.trim() || "your promotion");
+  }
+  if (bill.loyaltyRedeemCents > 0) {
+    parts.push("loyalty points");
+  }
+
+  const via = parts.length === 2 ? `${parts[0]} and ${parts[1]}` : parts[0];
+  return via
+    ? `You saved ${formatCad(totalSaved)} today with ${via}.`
+    : `You saved ${formatCad(totalSaved)} today.`;
 }
