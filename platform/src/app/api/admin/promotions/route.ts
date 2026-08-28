@@ -20,17 +20,50 @@ function ruleSelect() {
   } as const;
 }
 
-function settingsSelect() {
+function coreSettingsSelect() {
   return {
     loyaltyEnabled: true,
     discountsEnabled: true,
     loyaltyPointsPerDollar: true,
     loyaltyCentsPerPoint: true,
     loyaltyMaxRedeemPercent: true,
+  } as const;
+}
+
+function settingsSelect() {
+  return {
+    ...coreSettingsSelect(),
     promoBoardEnabled: true,
     promoBoardIntervalSec: true,
     promoBoardSlideSec: true,
   } as const;
+}
+
+function withBoardDefaults(salon: {
+  loyaltyEnabled: boolean;
+  discountsEnabled: boolean;
+  loyaltyPointsPerDollar: number;
+  loyaltyCentsPerPoint: number;
+  loyaltyMaxRedeemPercent: number;
+  promoBoardEnabled?: boolean;
+  promoBoardIntervalSec?: number;
+  promoBoardSlideSec?: number;
+}) {
+  return {
+    loyaltyEnabled: salon.loyaltyEnabled,
+    discountsEnabled: salon.discountsEnabled,
+    loyaltyPointsPerDollar: salon.loyaltyPointsPerDollar,
+    loyaltyCentsPerPoint: salon.loyaltyCentsPerPoint,
+    loyaltyMaxRedeemPercent: salon.loyaltyMaxRedeemPercent,
+    promoBoardEnabled: Boolean(salon.promoBoardEnabled),
+    promoBoardIntervalSec: salon.promoBoardIntervalSec ?? 90,
+    promoBoardSlideSec: salon.promoBoardSlideSec ?? 8,
+  };
+}
+
+function isMissingPromoBoardFieldError(err: unknown) {
+  const message = err instanceof Error ? err.message : String(err || "");
+  return /Unknown field `?promoBoard(Enabled|IntervalSec|SlideSec)`?/i.test(message);
 }
 
 function normalizeSettingsInput(raw: Record<string, unknown>) {
@@ -82,22 +115,31 @@ export async function GET() {
   }
 
   try {
-    const [salon, rules] = await Promise.all([
-      prisma.salon.findUnique({
+    let salon;
+    try {
+      salon = await prisma.salon.findUnique({
         where: { id: session.salonId },
         select: settingsSelect(),
-      }),
-      prisma.promotionRule.findMany({
-        where: { salonId: session.salonId },
-        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-        select: ruleSelect(),
-      }),
-    ]);
+      });
+    } catch (err) {
+      if (!isMissingPromoBoardFieldError(err)) throw err;
+      // Stale Prisma client / DB before promo board columns — load core settings only.
+      salon = await prisma.salon.findUnique({
+        where: { id: session.salonId },
+        select: coreSettingsSelect(),
+      });
+    }
+
+    const rules = await prisma.promotionRule.findMany({
+      where: { salonId: session.salonId },
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+      select: ruleSelect(),
+    });
 
     if (!salon) return NextResponse.json({ error: "Salon not found" }, { status: 404 });
 
     return NextResponse.json({
-      settings: salon,
+      settings: withBoardDefaults(salon),
       rules,
       ruleTypes: PROMOTION_RULE_TYPES,
     });
@@ -120,12 +162,32 @@ export async function POST(req: Request) {
 
   if (body.settings) {
     try {
-      const salon = await prisma.salon.update({
-        where: { id: session.salonId },
-        data: normalizeSettingsInput(body.settings as Record<string, unknown>),
-        select: settingsSelect(),
+      const payload = normalizeSettingsInput(body.settings as Record<string, unknown>);
+      let salon;
+      try {
+        salon = await prisma.salon.update({
+          where: { id: session.salonId },
+          data: payload,
+          select: settingsSelect(),
+        });
+      } catch (err) {
+        if (!isMissingPromoBoardFieldError(err)) throw err;
+        const {
+          promoBoardEnabled: _a,
+          promoBoardIntervalSec: _b,
+          promoBoardSlideSec: _c,
+          ...corePayload
+        } = payload;
+        salon = await prisma.salon.update({
+          where: { id: session.salonId },
+          data: corePayload,
+          select: coreSettingsSelect(),
+        });
+      }
+      return NextResponse.json({
+        settings: withBoardDefaults(salon),
+        message: "Promotion settings saved.",
       });
-      return NextResponse.json({ settings: salon, message: "Promotion settings saved." });
     } catch (err) {
       console.error("[promotions POST settings]", err);
       return NextResponse.json(
