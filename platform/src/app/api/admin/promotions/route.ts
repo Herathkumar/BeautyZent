@@ -44,14 +44,17 @@ function normalizeSettingsInput(raw: Record<string, unknown>) {
 }
 
 function promoErrorMessage(err: unknown, fallback: string) {
+  const message = err instanceof Error ? err.message : "";
+  if (/Unknown arg `loyaltyEnabled`|Unknown arg `discountsEnabled`/i.test(message)) {
+    return "Prisma client is out of date. Stop the dev server, run pnpm db:generate, then restart with pnpm dev:local.";
+  }
   if (err && typeof err === "object" && "code" in err) {
     const code = String((err as { code?: string }).code || "");
     if (code === "P2021" || code === "P2010" || code === "P2022") {
       return "Database schema is out of date. Run pnpm db:local:push, then restart the dev server.";
     }
   }
-  const message = err instanceof Error ? err.message : "";
-  if (/Unknown arg|does not exist|column .* does not exist/i.test(message)) {
+  if (/column .* does not exist|does not exist in the current database/i.test(message)) {
     return "Database schema is out of date. Run pnpm db:local:push, then restart the dev server.";
   }
   return message || fallback;
