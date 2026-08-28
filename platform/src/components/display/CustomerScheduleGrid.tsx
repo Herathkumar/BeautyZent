@@ -12,6 +12,7 @@ import {
   firstName,
   formatClock,
   formatMinutesClock,
+  initials,
   loungeTimeWindow,
   seatedServiceProgress,
   serviceKind,
