@@ -122,9 +122,11 @@ export function ReceptionSchedule({
   const nowTop = ((nowMin - openMin) / spanMin) * height;
   const showNow = viewingToday && nowMin >= openMin && nowMin <= closeHour * 60;
   const emptyAboveNowGap = 56;
+  // Today: sit just above the NOW line. Other days: same upper band (~1.75h after open)
+  // so the empty state does not drop into the afternoon when the day has no NOW marker.
   const emptyAnchorTop = showNow
     ? Math.max(96, nowTop - emptyAboveNowGap)
-    : height * 0.42;
+    : Math.max(96, hourPx * 1.75);
   const isCustomer = audience === "customer";
   const emptyTitle = isCustomer
     ? storeClosed
