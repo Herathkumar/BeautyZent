@@ -19,7 +19,6 @@ import {
   seatedServiceProgress,
   serviceKind,
   statusLabel,
-  seatedServiceProgress,
   stylistChairVisual,
   stylistCurrentGuest,
   stylistFloorTone,
