@@ -21,4 +21,16 @@ test.describe("Manager payroll", () => {
     await page.getByRole("menuitem", { name: /^payroll$/i }).click();
     await expect(page).toHaveURL(/\/manager\/pay/);
   });
+
+  test("add discount rule without saving settings first", async ({ page }) => {
+    const ruleName = `QA rule ${Date.now()}`;
+    await adminLogin(page);
+    await gotoSettled(page, "/manager/pay");
+    await page.getByTestId("promo-discounts-enabled").check();
+    await page.getByTestId("promotion-rule-form").scrollIntoViewIfNeeded();
+    await page.getByLabel(/label \(shown at checkout\)/i).fill(ruleName);
+    await page.getByRole("button", { name: /^add rule$/i }).click();
+    await expect(page.getByText(/rule added/i)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("promotion-rules-list")).toContainText(ruleName);
+  });
 });

@@ -36,6 +36,8 @@ export function PromotionsSettings() {
   const [rules, setRules] = useState<Rule[]>([]);
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
+  const [ruleMsg, setRuleMsg] = useState("");
+  const [ruleErr, setRuleErr] = useState("");
   const [busy, setBusy] = useState(false);
   const [draftType, setDraftType] = useState<PromotionRuleType>("MEMBER_PERCENT");
   const [draftName, setDraftName] = useState("Member 10% off");
@@ -46,11 +48,29 @@ export function PromotionsSettings() {
 
   const load = useCallback(async () => {
     const res = await fetch("/api/admin/promotions");
-    if (!res.ok) return;
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setErr(data.error || "Could not load promotion settings");
+      return;
+    }
     if (data.settings) setSettings(data.settings);
     setRules(data.rules || []);
   }, []);
+
+  async function persistSettings(next?: PromoSettings) {
+    const payload = next ?? settings;
+    const res = await fetch("/api/admin/promotions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ settings: payload }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.error || "Could not save settings");
+    }
+    if (data.settings) setSettings(data.settings);
+    return data.settings as PromoSettings;
+  }
 
   useEffect(() => {
     void load();
@@ -61,54 +81,70 @@ export function PromotionsSettings() {
     setBusy(true);
     setErr("");
     setMsg("");
-    const res = await fetch("/api/admin/promotions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ settings }),
-    });
-    const data = await res.json();
-    setBusy(false);
-    if (!res.ok) {
-      setErr(data.error || "Could not save settings");
-      return;
+    try {
+      await persistSettings();
+      setMsg("Promotion settings saved.");
+    } catch (error) {
+      setErr(error instanceof Error ? error.message : "Could not save settings");
+    } finally {
+      setBusy(false);
     }
-    if (data.settings) setSettings(data.settings);
-    setMsg(data.message || "Saved.");
   }
 
   async function addRule(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
-    setErr("");
-    setMsg("");
-    const body: Record<string, unknown> = {
-      type: draftType,
-      name: draftName,
-      membersOnly: draftType === "MEMBER_PERCENT",
-    };
-    if (draftType === "MEMBER_PERCENT" || draftType === "FIRST_VISIT" || draftType === "VISIT_MILESTONE" || draftType === "MIN_SPEND_PERCENT") {
-      body.discountBps = draftBps;
-    }
-    if (draftType === "MIN_SPEND_FLAT" || draftType === "FIRST_VISIT") {
-      body.discountCents = draftCents;
-    }
-    if (draftType === "VISIT_MILESTONE") body.minVisits = draftMinVisits;
-    if (draftType === "MIN_SPEND_PERCENT" || draftType === "MIN_SPEND_FLAT") {
-      body.minSpendCents = draftMinSpend;
-    }
-    const res = await fetch("/api/admin/promotions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    const data = await res.json();
-    setBusy(false);
-    if (!res.ok) {
-      setErr(data.error || "Could not add rule");
+    setRuleErr("");
+    setRuleMsg("");
+    const trimmedName = draftName.trim();
+    if (!trimmedName) {
+      setRuleErr("Enter a label for this rule.");
+      setBusy(false);
       return;
     }
-    setMsg(data.message || "Rule added.");
-    await load();
+    try {
+      await persistSettings();
+      const body: Record<string, unknown> = {
+        type: draftType,
+        name: trimmedName,
+        membersOnly: draftType === "MEMBER_PERCENT",
+      };
+      if (
+        draftType === "MEMBER_PERCENT" ||
+        draftType === "FIRST_VISIT" ||
+        draftType === "VISIT_MILESTONE" ||
+        draftType === "MIN_SPEND_PERCENT"
+      ) {
+        body.discountBps = draftBps;
+      }
+      if (draftType === "MIN_SPEND_FLAT" || draftType === "FIRST_VISIT") {
+        body.discountCents = draftCents;
+      }
+      if (draftType === "VISIT_MILESTONE") body.minVisits = draftMinVisits;
+      if (draftType === "MIN_SPEND_PERCENT" || draftType === "MIN_SPEND_FLAT") {
+        body.minSpendCents = draftMinSpend;
+      }
+      const res = await fetch("/api/admin/promotions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setRuleErr(data.error || "Could not add rule");
+        return;
+      }
+      if (data.rule) {
+        setRules((prev) => [...prev.filter((r) => r.id !== data.rule.id), data.rule]);
+      } else {
+        await load();
+      }
+      setRuleMsg(data.message || "Rule added.");
+    } catch (error) {
+      setRuleErr(error instanceof Error ? error.message : "Could not add rule");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function toggleRule(rule: Rule) {
@@ -343,8 +379,10 @@ export function PromotionsSettings() {
                 />
               </label>
             )}
+            {ruleErr ? <p className="text-sm text-[#f5a8a8]">{ruleErr}</p> : null}
+            {ruleMsg ? <p className="text-sm text-[#9fe3b8]">{ruleMsg}</p> : null}
             <button type="submit" disabled={busy} className="btn-solid w-fit rounded-full px-5 py-2.5">
-              Add rule
+              {busy ? "Adding…" : "Add rule"}
             </button>
           </form>
         </>
