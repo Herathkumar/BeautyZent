@@ -733,7 +733,17 @@ export function ReceptionClientPanel({
             </span>
           </button>
         ) : (
-          <p className="text-sm text-[color:var(--rx-faint)]">Tap a booking on the calendar, then Checkout.</p>
+          <button
+            type="button"
+            disabled
+            className="reception-quick__btn reception-quick__btn--checkout"
+            data-testid="reception-checkout"
+          >
+            <span>
+              <strong>Checkout</strong>
+              <span aria-hidden>Select a booking on the calendar first</span>
+            </span>
+          </button>
         )}
         {checkInError ? (
           <p className="text-center text-xs text-[#c45b7a]" data-testid="reception-checkin-error">
@@ -747,8 +757,34 @@ export function ReceptionClientPanel({
         ) : null}
       </div>
 
-      <div className="reception-quick__tip">
-        <p>Drag bookings onto an available stylist to check in</p>
+      <div className="reception-quick__hints">
+        <div className="reception-quick__hints-card">
+          <p className="reception-quick__hints-title">Tips</p>
+          <div className="reception-quick__hint-row">
+            <span className="reception-quick__hint-icon reception-quick__hint-icon--select" aria-hidden>
+              <svg viewBox="0 0 24 24" fill="none">
+                <rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" strokeWidth="1.6" />
+                <path d="M8 3v4M16 3v4M4 10h16" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                <circle cx="12" cy="15" r="2.2" fill="currentColor" />
+              </svg>
+            </span>
+            <p className="reception-quick__hint-text">
+              <strong>Select a booking</strong> on the calendar, then tap Checkout.
+            </p>
+          </div>
+          <div className="reception-quick__hint-row">
+            <span className="reception-quick__hint-icon reception-quick__hint-icon--drag" aria-hidden>
+              <svg viewBox="0 0 24 24" fill="none">
+                <rect x="5" y="4" width="14" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.6" />
+                <path d="M8 18h8M12 14v4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                <path d="M9 8h6M9 11h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+              </svg>
+            </span>
+            <p className="reception-quick__hint-text">
+              <strong>Drag a booking</strong> onto an available stylist to check in.
+            </p>
+          </div>
+        </div>
       </div>
     </aside>
   );
