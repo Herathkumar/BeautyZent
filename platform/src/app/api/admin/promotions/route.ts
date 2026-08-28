@@ -35,6 +35,7 @@ function settingsSelect() {
     ...coreSettingsSelect(),
     promoBoardEnabled: true,
     promoBoardIntervalSec: true,
+    promoBoardShowSec: true,
     promoBoardSlideSec: true,
   } as const;
 }
@@ -47,6 +48,7 @@ function withBoardDefaults(salon: {
   loyaltyMaxRedeemPercent: number;
   promoBoardEnabled?: boolean;
   promoBoardIntervalSec?: number;
+  promoBoardShowSec?: number;
   promoBoardSlideSec?: number;
 }) {
   return {
@@ -57,13 +59,14 @@ function withBoardDefaults(salon: {
     loyaltyMaxRedeemPercent: salon.loyaltyMaxRedeemPercent,
     promoBoardEnabled: Boolean(salon.promoBoardEnabled),
     promoBoardIntervalSec: salon.promoBoardIntervalSec ?? 90,
+    promoBoardShowSec: salon.promoBoardShowSec ?? 24,
     promoBoardSlideSec: salon.promoBoardSlideSec ?? 8,
   };
 }
 
 function isMissingPromoBoardFieldError(err: unknown) {
   const message = err instanceof Error ? err.message : String(err || "");
-  return /Unknown field `?promoBoard(Enabled|IntervalSec|SlideSec)`?/i.test(message);
+  return /Unknown field `?promoBoard(Enabled|IntervalSec|ShowSec|SlideSec)`?/i.test(message);
 }
 
 function normalizeSettingsInput(raw: Record<string, unknown>) {
@@ -80,6 +83,10 @@ function normalizeSettingsInput(raw: Record<string, unknown>) {
     promoBoardIntervalSec: Math.min(
       600,
       Math.max(30, Math.round(Number(raw.promoBoardIntervalSec ?? 90)))
+    ),
+    promoBoardShowSec: Math.min(
+      300,
+      Math.max(5, Math.round(Number(raw.promoBoardShowSec ?? 24)))
     ),
     promoBoardSlideSec: Math.min(
       60,
@@ -175,7 +182,8 @@ export async function POST(req: Request) {
         const {
           promoBoardEnabled: _a,
           promoBoardIntervalSec: _b,
-          promoBoardSlideSec: _c,
+          promoBoardShowSec: _c,
+          promoBoardSlideSec: _d,
           ...corePayload
         } = payload;
         salon = await prisma.salon.update({

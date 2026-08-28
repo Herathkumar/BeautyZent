@@ -29,6 +29,7 @@ export type PromotionBoardSlide = {
 export type PromotionBoardPayload = {
   enabled: boolean;
   intervalSec: number;
+  showSec: number;
   defaultSlideSec: number;
   salonName: string;
   slides: PromotionBoardSlide[];
@@ -163,6 +164,7 @@ export function buildPromotionBoardSlide(
 export function buildPromotionBoardPayload(opts: {
   enabled: boolean;
   intervalSec: number;
+  showSec: number;
   defaultSlideSec: number;
   salonName: string;
   rules: RuleLike[];
@@ -174,6 +176,7 @@ export function buildPromotionBoardPayload(opts: {
   return {
     enabled: opts.enabled && slides.length > 0,
     intervalSec: Math.min(600, Math.max(30, opts.intervalSec)),
+    showSec: Math.min(300, Math.max(5, opts.showSec)),
     defaultSlideSec: Math.min(60, Math.max(3, opts.defaultSlideSec)),
     salonName: opts.salonName,
     slides,

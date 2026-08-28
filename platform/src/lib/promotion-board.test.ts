@@ -22,6 +22,7 @@ describe("promotion board templates", () => {
     const board = buildPromotionBoardPayload({
       enabled: true,
       intervalSec: 90,
+      showSec: 24,
       defaultSlideSec: 8,
       salonName: "Aura Salon",
       rules: [

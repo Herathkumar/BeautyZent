@@ -46,10 +46,12 @@ model Salon {
   loyaltyPointsPerDollar  Int     @default(1)
   loyaltyCentsPerPoint    Int     @default(5)
   loyaltyMaxRedeemPercent Int     @default(50)
-  /// Customer TV promotion board — rotates uploaded promo slides.
+  /// Customer TV promotion board — rotates enabled discount templates.
   promoBoardEnabled     Boolean @default(false)
   /// Seconds between promotion board appearances on the customer display.
   promoBoardIntervalSec Int     @default(90)
+  /// How long the full promotion board stays on screen each appearance.
+  promoBoardShowSec     Int     @default(24)
   /// Default seconds each slide stays on screen during a board cycle.
   promoBoardSlideSec    Int     @default(8)
   createdAt    DateTime @default(now())

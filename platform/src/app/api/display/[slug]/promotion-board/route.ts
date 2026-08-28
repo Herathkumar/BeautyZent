@@ -19,6 +19,7 @@ export async function GET(
       discountsEnabled: true,
       promoBoardEnabled: true,
       promoBoardIntervalSec: true,
+      promoBoardShowSec: true,
       promoBoardSlideSec: true,
     },
   });
@@ -47,6 +48,7 @@ export async function GET(
   const board = buildPromotionBoardPayload({
     enabled: salon.promoBoardEnabled && salon.discountsEnabled,
     intervalSec: salon.promoBoardIntervalSec || 90,
+    showSec: salon.promoBoardShowSec || 24,
     defaultSlideSec: salon.promoBoardSlideSec || 8,
     salonName: salon.name,
     rules,

@@ -17,6 +17,7 @@ type PromoSettings = {
   loyaltyMaxRedeemPercent: number;
   promoBoardEnabled: boolean;
   promoBoardIntervalSec: number;
+  promoBoardShowSec: number;
   promoBoardSlideSec: number;
 };
 
@@ -42,6 +43,7 @@ export function PromotionsSettings() {
     loyaltyMaxRedeemPercent: 50,
     promoBoardEnabled: false,
     promoBoardIntervalSec: 90,
+    promoBoardShowSec: 24,
     promoBoardSlideSec: 8,
   });
   const [rules, setRules] = useState<Rule[]>([]);
@@ -109,6 +111,10 @@ export function PromotionsSettings() {
       promoBoardIntervalSec: Math.min(
         600,
         Math.max(30, Math.round(Number(next.promoBoardIntervalSec) || 90))
+      ),
+      promoBoardShowSec: Math.min(
+        300,
+        Math.max(5, Math.round(Number(next.promoBoardShowSec) || 24))
       ),
       promoBoardSlideSec: Math.min(
         60,
@@ -506,7 +512,7 @@ export function PromotionsSettings() {
           testId="promo-board-enabled"
         />
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-3">
           <label className="grid gap-1 text-sm text-[#6b5b52]">
             Show every (seconds)
             <input
@@ -523,6 +529,24 @@ export function PromotionsSettings() {
               className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-[#2b2521]"
             />
             <span className="text-xs text-[#9a8a80]">Time between board appearances</span>
+          </label>
+          <label className="grid gap-1 text-sm text-[#6b5b52]">
+            Board on screen (seconds)
+            <input
+              type="number"
+              min={5}
+              max={300}
+              value={settings.promoBoardShowSec}
+              onChange={(e) =>
+                setSettings((s) => ({
+                  ...s,
+                  promoBoardShowSec: Number(e.target.value),
+                }))
+              }
+              className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-[#2b2521]"
+              data-testid="promo-board-show-sec"
+            />
+            <span className="text-xs text-[#9a8a80]">How long the promo board stays visible</span>
           </label>
           <label className="grid gap-1 text-sm text-[#6b5b52]">
             Seconds per slide

@@ -241,8 +241,7 @@ export function usePromotionBoardCycle(
 
   const showDurationMs = useMemo(() => {
     if (!board?.enabled || !board.slides.length) return 0;
-    // One full carousel pass, then hide until next interval.
-    return board.slides.reduce((sum, s) => sum + s.durationSec, 0) * 1000;
+    return Math.max(5, board.showSec || 24) * 1000;
   }, [board]);
 
   useEffect(() => {
