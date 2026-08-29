@@ -9,6 +9,7 @@ const DAYS = new Set([0, 1, 2, 3, 4, 5, 6]);
 const SALON_SELECT = {
   name: true,
   slug: true,
+  description: true,
   address: true,
   brandColor: true,
   accentColor: true,
@@ -55,6 +56,30 @@ export async function PATCH(req: Request) {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const listingOnly =
+    body.description !== undefined &&
+    body.openHour == null &&
+    body.closeHour == null &&
+    body.taxPercent == null;
+  if (listingOnly) {
+    if (session.role === "FRONT_DESK") {
+      return NextResponse.json({ error: "Manager access required" }, { status: 403 });
+    }
+    const description = String(body.description ?? "").trim();
+    if (description.length > 600) {
+      return NextResponse.json(
+        { error: "Business description must be 600 characters or fewer." },
+        { status: 400 }
+      );
+    }
+    const salon = await prisma.salon.update({
+      where: { id: session.salonId },
+      data: { description: description || null },
+      select: SALON_SELECT,
+    });
+    return NextResponse.json({ salon, message: "Explore listing saved." });
   }
 
   const current = await prisma.salon.findUnique({

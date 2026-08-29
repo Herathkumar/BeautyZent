@@ -78,6 +78,12 @@ export default function AdminAccountPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [businessName, setBusinessName] = useState("");
+  const [businessSlug, setBusinessSlug] = useState("");
+  const [businessDescription, setBusinessDescription] = useState("");
+  const [listingMessage, setListingMessage] = useState("");
+  const [listingError, setListingError] = useState("");
+  const [savingListing, setSavingListing] = useState(false);
 
   const [photoUrl, setPhotoUrl] = useState(MANAGER_DEFAULT_AVATAR);
   const [hasPhoto, setHasPhoto] = useState(false);
@@ -109,6 +115,14 @@ export default function AdminAccountPage() {
         if (!data?.user) return;
         setPhotoUrl(data.user.photoUrl);
         setHasPhoto(Boolean(data.user.hasPhoto));
+      });
+    fetch("/api/admin/salon", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data?.salon) return;
+        setBusinessName(data.salon.name || "");
+        setBusinessSlug(data.salon.slug || "");
+        setBusinessDescription(data.salon.description || "");
       });
   }, []);
 
@@ -189,6 +203,27 @@ export default function AdminAccountPage() {
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/manager/login");
+    router.refresh();
+  }
+
+  async function saveListing(e: React.FormEvent) {
+    e.preventDefault();
+    setListingError("");
+    setListingMessage("");
+    setSavingListing(true);
+    const res = await fetch("/api/admin/salon", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ description: businessDescription }),
+    });
+    const data = await res.json().catch(() => ({}));
+    setSavingListing(false);
+    if (!res.ok) {
+      setListingError(data.error || "Could not update Explore listing");
+      return;
+    }
+    setBusinessDescription(data.salon?.description || "");
+    setListingMessage(data.message || "Explore listing saved.");
     router.refresh();
   }
 
@@ -470,6 +505,56 @@ export default function AdminAccountPage() {
           </form>
         ) : null}
       </section>
+
+      <form
+        onSubmit={saveListing}
+        className="grid gap-4 rounded-3xl border border-[#7d6154]/30 bg-white p-5"
+        data-testid="manager-explore-listing"
+      >
+        <div>
+          <p className="text-xs font-semibold tracking-[0.16em] text-[#7d6154] uppercase">
+            Public business card
+          </p>
+          <h2 className="mt-1 font-[family-name:var(--font-display)] text-xl text-[#2b2521]">
+            Explore listing
+          </h2>
+          <p className="mt-1 text-sm text-[#6b5b52]">
+            Update the description customers see on the BeautyZent business card.
+          </p>
+        </div>
+        <div className="rounded-2xl border border-[#7d6154]/20 bg-[#fffcf9] px-4 py-3">
+          <p className="font-semibold text-[#2b2521]">{businessName || "Your business"}</p>
+          {businessSlug ? (
+            <p className="mt-0.5 text-xs text-[#6b5b52]">/explore/{businessSlug}</p>
+          ) : null}
+        </div>
+        <label className="grid gap-1.5 text-sm text-[#6b5b52]">
+          Business description
+          <textarea
+            value={businessDescription}
+            onChange={(e) => setBusinessDescription(e.target.value)}
+            rows={4}
+            maxLength={600}
+            placeholder="Describe your services and what makes your business special."
+            className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-[#2b2521]"
+            data-testid="manager-business-description"
+          />
+          <span className="text-right text-xs text-[#6b5b52]">
+            {businessDescription.length}/600
+          </span>
+        </label>
+        {listingError ? <p className="text-sm text-[#b54a3c]">{listingError}</p> : null}
+        {listingMessage ? <p className="text-sm text-[#2f7a4f]">{listingMessage}</p> : null}
+        <div>
+          <button
+            type="submit"
+            disabled={savingListing}
+            className="btn-solid rounded-full px-6 py-3 text-sm font-semibold disabled:opacity-50"
+          >
+            {savingListing ? "Saving…" : "Save Explore listing"}
+          </button>
+        </div>
+      </form>
 
       <form
         onSubmit={onSave}
