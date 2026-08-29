@@ -50,6 +50,8 @@ const SALON_SELECT = {
   displayViewRotateSec: true,
   claimedAt: true,
   approvedAt: true,
+  listingReviewNote: true,
+  listingReviewedAt: true,
   createdAt: true,
   _count: { select: { stylists: true, services: true, appointments: true, clients: true } },
 } as const;

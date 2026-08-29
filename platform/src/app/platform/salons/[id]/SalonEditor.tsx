@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -30,6 +31,9 @@ export type EditableSalon = {
   phone: string | null;
   email: string | null;
   address: string | null;
+  city: string | null;
+  region: string | null;
+  country: string | null;
   timezone: string;
   openHour: number;
   closeHour: number;
@@ -53,6 +57,9 @@ export function SalonEditor({ salon }: { salon: EditableSalon }) {
     phone: salon.phone ?? "",
     email: salon.email ?? "",
     address: salon.address ?? "",
+    city: salon.city ?? "",
+    region: salon.region ?? "",
+    country: salon.country ?? "CA",
     timezone: salon.timezone,
     openHour: salon.openHour,
     closeHour: salon.closeHour,
@@ -71,6 +78,9 @@ export function SalonEditor({ salon }: { salon: EditableSalon }) {
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [coverBusy, setCoverBusy] = useState(false);
+  const [coverPrompt, setCoverPrompt] = useState("");
+  const [generatedCover, setGeneratedCover] = useState("");
+  const [generatingCover, setGeneratingCover] = useState(false);
   const [coverUrl, setCoverUrl] = useState(
     salon.coverUpdatedAt
       ? `/api/public/cover/${salon.id}?t=${new Date(salon.coverUpdatedAt).getTime()}`
@@ -140,6 +150,7 @@ export function SalonEditor({ salon }: { salon: EditableSalon }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Could not save cover");
       setCoverUrl(data.coverUrl || `/api/public/cover/${salon.id}?t=${Date.now()}`);
+      setGeneratedCover("");
       setMessage(data.message || "Explore cover saved.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save cover");
@@ -159,9 +170,57 @@ export function SalonEditor({ salon }: { salon: EditableSalon }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Could not remove cover");
       setCoverUrl("");
+      setGeneratedCover("");
       setMessage(data.message || "Cover removed.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not remove cover");
+    } finally {
+      setCoverBusy(false);
+    }
+  }
+
+  async function generateCover() {
+    setGeneratingCover(true);
+    setError("");
+    setMessage("");
+    try {
+      const res = await fetch(`/api/platform/salons/${salon.id}/cover/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: coverPrompt }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Could not generate cover");
+      setGeneratedCover(data.imageBase64 || "");
+      setMessage("AI cover generated. Review it, then use it as the cover.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not generate cover");
+    } finally {
+      setGeneratingCover(false);
+    }
+  }
+
+  async function applyGeneratedCover() {
+    if (!generatedCover) return;
+    setCoverBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      const res = await fetch(`/api/platform/salons/${salon.id}/cover`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          imageBase64: generatedCover,
+          mimeType: "image/jpeg",
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Could not save generated cover");
+      setCoverUrl(data.coverUrl || `/api/public/cover/${salon.id}?t=${Date.now()}`);
+      setGeneratedCover("");
+      setMessage(data.message || "AI cover saved.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not save generated cover");
     } finally {
       setCoverBusy(false);
     }
@@ -201,9 +260,28 @@ export function SalonEditor({ salon }: { salon: EditableSalon }) {
           </label>
         </div>
         <label className={labelClass}>
-          Address
+          Street address
           <input value={form.address} onChange={(e) => set("address", e.target.value)} className={fieldClass} />
         </label>
+        <div className="grid gap-4 sm:grid-cols-[1fr_0.7fr_0.45fr]">
+          <label className={labelClass}>
+            City
+            <input value={form.city} onChange={(e) => set("city", e.target.value)} className={fieldClass} />
+          </label>
+          <label className={labelClass}>
+            Province / state
+            <input value={form.region} onChange={(e) => set("region", e.target.value)} className={fieldClass} />
+          </label>
+          <label className={labelClass}>
+            Country
+            <input
+              value={form.country}
+              onChange={(e) => set("country", e.target.value.toUpperCase())}
+              maxLength={8}
+              className={fieldClass}
+            />
+          </label>
+        </div>
       </section>
 
       <section className="grid gap-3 rounded-3xl border border-ink/12 bg-white/80 p-5">
@@ -212,15 +290,15 @@ export function SalonEditor({ salon }: { salon: EditableSalon }) {
         </h2>
         <p className="text-sm text-muted">
           This picture shows on the public{" "}
-          <a href="/explore" className="font-semibold text-ink underline-offset-2 hover:underline">
+          <Link href="/explore" className="font-semibold text-ink underline-offset-2 hover:underline">
             /explore
-          </a>{" "}
+          </Link>{" "}
           directory for this business. Each business can have its own photo.
         </p>
         <div className="overflow-hidden rounded-2xl border border-ink/10 bg-[#f3eee8]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={coverUrl || "/display-promo.jpg"}
+            src={generatedCover || coverUrl || "/display-promo.jpg"}
             alt=""
             className="aspect-[16/10] w-full object-cover"
           />
@@ -256,6 +334,60 @@ export function SalonEditor({ salon }: { salon: EditableSalon }) {
               Remove
             </button>
           ) : null}
+          {generatedCover ? (
+            <>
+              <button
+                type="button"
+                disabled={coverBusy || generatingCover}
+                onClick={() => void applyGeneratedCover()}
+                className="btn-solid rounded-full px-4 py-2 text-sm font-semibold disabled:opacity-50"
+              >
+                {coverBusy ? "Saving…" : "Use AI cover"}
+              </button>
+              <button
+                type="button"
+                disabled={coverBusy}
+                onClick={() => setGeneratedCover("")}
+                className="rounded-full border border-ink/20 px-4 py-2 text-sm text-muted disabled:opacity-50"
+              >
+                Cancel preview
+              </button>
+            </>
+          ) : null}
+        </div>
+        <div className="grid gap-2 rounded-2xl border border-ink/12 bg-[#f8f2ec] p-4">
+          <div>
+            <p className="text-sm font-semibold text-ink">AI cover generator</p>
+            <p className="mt-0.5 text-xs text-muted">
+              Describe the business interior or scene. Generate a preview before updating the
+              public cover.
+            </p>
+          </div>
+          <textarea
+            value={coverPrompt}
+            onChange={(e) => setCoverPrompt(e.target.value)}
+            rows={3}
+            maxLength={400}
+            placeholder="Example: A premium modern salon with warm lighting, walnut mirrors, cream chairs, and plants"
+            className={fieldClass}
+            data-testid="platform-cover-ai-prompt"
+          />
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-xs text-muted">{coverPrompt.length}/400</span>
+            <button
+              type="button"
+              disabled={generatingCover || coverBusy || coverPrompt.trim().length < 8}
+              onClick={() => void generateCover()}
+              className="rounded-full border border-ink/25 bg-white px-4 py-2 text-sm font-semibold text-ink-soft disabled:opacity-50"
+              data-testid="platform-cover-generate"
+            >
+              {generatingCover
+                ? "Generating…"
+                : generatedCover
+                  ? "Generate again"
+                  : "Generate with AI"}
+            </button>
+          </div>
         </div>
       </section>
 

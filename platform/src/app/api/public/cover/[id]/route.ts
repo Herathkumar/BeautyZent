@@ -18,7 +18,9 @@ export async function GET(
   return new NextResponse(Buffer.from(salon.coverData), {
     headers: {
       "Content-Type": salon.coverMime || "image/jpeg",
-      "Cache-Control": "public, max-age=3600",
+      // Covers can be replaced from Platform Configure. Do not let an
+      // unversioned browser/CDN response hide a freshly uploaded image.
+      "Cache-Control": "no-store, max-age=0",
     },
   });
 }

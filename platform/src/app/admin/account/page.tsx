@@ -83,9 +83,12 @@ export default function AdminAccountPage() {
   const [businessId, setBusinessId] = useState("");
   const [businessSlug, setBusinessSlug] = useState("");
   const [businessDescription, setBusinessDescription] = useState("");
+  const [listingStatus, setListingStatus] = useState("");
+  const [listingReviewNote, setListingReviewNote] = useState("");
   const [listingMessage, setListingMessage] = useState("");
   const [listingError, setListingError] = useState("");
   const [savingListing, setSavingListing] = useState(false);
+  const [resubmitting, setResubmitting] = useState(false);
   const [coverUrl, setCoverUrl] = useState("");
   const [coverPrompt, setCoverPrompt] = useState("");
   const [generatedCover, setGeneratedCover] = useState("");
@@ -134,6 +137,8 @@ export default function AdminAccountPage() {
         setBusinessName(data.salon.name || "");
         setBusinessSlug(data.salon.slug || "");
         setBusinessDescription(data.salon.description || "");
+        setListingStatus(data.salon.listingStatus || "");
+        setListingReviewNote(data.salon.listingReviewNote || "");
         setCoverUrl(
           data.salon.id && data.salon.coverUpdatedAt
             ? `/api/public/cover/${data.salon.id}?t=${new Date(data.salon.coverUpdatedAt).getTime()}`
@@ -243,6 +248,26 @@ export default function AdminAccountPage() {
     }
     setBusinessDescription(data.salon?.description || "");
     setListingMessage(data.message || "Explore listing saved.");
+    router.refresh();
+  }
+
+  async function requestApprovalAgain() {
+    setListingError("");
+    setListingMessage("");
+    setResubmitting(true);
+    const res = await fetch("/api/admin/salon/listing", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "RESUBMIT" }),
+    });
+    const data = await res.json().catch(() => ({}));
+    setResubmitting(false);
+    if (!res.ok) {
+      setListingError(data.error || "Could not request approval");
+      return;
+    }
+    setListingStatus(data.salon?.listingStatus || "DRAFT");
+    setListingMessage(data.message || "Sent back for platform review.");
     router.refresh();
   }
 
@@ -627,6 +652,35 @@ export default function AdminAccountPage() {
             Update the cover photo and description customers see on the BeautyZent business card.
           </p>
         </div>
+        {listingStatus === "DRAFT" ? (
+          <p
+            className="rounded-2xl border border-[#7a6230]/25 bg-[#f5efd8] px-4 py-3 text-sm text-[#7a6230]"
+            data-testid="listing-pending-note"
+          >
+            Pending platform review. You can keep updating these details while you wait.
+            {listingReviewNote ? ` Last note: ${listingReviewNote}` : ""}
+          </p>
+        ) : null}
+        {listingStatus === "REJECTED" ? (
+          <div
+            className="grid gap-3 rounded-2xl border border-[#8a4a37]/25 bg-[#f2e6e2] px-4 py-3 text-sm text-[#8a4a37]"
+            data-testid="listing-rejected-note"
+          >
+            <p>
+              Platform asked for changes
+              {listingReviewNote ? `: ${listingReviewNote}` : "."}
+            </p>
+            <button
+              type="button"
+              disabled={resubmitting}
+              onClick={() => void requestApprovalAgain()}
+              className="w-fit rounded-full border border-[#8a4a37]/40 bg-white px-4 py-2 text-sm font-semibold text-[#8a4a37] disabled:opacity-50"
+              data-testid="listing-resubmit"
+            >
+              {resubmitting ? "Sending…" : "Request approval again"}
+            </button>
+          </div>
+        ) : null}
         <div className="rounded-2xl border border-[#7d6154]/20 bg-[#fffcf9] px-4 py-3">
           <p className="font-semibold text-[#2b2521]">{businessName || "Your business"}</p>
           {businessSlug ? (

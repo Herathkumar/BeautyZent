@@ -34,6 +34,9 @@ model Salon {
   claimedAt     DateTime?
   approvedAt    DateTime?
   approvedById  String?
+  /// Last reject reason from platform review. Kept after resubmit so admins see prior feedback.
+  listingReviewNote String?
+  listingReviewedAt DateTime?
   /// Legacy accent colours — still used for stylist chips and splash tinting.
   brandColor   String?
   accentColor  String?

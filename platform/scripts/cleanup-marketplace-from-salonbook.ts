@@ -59,6 +59,8 @@ const statements = [
   `ALTER TABLE "Salon" DROP COLUMN IF EXISTS "claimedAt"`,
   `ALTER TABLE "Salon" DROP COLUMN IF EXISTS "approvedAt"`,
   `ALTER TABLE "Salon" DROP COLUMN IF EXISTS "approvedById"`,
+  `ALTER TABLE "Salon" DROP COLUMN IF EXISTS "listingReviewNote"`,
+  `ALTER TABLE "Salon" DROP COLUMN IF EXISTS "listingReviewedAt"`,
 ];
 
 async function main() {
@@ -83,7 +85,8 @@ async function main() {
      WHERE table_schema = 'public' AND table_name = 'Salon'
        AND column_name IN (
          'listingStatus','businessType','city','region','country','lat','lng',
-         'description','coverMime','coverData','coverUpdatedAt','claimedAt','approvedAt','approvedById'
+         'description','coverMime','coverData','coverUpdatedAt','claimedAt','approvedAt','approvedById',
+         'listingReviewNote','listingReviewedAt'
        )
      ORDER BY column_name`
   );

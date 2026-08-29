@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 
 const bodySchema = z.object({
   action: z.enum(["PUBLISHED", "REJECTED", "pause", "resume"]),
+  reason: z.string().max(800).optional(),
 });
 
 /** Approve / reject marketplace claims, or pause / resume a published listing. */
@@ -25,6 +26,7 @@ export async function POST(
   if (!salon) return NextResponse.json({ error: "Business not found." }, { status: 404 });
 
   const { action } = parsed.data;
+  const reason = parsed.data.reason?.trim() || "";
 
   if (action === "PUBLISHED") {
     await prisma.salon.update({
@@ -34,17 +36,27 @@ export async function POST(
         active: true,
         approvedAt: new Date(),
         approvedById: session.adminId,
+        listingReviewNote: null,
+        listingReviewedAt: new Date(),
       },
     });
     return NextResponse.json({ ok: true, message: "Business published." });
   }
 
   if (action === "REJECTED") {
+    if (reason.length < 8) {
+      return NextResponse.json(
+        { error: "Add a short reason so the business knows what to fix." },
+        { status: 400 }
+      );
+    }
     await prisma.salon.update({
       where: { id },
       data: {
         listingStatus: "REJECTED",
         active: false,
+        listingReviewNote: reason,
+        listingReviewedAt: new Date(),
       },
     });
     return NextResponse.json({ ok: true, message: "Claim rejected." });

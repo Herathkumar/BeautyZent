@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 export default function PlatformLoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState("platform@beautyzent.local");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -31,23 +31,13 @@ export default function PlatformLoginPage() {
 
   return (
     <div className="mx-auto max-w-md space-y-6">
-      <div className="flex items-center gap-3">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/brand/beautyzent-logo-light.jpg"
-          alt="BeautyZent"
-          width={56}
-          height={56}
-          className="h-14 w-14 object-contain"
-        />
-        <div>
-          <h1 className="font-[family-name:var(--font-display)] text-3xl text-ink">
-            Platform sign in
-          </h1>
-          <p className="mt-1 text-sm text-muted">
-            BeautyZent operator access. Managers and staff keep using their own portals.
-          </p>
-        </div>
+      <div>
+        <h1 className="font-[family-name:var(--font-display)] text-3xl text-ink">
+          Platform sign in
+        </h1>
+        <p className="mt-1 text-sm text-muted">
+          BeautyZent operator access. Managers and staff keep using their own portals.
+        </p>
       </div>
 
       <form onSubmit={onSubmit} className="grid gap-4 rounded-3xl border border-ink/12 bg-white/80 p-5">

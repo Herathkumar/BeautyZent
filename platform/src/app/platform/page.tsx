@@ -9,7 +9,6 @@ import {
   DEFAULT_STYLIST_THEME_ID,
   getSalonTheme,
 } from "@/lib/salon-themes";
-import { PlatformListingActions } from "./PlatformListingActions";
 
 export const dynamic = "force-dynamic";
 
@@ -114,12 +113,6 @@ export default async function PlatformHomePage() {
               </div>
             </div>
 
-            <PlatformListingActions
-              salonId={salon.id}
-              listingStatus={salon.listingStatus}
-              active={salon.active}
-            />
-
             <p className="text-sm text-muted">
               {salon._count.stylists} providers · {salon._count.services} services ·{" "}
               {salon._count.appointments} bookings
@@ -162,30 +155,12 @@ export default async function PlatformHomePage() {
               >
                 Configure
               </Link>
-              <a
-                href={`/book/${salon.slug}`}
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-full border border-ink/12 px-4 py-2 text-muted hover:border-ink/30"
+              <Link
+                href={`/platform/salons/${salon.id}/preview`}
+                className="rounded-full border border-ink/20 px-4 py-2 font-medium text-ink-soft hover:border-ink"
               >
-                Book
-              </a>
-              <a
-                href={`/display/${salon.slug}`}
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-full border border-ink/12 px-4 py-2 text-muted hover:border-ink/30"
-              >
-                Display
-              </a>
-              <a
-                href={`/display/${salon.slug}/reception`}
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-full border border-ink/12 px-4 py-2 text-muted hover:border-ink/30"
-              >
-                Reception
-              </a>
+                Preview
+              </Link>
             </div>
           </article>
         ))}

@@ -8,8 +8,8 @@ export const metadata: Metadata = {
   description:
     "BeautyZent marketplace for salons, barbers, spas, and similar businesses — book online and run your shop.",
   icons: {
-    icon: [{ url: "/brand/beautyzent-logo-light.jpg", type: "image/jpeg" }],
-    apple: [{ url: "/brand/beautyzent-logo-light.jpg" }],
+    icon: [{ url: "/brand/beautyzent-logo-rose-mark.png", type: "image/png" }],
+    apple: [{ url: "/brand/beautyzent-logo-rose-mark.png" }],
   },
   formatDetection: {
     telephone: false,

@@ -3,9 +3,12 @@ import type { ReactNode } from "react";
 
 export const BEAUTYZENT = {
   name: "BeautyZent",
-  tagline: "Premium salon & beauty marketplace",
-  logoLight: "/brand/beautyzent-logo-light.jpg",
-  logoDark: "/brand/beautyzent-logo-dark.jpg",
+  tagline: "Premium marketplace for beauty businesses",
+  logoLight: "/brand/beautyzent-logo-rose.png",
+  logoDark: "/brand/beautyzent-logo-rose.png",
+  logoMark: "/brand/beautyzent-logo-rose-mark.png",
+  logoRose: "/brand/beautyzent-logo-rose.png",
+  logoRoseMark: "/brand/beautyzent-logo-rose-mark.png",
 } as const;
 
 type Size = "sm" | "md" | "lg" | "hero";
@@ -19,8 +22,9 @@ const SIZES: Record<Size, { width: number; height: number; className: string }> 
 
 /**
  * BeautyZent wordmark / mark.
- * - light: rose-gold on white (default marketplace chrome)
- * - dark: gold on black (dark panels / hero)
+ * - light / dark: full gold lockup with a transparent background
+ * - mark: gold Z only, transparent PNG (headers)
+ * - rose: rose-gold Z only, transparent PNG (Explore preview)
  */
 export function BeautyZentLogo({
   variant = "light",
@@ -30,7 +34,7 @@ export function BeautyZentLogo({
   className = "",
   priority = false,
 }: {
-  variant?: "light" | "dark";
+  variant?: "light" | "dark" | "mark" | "rose";
   size?: Size;
   href?: string | null;
   showWordmark?: boolean;
@@ -38,7 +42,14 @@ export function BeautyZentLogo({
   priority?: boolean;
 }) {
   const dims = SIZES[size];
-  const src = variant === "dark" ? BEAUTYZENT.logoDark : BEAUTYZENT.logoLight;
+  const src =
+    variant === "rose"
+      ? BEAUTYZENT.logoRoseMark
+      : variant === "mark"
+      ? BEAUTYZENT.logoMark
+      : variant === "dark"
+        ? BEAUTYZENT.logoDark
+        : BEAUTYZENT.logoLight;
   const img = (
     // eslint-disable-next-line @next/next/no-img-element
     <img
@@ -46,7 +57,7 @@ export function BeautyZentLogo({
       alt={BEAUTYZENT.name}
       width={dims.width}
       height={dims.height}
-      className={`${dims.className} object-contain ${className}`.trim()}
+      className={`${dims.className} bg-transparent object-contain ${className}`.trim()}
       {...(priority ? { fetchPriority: "high" as const } : {})}
     />
   );
@@ -57,14 +68,14 @@ export function BeautyZentLogo({
       <span className="grid leading-tight">
         <span
           className={`font-[family-name:var(--font-display)] text-xl tracking-tight ${
-            variant === "dark" ? "text-[#e8c9a0]" : "text-ink"
+            variant === "dark" || variant === "mark" ? "text-[#e8c9a0]" : "text-ink"
           }`}
         >
           {BEAUTYZENT.name}
         </span>
         <span
           className={`text-[0.65rem] font-semibold tracking-[0.16em] uppercase ${
-            variant === "dark" ? "text-[#c4a574]/80" : "text-cocoa"
+            variant === "dark" || variant === "mark" ? "text-[#c4a574]/80" : "text-cocoa"
           }`}
         >
           {BEAUTYZENT.tagline}

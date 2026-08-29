@@ -104,6 +104,26 @@ async function DashboardBody() {
         </div>
       </div>
 
+      {salon.listingStatus === "DRAFT" ? (
+        <p className="rounded-xl border border-[#7a6230]/25 bg-[#f5efd8] px-4 py-2.5 text-sm text-[#7a6230]">
+          Your Explore listing is pending platform review. You can still update details on{" "}
+          <Link href="/manager/account" className="font-semibold underline-offset-2 hover:underline">
+            Account
+          </Link>
+          .
+        </p>
+      ) : null}
+      {salon.listingStatus === "REJECTED" ? (
+        <p className="rounded-xl border border-[#8a4a37]/25 bg-[#f2e6e2] px-4 py-2.5 text-sm text-[#8a4a37]">
+          Platform asked for changes
+          {salon.listingReviewNote ? `: ${salon.listingReviewNote}` : "."} Update details on{" "}
+          <Link href="/manager/account" className="font-semibold underline-offset-2 hover:underline">
+            Account
+          </Link>{" "}
+          and request approval again.
+        </p>
+      ) : null}
+
       {pendingLeaveCount > 0 ? (
         <p className="rounded-xl border border-[color:var(--line)] bg-[color:var(--color-cream)] px-4 py-2.5 text-sm font-medium text-ink-soft">
           {pendingLeaveCount} leave request{pendingLeaveCount === 1 ? "" : "s"} awaiting your

@@ -28,10 +28,10 @@ export function PlatformShell({
           href={admin ? "/platform" : "/platform/login"}
           className="flex items-center gap-3"
         >
-          <BeautyZentLogo variant="light" size="sm" href={null} />
+          <BeautyZentLogo variant="mark" size="lg" href={null} priority />
           <span className="grid gap-0.5">
             <span className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-cocoa">
-              BeautyZent platform
+              BeautyZent Marketplace
             </span>
             <span className="font-[family-name:var(--font-display)] text-2xl leading-none text-ink">
               Operator console

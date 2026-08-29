@@ -23,6 +23,9 @@ const SALON_SELECT = {
   closedDays: true,
   slotMinutes: true,
   taxPercent: true,
+  listingStatus: true,
+  listingReviewNote: true,
+  listingReviewedAt: true,
 } as const;
 
 /** Signed-in manager salon branding for chrome / splash / store hours. */

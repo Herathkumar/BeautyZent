@@ -27,19 +27,29 @@ export async function GET(req: Request) {
       active: true,
       listingStatus: "PUBLISHED",
       ...(type ? { businessType: type } : {}),
-      ...(city
-        ? { city: { contains: city, mode: "insensitive" } }
-        : {}),
-      ...(q
-        ? {
+      AND: [
+        ...(city
+          ? [
+              {
+                OR: [
+                  { city: { contains: city, mode: "insensitive" as const } },
+                  { region: { contains: city, mode: "insensitive" as const } },
+                  { address: { contains: city, mode: "insensitive" as const } },
+                ],
+              },
+            ]
+          : []),
+        ...(q
+          ? [{
             OR: [
-              { name: { contains: q, mode: "insensitive" } },
-              { description: { contains: q, mode: "insensitive" } },
-              { city: { contains: q, mode: "insensitive" } },
-              { address: { contains: q, mode: "insensitive" } },
+              { name: { contains: q, mode: "insensitive" as const } },
+              { description: { contains: q, mode: "insensitive" as const } },
+              { city: { contains: q, mode: "insensitive" as const } },
+              { address: { contains: q, mode: "insensitive" as const } },
             ],
-          }
-        : {}),
+          }]
+          : []),
+      ],
     },
     orderBy: [{ name: "asc" }],
     take: limit,
@@ -128,7 +138,9 @@ export async function GET(req: Request) {
         timezone: b.timezone,
         lat: b.lat,
         lng: b.lng,
-        coverUrl: b.coverUpdatedAt ? `/api/public/cover/${b.id}` : null,
+        coverUrl: b.coverUpdatedAt
+          ? `/api/public/cover/${b.id}?v=${b.coverUpdatedAt.getTime()}`
+          : null,
         bookUrl: `/book/${b.slug}`,
         rewards: {
           hasRewards,

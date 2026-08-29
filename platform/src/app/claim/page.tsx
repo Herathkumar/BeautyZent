@@ -2,7 +2,10 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { BeautyZentMarketHeader } from "@/components/BeautyZentBrand";
+import {
+  BeautyZentLogo,
+  BeautyZentMarketHeader,
+} from "@/components/BeautyZentBrand";
 import { BUSINESS_TYPES } from "@/lib/marketplace";
 import { fileToBoundedJpegDataUrl } from "@/lib/photo-resize";
 
@@ -112,16 +115,21 @@ export default function ClaimBusinessPage() {
       />
 
       <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
-        <p className="text-xs font-semibold tracking-[0.18em] text-cocoa uppercase">
-          List your business
-        </p>
-        <h1 className="mt-2 font-[family-name:var(--font-display)] text-4xl text-ink">
-          Claim or create
-        </h1>
-        <p className="mt-3 text-muted">
-          Submit your shop for review. After a platform admin publishes it, clients can find
-          you on Explore and book online.
-        </p>
+        <header className="flex items-center gap-5">
+          <BeautyZentLogo variant="rose" size="lg" href={null} priority />
+          <div>
+            <p className="text-xs font-semibold tracking-[0.18em] text-cocoa uppercase">
+              BeautyZent Marketplace
+            </p>
+            <h1 className="mt-2 font-[family-name:var(--font-display)] text-4xl text-ink">
+              Claim or create
+            </h1>
+            <p className="mt-3 text-muted">
+              List your beauty business for review. After a platform admin publishes it,
+              clients can find you on Explore and book online.
+            </p>
+          </div>
+        </header>
 
         {done ? (
           <div className="mt-8 rounded-3xl border border-ink/12 bg-white p-6">
