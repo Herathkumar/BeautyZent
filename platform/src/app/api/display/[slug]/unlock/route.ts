@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { normalizeCustomerDisplayView } from "@/lib/customer-display-view";
+import {
+  normalizeCustomerDisplayView,
+  normalizeCustomerDisplayViewControl,
+  normalizeCustomerDisplayViewRotateSec,
+} from "@/lib/customer-display-view";
 import {
   clearDisplayUnlockCookieOn,
   createDisplayUnlockToken,
@@ -10,7 +14,7 @@ import {
 import { prisma } from "@/lib/prisma";
 import { calendarDateInTz, dayOfWeekInTz } from "@/lib/salon-time";
 
-const salonHoursSelect = {
+const salonHoursCoreSelect = {
   id: true,
   slug: true,
   name: true,
@@ -23,6 +27,31 @@ const salonHoursSelect = {
   displayViewMode: true,
 } as const;
 
+const salonHoursSelect = {
+  ...salonHoursCoreSelect,
+  displayViewControl: true,
+  displayViewRotateSec: true,
+} as const;
+
+async function loadSalonHours(slug: string) {
+  try {
+    return await prisma.salon.findUnique({
+      where: { slug },
+      select: salonHoursSelect,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err || "");
+    if (!/displayView(Control|RotateSec)/i.test(message)) throw err;
+    const salon = await prisma.salon.findUnique({
+      where: { slug },
+      select: salonHoursCoreSelect,
+    });
+    return salon
+      ? { ...salon, displayViewControl: "manual", displayViewRotateSec: 60 }
+      : null;
+  }
+}
+
 function publicSalon(salon: {
   name: string;
   slug: string;
@@ -31,6 +60,8 @@ function publicSalon(salon: {
   closeHour: number;
   closedDays: number[];
   displayViewMode?: string | null;
+  displayViewControl?: string | null;
+  displayViewRotateSec?: number | null;
 }) {
   const timeZone = salon.timezone || "America/Toronto";
   const today = calendarDateInTz(timeZone);
@@ -43,6 +74,8 @@ function publicSalon(salon: {
     closedDays: salon.closedDays || [],
     todayClosed: (salon.closedDays || []).includes(dayOfWeekInTz(today, timeZone)),
     displayViewMode: normalizeCustomerDisplayView(salon.displayViewMode),
+    displayViewControl: normalizeCustomerDisplayViewControl(salon.displayViewControl),
+    displayViewRotateSec: normalizeCustomerDisplayViewRotateSec(salon.displayViewRotateSec),
   };
 }
 
@@ -57,10 +90,7 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params;
-  const salon = await prisma.salon.findUnique({
-    where: { slug },
-    select: salonHoursSelect,
-  });
+  const salon = await loadSalonHours(slug);
   if (!salon) return NextResponse.json({ error: "Salon not found" }, { status: 404 });
 
   const pinSet = Boolean(salon.displayPinHash);
@@ -94,10 +124,7 @@ export async function POST(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params;
-  const salon = await prisma.salon.findUnique({
-    where: { slug },
-    select: salonHoursSelect,
-  });
+  const salon = await loadSalonHours(slug);
   if (!salon) return NextResponse.json({ error: "Salon not found" }, { status: 404 });
 
   if (!salon.displayPinHash) {

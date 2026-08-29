@@ -38,6 +38,8 @@ export default async function SalonDetailPage({
       managerThemeId: true,
       stylistThemeId: true,
       displayViewMode: true,
+      displayViewControl: true,
+      displayViewRotateSec: true,
     },
   });
   if (!salon) notFound();

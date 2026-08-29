@@ -50,7 +50,10 @@ import {
   CUSTOMER_VIEW_EVENT,
   customerViewKey,
   normalizeCustomerDisplayView,
+  normalizeCustomerDisplayViewControl,
+  normalizeCustomerDisplayViewRotateSec,
   readCustomerDisplayView,
+  resolveCustomerDisplayView,
   type CustomerDisplayView,
 } from "@/lib/customer-display-view";
 import type { CheckoutBill } from "@/lib/display-checkout-types";
@@ -74,6 +77,8 @@ type SalonInfo = {
   closedDays?: number[];
   todayClosed?: boolean;
   displayViewMode?: string | null;
+  displayViewControl?: string | null;
+  displayViewRotateSec?: number | null;
   displayCheckoutEnabled?: boolean;
 };
 
@@ -562,6 +567,7 @@ export function DisplayBoard({
   const [rescheduleOpen, setRescheduleOpen] = useState(false);
   /** null until this tablet picks a layout; then it wins over the salon default. */
   const [viewOverride, setViewOverride] = useState<CustomerDisplayView | null>(null);
+  const [rotateView, setRotateView] = useState<CustomerDisplayView>("lounge");
   const [needsPin, setNeedsPin] = useState(false);
   const [pinSet, setPinSet] = useState(false);
   const [unlockChecked, setUnlockChecked] = useState(false);
@@ -613,8 +619,25 @@ export function DisplayBoard({
     return () => window.removeEventListener("keydown", onKey);
   }, [variant]);
 
-  const customerView =
-    viewOverride ?? normalizeCustomerDisplayView(salon?.displayViewMode);
+  const displayViewControl = normalizeCustomerDisplayViewControl(salon?.displayViewControl);
+  const displayViewRotateSec = normalizeCustomerDisplayViewRotateSec(salon?.displayViewRotateSec);
+
+  useEffect(() => {
+    if (displayViewControl !== "rotate") return;
+    const ms = displayViewRotateSec * 1000;
+    const timer = window.setInterval(() => {
+      setRotateView((prev) => (prev === "lounge" ? "timeline" : "lounge"));
+    }, ms);
+    return () => window.clearInterval(timer);
+  }, [displayViewControl, displayViewRotateSec]);
+
+  const customerView = resolveCustomerDisplayView({
+    control: displayViewControl,
+    defaultView: normalizeCustomerDisplayView(salon?.displayViewMode),
+    tabletOverride: viewOverride,
+    rotateView,
+  });
+  const showViewToggle = displayViewControl === "manual";
 
   const unlockHeaders = useMemo(() => {
     if (!unlockToken) return {} as Record<string, string>;
@@ -1815,7 +1838,9 @@ export function DisplayBoard({
             </div>
             <div className="flex flex-col items-end gap-2">
               <div className="flex flex-wrap items-center justify-end gap-2">
-                <CustomerViewToggle slug={slug} view={customerView} />
+                {showViewToggle ? (
+                  <CustomerViewToggle slug={slug} view={customerView} />
+                ) : null}
                 <CustomerThemeToggle />
               </div>
               <div className="flex items-center gap-3">

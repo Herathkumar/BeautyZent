@@ -7,6 +7,12 @@ import {
   PROMOTION_RULE_TYPES,
   type PromotionRuleType,
 } from "@/lib/promotions";
+import {
+  CUSTOMER_VIEW_CONTROL_OPTIONS,
+  normalizeCustomerDisplayViewControl,
+  normalizeCustomerDisplayViewRotateSec,
+  type CustomerDisplayViewControl,
+} from "@/lib/customer-display-view";
 import { SettingToggle } from "@/components/admin/SettingToggle";
 
 type PromoSettings = {
@@ -16,6 +22,8 @@ type PromoSettings = {
   loyaltyCentsPerPoint: number;
   loyaltyMaxRedeemPercent: number;
   displayCheckoutEnabled: boolean;
+  displayViewControl: CustomerDisplayViewControl;
+  displayViewRotateSec: number;
   promoBoardEnabled: boolean;
   promoBoardIntervalSec: number;
   promoBoardShowSec: number;
@@ -43,6 +51,8 @@ export function PromotionsSettings() {
     loyaltyCentsPerPoint: 5,
     loyaltyMaxRedeemPercent: 50,
     displayCheckoutEnabled: true,
+    displayViewControl: "manual",
+    displayViewRotateSec: 60,
     promoBoardEnabled: false,
     promoBoardIntervalSec: 90,
     promoBoardShowSec: 24,
@@ -110,6 +120,8 @@ export function PromotionsSettings() {
         Math.max(0, Math.round(Number(next.loyaltyMaxRedeemPercent) || 0))
       ),
       displayCheckoutEnabled: next.displayCheckoutEnabled !== false,
+      displayViewControl: normalizeCustomerDisplayViewControl(next.displayViewControl),
+      displayViewRotateSec: normalizeCustomerDisplayViewRotateSec(next.displayViewRotateSec),
       promoBoardEnabled: Boolean(next.promoBoardEnabled),
       promoBoardIntervalSec: Math.min(
         600,
@@ -513,6 +525,62 @@ export function PromotionsSettings() {
             checked={settings.displayCheckoutEnabled}
             onChange={(displayCheckoutEnabled) => setSettings((s) => ({ ...s, displayCheckoutEnabled }))}
           />
+
+          <div className="grid gap-2">
+            <p className="text-sm font-medium text-[#2b2521]">Lounge / Schedule layout</p>
+            <p className="text-xs text-[#6b5b52]">
+              Choose how the customer TV switches between Lounge and Schedule.
+            </p>
+            <div className="grid gap-2 sm:grid-cols-2" data-testid="display-view-control">
+              {CUSTOMER_VIEW_CONTROL_OPTIONS.map((option) => {
+                const on = settings.displayViewControl === option.id;
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    aria-pressed={on}
+                    data-testid={`display-view-control-${option.id}`}
+                    onClick={() =>
+                      setSettings((s) => ({
+                        ...s,
+                        displayViewControl: option.id,
+                      }))
+                    }
+                    className={`rounded-xl border p-3 text-left transition ${
+                      on
+                        ? "border-[#7d6154] bg-[#f7efe6]"
+                        : "border-[#7d6154]/25 bg-[#fffcf9] hover:border-[#7d6154]/50"
+                    }`}
+                  >
+                    <span className="block text-sm font-semibold text-[#2b2521]">{option.label}</span>
+                    <span className="mt-1 block text-xs text-[#6b5b52]">{option.hint}</span>
+                  </button>
+                );
+              })}
+            </div>
+            {settings.displayViewControl === "rotate" ? (
+              <label className="mt-1 grid max-w-xs gap-1 text-sm text-[#6b5b52]">
+                Switch every (seconds)
+                <input
+                  type="number"
+                  min={5}
+                  max={600}
+                  value={settings.displayViewRotateSec}
+                  onChange={(e) =>
+                    setSettings((s) => ({
+                      ...s,
+                      displayViewRotateSec: Number(e.target.value),
+                    }))
+                  }
+                  className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-[#2b2521]"
+                  data-testid="display-view-rotate-sec"
+                />
+                <span className="text-xs text-[#9a8a80]">
+                  How long each layout stays on screen before switching
+                </span>
+              </label>
+            ) : null}
+          </div>
         </div>
 
         <div>

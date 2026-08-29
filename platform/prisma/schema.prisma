@@ -37,9 +37,14 @@ model Salon {
   /// bcrypt hash of the store-display tablet PIN (null = board unlocked / no PIN)
   displayPinHash   String?
   displayPinSetAt  DateTime?
-  /// Default customer TV layout: "lounge" chair cards or "timeline" day schedule.
+  /// Default customer TV layout when control is "manual": "lounge" or "timeline".
   /// A tablet can override this locally (see src/lib/customer-display-view.ts).
   displayViewMode  String   @default("lounge")
+  /// How the customer TV picks Lounge vs Schedule:
+  /// "manual" (tablet switch), "lounge", "timeline", or "rotate".
+  displayViewControl   String @default("manual")
+  /// Seconds between Lounge ↔ Schedule when displayViewControl is "rotate".
+  displayViewRotateSec Int    @default(60)
   /// Loyalty points earn/redeem at checkout (members only).
   loyaltyEnabled          Boolean @default(false)
   discountsEnabled        Boolean @default(false)

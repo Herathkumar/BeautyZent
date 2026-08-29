@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { getSession, isSalonStaff } from "@/lib/auth";
+import {
+  normalizeCustomerDisplayViewControl,
+  normalizeCustomerDisplayViewRotateSec,
+} from "@/lib/customer-display-view";
 import { prisma } from "@/lib/prisma";
 import { PROMOTION_RULE_TYPES, type PromotionRuleType } from "@/lib/promotions";
 
@@ -34,6 +38,8 @@ function settingsSelect() {
   return {
     ...coreSettingsSelect(),
     displayCheckoutEnabled: true,
+    displayViewControl: true,
+    displayViewRotateSec: true,
     promoBoardEnabled: true,
     promoBoardIntervalSec: true,
     promoBoardShowSec: true,
@@ -48,6 +54,8 @@ function withBoardDefaults(salon: {
   loyaltyCentsPerPoint: number;
   loyaltyMaxRedeemPercent: number;
   displayCheckoutEnabled?: boolean;
+  displayViewControl?: string | null;
+  displayViewRotateSec?: number | null;
   promoBoardEnabled?: boolean;
   promoBoardIntervalSec?: number;
   promoBoardShowSec?: number;
@@ -60,6 +68,8 @@ function withBoardDefaults(salon: {
     loyaltyCentsPerPoint: salon.loyaltyCentsPerPoint,
     loyaltyMaxRedeemPercent: salon.loyaltyMaxRedeemPercent,
     displayCheckoutEnabled: salon.displayCheckoutEnabled !== false,
+    displayViewControl: normalizeCustomerDisplayViewControl(salon.displayViewControl),
+    displayViewRotateSec: normalizeCustomerDisplayViewRotateSec(salon.displayViewRotateSec),
     promoBoardEnabled: Boolean(salon.promoBoardEnabled),
     promoBoardIntervalSec: salon.promoBoardIntervalSec ?? 90,
     promoBoardShowSec: salon.promoBoardShowSec ?? 24,
@@ -70,6 +80,13 @@ function withBoardDefaults(salon: {
 function isMissingDisplayCheckoutFieldError(err: unknown) {
   const message = err instanceof Error ? err.message : String(err || "");
   return /Unknown (?:field|arg) `?displayCheckoutEnabled`?|Salon\.displayCheckoutEnabled|column [`']?Salon\.displayCheckoutEnabled/i.test(
+    message
+  );
+}
+
+function isMissingViewControlFieldError(err: unknown) {
+  const message = err instanceof Error ? err.message : String(err || "");
+  return /Unknown (?:field|arg) `?displayView(Control|RotateSec)`?|Salon\.displayView(Control|RotateSec)/i.test(
     message
   );
 }
@@ -91,6 +108,8 @@ function normalizeSettingsInput(raw: Record<string, unknown>) {
     ),
     displayCheckoutEnabled:
       raw.displayCheckoutEnabled === undefined ? true : Boolean(raw.displayCheckoutEnabled),
+    displayViewControl: normalizeCustomerDisplayViewControl(raw.displayViewControl),
+    displayViewRotateSec: normalizeCustomerDisplayViewRotateSec(raw.displayViewRotateSec),
     promoBoardEnabled: Boolean(raw.promoBoardEnabled),
     promoBoardIntervalSec: Math.min(
       600,
@@ -112,7 +131,7 @@ function promoErrorMessage(err: unknown, fallback: string) {
   if (/reading 'findMany'|promotionSlide/i.test(message)) {
     return "Prisma client is out of date. Stop the dev server, run pnpm db:generate, then restart with pnpm dev:local.";
   }
-  if (/Unknown arg `loyaltyEnabled`|Unknown arg `discountsEnabled`|Unknown arg `displayCheckoutEnabled`|Unknown arg `promoBoardEnabled`/i.test(message)) {
+  if (/Unknown arg `loyaltyEnabled`|Unknown arg `discountsEnabled`|Unknown arg `displayCheckoutEnabled`|Unknown arg `displayViewControl`|Unknown arg `promoBoardEnabled`/i.test(message)) {
     return "Prisma client is out of date. Stop the dev server, run pnpm db:generate, then restart with pnpm dev:local.";
   }
   if (err && typeof err === "object" && "code" in err) {
@@ -133,43 +152,48 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  try {
+    let salon = null as Awaited<ReturnType<typeof prisma.salon.findUnique>> | null;
     try {
-      let salon;
-      try {
-        salon = await prisma.salon.findUnique({
-          where: { id: session.salonId },
-          select: settingsSelect(),
-        });
-      } catch (err) {
-        if (isMissingDisplayCheckoutFieldError(err)) {
-          const {
-            displayCheckoutEnabled: _checkout,
-            ...withoutCheckout
-          } = settingsSelect();
-          try {
-            salon = await prisma.salon.findUnique({
-              where: { id: session.salonId },
-              select: withoutCheckout,
-            });
-          } catch (inner) {
-            if (!isMissingPromoBoardFieldError(inner)) throw inner;
-            salon = await prisma.salon.findUnique({
-              where: { id: session.salonId },
-              select: coreSettingsSelect(),
-            });
-          }
-        } else if (isMissingPromoBoardFieldError(err)) {
+      salon = await prisma.salon.findUnique({
+        where: { id: session.salonId },
+        select: settingsSelect(),
+      });
+    } catch (err) {
+      if (isMissingViewControlFieldError(err) || isMissingDisplayCheckoutFieldError(err)) {
+        const {
+          displayCheckoutEnabled: _checkout,
+          displayViewControl: _c,
+          displayViewRotateSec: _r,
+          ...rest
+        } = settingsSelect();
+        const select = isMissingDisplayCheckoutFieldError(err)
+          ? rest
+          : { ...rest, displayCheckoutEnabled: true as const };
+        try {
           salon = await prisma.salon.findUnique({
             where: { id: session.salonId },
-            select: {
-              ...coreSettingsSelect(),
-              displayCheckoutEnabled: true,
-            },
+            select,
           });
-        } else {
-          throw err;
+        } catch (inner) {
+          if (!isMissingPromoBoardFieldError(inner)) throw inner;
+          salon = await prisma.salon.findUnique({
+            where: { id: session.salonId },
+            select: coreSettingsSelect(),
+          });
         }
+      } else if (isMissingPromoBoardFieldError(err)) {
+        salon = await prisma.salon.findUnique({
+          where: { id: session.salonId },
+          select: {
+            ...coreSettingsSelect(),
+            displayCheckoutEnabled: true,
+          },
+        });
+      } else {
+        throw err;
       }
+    }
 
     const rules = await prisma.promotionRule.findMany({
       where: { salonId: session.salonId },
@@ -204,7 +228,7 @@ export async function POST(req: Request) {
   if (body.settings) {
     try {
       const payload = normalizeSettingsInput(body.settings as Record<string, unknown>);
-      let salon;
+      let salon: Awaited<ReturnType<typeof prisma.salon.update>> | null = null;
       try {
         salon = await prisma.salon.update({
           where: { id: session.salonId },
@@ -212,14 +236,48 @@ export async function POST(req: Request) {
           select: settingsSelect(),
         });
       } catch (err) {
-        if (isMissingDisplayCheckoutFieldError(err)) {
-          const { displayCheckoutEnabled: _checkout, ...rest } = payload;
+        let lastErr: unknown = err;
+        if (isMissingViewControlFieldError(lastErr)) {
+          const {
+            displayViewControl: _vc,
+            displayViewRotateSec: _vr,
+            ...withoutView
+          } = payload;
+          try {
+            salon = await prisma.salon.update({
+              where: { id: session.salonId },
+              data: withoutView,
+              select: (() => {
+                const {
+                  displayViewControl: _c,
+                  displayViewRotateSec: _r,
+                  ...sel
+                } = settingsSelect();
+                return sel;
+              })(),
+            });
+          } catch (inner) {
+            lastErr = inner;
+          }
+        }
+        if (!salon && isMissingDisplayCheckoutFieldError(lastErr)) {
+          const {
+            displayCheckoutEnabled: _checkout,
+            displayViewControl: _vc,
+            displayViewRotateSec: _vr,
+            ...rest
+          } = payload;
           try {
             salon = await prisma.salon.update({
               where: { id: session.salonId },
               data: rest,
               select: (() => {
-                const { displayCheckoutEnabled: _c, ...sel } = settingsSelect();
+                const {
+                  displayCheckoutEnabled: _c,
+                  displayViewControl: _vc2,
+                  displayViewRotateSec: _vr2,
+                  ...sel
+                } = settingsSelect();
                 return sel;
               })(),
             });
@@ -238,12 +296,14 @@ export async function POST(req: Request) {
               select: coreSettingsSelect(),
             });
           }
-        } else if (isMissingPromoBoardFieldError(err)) {
+        } else if (!salon && isMissingPromoBoardFieldError(lastErr)) {
           const {
             promoBoardEnabled: _a,
             promoBoardIntervalSec: _b,
             promoBoardShowSec: _c,
             promoBoardSlideSec: _d,
+            displayViewControl: _vc,
+            displayViewRotateSec: _vr,
             ...corePayload
           } = payload;
           salon = await prisma.salon.update({
@@ -254,8 +314,8 @@ export async function POST(req: Request) {
               displayCheckoutEnabled: true,
             },
           });
-        } else {
-          throw err;
+        } else if (!salon) {
+          throw lastErr;
         }
       }
       return NextResponse.json({

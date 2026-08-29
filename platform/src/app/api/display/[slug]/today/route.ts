@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { normalizeCustomerDisplayView } from "@/lib/customer-display-view";
+import {
+  normalizeCustomerDisplayView,
+  normalizeCustomerDisplayViewControl,
+  normalizeCustomerDisplayViewRotateSec,
+} from "@/lib/customer-display-view";
 import { assertDisplayAccess } from "@/lib/display-pin";
 import { prisma } from "@/lib/prisma";
 import {
@@ -34,19 +38,56 @@ function isMissingCheckoutColumn(err: unknown) {
   return /displayCheckoutEnabled/i.test(message);
 }
 
+function isMissingViewControlColumn(err: unknown) {
+  const message = err instanceof Error ? err.message : String(err || "");
+  return /displayView(Control|RotateSec)/i.test(message);
+}
+
 async function loadSalon(slug: string) {
   try {
     return await prisma.salon.findUnique({
       where: { slug },
-      select: { ...salonCoreSelect, displayCheckoutEnabled: true },
+      select: {
+        ...salonCoreSelect,
+        displayCheckoutEnabled: true,
+        displayViewControl: true,
+        displayViewRotateSec: true,
+      },
     });
   } catch (err) {
-    if (!isMissingCheckoutColumn(err)) throw err;
-    const salon = await prisma.salon.findUnique({
-      where: { slug },
-      select: salonCoreSelect,
-    });
-    return salon ? { ...salon, displayCheckoutEnabled: true } : null;
+    let lastErr: unknown = err;
+    if (isMissingViewControlColumn(lastErr)) {
+      try {
+        const salon = await prisma.salon.findUnique({
+          where: { slug },
+          select: { ...salonCoreSelect, displayCheckoutEnabled: true },
+        });
+        return salon
+          ? {
+              ...salon,
+              displayViewControl: "manual",
+              displayViewRotateSec: 60,
+            }
+          : null;
+      } catch (inner) {
+        lastErr = inner;
+      }
+    }
+    if (isMissingCheckoutColumn(lastErr)) {
+      const salon = await prisma.salon.findUnique({
+        where: { slug },
+        select: salonCoreSelect,
+      });
+      return salon
+        ? {
+            ...salon,
+            displayCheckoutEnabled: true,
+            displayViewControl: "manual",
+            displayViewRotateSec: 60,
+          }
+        : null;
+    }
+    throw lastErr;
   }
 }
 
@@ -178,7 +219,16 @@ export async function GET(
       closedDays: salon.closedDays || [],
       todayClosed: (salon.closedDays || []).includes(dayOfWeekInTz(todayYmd, timeZone)),
       displayViewMode: normalizeCustomerDisplayView(salon.displayViewMode),
-      displayCheckoutEnabled: salon.displayCheckoutEnabled !== false,
+      displayViewControl: normalizeCustomerDisplayViewControl(
+        "displayViewControl" in salon ? salon.displayViewControl : "manual"
+      ),
+      displayViewRotateSec: normalizeCustomerDisplayViewRotateSec(
+        "displayViewRotateSec" in salon ? salon.displayViewRotateSec : 60
+      ),
+      displayCheckoutEnabled:
+        "displayCheckoutEnabled" in salon
+          ? salon.displayCheckoutEnabled !== false
+          : true,
     },
     range: {
       from: from.toISOString(),

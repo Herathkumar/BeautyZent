@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  CUSTOMER_VIEW_OPTIONS,
+  CUSTOMER_VIEW_CONTROL_OPTIONS,
   normalizeCustomerDisplayView,
-  type CustomerDisplayView,
+  normalizeCustomerDisplayViewControl,
+  normalizeCustomerDisplayViewRotateSec,
+  type CustomerDisplayViewControl,
 } from "@/lib/customer-display-view";
 import {
   DEFAULT_BOOKING_THEME_ID,
@@ -34,6 +36,8 @@ export type EditableSalon = {
   managerThemeId: string;
   stylistThemeId: string;
   displayViewMode: string;
+  displayViewControl?: string | null;
+  displayViewRotateSec?: number | null;
 };
 
 export function SalonEditor({ salon }: { salon: EditableSalon }) {
@@ -54,6 +58,8 @@ export function SalonEditor({ salon }: { salon: EditableSalon }) {
     managerThemeId: normalizeThemeId(salon.managerThemeId, DEFAULT_MANAGER_THEME_ID),
     stylistThemeId: normalizeThemeId(salon.stylistThemeId, DEFAULT_STYLIST_THEME_ID),
     displayViewMode: normalizeCustomerDisplayView(salon.displayViewMode),
+    displayViewControl: normalizeCustomerDisplayViewControl(salon.displayViewControl),
+    displayViewRotateSec: normalizeCustomerDisplayViewRotateSec(salon.displayViewRotateSec),
   });
   const [managerEmail, setManagerEmail] = useState("");
   const [managerPassword, setManagerPassword] = useState("");
@@ -232,20 +238,20 @@ export function SalonEditor({ salon }: { salon: EditableSalon }) {
             Customer display
           </h2>
           <p className="mt-1 text-xs text-muted">
-            Starting layout for the lounge TV. Staff can switch views on the tablet itself, and
-            that choice sticks on that device.
+            How the lounge TV picks Lounge vs Schedule. Managers can also change this under
+            Promotions.
           </p>
         </div>
         <div className="grid gap-2 sm:grid-cols-2">
-          {CUSTOMER_VIEW_OPTIONS.map((option) => {
-            const on = form.displayViewMode === option.id;
+          {CUSTOMER_VIEW_CONTROL_OPTIONS.map((option) => {
+            const on = form.displayViewControl === option.id;
             return (
               <button
                 key={option.id}
                 type="button"
                 aria-pressed={on}
-                data-testid={`salon-display-view-${option.id}`}
-                onClick={() => set("displayViewMode", option.id as CustomerDisplayView)}
+                data-testid={`salon-display-control-${option.id}`}
+                onClick={() => set("displayViewControl", option.id as CustomerDisplayViewControl)}
                 className={`rounded-2xl border p-4 text-left ${
                   on ? "border-ink bg-ink/5" : "border-ink/15 hover:border-ink/40"
                 }`}
@@ -256,6 +262,20 @@ export function SalonEditor({ salon }: { salon: EditableSalon }) {
             );
           })}
         </div>
+        {form.displayViewControl === "rotate" ? (
+          <label className={`${labelClass} max-w-xs`}>
+            Switch every (seconds)
+            <input
+              type="number"
+              min={5}
+              max={600}
+              value={form.displayViewRotateSec}
+              onChange={(e) => set("displayViewRotateSec", Number(e.target.value))}
+              className={fieldClass}
+              data-testid="salon-display-rotate-sec"
+            />
+          </label>
+        ) : null}
       </section>
 
       <section className="grid gap-5 rounded-3xl border border-ink/12 bg-white/80 p-5">

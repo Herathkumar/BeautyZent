@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { normalizeCustomerDisplayView } from "@/lib/customer-display-view";
+import { normalizeCustomerDisplayView, normalizeCustomerDisplayViewControl, normalizeCustomerDisplayViewRotateSec } from "@/lib/customer-display-view";
 import { getPlatformSession } from "@/lib/platform-auth";
 import { prisma } from "@/lib/prisma";
 import {
@@ -36,6 +36,8 @@ const SALON_SELECT = {
   managerThemeId: true,
   stylistThemeId: true,
   displayViewMode: true,
+  displayViewControl: true,
+  displayViewRotateSec: true,
   createdAt: true,
   _count: { select: { stylists: true, services: true, appointments: true, clients: true } },
 } as const;
@@ -160,6 +162,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       managerThemeId,
       stylistThemeId,
       displayViewMode: normalizeCustomerDisplayView(body.displayViewMode),
+      displayViewControl: normalizeCustomerDisplayViewControl(body.displayViewControl),
+      displayViewRotateSec: normalizeCustomerDisplayViewRotateSec(body.displayViewRotateSec),
       brandColor: bookingTheme.dark.accent,
       accentColor: bookingTheme.dark.accentStrong,
     },
