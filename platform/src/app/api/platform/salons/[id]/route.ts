@@ -10,6 +10,10 @@ import {
   validateSlug,
 } from "@/lib/platform-salons";
 import {
+  normalizeBusinessType,
+  normalizeListingStatus,
+} from "@/lib/marketplace";
+import {
   DEFAULT_BOOKING_THEME_ID,
   DEFAULT_MANAGER_THEME_ID,
   DEFAULT_STYLIST_THEME_ID,
@@ -24,6 +28,12 @@ const SALON_SELECT = {
   name: true,
   slug: true,
   active: true,
+  listingStatus: true,
+  businessType: true,
+  city: true,
+  region: true,
+  country: true,
+  description: true,
   phone: true,
   email: true,
   address: true,
@@ -38,6 +48,8 @@ const SALON_SELECT = {
   displayViewMode: true,
   displayViewControl: true,
   displayViewRotateSec: true,
+  claimedAt: true,
+  approvedAt: true,
   createdAt: true,
   _count: { select: { stylists: true, services: true, appointments: true, clients: true } },
 } as const;
@@ -144,6 +156,15 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const stylistThemeId = normalizeThemeId(body.stylistThemeId, DEFAULT_STYLIST_THEME_ID);
   const bookingTheme = getSalonTheme(bookingThemeId, DEFAULT_BOOKING_THEME_ID);
 
+  const listingStatus =
+    body.listingStatus != null
+      ? normalizeListingStatus(body.listingStatus)
+      : undefined;
+  const businessType =
+    body.businessType != null ? normalizeBusinessType(body.businessType) : undefined;
+
+  const approving = listingStatus === "PUBLISHED";
+
   await prisma.salon.update({
     where: { id },
     data: {
@@ -166,9 +187,31 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       displayViewRotateSec: normalizeCustomerDisplayViewRotateSec(body.displayViewRotateSec),
       brandColor: bookingTheme.dark.accent,
       accentColor: bookingTheme.dark.accentStrong,
+      ...(listingStatus
+        ? {
+            listingStatus,
+            ...(approving
+              ? { approvedAt: new Date(), approvedById: session.adminId ?? session.email ?? null }
+              : {}),
+            ...(listingStatus === "PUBLISHED" && body.active !== false ? { active: true } : {}),
+          }
+        : {}),
+      ...(businessType ? { businessType } : {}),
+      ...(body.city !== undefined
+        ? { city: body.city ? String(body.city).trim() : null }
+        : {}),
+      ...(body.region !== undefined
+        ? { region: body.region ? String(body.region).trim() : null }
+        : {}),
+      ...(body.country !== undefined
+        ? { country: body.country ? String(body.country).trim() : null }
+        : {}),
+      ...(body.description !== undefined
+        ? { description: body.description ? String(body.description).trim() : null }
+        : {}),
     },
   });
 
   const data = await loadSalon(id);
-  return NextResponse.json({ ...data, message: "Salon saved." });
+  return NextResponse.json({ ...data, message: "Business saved." });
 }

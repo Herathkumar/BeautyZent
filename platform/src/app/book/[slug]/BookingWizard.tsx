@@ -41,7 +41,7 @@ type Salon = {
   today?: string;
 };
 
-const STEPS = ["Service", "Stylist", "Time", "Details"] as const;
+const STEPS = ["Service", "Provider", "Time", "Details"] as const;
 
 const CATEGORY_ORDER = ["WOMEN", "MEN"] as const;
 
@@ -841,7 +841,7 @@ export function BookingWizard({ slug }: { slug: string }) {
           <section className="space-y-3">
             <div className="flex flex-wrap items-end justify-between gap-2">
               <h2 className="font-[family-name:var(--font-display)] text-2xl">
-                Choose your stylist
+                Choose your provider
               </h2>
               <button
                 type="button"
@@ -853,7 +853,7 @@ export function BookingWizard({ slug }: { slug: string }) {
             </div>
             {filteredStylists.length === 0 ? (
               <div className="book-card rounded-2xl px-4 py-5 text-sm text-muted">
-                No stylist is available for this selection yet.{" "}
+                No provider is available for this selection yet.{" "}
                 <button
                   type="button"
                   className="font-semibold text-champagne underline-offset-2 hover:underline"
@@ -875,7 +875,7 @@ export function BookingWizard({ slug }: { slug: string }) {
                     stylistId === ANY_STYLIST_ID ? "is-selected" : ""
                   }`}
                 >
-                  <p className="font-semibold">Any available stylist</p>
+                  <p className="font-semibold">Any available provider</p>
                   <p className="mt-1 text-sm text-muted">
                     We’ll match you to the first open chair for your time.
                   </p>

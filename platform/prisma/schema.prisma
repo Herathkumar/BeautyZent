@@ -7,7 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/// Multi-tenant salon (pilot: Farzana Hair Salon; scalable to many salons)
+/// Multi-tenant business (salon, barber, spa, nails, …). Ops still use Salon tables.
 model Salon {
   id           String   @id @default(cuid())
   name         String
@@ -16,8 +16,24 @@ model Salon {
   email        String?
   address      String?
   timezone     String   @default("America/Toronto")
-  /// Platform operator can park a salon without deleting its data.
+  /// Operational pause — booking/display off without deleting data.
   active       Boolean  @default(true)
+  /// Marketplace listing: DRAFT (pending) | PUBLISHED | REJECTED
+  listingStatus String  @default("PUBLISHED")
+  /// Vertical: SALON | BARBER | SPA | NAILS | OTHER
+  businessType  String  @default("SALON")
+  city          String?
+  region        String?
+  country       String? @default("CA")
+  lat           Float?
+  lng           Float?
+  description   String?
+  coverMime     String?
+  coverData     Bytes?
+  coverUpdatedAt DateTime?
+  claimedAt     DateTime?
+  approvedAt    DateTime?
+  approvedById  String?
   /// Legacy accent colours — still used for stylist chips and splash tinting.
   brandColor   String?
   accentColor  String?
@@ -77,6 +93,38 @@ model Salon {
   stylePrefs   AppointmentStylePref[]
   styleAiUsage StyleAiUsage[]
   promotionRules PromotionRule[]
+}
+
+/// Global consumer identity — one email across many business memberships (Client rows).
+model ConsumerAccount {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  name            String?
+  phone           String?
+  emailVerifiedAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  clients Client[]
+  otps    ConsumerOtp[]
+}
+
+/// Platform-wide OTP (sign in once, then pick a business membership).
+model ConsumerOtp {
+  id        String   @id @default(cuid())
+  email     String
+  codeHash  String
+  purpose   String   @default("signin") // signin | join
+  name      String?
+  phone     String?
+  attempts  Int      @default(0)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  accountId String?
+  account   ConsumerAccount? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+
+  @@index([email, createdAt])
 }
 
 /// Platform operator login — separate from salon staff (User) so tenant auth is untouched.
@@ -285,6 +333,8 @@ model Product {
 model Client {
   id                 String    @id @default(cuid())
   salonId            String
+  /// Optional link to global ConsumerAccount (same email across businesses).
+  accountId          String?
   name               String
   phone              String?
   email              String?
@@ -301,13 +351,15 @@ model Client {
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
-  salon        Salon         @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  salon        Salon            @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  account      ConsumerAccount? @relation(fields: [accountId], references: [id], onDelete: SetNull)
   appointments Appointment[]
   lookPhotos   AppointmentPhoto[]
   stylePrefs   AppointmentStylePref[]
 
   @@index([salonId, phone])
   @@index([salonId, email])
+  @@index([accountId])
 }
 
 /// Salon discount rules — manager-configured, auto-applied at checkout.

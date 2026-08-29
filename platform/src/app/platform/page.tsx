@@ -2,12 +2,14 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getPlatformSession } from "@/lib/platform-auth";
 import { prisma } from "@/lib/prisma";
+import { businessTypeLabel } from "@/lib/marketplace";
 import {
   DEFAULT_BOOKING_THEME_ID,
   DEFAULT_MANAGER_THEME_ID,
   DEFAULT_STYLIST_THEME_ID,
   getSalonTheme,
 } from "@/lib/salon-themes";
+import { PlatformListingActions } from "./PlatformListingActions";
 
 export const dynamic = "force-dynamic";
 
@@ -16,12 +18,15 @@ export default async function PlatformHomePage() {
   if (!session) redirect("/platform/login");
 
   const salons = await prisma.salon.findMany({
-    orderBy: [{ active: "desc" }, { name: "asc" }],
+    orderBy: [{ listingStatus: "asc" }, { active: "desc" }, { name: "asc" }],
     select: {
       id: true,
       name: true,
       slug: true,
       active: true,
+      listingStatus: true,
+      businessType: true,
+      city: true,
       timezone: true,
       openHour: true,
       closeHour: true,
@@ -32,23 +37,36 @@ export default async function PlatformHomePage() {
     },
   });
 
+  const pending = salons.filter((s) => s.listingStatus === "DRAFT").length;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-[family-name:var(--font-display)] text-3xl text-ink">Salons</h1>
+          <h1 className="font-[family-name:var(--font-display)] text-3xl text-ink">
+            Businesses
+          </h1>
           <p className="mt-1 text-sm text-muted">
-            {salons.length} tenant{salons.length === 1 ? "" : "s"} on this database.
+            {salons.length} tenant{salons.length === 1 ? "" : "s"}
+            {pending ? ` · ${pending} pending review` : ""} on this database.
           </p>
         </div>
-        <Link href="/platform/salons/new" className="btn-solid rounded-full px-5 py-3 font-medium">
-          New salon
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/explore"
+            className="rounded-full border border-ink/20 px-5 py-3 font-medium text-ink-soft"
+          >
+            Public explore
+          </Link>
+          <Link href="/platform/salons/new" className="btn-solid rounded-full px-5 py-3 font-medium">
+            New business
+          </Link>
+        </div>
       </div>
 
       {salons.length === 0 ? (
         <p className="rounded-3xl border border-dashed border-ink/20 bg-white/60 p-6 text-sm text-muted">
-          No salons yet. Create the first one to get a manager login and booking page.
+          No businesses yet. Create one here or wait for a self-serve claim at /claim.
         </p>
       ) : null}
 
@@ -64,20 +82,43 @@ export default async function PlatformHomePage() {
                   {salon.name}
                 </h2>
                 <code className="text-xs text-muted">/{salon.slug}</code>
+                <p className="text-xs text-muted">
+                  {businessTypeLabel(salon.businessType)}
+                  {salon.city ? ` · ${salon.city}` : ""}
+                </p>
               </div>
-              <span
-                className={`rounded-full px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.12em] ${
-                  salon.active
-                    ? "bg-[#e7f0e6] text-[#3f6b43]"
-                    : "bg-[#f2e6e2] text-[#8a4a37]"
-                }`}
-              >
-                {salon.active ? "Active" : "Paused"}
-              </span>
+              <div className="flex flex-col items-end gap-1">
+                <span
+                  className={`rounded-full px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.12em] ${
+                    salon.listingStatus === "PUBLISHED"
+                      ? "bg-[#e7f0e6] text-[#3f6b43]"
+                      : salon.listingStatus === "DRAFT"
+                        ? "bg-[#f5efd8] text-[#7a6230]"
+                        : "bg-[#f2e6e2] text-[#8a4a37]"
+                  }`}
+                >
+                  {salon.listingStatus}
+                </span>
+                <span
+                  className={`rounded-full px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.12em] ${
+                    salon.active
+                      ? "bg-[#e7f0e6] text-[#3f6b43]"
+                      : "bg-[#f2e6e2] text-[#8a4a37]"
+                  }`}
+                >
+                  {salon.active ? "Live" : "Paused"}
+                </span>
+              </div>
             </div>
 
+            <PlatformListingActions
+              salonId={salon.id}
+              listingStatus={salon.listingStatus}
+              active={salon.active}
+            />
+
             <p className="text-sm text-muted">
-              {salon._count.stylists} stylists · {salon._count.services} services ·{" "}
+              {salon._count.stylists} providers · {salon._count.services} services ·{" "}
               {salon._count.appointments} bookings
             </p>
             <p className="text-xs text-muted">
@@ -89,7 +130,7 @@ export default async function PlatformHomePage() {
                 [
                   ["Booking", salon.bookingThemeId, DEFAULT_BOOKING_THEME_ID],
                   ["Manager", salon.managerThemeId, DEFAULT_MANAGER_THEME_ID],
-                  ["Stylist", salon.stylistThemeId, DEFAULT_STYLIST_THEME_ID],
+                  ["Staff", salon.stylistThemeId, DEFAULT_STYLIST_THEME_ID],
                 ] as const
               ).map(([app, id, fallback]) => {
                 const theme = getSalonTheme(id, fallback);

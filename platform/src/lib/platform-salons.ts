@@ -7,13 +7,21 @@ import {
   getSalonTheme,
   normalizeThemeId,
 } from "./salon-themes";
+import {
+  normalizeBusinessType,
+  normalizeListingStatus,
+  type BusinessTypeId,
+  type ListingStatus,
+} from "./marketplace";
 
 export const RESERVED_SLUGS = new Set([
   "admin",
   "api",
   "book",
+  "claim",
   "demo",
   "display",
+  "explore",
   "manager",
   "platform",
   "shells",
@@ -88,6 +96,15 @@ export type CreateSalonInput = {
   managerEmail: string;
   managerPassword: string;
   starterMenu: boolean;
+  /** Marketplace listing — operator creates PUBLISHED; self-serve uses DRAFT. */
+  listingStatus?: ListingStatus;
+  businessType?: BusinessTypeId;
+  city?: string | null;
+  region?: string | null;
+  country?: string | null;
+  description?: string | null;
+  active?: boolean;
+  claimedAt?: Date | null;
 };
 
 /** Creates the tenant plus a usable manager login (and optionally a bookable starter menu). */
@@ -95,6 +112,10 @@ export async function createSalonWithManager(input: CreateSalonInput) {
   const passwordHash = await bcrypt.hash(input.managerPassword, 10);
 
   const bookingTheme = getSalonTheme(input.bookingThemeId, DEFAULT_BOOKING_THEME_ID);
+  const listingStatus = normalizeListingStatus(input.listingStatus ?? "PUBLISHED");
+  const businessType = normalizeBusinessType(input.businessType ?? "SALON");
+  const active = input.active ?? listingStatus === "PUBLISHED";
+
   const salon = await prisma.salon.create({
     data: {
       name: input.name,
@@ -112,6 +133,15 @@ export async function createSalonWithManager(input: CreateSalonInput) {
       // Legacy splash/API fields — keep in sync with booking pack accent.
       brandColor: bookingTheme.dark.accent,
       accentColor: bookingTheme.dark.accentStrong,
+      listingStatus,
+      businessType,
+      city: input.city?.trim() || null,
+      region: input.region?.trim() || null,
+      country: input.country?.trim() || "CA",
+      description: input.description?.trim() || null,
+      active,
+      claimedAt: input.claimedAt ?? null,
+      approvedAt: listingStatus === "PUBLISHED" ? new Date() : null,
     },
   });
 
@@ -129,7 +159,7 @@ export async function createSalonWithManager(input: CreateSalonInput) {
     const stylist = await prisma.stylist.create({
       data: {
         salonId: salon.id,
-        name: "Lead Stylist",
+        name: "Lead provider",
         bio: "Update this profile from the manager portal.",
         color: getSalonTheme(input.managerThemeId, DEFAULT_MANAGER_THEME_ID).light.accent,
       },

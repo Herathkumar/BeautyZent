@@ -18,11 +18,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     where: { slug },
     select: { name: true, active: true },
   });
-  const title = salon?.active && salon.name ? salon.name : "Salon Booking";
+  const title = salon?.active && salon.name ? salon.name : "Book online";
   return {
     title,
     description:
-      "Book your salon visit, manage appointments, and keep a photo look book of every visit.",
+      "Book your visit, manage appointments, and keep a photo look book of every visit.",
     manifest: `/book/${slug}/manifest`,
     appleWebApp: {
       capable: true,

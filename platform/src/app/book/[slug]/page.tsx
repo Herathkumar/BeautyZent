@@ -19,9 +19,9 @@ export default async function BookPage({
     return (
       <main className="book-theme mx-auto px-6 py-20">
         <div className="mx-auto max-w-lg">
-          <h1 className="font-[family-name:var(--font-display)] text-3xl">Salon not found</h1>
-          <Link href="/" className="mt-4 inline-block text-champagne">
-            Back home
+          <h1 className="font-[family-name:var(--font-display)] text-3xl">Business not found</h1>
+          <Link href="/explore" className="mt-4 inline-block text-champagne">
+            Explore businesses
           </Link>
           <ZentraLabFooter compact />
         </div>
@@ -50,7 +50,7 @@ export default async function BookPage({
               {salon.name}
             </h1>
             <p className="book-hero-copy max-w-xl text-sm sm:text-base">
-              Guest or member — pick a service, stylist, and time. Members keep a
+              Guest or member — pick a service, provider, and time. Members keep a
               photo look book of every visit.
             </p>
             {(salon.phone || salon.address) && (

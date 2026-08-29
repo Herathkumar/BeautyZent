@@ -20,6 +20,7 @@ export type ClientSession = {
   email: string;
   name: string;
   phone: string | null;
+  accountId?: string | null;
 };
 
 export function hashOtp(code: string) {
@@ -36,6 +37,7 @@ export async function issueClientSession(client: {
   email: string | null;
   name: string;
   phone: string | null;
+  accountId?: string | null;
 }) {
   if (!client.email) throw new Error("Client email required for session");
   const token = await new SignJWT({
@@ -44,6 +46,7 @@ export async function issueClientSession(client: {
     email: client.email,
     name: client.name,
     phone: client.phone,
+    accountId: client.accountId ?? null,
   } satisfies ClientSession)
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime("30d")
@@ -89,7 +92,45 @@ export async function getClientSessionForSalon(salonId: string) {
     email: client.email,
     name: client.name,
     phone: client.phone,
+    accountId: client.accountId,
   } satisfies ClientSession;
+}
+
+/**
+ * Upsert global consumer by email and link the membership Client row.
+ * Safe to call from salon-scoped OTP verify (non-breaking dual-write).
+ */
+export async function ensureConsumerAccountForClient(client: {
+  id: string;
+  email: string | null;
+  name: string;
+  phone: string | null;
+  accountId?: string | null;
+}) {
+  if (!client.email) return null;
+  const email = normalizeEmail(client.email);
+  const account = await prisma.consumerAccount.upsert({
+    where: { email },
+    create: {
+      email,
+      name: client.name,
+      phone: client.phone,
+      emailVerifiedAt: new Date(),
+    },
+    update: {
+      emailVerifiedAt: new Date(),
+      ...(client.name ? { name: client.name } : {}),
+      ...(client.phone ? { phone: client.phone } : {}),
+    },
+  });
+
+  if (client.accountId !== account.id) {
+    await prisma.client.update({
+      where: { id: client.id },
+      data: { accountId: account.id },
+    });
+  }
+  return account;
 }
 
 export function canCancelOnline(startsAt: Date, now = new Date()) {
@@ -107,6 +148,7 @@ export type ClientSalonMembership = {
   salonName: string;
   salonSlug: string;
   memberName: string;
+  businessType?: string;
 };
 
 /** All active salon memberships for an email (multi-tenant client). */
@@ -125,7 +167,7 @@ export async function listClientMembershipsByEmail(
       id: true,
       name: true,
       salonId: true,
-      salon: { select: { id: true, name: true, slug: true } },
+      salon: { select: { id: true, name: true, slug: true, businessType: true } },
     },
     orderBy: { salon: { name: "asc" } },
   });
@@ -135,5 +177,6 @@ export async function listClientMembershipsByEmail(
     salonName: r.salon.name,
     salonSlug: r.salon.slug,
     memberName: r.name,
+    businessType: r.salon.businessType,
   }));
 }

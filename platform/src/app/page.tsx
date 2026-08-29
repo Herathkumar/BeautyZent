@@ -7,59 +7,50 @@ export default function HomePage() {
     <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col justify-center gap-8 px-6 py-16">
       <div>
         <p className="mb-3 text-xs font-semibold tracking-[0.18em] text-cocoa uppercase">
-          SalonBook platform
+          BeautyZent
         </p>
         <h1 className="font-[family-name:var(--font-display)] text-5xl leading-none tracking-tight text-ink">
-          Online booking for salons
+          Book beauty & personal care near you
         </h1>
         <p className="mt-4 max-w-xl text-lg text-muted">
-          Pilot for Farzana Hair Salon — stylist booking, Google Calendar phone sync, tablet
-          floor display, and admin for services & products. Multi-tenant ready for other salons.
+          Marketplace for salons, barbers, spas, and similar businesses — online booking,
+          memberships, and shop tools in one platform.
         </p>
       </div>
 
       <div className="flex flex-wrap gap-3">
+        <Link href="/explore" className="btn-solid rounded-full px-5 py-3 font-medium">
+          Explore businesses
+        </Link>
         <Link
-          href="/demo"
-          className="btn-solid rounded-full px-5 py-3 font-medium"
+          href="/claim"
+          className="rounded-full border border-ink px-5 py-3 font-medium text-ink hover:bg-ink hover:text-[#fffaf6]"
         >
-          Open demo hub
+          List your business
         </Link>
         <Link
           href={`/book/${slug}`}
-          className="rounded-full border border-ink px-5 py-3 font-medium text-ink hover:bg-ink hover:text-[#fffaf6]"
-        >
-          Book appointment
-        </Link>
-        <Link
-          href={`/display/${slug}`}
           className="rounded-full border border-ink/20 px-5 py-3 font-medium text-ink-soft hover:border-ink"
         >
-          Customer display
+          Demo booking
         </Link>
         <Link
-          href={`/display/${slug}/reception`}
+          href="/platform/login"
           className="rounded-full border border-ink/20 px-5 py-3 font-medium text-ink-soft hover:border-ink"
         >
-          Reception display
+          Platform admin
         </Link>
         <Link
           href="/manager"
           className="rounded-full border border-ink/20 px-5 py-3 font-medium text-ink-soft hover:border-ink"
         >
-          Admin portal
-        </Link>
-        <Link
-          href="/stylist/login"
-          className="rounded-full border border-ink/20 px-5 py-3 font-medium text-ink-soft hover:border-ink"
-        >
-          Stylist portal
+          Manager portal
         </Link>
       </div>
 
       <p className="text-sm text-muted">
-        Live marketing site stays on Netlify <code>main</code>. This app runs on the{" "}
-        <code>feature/online-booking</code> branch until you promote it.
+        Operators approve new listings from the platform console. Clients join once with email
+        and can switch between businesses they belong to.
       </p>
     </main>
   );

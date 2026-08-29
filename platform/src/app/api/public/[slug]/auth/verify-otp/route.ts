@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import {
+  ensureConsumerAccountForClient,
   hashOtp,
   issueClientSession,
   listClientMembershipsByEmail,
@@ -113,7 +114,12 @@ export async function POST(
   }
 
   await prisma.clientOtp.deleteMany({ where: { salonId: salon.id, email } });
-  await issueClientSession(client);
+
+  const account = await ensureConsumerAccountForClient(client);
+  await issueClientSession({
+    ...client,
+    accountId: account?.id ?? client.accountId,
+  });
 
   const salons = await listClientMembershipsByEmail(email);
 
@@ -126,6 +132,7 @@ export async function POST(
       email: client.email,
       preferredStylistId: client.preferredStylistId,
     },
+    accountId: account?.id ?? null,
     salons,
     currentSalonId: salon.id,
   });

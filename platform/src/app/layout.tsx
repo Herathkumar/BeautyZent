@@ -4,9 +4,9 @@ import { RegisterServiceWorker } from "@/components/RegisterServiceWorker";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "SalonBook — Online salon booking",
+  title: "BeautyZent — Book beauty & personal care",
   description:
-    "Multi-tenant salon booking with stylist calendars, tablet floor display, and admin portal.",
+    "Marketplace booking for salons, barbers, spas, and similar businesses — plus shop tools for owners.",
   formatDetection: {
     telephone: false,
     date: false,
