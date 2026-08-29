@@ -20,6 +20,8 @@
 
 # local dev database (pnpm db:local:up)
 /.local-pg-data/
+# marketplace local DB (pnpm db:marketplace:up)
+/.local-pg-marketplace-data/
 
 # next.js
 /.next/
@@ -42,6 +44,7 @@ yarn-error.log*
 .env*
 !.env.example
 !.env.local.example
+!.env.marketplace.example
 
 # vercel
 .vercel

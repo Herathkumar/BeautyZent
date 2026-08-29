@@ -1,0 +1,25 @@
+### Local BeautyZent marketplace database — separate from multi-salon (55433/salonbook).
+### Start:  pnpm db:marketplace:docker
+### Stop:   pnpm db:marketplace:docker:down
+### Wipe:   pnpm db:marketplace:docker:down -- -v
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: beautyzent-marketplace-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: beautyzent
+      POSTGRES_PASSWORD: beautyzent
+      POSTGRES_DB: beautyzent
+    ports:
+      - "55434:5432"
+    volumes:
+      - beautyzent-marketplace-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U beautyzent -d beautyzent"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  beautyzent-marketplace-pgdata:
