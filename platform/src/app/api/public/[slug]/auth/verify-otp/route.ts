@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import {
   hashOtp,
   issueClientSession,
+  listClientMembershipsByEmail,
   normalizeEmail,
 } from "@/lib/client-auth";
 
@@ -114,6 +115,8 @@ export async function POST(
   await prisma.clientOtp.deleteMany({ where: { salonId: salon.id, email } });
   await issueClientSession(client);
 
+  const salons = await listClientMembershipsByEmail(email);
+
   return NextResponse.json({
     ok: true,
     client: {
@@ -123,5 +126,7 @@ export async function POST(
       email: client.email,
       preferredStylistId: client.preferredStylistId,
     },
+    salons,
+    currentSalonId: salon.id,
   });
 }

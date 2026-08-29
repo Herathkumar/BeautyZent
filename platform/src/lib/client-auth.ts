@@ -100,3 +100,40 @@ export function canCancelOnline(startsAt: Date, now = new Date()) {
 export function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
 }
+
+export type ClientSalonMembership = {
+  clientId: string;
+  salonId: string;
+  salonName: string;
+  salonSlug: string;
+  memberName: string;
+};
+
+/** All active salon memberships for an email (multi-tenant client). */
+export async function listClientMembershipsByEmail(
+  email: string
+): Promise<ClientSalonMembership[]> {
+  const normalized = normalizeEmail(email);
+  if (!normalized) return [];
+  const rows = await prisma.client.findMany({
+    where: {
+      email: normalized,
+      memberAt: { not: null },
+      salon: { active: true },
+    },
+    select: {
+      id: true,
+      name: true,
+      salonId: true,
+      salon: { select: { id: true, name: true, slug: true } },
+    },
+    orderBy: { salon: { name: "asc" } },
+  });
+  return rows.map((r) => ({
+    clientId: r.id,
+    salonId: r.salonId,
+    salonName: r.salon.name,
+    salonSlug: r.salon.slug,
+    memberName: r.name,
+  }));
+}

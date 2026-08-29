@@ -6,6 +6,7 @@ import { useConfirm } from "@/components/ConfirmDialog";
 import { DEFAULT_CLIENT_AVATAR, MAX_CLIENT_PHOTO_BYTES } from "@/lib/client-photo";
 import { fileToBoundedJpegDataUrl } from "@/lib/photo-resize";
 import { BookThemeToggle } from "./BookThemeToggle";
+import { BookingSalonChooser } from "./BookingSalonChooser";
 import type { BookClient } from "./ClientMemberBar";
 
 export function BookingProfile({
@@ -358,6 +359,11 @@ export function BookingProfile({
                   <p className="mt-4 text-center text-sm text-[#f5a8a8]">{error}</p>
                 ) : null}
               </section>
+
+              <BookingSalonChooser
+                currentSlug={slug}
+                enabled={Boolean(client)}
+              />
 
               <BookThemeToggle />
 
