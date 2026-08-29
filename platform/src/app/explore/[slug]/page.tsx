@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BeautyZentMarketHeader } from "@/components/BeautyZentBrand";
+import { FavoriteBusinessButton } from "@/components/FavoriteBusinessButton";
 import { businessTypeLabel, isPublicListing } from "@/lib/marketplace";
 import { formatCad } from "@/lib/money";
 import { prisma } from "@/lib/prisma";
@@ -116,6 +117,9 @@ export default async function ExploreBusinessMenuPage({
             <Link href="/explore" className="text-muted hover:text-ink">
               ← Explore
             </Link>
+            <Link href="/account" className="text-muted hover:text-ink">
+              My account
+            </Link>
             <a href={bookHref} className="font-semibold text-ink hover:underline">
               Book
             </a>
@@ -154,6 +158,7 @@ export default async function ExploreBusinessMenuPage({
               >
                 Book a visit
               </a>
+              <FavoriteBusinessButton salonId={salon.id} />
               <Link
                 href="/explore"
                 className="rounded-full border border-ink/15 px-5 py-2.5 text-sm font-semibold text-ink"

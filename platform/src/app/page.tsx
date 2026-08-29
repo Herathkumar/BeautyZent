@@ -28,6 +28,12 @@ export default function HomePage() {
             Explore businesses
           </Link>
           <Link
+            href="/account"
+            className="rounded-full border border-ink px-5 py-3 font-medium text-ink hover:bg-ink hover:text-[#fffaf6]"
+          >
+            My account
+          </Link>
+          <Link
             href="/claim"
             className="rounded-full border border-ink px-5 py-3 font-medium text-ink hover:bg-ink hover:text-[#fffaf6]"
           >

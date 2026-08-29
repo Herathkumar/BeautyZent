@@ -17,6 +17,8 @@ export async function getAvailableSlots(opts: {
   date: string;
   /** Keep this booking's current window selectable when moving it. */
   ignoreAppointmentId?: string;
+  /** Keep every row in a multi-service booking selectable when moving it. */
+  ignoreAppointmentIds?: string[];
 }) {
   const salon = await prisma.salon.findUniqueOrThrow({ where: { id: opts.salonId } });
   const ids = [
@@ -75,7 +77,11 @@ export async function getAvailableSlots(opts: {
         status: { notIn: ["CANCELLED", "NO_SHOW"] },
         startsAt: { lt: dayEnd },
         endsAt: { gt: open },
-        ...(opts.ignoreAppointmentId ? { id: { not: opts.ignoreAppointmentId } } : {}),
+        ...(opts.ignoreAppointmentIds?.length
+          ? { id: { notIn: opts.ignoreAppointmentIds } }
+          : opts.ignoreAppointmentId
+            ? { id: { not: opts.ignoreAppointmentId } }
+            : {}),
       },
       select: { startsAt: true, endsAt: true },
     }),

@@ -69,6 +69,6 @@ export async function POST(req: Request) {
     ok: true,
     message: "Check your email for a sign-in code.",
     membershipCount: memberships.length,
-    ...(demo ? { demoCode: code } : {}),
+    ...(demo && process.env.NODE_ENV !== "production" ? { demoCode: code } : {}),
   });
 }

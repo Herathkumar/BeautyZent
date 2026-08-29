@@ -44,6 +44,7 @@ const statements = [
   `ALTER TABLE "Client" DROP COLUMN IF EXISTS "accountId"`,
   `ALTER TABLE "ConsumerOtp" DROP CONSTRAINT IF EXISTS "ConsumerOtp_accountId_fkey"`,
   `DROP TABLE IF EXISTS "ConsumerOtp"`,
+  `DROP TABLE IF EXISTS "ConsumerFavorite"`,
   `DROP TABLE IF EXISTS "ConsumerAccount"`,
   `ALTER TABLE "Salon" DROP COLUMN IF EXISTS "listingStatus"`,
   `ALTER TABLE "Salon" DROP COLUMN IF EXISTS "businessType"`,
@@ -92,7 +93,7 @@ async function main() {
   );
   const tables = await prisma.$queryRawUnsafe<Array<{ tablename: string }>>(
     `SELECT tablename FROM pg_tables
-     WHERE schemaname = 'public' AND tablename IN ('ConsumerAccount','ConsumerOtp')`
+     WHERE schemaname = 'public' AND tablename IN ('ConsumerAccount','ConsumerOtp','ConsumerFavorite')`
   );
   const clientCol = await prisma.$queryRawUnsafe<Array<{ column_name: string }>>(
     `SELECT column_name FROM information_schema.columns

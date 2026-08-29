@@ -79,6 +79,30 @@ export async function getClientSession(): Promise<ClientSession | null> {
   }
 }
 
+/** Resolve the platform-wide consumer represented by the shared client cookie. */
+export async function getConsumerSession() {
+  const session = await getClientSession();
+  if (!session?.email) return null;
+
+  const account = await prisma.consumerAccount.findFirst({
+    where: {
+      OR: [
+        ...(session.accountId ? [{ id: session.accountId }] : []),
+        { email: normalizeEmail(session.email) },
+      ],
+    },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      phone: true,
+      emailVerifiedAt: true,
+    },
+  });
+  if (!account?.emailVerifiedAt) return null;
+  return account;
+}
+
 export async function getClientSessionForSalon(salonId: string) {
   const session = await getClientSession();
   if (!session || session.salonId !== salonId) return null;

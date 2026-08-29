@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { BeautyZentLogo } from "@/components/BeautyZentBrand";
+import { FavoriteBusinessButton } from "@/components/FavoriteBusinessButton";
 import { BUSINESS_TYPES } from "@/lib/marketplace";
 import { formatCad } from "@/lib/money";
 
@@ -125,6 +126,14 @@ export function ExploreDirectory() {
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6">
+      <div className="mb-4 flex justify-end">
+        <Link
+          href="/account"
+          className="rounded-full border border-ink/15 bg-white/80 px-4 py-2 text-sm font-semibold text-ink"
+        >
+          My account
+        </Link>
+      </div>
       <header className="mb-8 flex max-w-3xl items-center gap-5">
         <BeautyZentLogo variant="rose" size="lg" href={null} priority />
         <div>
@@ -301,14 +310,23 @@ export function ExploreDirectory() {
             className="flex h-full flex-col overflow-hidden rounded-3xl border border-ink/12 bg-white/90 shadow-[0_12px_40px_rgba(0,0,0,0.06)]"
           >
             {/* Absolute img locks 16:10 so different cover files don't stretch the card. */}
-            <Link href={menuHref} className="relative aspect-[16/10] w-full shrink-0 overflow-hidden bg-[#f3eee8]" aria-label={`View ${b.name} menu`}>
+            <div className="relative aspect-[16/10] w-full shrink-0 overflow-hidden bg-[#f3eee8]">
+              <Link
+                href={menuHref}
+                className="absolute inset-0"
+                aria-label={`View ${b.name} menu`}
+              >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={b.coverUrl || "/display-promo.jpg"}
-                alt=""
-                className="absolute inset-0 h-full w-full object-cover"
-              />
-            </Link>
+                <img
+                  src={b.coverUrl || "/display-promo.jpg"}
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+              </Link>
+              <div className="absolute right-3 top-3 z-10">
+                <FavoriteBusinessButton salonId={b.id} compact />
+              </div>
+            </div>
             <div className="flex flex-1 flex-col gap-1.5 p-4">
               <p className="text-[0.68rem] font-semibold tracking-[0.14em] text-cocoa uppercase">
                 {b.businessTypeLabel}
