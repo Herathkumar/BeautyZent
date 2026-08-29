@@ -4148,9 +4148,14 @@ html.customer-shell--dark body {
 }
 
 .book-bottom-nav__label {
-  font-size: 11px;
+  font-size: 0.62rem;
   font-weight: 600;
   letter-spacing: 0.02em;
+  line-height: 1.1;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .book-bottom-nav__badge {

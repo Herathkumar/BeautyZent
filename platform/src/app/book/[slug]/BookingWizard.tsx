@@ -8,6 +8,7 @@ import { writeSalonBrand } from "@/lib/salon-branding";
 import { BookBottomNav, BookTabKey } from "./BookBottomNav";
 import { BookingMyBookings, MemberTab } from "./BookingMyBookings";
 import { BookingProfile } from "./BookingProfile";
+import { BookingRewards } from "./BookingRewards";
 import { BookClient, ClientMemberBar } from "./ClientMemberBar";
 import { StylePreviewPanel, StylePrefDraft } from "./StylePreviewPanel";
 import { SettingToggle } from "@/components/admin/SettingToggle";
@@ -196,6 +197,7 @@ export function BookingWizard({ slug }: { slug: string }) {
   const [signInMode, setSignInMode] = useState<"signin" | "join">("signin");
   const [joinPrompt, setJoinPrompt] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [rewardsOpen, setRewardsOpen] = useState(false);
   const [counts, setCounts] = useState({ upcoming: 0, photos: 0 });
   const [done, setDone] = useState<{
     id: string;
@@ -457,6 +459,7 @@ export function BookingWizard({ slug }: { slug: string }) {
       return;
     }
     setProfileOpen(false);
+    setRewardsOpen(false);
     setMemberTab(tab);
     setShowBookings(true);
   }
@@ -465,25 +468,36 @@ export function BookingWizard({ slug }: { slug: string }) {
     if (key === "book") {
       setShowBookings(false);
       setProfileOpen(false);
+      setRewardsOpen(false);
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
     if (key === "profile") {
       // Guests still get Profile — it holds Appearance and the join prompt.
       setShowBookings(false);
+      setRewardsOpen(false);
       setProfileOpen(true);
+      return;
+    }
+    if (key === "rewards") {
+      // Guests can browse offers; points balance needs sign-in.
+      setShowBookings(false);
+      setProfileOpen(false);
+      setRewardsOpen(true);
       return;
     }
     openMemberTab(key === "lookbook" ? "lookbook" : "visits");
   }
 
-  const activeTab: BookTabKey = profileOpen
-    ? "profile"
-    : showBookings
-      ? memberTab === "lookbook"
-        ? "lookbook"
-        : "visits"
-      : "book";
+  const activeTab: BookTabKey = rewardsOpen
+    ? "rewards"
+    : profileOpen
+      ? "profile"
+      : showBookings
+        ? memberTab === "lookbook"
+          ? "lookbook"
+          : "visits"
+        : "book";
 
   const appChrome = (
     <>
@@ -493,6 +507,21 @@ export function BookingWizard({ slug }: { slug: string }) {
         initialTab={memberTab}
         onClose={() => setShowBookings(false)}
         timezone={salon?.timezone}
+      />
+      <BookingRewards
+        slug={slug}
+        salonName={salon?.name}
+        open={rewardsOpen}
+        signedIn={Boolean(client)}
+        onClose={() => setRewardsOpen(false)}
+        onSignInRequest={() => {
+          setRewardsOpen(false);
+          requestMemberForm("signin");
+        }}
+        onJoinRequest={() => {
+          setRewardsOpen(false);
+          requestMemberForm("join");
+        }}
       />
       <BookingProfile
         slug={slug}

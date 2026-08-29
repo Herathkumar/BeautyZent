@@ -1,6 +1,6 @@
 "use client";
 
-export type BookTabKey = "book" | "visits" | "lookbook" | "profile";
+export type BookTabKey = "book" | "visits" | "lookbook" | "rewards" | "profile";
 
 const ICONS: Record<BookTabKey, React.ReactNode> = {
   book: (
@@ -22,6 +22,16 @@ const ICONS: Record<BookTabKey, React.ReactNode> = {
       <path d="M4 17l4.5-4 3.5 3 3-2.5L20 17" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
     </svg>
   ),
+  rewards: (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden className="h-5 w-5">
+      <path
+        d="M12 3.5l2.1 4.25 4.7.68-3.4 3.31.8 4.66L12 14.4l-4.2 2.2.8-4.66-3.4-3.31 4.7-.68L12 3.5z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+    </svg>
+  ),
   profile: (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden className="h-5 w-5">
       <circle cx="12" cy="8.5" r="4" stroke="currentColor" strokeWidth="1.6" />
@@ -39,6 +49,7 @@ const TABS: Array<{ key: BookTabKey; label: string }> = [
   { key: "book", label: "Book" },
   { key: "visits", label: "Visits" },
   { key: "lookbook", label: "Look book" },
+  { key: "rewards", label: "Rewards" },
   { key: "profile", label: "Profile" },
 ];
 
