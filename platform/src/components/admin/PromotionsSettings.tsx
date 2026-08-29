@@ -569,13 +569,18 @@ export function PromotionsSettings() {
 
         <div className="rounded-xl border border-[#7d6154]/20 bg-[#fffcf9] px-4 py-3">
           <p className="text-sm font-semibold text-[#2b2521]">
-            On the board now ({boardRules.length})
+            On the board now ({boardRules.length + (settings.loyaltyEnabled ? 1 : 0)})
           </p>
-          {boardRules.length ? (
+          {boardRules.length > 0 || settings.loyaltyEnabled ? (
             <ul className="mt-2 space-y-1 text-sm text-[#6b5b52]" data-testid="promo-board-preview">
+              {settings.loyaltyEnabled ? (
+                <li>
+                  Loyalty Rewards ({settings.loyaltyPointsPerDollar} pt per $1)
+                </li>
+              ) : null}
               {boardRules.map((rule, i) => (
                 <li key={rule.id}>
-                  {i + 1}. {rule.name}
+                  {settings.loyaltyEnabled ? i + 2 : i + 1}. {rule.name}
                 </li>
               ))}
             </ul>
