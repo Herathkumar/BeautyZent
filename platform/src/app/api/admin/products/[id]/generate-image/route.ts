@@ -24,7 +24,10 @@ export async function POST(
 
   if (!productImageAiConfigured()) {
     return NextResponse.json(
-      { error: "Image AI is not configured. Set GEMINI_API_KEY." },
+      {
+        error:
+          "Image AI is not configured. Set CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN.",
+      },
       { status: 503 }
     );
   }

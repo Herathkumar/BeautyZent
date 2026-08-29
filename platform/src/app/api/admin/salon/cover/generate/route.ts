@@ -19,7 +19,10 @@ export async function POST(req: Request) {
   }
   if (!serviceImageAiConfigured()) {
     return NextResponse.json(
-      { error: "Image AI is not configured. Set GEMINI_API_KEY to generate covers." },
+      {
+        error:
+          "Image AI is not configured. Set CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN.",
+      },
       { status: 503 }
     );
   }

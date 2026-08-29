@@ -742,8 +742,8 @@ export default function AdminAccountPage() {
             </div>
             {coverAiConfigured === false ? (
               <p className="text-xs text-[#8a4a37]">
-                AI generation is unavailable until a Gemini API key is configured. Photo upload
-                still works.
+                AI generation is unavailable until Cloudflare Workers AI is configured. Photo
+                upload still works.
               </p>
             ) : null}
           </div>
