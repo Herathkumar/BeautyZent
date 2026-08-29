@@ -225,25 +225,16 @@ export function BookingRewards({
               data-testid="book-loyalty-card"
             >
               <p className="text-[10px] font-semibold tracking-[0.16em] text-champagne uppercase">
-                Loyalty points
+                Loyalty rewards
               </p>
               {signedIn && loyalty.points != null ? (
                 <>
                   <p className="mt-2 font-[family-name:var(--font-display)] text-4xl text-ink tabular-nums">
-                    {loyalty.points}
-                    <span className="ml-2 text-base font-sans tracking-normal text-muted">
-                      pts
-                    </span>
+                    {formatCad(loyalty.redeemValueCents ?? 0)}
                   </p>
-                  {loyalty.redeemValueCents != null && loyalty.redeemValueCents > 0 ? (
-                    <p className="mt-1 text-sm text-muted">
-                      Worth about {formatCad(loyalty.redeemValueCents)} at checkout
-                    </p>
-                  ) : (
-                    <p className="mt-1 text-sm text-muted">
-                      Earn points on every visit and redeem at reception.
-                    </p>
-                  )}
+                  <p className="mt-1 text-sm text-muted">
+                    {loyalty.points} pts ready to redeem at checkout
+                  </p>
                   {!loyalty.isMember ? (
                     <p className="mt-3 text-sm text-champagne">
                       Ask reception to verify your membership for member-only offers.
