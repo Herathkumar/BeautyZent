@@ -127,33 +127,34 @@ export function ExploreDirectory() {
         </p>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {businesses.map((b) => (
           <article
             key={b.id}
-            className="flex flex-col overflow-hidden rounded-3xl border border-ink/12 bg-white/90 shadow-[0_12px_40px_rgba(0,0,0,0.06)]"
+            className="flex h-full flex-col overflow-hidden rounded-3xl border border-ink/12 bg-white/90 shadow-[0_12px_40px_rgba(0,0,0,0.06)]"
           >
-            <div className="aspect-[16/10] bg-[#f3eee8]">
+            {/* Absolute img locks 16:10 so different cover files don't stretch the card. */}
+            <div className="relative aspect-[16/10] w-full shrink-0 overflow-hidden bg-[#f3eee8]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={b.coverUrl || "/display-promo.jpg"}
                 alt=""
-                className="h-full w-full object-cover"
+                className="absolute inset-0 h-full w-full object-cover"
               />
             </div>
-            <div className="flex flex-1 flex-col gap-2 p-4">
+            <div className="flex min-h-0 flex-1 flex-col gap-2 p-4">
               <p className="text-[0.68rem] font-semibold tracking-[0.14em] text-cocoa uppercase">
                 {b.businessTypeLabel}
               </p>
-              <h2 className="font-[family-name:var(--font-display)] text-xl text-ink">
+              <h2 className="line-clamp-2 min-h-[2.5rem] font-[family-name:var(--font-display)] text-xl leading-tight text-ink">
                 {b.name}
               </h2>
               <p className="text-sm text-muted">
                 {[b.city, b.region].filter(Boolean).join(", ") || "Location coming soon"}
               </p>
-              {b.description ? (
-                <p className="line-clamp-2 text-sm text-ink-soft">{b.description}</p>
-              ) : null}
+              <p className="line-clamp-2 min-h-[2.5rem] text-sm text-ink-soft">
+                {b.description?.trim() || "\u00a0"}
+              </p>
               <p className="text-xs text-muted">
                 Hours {b.openHour}:00–{b.closeHour}:00
               </p>
