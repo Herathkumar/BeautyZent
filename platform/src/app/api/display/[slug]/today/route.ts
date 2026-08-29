@@ -14,29 +14,48 @@ function toDate(d: { getTime: () => number }) {
   return new Date(d.getTime());
 }
 
+const salonCoreSelect = {
+  id: true,
+  slug: true,
+  name: true,
+  phone: true,
+  address: true,
+  timezone: true,
+  openHour: true,
+  closeHour: true,
+  closedDays: true,
+  displayPinHash: true,
+  displayPinSetAt: true,
+  displayViewMode: true,
+} as const;
+
+function isMissingCheckoutColumn(err: unknown) {
+  const message = err instanceof Error ? err.message : String(err || "");
+  return /displayCheckoutEnabled/i.test(message);
+}
+
+async function loadSalon(slug: string) {
+  try {
+    return await prisma.salon.findUnique({
+      where: { slug },
+      select: { ...salonCoreSelect, displayCheckoutEnabled: true },
+    });
+  } catch (err) {
+    if (!isMissingCheckoutColumn(err)) throw err;
+    const salon = await prisma.salon.findUnique({
+      where: { slug },
+      select: salonCoreSelect,
+    });
+    return salon ? { ...salon, displayCheckoutEnabled: true } : null;
+  }
+}
+
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params;
-  const salon = await prisma.salon.findUnique({
-    where: { slug },
-    select: {
-      id: true,
-      slug: true,
-      name: true,
-      phone: true,
-      address: true,
-      timezone: true,
-      openHour: true,
-      closeHour: true,
-      closedDays: true,
-      displayPinHash: true,
-      displayPinSetAt: true,
-      displayViewMode: true,
-      displayCheckoutEnabled: true,
-    },
-  });
+  const salon = await loadSalon(slug);
   if (!salon) return NextResponse.json({ error: "Salon not found" }, { status: 404 });
 
   const locked = await assertDisplayAccess(salon, req);
@@ -159,7 +178,7 @@ export async function GET(
       closedDays: salon.closedDays || [],
       todayClosed: (salon.closedDays || []).includes(dayOfWeekInTz(todayYmd, timeZone)),
       displayViewMode: normalizeCustomerDisplayView(salon.displayViewMode),
-      displayCheckoutEnabled: salon.displayCheckoutEnabled,
+      displayCheckoutEnabled: salon.displayCheckoutEnabled !== false,
     },
     range: {
       from: from.toISOString(),

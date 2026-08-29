@@ -74,6 +74,7 @@ type SalonInfo = {
   closedDays?: number[];
   todayClosed?: boolean;
   displayViewMode?: string | null;
+  displayCheckoutEnabled?: boolean;
 };
 
 type Tab = "today" | "future" | "services" | "products";
