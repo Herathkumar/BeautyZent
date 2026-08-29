@@ -2806,11 +2806,13 @@ html.customer-shell--dark body {
   overflow: visible;
 }
 .customer-lounge-footer > div {
-  align-items: flex-end;
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+  text-align: left !important;
   overflow: visible;
 }
-.customer-lounge-footer .customer-lounge-timeline {
-  width: 100%;
+.customer-lounge-footer > div > div {
+  text-align: left !important;
 }
 .customer-lounge-footer .zentralab-footer-meta,
 .customer-lounge-footer a {

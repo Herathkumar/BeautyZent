@@ -8,12 +8,9 @@ import { ServiceGlyph } from "./ServiceGlyph";
 import {
   canChairCheckIn,
   chairAcceptsDrop,
-  clockParts,
   firstName,
   formatClock,
-  formatMinutesClock,
   initials,
-  loungeTimeWindow,
   seatedServiceProgress,
   serviceKind,
   stylistChairVisual,
@@ -210,14 +207,6 @@ export function CustomerScheduleGrid({
   compactPad?: boolean;
   onCheckIn?: (payload: { appointmentId: string; targetStylistId: string }) => void;
 }) {
-  const nowMin = clockParts(now.toISOString(), timeZone).minutes;
-  const openMin = openHour * 60;
-  const closeMin = closeHour * 60;
-  const window = loungeTimeWindow(nowMin, openMin, closeMin);
-  const span = Math.max(1, window.end - window.start);
-  const nowPct = ((nowMin - window.start) / span) * 100;
-  const showNow = nowMin >= window.start && nowMin <= window.end;
-
   const columns = stylists.length ? stylists : [{ id: "none", name: "Chair", bio: null, color: "#c9a87c", photoUrl: "" }];
   const pending = useRef<{
     pointerId: number;
@@ -288,33 +277,6 @@ export function CustomerScheduleGrid({
   });
 
   const padClass = compactPad ? "px-4 py-4 sm:px-5 sm:py-5" : "px-8 py-5";
-  const timeline = (
-    <section className="customer-lounge-timeline" aria-label="Salon hours and current time">
-      <div className="customer-lounge-ruler">
-        {window.marks.map((mark) => {
-          const pct = ((mark - window.start) / span) * 100;
-          const nearNow = showNow && Math.abs(pct - nowPct) < 10;
-          return (
-            <span
-              key={mark}
-              className={`customer-lounge-tick${nearNow ? " is-near-now" : ""}`}
-              style={{ left: `${pct}%` }}
-            >
-              {formatMinutesClock(mark)}
-            </span>
-          );
-        })}
-        {showNow ? (
-          <span className="customer-lounge-now" style={{ left: `${Math.max(2, Math.min(98, nowPct))}%` }}>
-            <span className="customer-lounge-now__label">
-              NOW {formatMinutesClock(nowMin)}
-            </span>
-            <span className="customer-lounge-now__dot" />
-          </span>
-        ) : null}
-      </div>
-    </section>
-  );
 
   return (
     <div className="customer-lounge flex h-full min-h-0 flex-1 flex-col">
@@ -395,7 +357,6 @@ export function CustomerScheduleGrid({
       <ZentraLabFooter
         compact
         className={`customer-lounge-footer shrink-0 !mt-0 text-[11px] ${compactPad ? "!px-4 !py-1.5 sm:!px-5" : "!px-8 !py-1.5"}`}
-        lead={timeline}
       />
 
       {drag ? (
