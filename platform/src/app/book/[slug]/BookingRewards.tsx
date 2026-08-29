@@ -4,6 +4,15 @@ import { useEffect, useState } from "react";
 import type { PromoBoardTemplate } from "@/lib/promotion-board";
 import { formatCad } from "@/lib/money";
 
+type OfferProgress = {
+  kind: "visits";
+  current: number;
+  target: number;
+  remaining: number;
+  nextVisitUnlocks: boolean;
+  passed: boolean;
+};
+
 type LoyaltyPayload = {
   salonName: string;
   loyalty: {
@@ -11,6 +20,7 @@ type LoyaltyPayload = {
     points: number | null;
     isMember: boolean;
     clientName: string | null;
+    visitCount: number | null;
     pointsPerDollar: number;
     centsPerPoint: number;
     maxRedeemPercent: number;
@@ -24,16 +34,75 @@ type LoyaltyPayload = {
       name: string;
       label: string;
       template: PromoBoardTemplate;
+      minVisits: number | null;
+      progress: OfferProgress | null;
     }>;
   };
 };
 
+function VisitProgressBar({ progress }: { progress: OfferProgress }) {
+  const pct = Math.max(
+    0,
+    Math.min(100, progress.target > 0 ? (progress.current / progress.target) * 100 : 0)
+  );
+  let status: string;
+  if (progress.passed) {
+    status =
+      progress.target === 1
+        ? "Welcome offer already used"
+        : `Milestone reached — applied on visit #${progress.target}`;
+  } else if (progress.nextVisitUnlocks) {
+    status =
+      progress.remaining === 1
+        ? "1 visit left — your next booking unlocks this offer"
+        : "Your next visit unlocks this offer";
+  } else {
+    status = `${progress.remaining} visit${progress.remaining === 1 ? "" : "s"} to go`;
+  }
+
+  return (
+    <div className="mt-3 space-y-2" data-testid="book-offer-visit-progress">
+      <div className="flex items-end justify-between gap-2">
+        <p className="text-sm font-semibold text-ink tabular-nums">
+          {progress.current}
+          <span className="text-muted"> / {progress.target} visits</span>
+        </p>
+        <p
+          className={`text-xs font-medium ${
+            progress.passed
+              ? "text-muted"
+              : progress.nextVisitUnlocks
+                ? "text-champagne"
+                : "text-muted"
+          }`}
+        >
+          {status}
+        </p>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-[color:var(--line)]">
+        <div
+          className="h-full rounded-full bg-champagne transition-all duration-500"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
 function OfferCard({
   label,
   template,
+  progress,
+  signedIn,
+  showVisitHint,
+  onSignInRequest,
 }: {
   label: string;
   template: PromoBoardTemplate;
+  progress: OfferProgress | null;
+  signedIn: boolean;
+  showVisitHint: boolean;
+  onSignInRequest: () => void;
 }) {
   return (
     <article
@@ -53,6 +122,21 @@ function OfferCard({
       <p className="mt-1 text-sm text-muted">{template.description}</p>
       {label && label !== template.headline ? (
         <p className="mt-2 text-xs text-muted">{label}</p>
+      ) : null}
+
+      {progress ? (
+        <VisitProgressBar progress={progress} />
+      ) : !signedIn && showVisitHint ? (
+        <div className="mt-3 rounded-xl border border-[color:var(--line)] px-3 py-2.5">
+          <p className="text-xs text-muted">Sign in to track visits toward this offer.</p>
+          <button
+            type="button"
+            onClick={onSignInRequest}
+            className="mt-2 text-xs font-semibold text-champagne"
+          >
+            Sign in
+          </button>
+        </div>
       ) : null}
     </article>
   );
@@ -246,6 +330,12 @@ export function BookingRewards({
                       key={item.id}
                       label={item.label}
                       template={item.template}
+                      progress={item.progress}
+                      signedIn={signedIn}
+                      showVisitHint={
+                        item.type === "VISIT_MILESTONE" || item.type === "FIRST_VISIT"
+                      }
+                      onSignInRequest={onSignInRequest}
                     />
                   ))}
                 </div>
