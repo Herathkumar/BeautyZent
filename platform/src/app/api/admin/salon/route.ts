@@ -7,9 +7,11 @@ import { validateHours } from "@/lib/platform-salons";
 const DAYS = new Set([0, 1, 2, 3, 4, 5, 6]);
 
 const SALON_SELECT = {
+  id: true,
   name: true,
   slug: true,
   description: true,
+  coverUpdatedAt: true,
   address: true,
   brandColor: true,
   accentColor: true,

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { SelfieCamera } from "@/components/SelfieCamera";
 import { TabletPinCard } from "@/components/TabletPinCard";
 import { MANAGER_DEFAULT_AVATAR } from "@/lib/manager-photo";
+import { fileToBoundedJpegDataUrl } from "@/lib/photo-resize";
 import { ManagerThemeToggle } from "../ManagerThemeToggle";
 import { SettingToggle } from "@/components/admin/SettingToggle";
 
@@ -79,11 +80,20 @@ export default function AdminAccountPage() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [businessName, setBusinessName] = useState("");
+  const [businessId, setBusinessId] = useState("");
   const [businessSlug, setBusinessSlug] = useState("");
   const [businessDescription, setBusinessDescription] = useState("");
   const [listingMessage, setListingMessage] = useState("");
   const [listingError, setListingError] = useState("");
   const [savingListing, setSavingListing] = useState(false);
+  const [coverUrl, setCoverUrl] = useState("");
+  const [coverPrompt, setCoverPrompt] = useState("");
+  const [generatedCover, setGeneratedCover] = useState("");
+  const [coverBusy, setCoverBusy] = useState(false);
+  const [generatingCover, setGeneratingCover] = useState(false);
+  const [coverAiConfigured, setCoverAiConfigured] = useState<boolean | null>(null);
+  const [coverMessage, setCoverMessage] = useState("");
+  const [coverError, setCoverError] = useState("");
 
   const [photoUrl, setPhotoUrl] = useState(MANAGER_DEFAULT_AVATAR);
   const [hasPhoto, setHasPhoto] = useState(false);
@@ -120,10 +130,19 @@ export default function AdminAccountPage() {
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (!data?.salon) return;
+        setBusinessId(data.salon.id || "");
         setBusinessName(data.salon.name || "");
         setBusinessSlug(data.salon.slug || "");
         setBusinessDescription(data.salon.description || "");
+        setCoverUrl(
+          data.salon.id && data.salon.coverUpdatedAt
+            ? `/api/public/cover/${data.salon.id}?t=${new Date(data.salon.coverUpdatedAt).getTime()}`
+            : ""
+        );
       });
+    fetch("/api/admin/salon/cover/generate", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => setCoverAiConfigured(Boolean(data?.configured)));
   }, []);
 
   async function onPickPhoto(file: File | null) {
@@ -225,6 +244,92 @@ export default function AdminAccountPage() {
     setBusinessDescription(data.salon?.description || "");
     setListingMessage(data.message || "Explore listing saved.");
     router.refresh();
+  }
+
+  async function saveCoverDataUrl(imageBase64: string) {
+    const res = await fetch("/api/admin/salon/cover", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ imageBase64, mimeType: "image/jpeg" }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || "Could not save cover");
+    setCoverUrl(data.coverUrl || (businessId ? `/api/public/cover/${businessId}?t=${Date.now()}` : ""));
+    setGeneratedCover("");
+    setCoverMessage(data.message || "Explore cover saved.");
+    router.refresh();
+  }
+
+  async function onPickCover(file: File | null) {
+    if (!file) return;
+    setCoverError("");
+    setCoverMessage("");
+    setCoverBusy(true);
+    try {
+      const dataUrl = await fileToBoundedJpegDataUrl(file, 900_000);
+      await saveCoverDataUrl(dataUrl);
+    } catch (e) {
+      setCoverError(e instanceof Error ? e.message : "Could not save cover");
+    } finally {
+      setCoverBusy(false);
+    }
+  }
+
+  async function generateCover() {
+    setCoverError("");
+    setCoverMessage("");
+    setGeneratingCover(true);
+    try {
+      const res = await fetch("/api/admin/salon/cover/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: coverPrompt }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Could not generate cover");
+      setGeneratedCover(data.imageBase64 || "");
+      setCoverMessage("Cover generated. Preview it, then choose Use this cover.");
+    } catch (e) {
+      setCoverError(e instanceof Error ? e.message : "Could not generate cover");
+    } finally {
+      setGeneratingCover(false);
+    }
+  }
+
+  async function saveGeneratedCover() {
+    if (!generatedCover) return;
+    setCoverError("");
+    setCoverMessage("");
+    setCoverBusy(true);
+    try {
+      const blob = await fetch(generatedCover).then((res) => res.blob());
+      const file = new File([blob], "ai-cover", { type: blob.type || "image/png" });
+      const dataUrl = await fileToBoundedJpegDataUrl(file, 900_000);
+      await saveCoverDataUrl(dataUrl);
+    } catch (e) {
+      setCoverError(e instanceof Error ? e.message : "Could not save generated cover");
+    } finally {
+      setCoverBusy(false);
+    }
+  }
+
+  async function removeCover() {
+    setCoverError("");
+    setCoverMessage("");
+    setCoverBusy(true);
+    try {
+      const res = await fetch("/api/admin/salon/cover", { method: "DELETE" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Could not remove cover");
+      setCoverUrl("");
+      setGeneratedCover("");
+      setCoverMessage(data.message || "Explore cover removed.");
+      router.refresh();
+    } catch (e) {
+      setCoverError(e instanceof Error ? e.message : "Could not remove cover");
+    } finally {
+      setCoverBusy(false);
+    }
   }
 
   async function onSave(e: React.FormEvent) {
@@ -519,7 +624,7 @@ export default function AdminAccountPage() {
             Explore listing
           </h2>
           <p className="mt-1 text-sm text-[#6b5b52]">
-            Update the description customers see on the BeautyZent business card.
+            Update the cover photo and description customers see on the BeautyZent business card.
           </p>
         </div>
         <div className="rounded-2xl border border-[#7d6154]/20 bg-[#fffcf9] px-4 py-3">
@@ -527,6 +632,123 @@ export default function AdminAccountPage() {
           {businessSlug ? (
             <p className="mt-0.5 text-xs text-[#6b5b52]">/explore/{businessSlug}</p>
           ) : null}
+        </div>
+        <div className="grid gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-medium text-[#6b5b52]">Business card cover</p>
+            {generatedCover ? (
+              <span className="rounded-full bg-[#7d6154]/10 px-2.5 py-1 text-[10px] font-semibold tracking-wide text-[#7d6154] uppercase">
+                AI preview
+              </span>
+            ) : null}
+          </div>
+          <div className="overflow-hidden rounded-2xl border border-[#7d6154]/20 bg-[#f3eee8]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={generatedCover || coverUrl || "/display-promo.jpg"}
+              alt={`${businessName || "Business"} Explore cover`}
+              className="aspect-[16/10] w-full object-cover"
+              data-testid="manager-cover-preview"
+            />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <label
+              className={`relative inline-flex cursor-pointer items-center justify-center overflow-hidden rounded-full border border-[#7d6154]/35 px-4 py-2 text-sm font-semibold text-[#6b5b52] hover:bg-[#7d6154]/10 ${
+                coverBusy || generatingCover ? "pointer-events-none opacity-50" : ""
+              }`}
+            >
+              <span className="pointer-events-none">
+                {coverBusy ? "Saving…" : coverUrl ? "Upload new cover" : "Upload cover"}
+              </span>
+              <input
+                type="file"
+                accept="image/*"
+                disabled={coverBusy || generatingCover}
+                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                data-testid="manager-cover-upload"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] ?? null;
+                  void onPickCover(file);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+            {generatedCover ? (
+              <>
+                <button
+                  type="button"
+                  disabled={coverBusy || generatingCover}
+                  onClick={() => void saveGeneratedCover()}
+                  className="btn-solid rounded-full px-4 py-2 text-sm font-semibold disabled:opacity-50"
+                  data-testid="manager-cover-use-generated"
+                >
+                  {coverBusy ? "Saving…" : "Use this cover"}
+                </button>
+                <button
+                  type="button"
+                  disabled={coverBusy}
+                  onClick={() => {
+                    setGeneratedCover("");
+                    setCoverMessage("");
+                  }}
+                  className="rounded-full border border-[#7d6154]/25 px-4 py-2 text-sm text-[#6b5b52] disabled:opacity-50"
+                >
+                  Cancel preview
+                </button>
+              </>
+            ) : coverUrl ? (
+              <button
+                type="button"
+                disabled={coverBusy || generatingCover}
+                onClick={() => void removeCover()}
+                className="rounded-full border border-[#b54a3c]/35 px-4 py-2 text-sm font-medium text-[#b54a3c] disabled:opacity-50"
+              >
+                Remove
+              </button>
+            ) : null}
+          </div>
+          <div className="grid gap-2 rounded-2xl border border-[#7d6154]/20 bg-[#f8f2ec] p-3">
+            <div>
+              <p className="text-sm font-semibold text-[#2b2521]">AI cover assistant</p>
+              <p className="mt-0.5 text-xs text-[#6b5b52]">
+                Describe the scene you want. AI will create a wide, text-free business card image.
+              </p>
+            </div>
+            <textarea
+              value={coverPrompt}
+              onChange={(e) => setCoverPrompt(e.target.value)}
+              rows={3}
+              maxLength={400}
+              placeholder="Example: A modern bright salon interior with warm wood, cream chairs, plants, and elegant lighting"
+              className="rounded-xl border border-[#7d6154]/35 bg-[#fffcf9] px-3 py-2 text-sm text-[#2b2521]"
+              data-testid="manager-cover-ai-prompt"
+            />
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs text-[#6b5b52]">{coverPrompt.length}/400</span>
+              <button
+                type="button"
+                disabled={
+                  coverAiConfigured === false ||
+                  generatingCover ||
+                  coverBusy ||
+                  coverPrompt.trim().length < 8
+                }
+                onClick={() => void generateCover()}
+                className="rounded-full border border-[#7d6154]/45 bg-white px-4 py-2 text-sm font-semibold text-[#7d6154] hover:bg-[#7d6154]/10 disabled:opacity-50"
+                data-testid="manager-cover-generate"
+              >
+                {generatingCover ? "Generating…" : generatedCover ? "Generate again" : "Generate with AI"}
+              </button>
+            </div>
+            {coverAiConfigured === false ? (
+              <p className="text-xs text-[#8a4a37]">
+                AI generation is unavailable until a Gemini API key is configured. Photo upload
+                still works.
+              </p>
+            ) : null}
+          </div>
+          {coverError ? <p className="text-sm text-[#b54a3c]">{coverError}</p> : null}
+          {coverMessage ? <p className="text-sm text-[#2f7a4f]">{coverMessage}</p> : null}
         </div>
         <label className="grid gap-1.5 text-sm text-[#6b5b52]">
           Business description
