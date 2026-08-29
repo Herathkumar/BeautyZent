@@ -15,9 +15,12 @@ import {
   DEFAULT_STYLIST_THEME_ID,
   normalizeThemeId,
 } from "@/lib/salon-themes";
+import { fileToBoundedJpegDataUrl } from "@/lib/photo-resize";
 import { SettingToggle } from "@/components/admin/SettingToggle";
 import { DAY_LABELS, TIMEZONES, fieldClass, labelClass } from "../salon-form";
 import { THEME_PICKER_HINT, ThemePicker } from "../ThemePicker";
+
+const MAX_COVER_BYTES = 900_000;
 
 export type EditableSalon = {
   id: string;
@@ -38,6 +41,7 @@ export type EditableSalon = {
   displayViewMode: string;
   displayViewControl?: string | null;
   displayViewRotateSec?: number | null;
+  coverUpdatedAt?: string | Date | null;
 };
 
 export function SalonEditor({ salon }: { salon: EditableSalon }) {

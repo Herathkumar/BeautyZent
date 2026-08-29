@@ -40,6 +40,7 @@ export default async function SalonDetailPage({
       displayViewMode: true,
       displayViewControl: true,
       displayViewRotateSec: true,
+      coverUpdatedAt: true,
     },
   });
   if (!salon) notFound();
