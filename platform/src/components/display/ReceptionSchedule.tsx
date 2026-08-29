@@ -265,7 +265,7 @@ export function ReceptionSchedule({
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col">
-      {showChairs ? (
+      {showChairs && !isCustomer ? (
         <div className="reception-cal-toolbar">
           {showDayNav ? (
             <div className="reception-cal-toolbar__nav">
