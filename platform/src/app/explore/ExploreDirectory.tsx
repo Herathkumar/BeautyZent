@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { BeautyZentLogo } from "@/components/BeautyZentBrand";
 import { BUSINESS_TYPES } from "@/lib/marketplace";
+import { formatCad } from "@/lib/money";
 
 type BusinessCard = {
   id: string;
@@ -19,6 +20,20 @@ type BusinessCard = {
   bookUrl: string;
   openHour: number;
   closeHour: number;
+  timezone: string;
+  minPriceCents: number | null;
+  matchedServices: {
+    id: string;
+    name: string;
+    durationMin: number;
+    priceCents: number;
+  }[];
+  availability: {
+    earliestAt: string;
+    serviceId: string;
+    serviceName: string;
+    priceCents: number;
+  } | null;
   rewards?: {
     hasRewards: boolean;
     loyaltyEnabled: boolean;
@@ -29,10 +44,51 @@ type BusinessCard = {
   };
 };
 
+type AppliedFilters = {
+  q: string;
+  city: string;
+  type: string;
+  date: string;
+  maxPrice: string;
+  rewardsOnly: boolean;
+  sort: string;
+  requestId: number;
+};
+
+const EMPTY_FILTERS: AppliedFilters = {
+  q: "",
+  city: "",
+  type: "",
+  date: "",
+  maxPrice: "",
+  rewardsOnly: false,
+  sort: "name",
+  requestId: 0,
+};
+
+function localToday() {
+  const now = new Date();
+  const offset = now.getTimezoneOffset() * 60_000;
+  return new Date(now.getTime() - offset).toISOString().slice(0, 10);
+}
+
+function slotLabel(iso: string, timeZone: string) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(iso));
+}
+
 export function ExploreDirectory() {
   const [q, setQ] = useState("");
   const [city, setCity] = useState("");
   const [type, setType] = useState("");
+  const [date, setDate] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [rewardsOnly, setRewardsOnly] = useState(false);
+  const [sort, setSort] = useState("name");
+  const [applied, setApplied] = useState<AppliedFilters>(EMPTY_FILTERS);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [businesses, setBusinesses] = useState<BusinessCard[]>([]);
@@ -42,9 +98,13 @@ export function ExploreDirectory() {
     setError("");
     try {
       const params = new URLSearchParams();
-      if (q.trim()) params.set("q", q.trim());
-      if (city.trim()) params.set("city", city.trim());
-      if (type) params.set("type", type);
+      if (applied.q) params.set("q", applied.q);
+      if (applied.city) params.set("city", applied.city);
+      if (applied.type) params.set("type", applied.type);
+      if (applied.date) params.set("date", applied.date);
+      if (applied.maxPrice) params.set("maxPrice", applied.maxPrice);
+      if (applied.rewardsOnly) params.set("rewards", "1");
+      if (applied.sort) params.set("sort", applied.sort);
       const res = await fetch(`/api/public/explore?${params.toString()}`, {
         cache: "no-store",
       });
@@ -57,7 +117,7 @@ export function ExploreDirectory() {
     } finally {
       setBusy(false);
     }
-  }, [q, city, type]);
+  }, [applied]);
 
   useEffect(() => {
     void load();
@@ -82,57 +142,145 @@ export function ExploreDirectory() {
       </header>
 
       <form
-        className="mb-8 grid gap-3 rounded-3xl border border-ink/12 bg-white/80 p-4 sm:grid-cols-[1fr_1fr_auto_auto]"
+        className="mb-5 grid gap-3 rounded-3xl border border-ink/12 bg-white/80 p-4"
         onSubmit={(e) => {
           e.preventDefault();
-          void load();
+          setApplied({
+            q: q.trim(),
+            city: city.trim(),
+            type,
+            date,
+            maxPrice,
+            rewardsOnly,
+            sort,
+            requestId: Date.now(),
+          });
         }}
       >
-        <label className="grid gap-1 text-xs font-medium text-muted">
-          Search
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Name or service"
-            className="rounded-xl border border-ink/15 px-3 py-2.5 text-sm text-ink"
-          />
-        </label>
-        <label className="grid gap-1 text-xs font-medium text-muted">
-          City
-          <input
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-            placeholder="Toronto"
-            className="rounded-xl border border-ink/15 px-3 py-2.5 text-sm text-ink"
-          />
-        </label>
-        <label className="grid gap-1 text-xs font-medium text-muted">
-          Type
-          <select
-            value={type}
-            onChange={(e) => setType(e.target.value)}
-            className="rounded-xl border border-ink/15 px-3 py-2.5 text-sm text-ink"
-          >
-            <option value="">All</option>
-            {BUSINESS_TYPES.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.label}
+        <div className="grid gap-3 sm:grid-cols-[1.3fr_1fr_1fr]">
+          <label className="grid gap-1 text-xs font-medium text-muted">
+            Business or service
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Haircut, massage, nails…"
+              className="rounded-xl border border-ink/15 px-3 py-2.5 text-sm text-ink"
+            />
+          </label>
+          <label className="grid gap-1 text-xs font-medium text-muted">
+            Location
+            <input
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              placeholder="Toronto"
+              className="rounded-xl border border-ink/15 px-3 py-2.5 text-sm text-ink"
+            />
+          </label>
+          <label className="grid gap-1 text-xs font-medium text-muted">
+            Business type
+            <select
+              value={type}
+              onChange={(e) => setType(e.target.value)}
+              className="rounded-xl border border-ink/15 px-3 py-2.5 text-sm text-ink"
+            >
+              <option value="">All types</option>
+              {BUSINESS_TYPES.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-[1fr_0.8fr_1fr_auto]">
+          <label className="grid gap-1 text-xs font-medium text-muted">
+            Available on
+            <input
+              type="date"
+              min={localToday()}
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="rounded-xl border border-ink/15 px-3 py-2.5 text-sm text-ink"
+            />
+          </label>
+          <label className="grid gap-1 text-xs font-medium text-muted">
+            Max price
+            <select
+              value={maxPrice}
+              onChange={(e) => setMaxPrice(e.target.value)}
+              className="rounded-xl border border-ink/15 px-3 py-2.5 text-sm text-ink"
+            >
+              <option value="">Any price</option>
+              <option value="25">Up to $25</option>
+              <option value="50">Up to $50</option>
+              <option value="75">Up to $75</option>
+              <option value="100">Up to $100</option>
+              <option value="150">Up to $150</option>
+            </select>
+          </label>
+          <label className="grid gap-1 text-xs font-medium text-muted">
+            Sort
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value)}
+              className="rounded-xl border border-ink/15 px-3 py-2.5 text-sm text-ink"
+            >
+              <option value="name">Business name</option>
+              <option value="price">Lowest price</option>
+              <option value="availability" disabled={!date}>
+                Earliest availability
               </option>
-            ))}
-          </select>
-        </label>
-        <div className="flex items-end">
-          <button
-            type="submit"
-            disabled={busy}
-            className="btn-solid w-full rounded-full px-5 py-2.5 text-sm font-semibold disabled:opacity-60"
-          >
-            {busy ? "Searching…" : "Search"}
-          </button>
+            </select>
+          </label>
+          <div className="flex items-end">
+            <button
+              type="submit"
+              disabled={busy}
+              className="btn-solid w-full rounded-full px-6 py-2.5 text-sm font-semibold disabled:opacity-60"
+            >
+              {busy ? "Searching…" : "Search"}
+            </button>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <label className="inline-flex items-center gap-2 text-sm text-ink-soft">
+            <input
+              type="checkbox"
+              checked={rewardsOnly}
+              onChange={(e) => setRewardsOnly(e.target.checked)}
+              className="h-4 w-4 accent-[#8d4f59]"
+            />
+            Rewards and offers only
+          </label>
+          {(q || city || type || date || maxPrice || rewardsOnly || sort !== "name") ? (
+            <button
+              type="button"
+              onClick={() => {
+                setQ("");
+                setCity("");
+                setType("");
+                setDate("");
+                setMaxPrice("");
+                setRewardsOnly(false);
+                setSort("name");
+                setApplied({ ...EMPTY_FILTERS, requestId: Date.now() });
+              }}
+              className="text-sm font-medium text-cocoa underline-offset-2 hover:underline"
+            >
+              Clear filters
+            </button>
+          ) : null}
         </div>
       </form>
 
       {error ? <p className="mb-4 text-sm text-[#8a4a37]">{error}</p> : null}
+
+      {!busy && !error ? (
+        <p className="mb-4 text-sm text-muted">
+          {businesses.length} {businesses.length === 1 ? "business" : "businesses"} found
+          {applied.date ? ` with availability on ${applied.date}` : ""}.
+        </p>
+      ) : null}
 
       {!busy && businesses.length === 0 ? (
         <p className="rounded-3xl border border-dashed border-ink/20 bg-white/60 p-8 text-center text-sm text-muted">
@@ -181,6 +329,22 @@ export function ExploreDirectory() {
               <p className="text-xs text-muted">
                 Hours {b.openHour}:00–{b.closeHour}:00
               </p>
+              {b.matchedServices[0] ? (
+                <p className="line-clamp-1 text-xs text-ink-soft">
+                  {b.matchedServices[0].name} · from{" "}
+                  <span className="font-semibold text-ink">
+                    {formatCad(b.minPriceCents ?? b.matchedServices[0].priceCents)}
+                  </span>
+                </p>
+              ) : null}
+              {b.availability ? (
+                <div className="mt-1 rounded-xl bg-[#e7f0e6] px-3 py-2 text-xs text-[#3f6b43]">
+                  <span className="font-semibold">
+                    Available {slotLabel(b.availability.earliestAt, b.timezone)}
+                  </span>
+                  <span> · {b.availability.serviceName}</span>
+                </div>
+              ) : null}
               {b.rewards?.hasRewards ? (
                 <div
                   className="mt-1 flex items-center justify-between gap-3 rounded-xl border border-[#c9a87c]/35 bg-[linear-gradient(135deg,#fbf6ef,#f3ebe3)] px-3 py-2"

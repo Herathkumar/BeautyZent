@@ -5,14 +5,49 @@ import {
   businessTypeLabel,
   normalizeBusinessType,
 } from "@/lib/marketplace";
+import { getMarketplaceAvailability } from "@/lib/marketplace-availability";
 import type { PromotionRuleType } from "@/lib/promotions";
 import { generatePromotionRuleLabel } from "@/lib/promotions";
 
 export const dynamic = "force-dynamic";
 
+function isCalendarDate(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split("-").map(Number);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+  return (
+    parsed.getUTCFullYear() === year &&
+    parsed.getUTCMonth() === month - 1 &&
+    parsed.getUTCDate() === day
+  );
+}
+
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  mapper: (item: T) => Promise<R>
+) {
+  const results = new Array<R>(items.length);
+  let nextIndex = 0;
+
+  async function worker() {
+    while (nextIndex < items.length) {
+      const index = nextIndex++;
+      results[index] = await mapper(items[index]);
+    }
+  }
+
+  const workers = Array.from(
+    { length: Math.min(concurrency, items.length) },
+    () => worker()
+  );
+  await Promise.all(workers);
+  return results;
+}
+
 /**
  * Public marketplace directory search.
- * GET /api/public/explore?q=&city=&type=&limit=
+ * GET /api/public/explore?q=&city=&type=&date=&maxPrice=&rewards=&sort=&limit=
  */
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -20,6 +55,23 @@ export async function GET(req: Request) {
   const city = String(url.searchParams.get("city") || "").trim();
   const typeRaw = String(url.searchParams.get("type") || "").trim();
   const type = typeRaw ? normalizeBusinessType(typeRaw) : null;
+  const dateRaw = String(url.searchParams.get("date") || "").trim();
+  const date = isCalendarDate(dateRaw) ? dateRaw : "";
+  if (dateRaw && !date) {
+    return NextResponse.json({ error: "Date must be YYYY-MM-DD." }, { status: 400 });
+  }
+  const maxPriceRaw = Number(url.searchParams.get("maxPrice") || 0);
+  const maxPriceCents =
+    Number.isFinite(maxPriceRaw) && maxPriceRaw > 0
+      ? Math.min(Math.round(maxPriceRaw * 100), 1_000_000)
+      : null;
+  const rewardsOnly = url.searchParams.get("rewards") === "1";
+  const requestedSort = String(url.searchParams.get("sort") || "name");
+  const sort =
+    ["name", "price", "availability"].includes(requestedSort) &&
+    (requestedSort !== "availability" || date)
+      ? requestedSort
+      : "name";
   const limit = Math.min(Math.max(Number(url.searchParams.get("limit") || 48), 1), 100);
 
   const rows = await prisma.salon.findMany({
@@ -46,13 +98,44 @@ export async function GET(req: Request) {
               { description: { contains: q, mode: "insensitive" as const } },
               { city: { contains: q, mode: "insensitive" as const } },
               { address: { contains: q, mode: "insensitive" as const } },
+              {
+                services: {
+                  some: {
+                    active: true,
+                    ...(maxPriceCents
+                      ? { priceCents: { lte: maxPriceCents } }
+                      : {}),
+                    OR: [
+                      { name: { contains: q, mode: "insensitive" as const } },
+                      { description: { contains: q, mode: "insensitive" as const } },
+                      { category: { contains: q, mode: "insensitive" as const } },
+                    ],
+                  },
+                },
+              },
             ],
           }]
+          : []),
+        ...(maxPriceCents
+          ? [{ services: { some: { active: true, priceCents: { lte: maxPriceCents } } } }]
+          : []),
+        ...(rewardsOnly
+          ? [
+              {
+                OR: [
+                  { loyaltyEnabled: true },
+                  {
+                    discountsEnabled: true,
+                    promotionRules: { some: { enabled: true } },
+                  },
+                ],
+              },
+            ]
           : []),
       ],
     },
     orderBy: [{ name: "asc" }],
-    take: limit,
+    take: 100,
     select: {
       id: true,
       name: true,
@@ -74,10 +157,85 @@ export async function GET(req: Request) {
       discountsEnabled: true,
       loyaltyPointsPerDollar: true,
       loyaltyCentsPerPoint: true,
+      services: {
+        where: {
+          active: true,
+          ...(maxPriceCents ? { priceCents: { lte: maxPriceCents } } : {}),
+        },
+        orderBy: [{ priceCents: "asc" }, { sortOrder: "asc" }],
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          category: true,
+          priceCents: true,
+          durationMin: true,
+        },
+      },
     },
   });
 
-  const discountSalonIds = rows.filter((b) => b.discountsEnabled).map((b) => b.id);
+  const query = q.toLowerCase();
+  const prepared = rows.map((business) => {
+    const matchingServices = query
+      ? business.services.filter((service) =>
+          [service.name, service.description, service.category]
+            .filter(Boolean)
+            .some((value) => String(value).toLowerCase().includes(query))
+        )
+      : [];
+    const relevantServices = matchingServices.length
+      ? matchingServices
+      : business.services;
+    return {
+      business,
+      relevantServices,
+      minPriceCents: relevantServices.length
+        ? Math.min(...relevantServices.map((service) => service.priceCents))
+        : null,
+    };
+  });
+
+  const withAvailability = await mapWithConcurrency(
+    prepared,
+    5,
+    async (item) => ({
+      ...item,
+      availability: date
+        ? await getMarketplaceAvailability({
+            salonId: item.business.id,
+            date,
+            serviceIds: item.relevantServices.map((service) => service.id),
+          })
+        : null,
+    })
+  );
+  const available = date
+    ? withAvailability.filter((item) => item.availability)
+    : withAvailability;
+
+  available.sort((a, b) => {
+    if (sort === "price") {
+      return (
+        (a.minPriceCents ?? Number.MAX_SAFE_INTEGER) -
+          (b.minPriceCents ?? Number.MAX_SAFE_INTEGER) ||
+        a.business.name.localeCompare(b.business.name)
+      );
+    }
+    if (sort === "availability" && date) {
+      return (
+        new Date(a.availability!.earliestAt).getTime() -
+          new Date(b.availability!.earliestAt).getTime() ||
+        a.business.name.localeCompare(b.business.name)
+      );
+    }
+    return a.business.name.localeCompare(b.business.name);
+  });
+
+  const resultRows = available.slice(0, limit);
+  const discountSalonIds = resultRows
+    .filter((item) => item.business.discountsEnabled)
+    .map((item) => item.business.id);
   const rules =
     discountSalonIds.length > 0
       ? await prisma.promotionRule.findMany({
@@ -104,7 +262,7 @@ export async function GET(req: Request) {
   }
 
   return NextResponse.json({
-    businesses: rows.map((b) => {
+    businesses: resultRows.map(({ business: b, relevantServices, minPriceCents, availability }) => {
       const salonRules = b.discountsEnabled ? rulesBySalon.get(b.id) || [] : [];
       const promotions = salonRules.slice(0, 3).map((rule) => ({
         id: rule.id,
@@ -138,6 +296,14 @@ export async function GET(req: Request) {
         timezone: b.timezone,
         lat: b.lat,
         lng: b.lng,
+        minPriceCents,
+        matchedServices: relevantServices.slice(0, 3).map((service) => ({
+          id: service.id,
+          name: service.name,
+          durationMin: service.durationMin,
+          priceCents: service.priceCents,
+        })),
+        availability,
         coverUrl: b.coverUpdatedAt
           ? `/api/public/cover/${b.id}?v=${b.coverUpdatedAt.getTime()}`
           : null,
@@ -153,6 +319,14 @@ export async function GET(req: Request) {
       };
     }),
     types: BUSINESS_TYPES,
-    filters: { q, city, type },
+    filters: {
+      q,
+      city,
+      type,
+      date: date || null,
+      maxPrice: maxPriceCents ? maxPriceCents / 100 : null,
+      rewards: rewardsOnly,
+      sort,
+    },
   });
 }
