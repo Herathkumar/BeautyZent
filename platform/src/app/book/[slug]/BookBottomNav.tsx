@@ -46,7 +46,7 @@ const ICONS: Record<BookTabKey, React.ReactNode> = {
 };
 
 const TABS: Array<{ key: BookTabKey; label: string }> = [
-  { key: "book", label: "Book" },
+  { key: "book", label: "Home" },
   { key: "visits", label: "Visits" },
   { key: "lookbook", label: "Look book" },
   { key: "rewards", label: "Rewards" },

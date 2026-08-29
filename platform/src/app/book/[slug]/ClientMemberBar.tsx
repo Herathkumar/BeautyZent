@@ -20,7 +20,7 @@ export function ClientMemberBar({
   slug,
   client,
   onClientChange,
-  onOpenBookings,
+  onOpenBookings: _onOpenBookings,
   onOpenProfile,
   openSignInSignal = 0,
   openSignInMode = "signin",
@@ -133,57 +133,8 @@ export function ClientMemberBar({
     }
   }
 
-  async function logout() {
-    await fetch(`/api/public/${slug}/auth/logout`, { method: "POST" });
-    onClientChange(null);
-    setMode("closed");
-    setPurpose("signin");
-    setName("");
-    setPhone("");
-    setEmail("");
-    setCode("");
-    setDemoCode("");
-    setMsg("");
-    setError("");
-    setPendingSalons(null);
-    setPendingCurrentSalonId(null);
-  }
-
   if (client && mode !== "choose") {
-    return (
-      <div className="book-card mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl px-4 py-3">
-        <div className="min-w-0">
-          <p className="text-xs font-semibold tracking-[0.16em] text-champagne uppercase">
-            Member
-          </p>
-          <p className="truncate font-semibold text-ink">{client.name}</p>
-          <p className="truncate text-xs text-muted">{client.email}</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={onOpenBookings}
-            className="rounded-full border border-[rgba(201,180,232,0.4)] px-3 py-2 text-xs font-semibold text-champagne"
-          >
-            My bookings
-          </button>
-          <button
-            type="button"
-            onClick={onOpenProfile}
-            className="rounded-full border border-[rgba(201,180,232,0.4)] px-3 py-2 text-xs font-semibold text-champagne"
-          >
-            Profile
-          </button>
-          <button
-            type="button"
-            onClick={logout}
-            className="rounded-full border border-white/15 px-3 py-2 text-xs font-semibold text-muted"
-          >
-            Sign out
-          </button>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   if (client && mode === "choose") {
@@ -223,59 +174,42 @@ export function ClientMemberBar({
     );
   }
 
+  if (mode === "closed") {
+    return msg ? (
+      <p className="mb-4 text-sm text-champagne">{msg}</p>
+    ) : null;
+  }
+
   return (
     <div className="book-card mb-5 rounded-2xl p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold tracking-[0.16em] text-champagne uppercase">
-            Faster next time
+            {mode === "code" ? "Enter code" : mode === "join" ? "Join free" : "Sign in"}
           </p>
           <p className="mt-1 text-sm text-muted">
-            Join with email — no password. Or continue as guest below.
+            {mode === "join"
+              ? "Join to save your details and keep a photo look book of every visit."
+              : mode === "code"
+                ? msg || "Check your email for the code."
+                : "Sign in to see your visits and your look book."}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            className="rounded-full border border-[rgba(201,180,232,0.4)] px-3 py-2 text-xs font-semibold text-champagne"
-            onClick={onOpenProfile}
-          >
-            Appearance
-          </button>
-          <button
-            type="button"
-            className="rounded-full border border-[rgba(201,180,232,0.4)] px-3 py-2 text-xs font-semibold text-[#e0d0f5]"
-            onClick={() => {
-              setMode("signin");
-              setPurpose("signin");
-              setError("");
-              setMsg("");
-            }}
-          >
-            Sign in
-          </button>
-          <button
-            type="button"
-            className="btn-solid rounded-full px-3 py-2 text-xs font-semibold"
-            onClick={() => {
-              setMode("join");
-              setPurpose("join");
-              setError("");
-              setMsg("");
-            }}
-          >
-            Join free
-          </button>
-        </div>
+        <button
+          type="button"
+          className="rounded-full border border-white/15 px-3 py-2 text-xs font-semibold text-muted"
+          onClick={() => {
+            setMode("closed");
+            setError("");
+            setMsg("");
+          }}
+        >
+          Close
+        </button>
       </div>
 
       {mode === "signin" || mode === "join" ? (
         <div className="mt-4 grid gap-3 border-t border-white/10 pt-4 sm:grid-cols-2">
-          <p className="text-sm text-muted sm:col-span-2">
-            {mode === "join"
-              ? "Join to save your details and keep a photo look book of every visit."
-              : "Sign in to see your visits and your look book."}
-          </p>
           {mode === "join" ? (
             <>
               <label className="grid gap-1 text-xs text-muted">
@@ -332,7 +266,6 @@ export function ClientMemberBar({
 
       {mode === "code" ? (
         <div className="mt-4 grid gap-3 border-t border-white/10 pt-4">
-          <p className="text-sm text-muted">{msg}</p>
           {demoCode ? (
             <p className="rounded-xl border border-[rgba(201,180,232,0.35)] bg-[rgba(201,180,232,0.1)] px-3 py-2 text-sm text-[#e0d0f5]">
               Demo code: <span className="font-bold tracking-widest">{demoCode}</span>
@@ -370,7 +303,6 @@ export function ClientMemberBar({
       ) : null}
 
       {error ? <p className="mt-3 text-sm text-[#f5a8a8]">{error}</p> : null}
-      {msg && mode === "closed" ? <p className="mt-3 text-sm text-champagne">{msg}</p> : null}
     </div>
   );
 }
