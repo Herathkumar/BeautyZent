@@ -172,7 +172,7 @@ export function AdminBottomNav() {
         </button>
         <a href="/manager/account" className={onProfile ? "active" : undefined}>
           <span aria-hidden>✎</span>
-          Profile
+          Account
         </a>
       </nav>
     </div>

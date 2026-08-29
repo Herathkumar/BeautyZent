@@ -365,10 +365,10 @@ export default function AdminAccountPage() {
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold tracking-[0.2em] text-champagne uppercase">
-            Account
+            Manager
           </p>
           <h1 className="mt-1 font-[family-name:var(--font-display)] text-4xl leading-tight text-ink">
-            Profile
+            Account
           </h1>
           <p className="mt-1.5 text-sm text-muted">Your salon manager identity and login.</p>
         </div>

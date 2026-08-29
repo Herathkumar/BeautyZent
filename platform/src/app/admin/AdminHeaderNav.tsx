@@ -118,7 +118,7 @@ export function AdminHeaderNav() {
         href="/manager/account"
         className={pathname.startsWith("/manager/account") ? "is-active" : undefined}
       >
-        Profile
+        Account
       </Link>
     </nav>
   );
