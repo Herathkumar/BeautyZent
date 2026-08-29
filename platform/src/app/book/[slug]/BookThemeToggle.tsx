@@ -10,6 +10,11 @@ import {
   setBookThemePreference,
   type BookThemePreference,
 } from "@/lib/book-theme";
+import {
+  applyMarketplaceBookTheme,
+  isMarketplaceBookSession,
+  MARKETPLACE_BOOK_THEME_ID,
+} from "@/lib/marketplace-book-theme";
 import { DEFAULT_BOOKING_THEME_ID } from "@/lib/salon-themes";
 
 /** Light / dark switcher for the client booking app. */
@@ -19,10 +24,16 @@ export function BookThemeToggle() {
   const [packId, setPackId] = useState<string | null>(null);
 
   useLayoutEffect(() => {
-    const current = readBookThemePreference();
+    const market = isMarketplaceBookSession();
+    const current = market ? "light" : readBookThemePreference();
+    if (market) applyMarketplaceBookTheme();
+    else applyBookTheme(current);
     setTheme(current);
-    applyBookTheme(current);
-    setPackId(document.documentElement.getAttribute("data-salon-theme"));
+    setPackId(
+      market
+        ? MARKETPLACE_BOOK_THEME_ID
+        : document.documentElement.getAttribute("data-salon-theme")
+    );
 
     const onStorage = (e: StorageEvent) => {
       if (e.key !== BOOK_THEME_KEY) return;
@@ -59,7 +70,9 @@ export function BookThemeToggle() {
       testId="book-theme-toggle"
       optionTestIdPrefix="book-theme"
       ariaLabel="App theme"
-      fallbackThemeId={DEFAULT_BOOKING_THEME_ID}
+      fallbackThemeId={
+        isMarketplaceBookSession() ? MARKETPLACE_BOOK_THEME_ID : DEFAULT_BOOKING_THEME_ID
+      }
       packId={packId}
       value={theme}
       onChange={(mode) => {
@@ -70,11 +83,18 @@ export function BookThemeToggle() {
   );
 }
 
-/** Applies the saved light/dark preference before paint. */
+/** Applies marketplace cocoa (or saved light/dark) before paint. */
 export function BookThemeBoot({ children }: { children: React.ReactNode }) {
   useLayoutEffect(() => {
-    const apply = () => applyBookTheme(readBookThemePreference());
-    apply();
+    if (isMarketplaceBookSession()) {
+      applyMarketplaceBookTheme();
+    } else {
+      applyBookTheme(readBookThemePreference());
+    }
+    const apply = () => {
+      if (isMarketplaceBookSession()) applyMarketplaceBookTheme();
+      else applyBookTheme(readBookThemePreference());
+    };
     window.addEventListener(BOOK_THEME_EVENT, apply);
     return () => window.removeEventListener(BOOK_THEME_EVENT, apply);
   }, []);

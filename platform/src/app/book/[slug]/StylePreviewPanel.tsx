@@ -24,9 +24,17 @@ type Props = {
   isMember: boolean;
   value: StylePrefDraft | null;
   onChange: (next: StylePrefDraft | null) => void;
+  /** studio = Look book playground; attach = booking / visit (default). */
+  variant?: "studio" | "attach";
 };
 
-export function StylePreviewPanel({ slug, isMember, value, onChange }: Props) {
+export function StylePreviewPanel({
+  slug,
+  isMember,
+  value,
+  onChange,
+  variant = "attach",
+}: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [basePhoto, setBasePhoto] = useState<string | null>(null);
   const [cameraOpen, setCameraOpen] = useState(false);
@@ -179,14 +187,18 @@ export function StylePreviewPanel({ slug, isMember, value, onChange }: Props) {
   }
 
   const preview = value?.imageBase64 || basePhoto;
+  const isStudio = variant === "studio";
 
   return (
-    <div className="book-card space-y-3 rounded-2xl p-4">
+    <div className="book-card space-y-3 rounded-2xl p-4" data-testid={isStudio ? "style-preview-studio" : "style-preview-attach"}>
       <div>
-        <h3 className="font-semibold text-ink">Style preview</h3>
+        <h3 className="font-semibold text-ink">
+          {isStudio ? "Style preview studio" : "Style preview"}
+        </h3>
         <p className="mt-1 text-sm text-muted">
-          Optional — show your stylist the look you want. Upload, pick a past look, or try free AI
-          styles.
+          {isStudio
+            ? "Try looks with AI, upload inspo, or reuse a past visit photo. Attach one when you book or on an upcoming visit."
+            : "Optional — show your stylist the look you want. Upload, pick a past look, or try free AI styles."}
         </p>
       </div>
 
@@ -319,7 +331,7 @@ export function StylePreviewPanel({ slug, isMember, value, onChange }: Props) {
       </div>
 
       {error ? <p className="text-sm text-[#b54a3c]">{error}</p> : null}
-      {value ? (
+      {value && !isStudio ? (
         <p className="text-xs font-medium text-champagne">
           Saved for this booking
           {value.source === "AI"
@@ -328,6 +340,18 @@ export function StylePreviewPanel({ slug, isMember, value, onChange }: Props) {
               ? " · from look book"
               : " · upload"}
           {value.prompt ? ` · ${value.prompt}` : ""}
+        </p>
+      ) : null}
+      {value && isStudio ? (
+        <p className="text-xs font-medium text-champagne">
+          Ready to attach
+          {value.source === "AI"
+            ? " · AI preview"
+            : value.source === "LOOKBOOK"
+              ? " · from look book"
+              : " · upload"}
+          {value.prompt ? ` · ${value.prompt}` : ""}
+          . Open Book or an upcoming visit to attach it.
         </p>
       ) : null}
 

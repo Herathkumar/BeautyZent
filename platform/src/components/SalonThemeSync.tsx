@@ -2,6 +2,11 @@
 
 import { useLayoutEffect } from "react";
 import { writeSalonBrand, type SalonBrand } from "@/lib/salon-branding";
+import {
+  applyMarketplaceBookTheme,
+  isMarketplaceBookSession,
+  MARKETPLACE_BOOK_THEME_ID,
+} from "@/lib/marketplace-book-theme";
 import { applySalonThemeId } from "@/lib/salon-themes";
 
 type Props = {
@@ -39,7 +44,11 @@ export function SalonThemeSync({
   const accentColor = brand?.accentColor ?? null;
 
   useLayoutEffect(() => {
-    applySalonThemeId(themeId, fallbackThemeId);
+    if (isMarketplaceBookSession()) {
+      applyMarketplaceBookTheme();
+    } else {
+      applySalonThemeId(themeId, fallbackThemeId);
+    }
     if (brandSlug && name) {
       writeSalonBrand(
         {
@@ -66,6 +75,10 @@ export function SalonThemeSync({
       .then((data: { salon?: SalonBrand } | null) => {
         if (cancelled || !data?.salon) return;
         writeSalonBrand(data.salon, { staff });
+        if (isMarketplaceBookSession()) {
+          applyMarketplaceBookTheme();
+          return;
+        }
         const nextId = data.salon[themeField] ?? themeId;
         applySalonThemeId(nextId, fallbackThemeId);
       })

@@ -8,6 +8,7 @@ import { FacebookIcon, InstagramIcon } from "@/components/SocialBrandIcons";
 import { facebookUrl, instagramUrl } from "@/lib/social-links";
 import { LookPhoto, LookPhotoStrip, LookPhotoViewer } from "./LookPhotos";
 import { StylePreviewPanel, StylePrefDraft } from "./StylePreviewPanel";
+import { readStyleDraft, writeStyleDraft } from "./style-draft-storage";
 
 type StylistInfo = {
   id: string;
@@ -226,12 +227,18 @@ export function BookingMyBookings({
   const [styleDraft, setStyleDraft] = useState<StylePrefDraft | null>(null);
   const [styleBusy, setStyleBusy] = useState(false);
   const [styleViewer, setStyleViewer] = useState<string | null>(null);
+  const [studioDraft, setStudioDraft] = useState<StylePrefDraft | null>(null);
   const [stylistCard, setStylistCard] = useState<StylistInfo | null>(null);
   const confirm = useConfirm();
 
   useEffect(() => {
     if (open) setTab(initialTab);
   }, [open, initialTab]);
+
+  useEffect(() => {
+    if (!open) return;
+    setStudioDraft(readStyleDraft(slug));
+  }, [open, slug]);
 
   useEffect(() => {
     if (!open) return;
@@ -647,10 +654,23 @@ export function BookingMyBookings({
                 you want to repeat next time. Only you can see these.
               </p>
 
+              <div className="mt-4">
+                <StylePreviewPanel
+                  slug={slug}
+                  isMember
+                  variant="studio"
+                  value={studioDraft}
+                  onChange={(next) => {
+                    setStudioDraft(next);
+                    writeStyleDraft(slug, next);
+                  }}
+                />
+              </div>
+
               {photoVisits.length === 0 ? (
                 <p className="mt-6 text-sm text-muted">
-                  Your look book fills up after your first visit. Come back here to
-                  add photos.
+                  Visit photos appear here after your first appointment. Come back to
+                  add them — or try a style preview above anytime.
                 </p>
               ) : (
                 <div className="mt-4 space-y-4">

@@ -94,12 +94,25 @@ const BOOT_SCRIPT = `
     }
     else if(book){
       root.classList.add("book-shell");
-      themeId=(cached&&cached.bookingThemeId)||"plum";
       try{
-        var bt=localStorage.getItem("fhsalon-book-theme")||"dark";
-        light=bt==="light"||(bt==="system"&&window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches);
-      }catch(e){}
-      if(light) root.classList.add("book-shell--light");
+        var fromExplore=/[?&]from=explore(?:&|$)/.test(location.search||"");
+        var fromMarket=false;
+        try{ fromMarket=fromExplore||sessionStorage.getItem("fhsalon-book-from-market")==="1"; }catch(e){ fromMarket=fromExplore; }
+        if(fromExplore){ try{ sessionStorage.setItem("fhsalon-book-from-market","1"); }catch(e){} }
+        if(fromMarket){
+          themeId="cocoa";
+          light=true;
+          root.classList.add("book-shell--light","book-shell--marketplace");
+          try{ localStorage.setItem("fhsalon-book-theme","light"); }catch(e){}
+        }else{
+          themeId=(cached&&cached.bookingThemeId)||"plum";
+          var bt=localStorage.getItem("fhsalon-book-theme")||"dark";
+          light=bt==="light"||(bt==="system"&&window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches);
+          if(light) root.classList.add("book-shell--light");
+        }
+      }catch(e){
+        themeId=(cached&&cached.bookingThemeId)||"plum";
+      }
     }
     else if(display||demo){
       root.classList.add("display-shell");

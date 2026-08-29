@@ -3,6 +3,10 @@
 import { useLayoutEffect, useState } from "react";
 import { AppSplash } from "./AppSplash";
 import { writeSalonBrand } from "@/lib/salon-branding";
+import {
+  applyMarketplaceBookTheme,
+  isMarketplaceBookSession,
+} from "@/lib/marketplace-book-theme";
 import { applySalonThemeId, DEFAULT_BOOKING_THEME_ID, DEFAULT_MANAGER_THEME_ID, DEFAULT_STYLIST_THEME_ID } from "@/lib/salon-themes";
 
 type Variant = "manager" | "stylist" | "display" | "book";
@@ -60,7 +64,9 @@ export function AppOpenSplash({
 
     // Only paint when we know the pack — never fall back to defaults here or we
     // clobber a correct theme (manager splash has no themeIds and was resetting to cocoa).
-    if (variant === "book" && themeIds?.bookingThemeId) {
+    if (variant === "book" && isMarketplaceBookSession()) {
+      applyMarketplaceBookTheme();
+    } else if (variant === "book" && themeIds?.bookingThemeId) {
       applySalonThemeId(themeIds.bookingThemeId, DEFAULT_BOOKING_THEME_ID);
     } else if (variant === "manager" && themeIds?.managerThemeId) {
       applySalonThemeId(themeIds.managerThemeId, DEFAULT_MANAGER_THEME_ID);

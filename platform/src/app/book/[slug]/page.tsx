@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { ZentraLabFooter } from "@/components/ZentraLabFooter";
+import { BookMarketNav } from "./BookMarketNav";
 import { BookingWizard } from "./BookingWizard";
 
 function telHref(phone: string) {
@@ -9,10 +9,14 @@ function telHref(phone: string) {
 
 export default async function BookPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ from?: string }>;
 }) {
   const { slug } = await params;
+  const { from } = await searchParams;
+  const fromExplore = from === "explore";
   const salon = await prisma.salon.findUnique({ where: { slug } });
 
   if (!salon) {
@@ -23,7 +27,6 @@ export default async function BookPage({
           <Link href="/explore" className="mt-4 inline-block text-champagne">
             Explore businesses
           </Link>
-          <ZentraLabFooter compact />
         </div>
       </main>
     );
@@ -31,7 +34,8 @@ export default async function BookPage({
 
   return (
     <main className="book-theme flex min-h-screen flex-col">
-      <div className="mx-auto w-full max-w-2xl flex-1 px-4 pb-8 pt-6 sm:px-6">
+      <BookMarketNav salonName={salon.name} fromExplore={fromExplore} />
+      <div className="mx-auto w-full max-w-2xl flex-1 px-4 pb-[calc(var(--book-nav-h)+0.5rem)] pt-4 sm:px-6">
         <section className="book-hero relative mb-5 overflow-hidden rounded-3xl">
           <div className="book-hero-media absolute inset-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -68,10 +72,6 @@ export default async function BookPage({
         </section>
 
         <BookingWizard slug={slug} />
-      </div>
-
-      <div className="mx-auto w-full max-w-2xl px-4 pb-[calc(var(--book-nav-h)+0.5rem)] sm:px-6">
-        <ZentraLabFooter compact />
       </div>
     </main>
   );

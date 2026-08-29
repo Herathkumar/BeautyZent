@@ -70,6 +70,12 @@ export function SalonEditor({ salon }: { salon: EditableSalon }) {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  const [coverBusy, setCoverBusy] = useState(false);
+  const [coverUrl, setCoverUrl] = useState(
+    salon.coverUpdatedAt
+      ? `/api/public/cover/${salon.id}?t=${new Date(salon.coverUpdatedAt).getTime()}`
+      : ""
+  );
 
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -119,6 +125,48 @@ export function SalonEditor({ salon }: { salon: EditableSalon }) {
     router.refresh();
   }
 
+  async function onPickCover(file: File | null) {
+    if (!file) return;
+    setCoverBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      const dataUrl = await fileToBoundedJpegDataUrl(file, MAX_COVER_BYTES);
+      const res = await fetch(`/api/platform/salons/${salon.id}/cover`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageBase64: dataUrl, mimeType: "image/jpeg" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not save cover");
+      setCoverUrl(data.coverUrl || `/api/public/cover/${salon.id}?t=${Date.now()}`);
+      setMessage(data.message || "Explore cover saved.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not save cover");
+    } finally {
+      setCoverBusy(false);
+    }
+  }
+
+  async function removeCover() {
+    setCoverBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      const res = await fetch(`/api/platform/salons/${salon.id}/cover`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not remove cover");
+      setCoverUrl("");
+      setMessage(data.message || "Cover removed.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not remove cover");
+    } finally {
+      setCoverBusy(false);
+    }
+  }
+
   return (
     <form onSubmit={onSubmit} className="grid gap-5">
       <section className="grid gap-4 rounded-3xl border border-ink/12 bg-white/80 p-5">
@@ -156,6 +204,59 @@ export function SalonEditor({ salon }: { salon: EditableSalon }) {
           Address
           <input value={form.address} onChange={(e) => set("address", e.target.value)} className={fieldClass} />
         </label>
+      </section>
+
+      <section className="grid gap-3 rounded-3xl border border-ink/12 bg-white/80 p-5">
+        <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-cocoa">
+          Explore cover
+        </h2>
+        <p className="text-sm text-muted">
+          This picture shows on the public{" "}
+          <a href="/explore" className="font-semibold text-ink underline-offset-2 hover:underline">
+            /explore
+          </a>{" "}
+          directory for this business. Each business can have its own photo.
+        </p>
+        <div className="overflow-hidden rounded-2xl border border-ink/10 bg-[#f3eee8]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={coverUrl || "/display-promo.jpg"}
+            alt=""
+            className="aspect-[16/10] w-full object-cover"
+          />
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <label
+            className={`relative inline-flex cursor-pointer items-center justify-center overflow-hidden rounded-full border border-ink/20 px-4 py-2 text-sm font-medium text-ink-soft hover:border-ink ${
+              coverBusy ? "pointer-events-none opacity-50" : ""
+            }`}
+          >
+            <span className="pointer-events-none">
+              {coverBusy ? "Saving…" : coverUrl ? "Change cover" : "Upload cover"}
+            </span>
+            <input
+              type="file"
+              accept="image/*"
+              disabled={coverBusy}
+              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+              onChange={(e) => {
+                const file = e.target.files?.[0] ?? null;
+                void onPickCover(file);
+                e.target.value = "";
+              }}
+            />
+          </label>
+          {coverUrl ? (
+            <button
+              type="button"
+              disabled={coverBusy}
+              onClick={() => void removeCover()}
+              className="rounded-full border border-[#8a4a37]/35 px-4 py-2 text-sm font-medium text-[#8a4a37] disabled:opacity-50"
+            >
+              Remove
+            </button>
+          ) : null}
+        </div>
       </section>
 
       <section className="grid gap-4 rounded-3xl border border-ink/12 bg-white/80 p-5">

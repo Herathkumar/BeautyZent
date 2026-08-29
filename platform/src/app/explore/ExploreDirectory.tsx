@@ -17,6 +17,14 @@ type BusinessCard = {
   bookUrl: string;
   openHour: number;
   closeHour: number;
+  rewards?: {
+    hasRewards: boolean;
+    loyaltyEnabled: boolean;
+    pointsPerDollar: number;
+    centsPerPoint: number;
+    promotions: { id: string; name: string; label: string }[];
+    morePromotions: number;
+  };
 };
 
 export function ExploreDirectory() {
@@ -128,45 +136,89 @@ export function ExploreDirectory() {
       ) : null}
 
       <div className="grid items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {businesses.map((b) => (
+        {businesses.map((b) => {
+          const bookHref = `/book/${encodeURIComponent(b.slug)}?from=explore`;
+          const menuHref = `/explore/${encodeURIComponent(b.slug)}`;
+          return (
           <article
             key={b.id}
             className="flex h-full flex-col overflow-hidden rounded-3xl border border-ink/12 bg-white/90 shadow-[0_12px_40px_rgba(0,0,0,0.06)]"
           >
             {/* Absolute img locks 16:10 so different cover files don't stretch the card. */}
-            <div className="relative aspect-[16/10] w-full shrink-0 overflow-hidden bg-[#f3eee8]">
+            <a href={menuHref} className="relative aspect-[16/10] w-full shrink-0 overflow-hidden bg-[#f3eee8]" aria-label={`View ${b.name} menu`}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={b.coverUrl || "/display-promo.jpg"}
                 alt=""
                 className="absolute inset-0 h-full w-full object-cover"
               />
-            </div>
-            <div className="flex min-h-0 flex-1 flex-col gap-2 p-4">
+            </a>
+            <div className="flex flex-1 flex-col gap-1.5 p-4">
               <p className="text-[0.68rem] font-semibold tracking-[0.14em] text-cocoa uppercase">
                 {b.businessTypeLabel}
               </p>
-              <h2 className="line-clamp-2 min-h-[2.5rem] font-[family-name:var(--font-display)] text-xl leading-tight text-ink">
-                {b.name}
+              <h2 className="line-clamp-2 font-[family-name:var(--font-display)] text-xl leading-tight text-ink">
+                <a href={menuHref} className="hover:underline">
+                  {b.name}
+                </a>
               </h2>
               <p className="text-sm text-muted">
                 {[b.city, b.region].filter(Boolean).join(", ") || "Location coming soon"}
               </p>
-              <p className="line-clamp-2 min-h-[2.5rem] text-sm text-ink-soft">
-                {b.description?.trim() || "\u00a0"}
-              </p>
+              {b.description?.trim() ? (
+                <p className="line-clamp-2 text-sm text-ink-soft">{b.description.trim()}</p>
+              ) : null}
               <p className="text-xs text-muted">
                 Hours {b.openHour}:00–{b.closeHour}:00
               </p>
-              <Link
-                href={b.bookUrl}
-                className="btn-solid mt-auto rounded-full px-4 py-2.5 text-center text-sm font-semibold"
-              >
-                Book
-              </Link>
+              {b.rewards?.hasRewards ? (
+                <div
+                  className="rounded-2xl border border-[#c9a87c]/35 bg-[linear-gradient(135deg,#fbf6ef,#f3ebe3)] px-3 py-2"
+                  data-testid={`explore-rewards-${b.slug}`}
+                >
+                  <p className="text-[0.65rem] font-semibold tracking-[0.14em] text-cocoa uppercase">
+                    Rewards & promotions
+                  </p>
+                  <ul className="mt-1 space-y-0.5 text-xs text-ink-soft">
+                    {b.rewards.loyaltyEnabled ? (
+                      <li>
+                        Loyalty · earn {b.rewards.pointsPerDollar} pt
+                        {b.rewards.pointsPerDollar === 1 ? "" : "s"} per $1
+                      </li>
+                    ) : null}
+                    {b.rewards.promotions.map((p) => (
+                      <li key={p.id} className="line-clamp-1">
+                        {p.label}
+                      </li>
+                    ))}
+                    {b.rewards.morePromotions > 0 ? (
+                      <li className="text-muted">
+                        +{b.rewards.morePromotions} more on menu
+                      </li>
+                    ) : null}
+                  </ul>
+                </div>
+              ) : null}
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <a
+                  href={menuHref}
+                  className="rounded-full border border-ink/15 px-4 py-2.5 text-center text-sm font-semibold text-ink"
+                  data-testid={`explore-menu-${b.slug}`}
+                >
+                  Menu
+                </a>
+                <a
+                  href={bookHref}
+                  className="btn-solid block rounded-full px-4 py-2.5 text-center text-sm font-semibold"
+                  data-testid={`explore-book-${b.slug}`}
+                >
+                  Book
+                </a>
+              </div>
             </div>
           </article>
-        ))}
+          );
+        })}
       </div>
 
       <p className="mt-10 text-center text-sm text-muted">

@@ -18,7 +18,10 @@ export default async function PlatformHomePage() {
   if (!session) redirect("/platform/login");
 
   const salons = await prisma.salon.findMany({
-    orderBy: [{ listingStatus: "asc" }, { active: "desc" }, { name: "asc" }],
+    // Keep cards in a stable position when Pause / Resume reloads this page.
+    // Sorting by `active` made businesses swap places and look like the wrong
+    // tenant had been changed, even though the API update is scoped by id.
+    orderBy: [{ name: "asc" }],
     select: {
       id: true,
       name: true,

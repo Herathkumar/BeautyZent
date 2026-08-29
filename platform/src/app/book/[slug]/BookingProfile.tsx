@@ -149,9 +149,9 @@ export function BookingProfile({
 
   async function signOut() {
     const ok = await confirm({
-      title: "Sign out?",
+      title: "Log out?",
       message: "You can still book as a guest, and sign back in anytime.",
-      confirmLabel: "Sign out",
+      confirmLabel: "Log out",
       cancelLabel: "Stay",
     });
     if (!ok) return;
@@ -186,13 +186,25 @@ export function BookingProfile({
                 Profile
               </h2>
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-full border border-[color:var(--line)] px-3 py-1.5 text-sm text-muted"
-            >
-              Close
-            </button>
+            <div className="flex shrink-0 items-center gap-2">
+              {client ? (
+                <button
+                  type="button"
+                  onClick={signOut}
+                  data-testid="client-sign-out"
+                  className="rounded-full border border-[color:var(--champagne)]/45 px-3 py-1.5 text-sm font-semibold text-champagne hover:bg-[color:var(--champagne)]/10"
+                >
+                  Log out
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-full border border-[color:var(--line)] px-3 py-1.5 text-sm text-muted"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
 
@@ -366,15 +378,6 @@ export function BookingProfile({
               />
 
               <BookThemeToggle />
-
-              <button
-                type="button"
-                onClick={signOut}
-                data-testid="client-sign-out"
-                className="w-full rounded-full border border-[color:var(--line)] px-5 py-3 text-sm font-semibold text-muted"
-              >
-                Sign out
-              </button>
             </>
           ) : (
             <>

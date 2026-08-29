@@ -11,6 +11,11 @@ import { BookingProfile } from "./BookingProfile";
 import { BookingRewards } from "./BookingRewards";
 import { BookClient, ClientMemberBar } from "./ClientMemberBar";
 import { StylePreviewPanel, StylePrefDraft } from "./StylePreviewPanel";
+import {
+  clearStyleDraft,
+  readStyleDraft,
+  writeStyleDraft,
+} from "./style-draft-storage";
 import { SettingToggle } from "@/components/admin/SettingToggle";
 
 type Service = {
@@ -186,6 +191,7 @@ export function BookingWizard({ slug }: { slug: string }) {
   const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
   const [stylePref, setStylePref] = useState<StylePrefDraft | null>(null);
+  const [styleAttachOpen, setStyleAttachOpen] = useState(false);
   const [saveAsMember, setSaveAsMember] = useState(true);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -229,6 +235,14 @@ export function BookingWizard({ slug }: { slug: string }) {
     setSaveAsMember(true);
     setCounts({ upcoming: 0, photos: 0 });
   }, []);
+
+  useEffect(() => {
+    const draft = readStyleDraft(slug);
+    if (draft) {
+      setStylePref(draft);
+      setStyleAttachOpen(true);
+    }
+  }, [slug]);
 
   useEffect(() => {
     fetch(`/api/public/${slug}/catalog`, { cache: "no-store" })
@@ -432,6 +446,7 @@ export function BookingWizard({ slug }: { slug: string }) {
         priceCents: data.appointment.priceCents,
         durationMin: data.appointment.durationMin,
       });
+      clearStyleDraft(slug);
       setJoinPrompt(Boolean(data.suggestJoin && saveAsMember && email));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Booking failed");
@@ -737,13 +752,85 @@ export function BookingWizard({ slug }: { slug: string }) {
         openSignInMode={signInMode}
       />
 
-      <div className="mt-4">
-        <StylePreviewPanel
-          slug={slug}
-          isMember={Boolean(client)}
-          value={stylePref}
-          onChange={setStylePref}
-        />
+      <div className="mt-4 space-y-3">
+        {!styleAttachOpen ? (
+          <div className="book-card flex flex-wrap items-center justify-between gap-3 rounded-2xl p-4">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-ink">Style preview</p>
+              <p className="mt-0.5 text-xs text-muted">
+                Optional — attach a look for your stylist. Try AI styles in Look book.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {client ? (
+                <button
+                  type="button"
+                  onClick={() => openMemberTab("lookbook")}
+                  className="rounded-full border border-[color:var(--line)] px-3 py-1.5 text-xs font-semibold text-champagne"
+                >
+                  Open Look book
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => setStyleAttachOpen(true)}
+                data-testid="book-attach-style"
+                className="btn-solid rounded-full px-4 py-1.5 text-xs font-semibold"
+              >
+                {stylePref ? "Edit attached look" : "Attach style preview"}
+              </button>
+            </div>
+            {stylePref?.imageBase64 ? (
+              <button
+                type="button"
+                onClick={() => setStyleAttachOpen(true)}
+                className="flex w-full items-center gap-3 text-left"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={stylePref.imageBase64}
+                  alt=""
+                  className="h-14 w-14 rounded-xl object-cover ring-1 ring-[rgba(201,180,232,0.45)]"
+                />
+                <span className="text-xs text-muted">
+                  Look ready to send with this booking
+                  <span className="mt-0.5 block font-semibold text-champagne">Tap to change</span>
+                </span>
+              </button>
+            ) : null}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <StylePreviewPanel
+              slug={slug}
+              isMember={Boolean(client)}
+              variant="attach"
+              value={stylePref}
+              onChange={(next) => {
+                setStylePref(next);
+                writeStyleDraft(slug, next);
+              }}
+            />
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setStyleAttachOpen(false)}
+                className="rounded-full border border-[color:var(--line)] px-4 py-2 text-xs font-semibold text-champagne"
+              >
+                {stylePref ? "Done attaching" : "Close"}
+              </button>
+              {client ? (
+                <button
+                  type="button"
+                  onClick={() => openMemberTab("lookbook")}
+                  className="rounded-full border border-[color:var(--line)] px-4 py-2 text-xs font-semibold text-muted"
+                >
+                  Open Look book studio
+                </button>
+              ) : null}
+            </div>
+          </div>
+        )}
       </div>
 
       <form onSubmit={submit} className="mt-6 space-y-8 pb-52">

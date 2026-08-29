@@ -5,6 +5,8 @@ import {
   businessTypeLabel,
   normalizeBusinessType,
 } from "@/lib/marketplace";
+import type { PromotionRuleType } from "@/lib/promotions";
+import { generatePromotionRuleLabel } from "@/lib/promotions";
 
 export const dynamic = "force-dynamic";
 
@@ -58,16 +60,86 @@ export async function GET(req: Request) {
       coverUpdatedAt: true,
       lat: true,
       lng: true,
+      loyaltyEnabled: true,
+      discountsEnabled: true,
+      loyaltyPointsPerDollar: true,
+      loyaltyCentsPerPoint: true,
     },
   });
 
+  const discountSalonIds = rows.filter((b) => b.discountsEnabled).map((b) => b.id);
+  const rules =
+    discountSalonIds.length > 0
+      ? await prisma.promotionRule.findMany({
+          where: { salonId: { in: discountSalonIds }, enabled: true },
+          orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+          select: {
+            id: true,
+            salonId: true,
+            type: true,
+            name: true,
+            discountBps: true,
+            discountCents: true,
+            minVisits: true,
+            minSpendCents: true,
+          },
+        })
+      : [];
+
+  const rulesBySalon = new Map<string, typeof rules>();
+  for (const rule of rules) {
+    const list = rulesBySalon.get(rule.salonId) || [];
+    list.push(rule);
+    rulesBySalon.set(rule.salonId, list);
+  }
+
   return NextResponse.json({
-    businesses: rows.map((b) => ({
-      ...b,
-      businessTypeLabel: businessTypeLabel(b.businessType),
-      coverUrl: b.coverUpdatedAt ? `/api/public/cover/${b.id}` : null,
-      bookUrl: `/book/${b.slug}`,
-    })),
+    businesses: rows.map((b) => {
+      const salonRules = b.discountsEnabled ? rulesBySalon.get(b.id) || [] : [];
+      const promotions = salonRules.slice(0, 3).map((rule) => ({
+        id: rule.id,
+        name: rule.name,
+        label:
+          rule.name?.trim() ||
+          generatePromotionRuleLabel({
+            type: rule.type as PromotionRuleType,
+            discountBps: rule.discountBps ?? 0,
+            discountCents: rule.discountCents ?? 0,
+            minVisits: rule.minVisits ?? 0,
+            minSpendCents: rule.minSpendCents ?? 0,
+          }),
+      }));
+      const hasRewards = b.loyaltyEnabled || promotions.length > 0;
+
+      return {
+        id: b.id,
+        name: b.name,
+        slug: b.slug,
+        businessType: b.businessType,
+        businessTypeLabel: businessTypeLabel(b.businessType),
+        city: b.city,
+        region: b.region,
+        country: b.country,
+        description: b.description,
+        address: b.address,
+        phone: b.phone,
+        openHour: b.openHour,
+        closeHour: b.closeHour,
+        timezone: b.timezone,
+        lat: b.lat,
+        lng: b.lng,
+        coverUrl: b.coverUpdatedAt ? `/api/public/cover/${b.id}` : null,
+        bookUrl: `/book/${b.slug}`,
+        rewards: {
+          hasRewards,
+          loyaltyEnabled: b.loyaltyEnabled,
+          pointsPerDollar: b.loyaltyPointsPerDollar,
+          centsPerPoint: b.loyaltyCentsPerPoint,
+          promotions,
+          morePromotions: Math.max(0, salonRules.length - promotions.length),
+        },
+      };
+    }),
     types: BUSINESS_TYPES,
     filters: { q, city, type },
   });
