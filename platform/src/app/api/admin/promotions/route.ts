@@ -86,7 +86,7 @@ function isMissingDisplayCheckoutFieldError(err: unknown) {
 
 function isMissingViewControlFieldError(err: unknown) {
   const message = err instanceof Error ? err.message : String(err || "");
-  return /Unknown (?:field|arg) `?displayView(Control|RotateSec)`?|Salon\.displayView(Control|RotateSec)/i.test(
+  return /Unknown (?:field|arg(?:ument)?) `?displayView(Control|RotateSec)`?|Salon\.displayView(Control|RotateSec)/i.test(
     message
   );
 }
@@ -131,7 +131,7 @@ function promoErrorMessage(err: unknown, fallback: string) {
   if (/reading 'findMany'|promotionSlide/i.test(message)) {
     return "Prisma client is out of date. Stop the dev server, run pnpm db:generate, then restart with pnpm dev:local.";
   }
-  if (/Unknown arg `loyaltyEnabled`|Unknown arg `discountsEnabled`|Unknown arg `displayCheckoutEnabled`|Unknown arg `displayViewControl`|Unknown arg `promoBoardEnabled`/i.test(message)) {
+  if (/Unknown arg(?:ument)? `loyaltyEnabled`|Unknown arg(?:ument)? `discountsEnabled`|Unknown arg(?:ument)? `displayCheckoutEnabled`|Unknown arg(?:ument)? `displayViewControl`|Unknown arg(?:ument)? `promoBoardEnabled`/i.test(message)) {
     return "Prisma client is out of date. Stop the dev server, run pnpm db:generate, then restart with pnpm dev:local.";
   }
   if (err && typeof err === "object" && "code" in err) {
