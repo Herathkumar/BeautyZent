@@ -500,13 +500,28 @@ export function PromotionsSettings() {
         <div>
           <h3 className="font-semibold text-[#2b2521]">Customer display board</h3>
           <p className="mt-1 text-sm text-[#6b5b52]">
-            Shows a styled carousel of your enabled discount rules on the customer TV. Turn a
+            Settings for what clients see on the TV in the lounge or front desk.
+          </p>
+        </div>
+
+        <div className="grid gap-4 border-b border-[#7d6154]/10 pb-4">
+          <SettingToggle
+            label="Show checkout details (Payment success & savings)"
+            checked={settings.displayCheckoutEnabled}
+            onChange={(displayCheckoutEnabled) => setSettings((s) => ({ ...s, displayCheckoutEnabled }))}
+          />
+        </div>
+
+        <div>
+          <h4 className="font-medium text-[#2b2521]">Promotions Carousel</h4>
+          <p className="mt-1 text-sm text-[#6b5b52]">
+            Shows a styled carousel of your enabled discount rules. Turn a
             rule on above to include it — no image upload needed.
           </p>
         </div>
 
         <SettingToggle
-          label="Show promotion board on customer display"
+          label="Show promotion carousel on customer display"
           checked={settings.promoBoardEnabled}
           onChange={(promoBoardEnabled) => setSettings((s) => ({ ...s, promoBoardEnabled }))}
           testId="promo-board-enabled"

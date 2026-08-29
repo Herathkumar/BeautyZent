@@ -1355,7 +1355,7 @@ export function DisplayBoard({
     minute: "2-digit",
   });
   const apptDay = now.toLocaleDateString("en-CA", { month: "short", day: "numeric" });
-  const checkoutOverlayOpen = Boolean(checkout);
+  const checkoutOverlayOpen = Boolean(checkout && salon?.displayCheckoutEnabled !== false);
   const showPromoBoard = usePromotionBoardCycle(promoBoard, {
     paused: variant !== "customer" || checkoutOverlayOpen,
   });
@@ -1880,33 +1880,35 @@ export function DisplayBoard({
       {showPromoBoard && promoBoard?.enabled && promoBoard.slides.length ? (
         <CustomerPromotionBoard board={promoBoard} paused={checkoutOverlayOpen} />
       ) : null}
-      <CustomerCheckoutOverlay
-        bill={checkout}
-        thanks={null}
-        onTip={
-          checkout && checkout.status !== "PAID"
-            ? (tipMode) => {
-                void checkoutAction({ action: "tip", tipMode });
-              }
-            : undefined
-        }
-        onLooksGood={
-          checkout && checkout.status === "PENDING"
-            ? () => {
-                void checkoutAction({ action: "verify" });
-              }
-            : undefined
-        }
-        onDismissThanks={
-          checkout?.status === "PAID"
-            ? () => {
-                hidePaidThanksRef.current = true;
-                setCheckout(null);
-                void checkoutAction({ action: "cancel" });
-              }
-            : undefined
-        }
-      />
+      {salon?.displayCheckoutEnabled !== false ? (
+        <CustomerCheckoutOverlay
+          bill={checkout}
+          thanks={null}
+          onTip={
+            checkout && checkout.status !== "PAID"
+              ? (tipMode) => {
+                  void checkoutAction({ action: "tip", tipMode });
+                }
+              : undefined
+          }
+          onLooksGood={
+            checkout && checkout.status === "PENDING"
+              ? () => {
+                  void checkoutAction({ action: "verify" });
+                }
+              : undefined
+          }
+          onDismissThanks={
+            checkout?.status === "PAID"
+              ? () => {
+                  hidePaidThanksRef.current = true;
+                  setCheckout(null);
+                  void checkoutAction({ action: "cancel" });
+                }
+              : undefined
+          }
+        />
+      ) : null}
       </CustomerThemeRoot>
     </div>
   );

@@ -27,6 +27,7 @@ function coreSettingsSelect() {
     loyaltyPointsPerDollar: true,
     loyaltyCentsPerPoint: true,
     loyaltyMaxRedeemPercent: true,
+    displayCheckoutEnabled: true,
   } as const;
 }
 
@@ -46,6 +47,7 @@ function withBoardDefaults(salon: {
   loyaltyPointsPerDollar: number;
   loyaltyCentsPerPoint: number;
   loyaltyMaxRedeemPercent: number;
+  displayCheckoutEnabled?: boolean;
   promoBoardEnabled?: boolean;
   promoBoardIntervalSec?: number;
   promoBoardShowSec?: number;
@@ -57,6 +59,7 @@ function withBoardDefaults(salon: {
     loyaltyPointsPerDollar: salon.loyaltyPointsPerDollar,
     loyaltyCentsPerPoint: salon.loyaltyCentsPerPoint,
     loyaltyMaxRedeemPercent: salon.loyaltyMaxRedeemPercent,
+    displayCheckoutEnabled: salon.displayCheckoutEnabled ?? true,
     promoBoardEnabled: Boolean(salon.promoBoardEnabled),
     promoBoardIntervalSec: salon.promoBoardIntervalSec ?? 90,
     promoBoardShowSec: salon.promoBoardShowSec ?? 24,
@@ -66,7 +69,7 @@ function withBoardDefaults(salon: {
 
 function isMissingPromoBoardFieldError(err: unknown) {
   const message = err instanceof Error ? err.message : String(err || "");
-  return /Unknown field `?promoBoard(Enabled|IntervalSec|ShowSec|SlideSec)`?/i.test(message);
+  return /Unknown field `?(displayCheckoutEnabled|promoBoard(Enabled|IntervalSec|ShowSec|SlideSec))`?/i.test(message);
 }
 
 function normalizeSettingsInput(raw: Record<string, unknown>) {
@@ -79,6 +82,7 @@ function normalizeSettingsInput(raw: Record<string, unknown>) {
       100,
       Math.max(0, Math.round(Number(raw.loyaltyMaxRedeemPercent ?? 50)))
     ),
+    displayCheckoutEnabled: raw.displayCheckoutEnabled === undefined ? true : Boolean(raw.displayCheckoutEnabled),
     promoBoardEnabled: Boolean(raw.promoBoardEnabled),
     promoBoardIntervalSec: Math.min(
       600,
@@ -100,7 +104,7 @@ function promoErrorMessage(err: unknown, fallback: string) {
   if (/reading 'findMany'|promotionSlide/i.test(message)) {
     return "Prisma client is out of date. Stop the dev server, run pnpm db:generate, then restart with pnpm dev:local.";
   }
-  if (/Unknown arg `loyaltyEnabled`|Unknown arg `discountsEnabled`|Unknown arg `promoBoardEnabled`/i.test(message)) {
+  if (/Unknown arg `loyaltyEnabled`|Unknown arg `discountsEnabled`|Unknown arg `displayCheckoutEnabled`|Unknown arg `promoBoardEnabled`/i.test(message)) {
     return "Prisma client is out of date. Stop the dev server, run pnpm db:generate, then restart with pnpm dev:local.";
   }
   if (err && typeof err === "object" && "code" in err) {

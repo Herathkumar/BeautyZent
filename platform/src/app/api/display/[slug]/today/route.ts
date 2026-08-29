@@ -34,6 +34,7 @@ export async function GET(
       displayPinHash: true,
       displayPinSetAt: true,
       displayViewMode: true,
+      displayCheckoutEnabled: true,
     },
   });
   if (!salon) return NextResponse.json({ error: "Salon not found" }, { status: 404 });
@@ -158,6 +159,7 @@ export async function GET(
       closedDays: salon.closedDays || [],
       todayClosed: (salon.closedDays || []).includes(dayOfWeekInTz(todayYmd, timeZone)),
       displayViewMode: normalizeCustomerDisplayView(salon.displayViewMode),
+      displayCheckoutEnabled: salon.displayCheckoutEnabled,
     },
     range: {
       from: from.toISOString(),

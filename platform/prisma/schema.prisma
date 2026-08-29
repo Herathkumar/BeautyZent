@@ -46,6 +46,8 @@ model Salon {
   loyaltyPointsPerDollar  Int     @default(1)
   loyaltyCentsPerPoint    Int     @default(5)
   loyaltyMaxRedeemPercent Int     @default(50)
+  /// Show checkout details overlay on the customer display
+  displayCheckoutEnabled  Boolean @default(true)
   /// Customer TV promotion board — rotates enabled discount templates.
   promoBoardEnabled     Boolean @default(false)
   /// Seconds between promotion board appearances on the customer display.
