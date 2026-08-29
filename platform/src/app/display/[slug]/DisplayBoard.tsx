@@ -1323,7 +1323,18 @@ export function DisplayBoard({
     const real = stylists.filter(
       (s) => !isE2eFixtureStylist(s) || booked.has(s.id) || booked.has(s.name)
     );
-    return real.length ? real : stylists;
+    
+    const base = real.length ? real : stylists;
+    
+    // Ensure any stylist with an appointment is shown, even if inactive or filtered out
+    const baseIds = new Set(base.map((s) => s.id));
+    const extra = source
+      .map((a) => a.stylist)
+      .filter((s) => s && s.id && !baseIds.has(s.id));
+    
+    const uniqueExtra = Array.from(new Map(extra.map((s) => [s.id, s])).values());
+    
+    return [...base, ...uniqueExtra];
   })();
   const rescheduleStylists = (() => {
     const chairs = stylists.filter((s) => s.id && s.id !== "none" && !isE2eFixtureStylist(s));
