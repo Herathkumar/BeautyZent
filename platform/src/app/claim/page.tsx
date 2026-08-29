@@ -4,11 +4,17 @@ import Link from "next/link";
 import { useState } from "react";
 import { BeautyZentMarketHeader } from "@/components/BeautyZentBrand";
 import { BUSINESS_TYPES } from "@/lib/marketplace";
+import { fileToBoundedJpegDataUrl } from "@/lib/photo-resize";
 
 export default function ClaimBusinessPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState<{ name: string; slug: string } | null>(null);
+  const [coverImage, setCoverImage] = useState("");
+  const [coverSource, setCoverSource] = useState<"upload" | "ai" | "">("");
+  const [coverPrompt, setCoverPrompt] = useState("");
+  const [coverBusy, setCoverBusy] = useState(false);
+  const [coverError, setCoverError] = useState("");
   const [form, setForm] = useState({
     businessName: "",
     slug: "",
@@ -28,6 +34,44 @@ export default function ClaimBusinessPage() {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
+  async function pickCover(file: File | null) {
+    if (!file) return;
+    setCoverBusy(true);
+    setCoverError("");
+    try {
+      setCoverImage(await fileToBoundedJpegDataUrl(file, 900_000));
+      setCoverSource("upload");
+    } catch (err) {
+      setCoverError(err instanceof Error ? err.message : "Could not read that image");
+    } finally {
+      setCoverBusy(false);
+    }
+  }
+
+  async function generateCover() {
+    setCoverBusy(true);
+    setCoverError("");
+    try {
+      const res = await fetch("/api/public/claim/cover-generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          businessName: form.businessName,
+          businessType: form.businessType,
+          prompt: coverPrompt,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Could not generate cover");
+      setCoverImage(data.imageBase64 || "");
+      setCoverSource("ai");
+    } catch (err) {
+      setCoverError(err instanceof Error ? err.message : "Could not generate cover");
+    } finally {
+      setCoverBusy(false);
+    }
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -36,7 +80,11 @@ export default function ClaimBusinessPage() {
       const res = await fetch("/api/public/claim", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          coverImageBase64: coverImage || undefined,
+          coverMimeType: coverImage ? "image/jpeg" : undefined,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Could not submit");
@@ -171,6 +219,96 @@ export default function ClaimBusinessPage() {
                 maxLength={500}
               />
             </label>
+            <section className="grid gap-3 rounded-2xl border border-ink/12 bg-[#fbf8f4] p-4">
+              <div>
+                <p className="text-sm font-semibold text-ink">Business card cover</p>
+                <p className="mt-0.5 text-xs text-muted">
+                  Upload your own photo or generate one with AI. You can change it later from
+                  Manager Account.
+                </p>
+              </div>
+              {coverImage ? (
+                <div className="relative overflow-hidden rounded-2xl border border-ink/10 bg-[#f3eee8]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={coverImage}
+                    alt="Business card cover preview"
+                    className="aspect-[16/10] w-full object-cover"
+                    data-testid="claim-cover-preview"
+                  />
+                  <span className="absolute right-2 top-2 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-semibold tracking-wide text-cocoa uppercase">
+                    {coverSource === "ai" ? "AI preview" : "Uploaded"}
+                  </span>
+                </div>
+              ) : null}
+              <div className="flex flex-wrap gap-2">
+                <label
+                  className={`relative inline-flex cursor-pointer items-center justify-center overflow-hidden rounded-full border border-ink/15 bg-white px-4 py-2 text-sm font-semibold text-ink hover:border-cocoa ${
+                    coverBusy ? "pointer-events-none opacity-50" : ""
+                  }`}
+                >
+                  <span className="pointer-events-none">
+                    {coverSource === "upload" ? "Choose another photo" : "Upload photo"}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    disabled={coverBusy}
+                    className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                    data-testid="claim-cover-upload"
+                    onChange={(e) => {
+                      void pickCover(e.target.files?.[0] ?? null);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+                {coverImage ? (
+                  <button
+                    type="button"
+                    disabled={coverBusy}
+                    onClick={() => {
+                      setCoverImage("");
+                      setCoverSource("");
+                      setCoverError("");
+                    }}
+                    className="rounded-full border border-[#8a4a37]/25 px-4 py-2 text-sm text-[#8a4a37] disabled:opacity-50"
+                  >
+                    Remove
+                  </button>
+                ) : null}
+              </div>
+              <div className="grid gap-2 border-t border-ink/10 pt-3">
+                <label className="grid gap-1 text-sm">
+                  Generate with AI
+                  <textarea
+                    value={coverPrompt}
+                    onChange={(e) => setCoverPrompt(e.target.value)}
+                    rows={2}
+                    maxLength={400}
+                    placeholder="Example: A bright modern salon with cream chairs, plants, and warm lighting"
+                    className="rounded-xl border border-ink/15 bg-white px-3 py-2.5"
+                    data-testid="claim-cover-ai-prompt"
+                  />
+                </label>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-xs text-muted">Up to 3 AI previews per hour</span>
+                  <button
+                    type="button"
+                    disabled={
+                      coverBusy ||
+                      form.businessName.trim().length < 2 ||
+                      coverPrompt.trim().length < 8
+                    }
+                    onClick={() => void generateCover()}
+                    className="rounded-full border border-cocoa/35 bg-white px-4 py-2 text-sm font-semibold text-cocoa hover:bg-cocoa/5 disabled:opacity-50"
+                    data-testid="claim-cover-generate"
+                  >
+                    {coverBusy ? "Working…" : coverSource === "ai" ? "Generate again" : "Generate cover"}
+                  </button>
+                </div>
+              </div>
+              {coverError ? <p className="text-sm text-[#8a4a37]">{coverError}</p> : null}
+            </section>
             <label className="grid gap-1 text-sm">
               Address
               <input

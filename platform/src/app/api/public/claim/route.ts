@@ -25,6 +25,8 @@ const bodySchema = z.object({
   description: z.string().max(500).optional(),
   phone: z.string().max(40).optional(),
   address: z.string().max(200).optional(),
+  coverImageBase64: z.string().max(1_250_000).optional(),
+  coverMimeType: z.string().max(40).optional(),
   timezone: z.string().min(3).max(64).default("America/Toronto"),
   openHour: z.number().int().min(0).max(23).default(9),
   closeHour: z.number().int().min(1).max(24).default(18),
@@ -33,6 +35,26 @@ const bodySchema = z.object({
   managerEmail: z.string().email(),
   managerPassword: z.string().min(8).max(128),
 });
+
+function decodeCover(imageBase64?: string, mimeType?: string) {
+  if (!imageBase64) return { ok: true as const, bytes: null, mime: null };
+  const mime = String(mimeType || "image/jpeg").toLowerCase();
+  if (mime !== "image/jpeg" && mime !== "image/png") {
+    return { ok: false as const, error: "Cover must be a JPEG or PNG image." };
+  }
+  try {
+    const decoded = Buffer.from(imageBase64.replace(/^data:[^;]+;base64,/, ""), "base64");
+    if (!decoded.length) return { ok: false as const, error: "Cover image could not be read." };
+    if (decoded.length > 900_000) {
+      return { ok: false as const, error: "Cover image is too large. Try a smaller photo." };
+    }
+    const bytes: Uint8Array<ArrayBuffer> = new Uint8Array(decoded.byteLength);
+    bytes.set(decoded);
+    return { ok: true as const, bytes, mime };
+  } catch {
+    return { ok: false as const, error: "Cover image could not be read." };
+  }
+}
 
 /**
  * Self-serve create business (marketplace claim).
@@ -48,6 +70,10 @@ export async function POST(req: Request) {
   }
 
   const data = parsed.data;
+  const cover = decodeCover(data.coverImageBase64, data.coverMimeType);
+  if (!cover.ok) {
+    return NextResponse.json({ error: cover.error }, { status: 400 });
+  }
   const slug = normalizeSlug(data.slug);
   const slugError = validateSlug(slug);
   if (slugError) return NextResponse.json({ error: slugError }, { status: 400 });
@@ -94,6 +120,8 @@ export async function POST(req: Request) {
     region: data.region?.trim() || null,
     country: data.country?.trim() || "CA",
     description: data.description?.trim() || null,
+    coverData: cover.bytes,
+    coverMime: cover.mime,
     claimedAt: new Date(),
   });
 

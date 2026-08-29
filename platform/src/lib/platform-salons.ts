@@ -103,6 +103,8 @@ export type CreateSalonInput = {
   region?: string | null;
   country?: string | null;
   description?: string | null;
+  coverData?: Uint8Array<ArrayBuffer> | null;
+  coverMime?: string | null;
   active?: boolean;
   claimedAt?: Date | null;
 };
@@ -139,6 +141,9 @@ export async function createSalonWithManager(input: CreateSalonInput) {
       region: input.region?.trim() || null,
       country: input.country?.trim() || "CA",
       description: input.description?.trim() || null,
+      coverData: input.coverData ?? null,
+      coverMime: input.coverMime ?? null,
+      coverUpdatedAt: input.coverData?.length ? new Date() : null,
       active,
       claimedAt: input.claimedAt ?? null,
       approvedAt: listingStatus === "PUBLISHED" ? new Date() : null,
