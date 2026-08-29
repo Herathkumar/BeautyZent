@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { BeautyZentMarketHeader } from "@/components/BeautyZentBrand";
 import { BUSINESS_TYPES } from "@/lib/marketplace";
 
 export default function ClaimBusinessPage() {
@@ -49,16 +50,18 @@ export default function ClaimBusinessPage() {
 
   return (
     <main className="min-h-screen bg-[#f7f2ec]">
-      <div className="border-b border-ink/10 bg-white/70">
-        <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
-          <Link href="/explore" className="text-sm font-semibold text-ink">
-            ← Explore
-          </Link>
-          <Link href="/platform/login" className="text-sm text-muted hover:text-ink">
-            Platform login
-          </Link>
-        </div>
-      </div>
+      <BeautyZentMarketHeader
+        right={
+          <>
+            <Link href="/explore" className="text-muted hover:text-ink">
+              ← Explore
+            </Link>
+            <Link href="/platform/login" className="text-muted hover:text-ink">
+              Platform login
+            </Link>
+          </>
+        }
+      />
 
       <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
         <p className="text-xs font-semibold tracking-[0.18em] text-cocoa uppercase">

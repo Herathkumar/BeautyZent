@@ -4,9 +4,13 @@ import { RegisterServiceWorker } from "@/components/RegisterServiceWorker";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "BeautyZent — Book beauty & personal care",
+  title: "BeautyZent — Premium salon & beauty marketplace",
   description:
-    "Marketplace booking for salons, barbers, spas, and similar businesses — plus shop tools for owners.",
+    "BeautyZent marketplace for salons, barbers, spas, and similar businesses — book online and run your shop.",
+  icons: {
+    icon: [{ url: "/brand/beautyzent-logo-light.jpg", type: "image/jpeg" }],
+    apple: [{ url: "/brand/beautyzent-logo-light.jpg" }],
+  },
   formatDetection: {
     telephone: false,
     date: false,

@@ -55,7 +55,7 @@ export function ExploreDirectory() {
     <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6">
       <header className="mb-8 max-w-2xl">
         <p className="text-xs font-semibold tracking-[0.18em] text-cocoa uppercase">
-          BeautyZent
+          BeautyZent marketplace
         </p>
         <h1 className="mt-2 font-[family-name:var(--font-display)] text-4xl leading-tight text-ink">
           Explore businesses

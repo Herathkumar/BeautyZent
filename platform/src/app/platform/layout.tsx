@@ -3,8 +3,8 @@ import { getPlatformSession } from "@/lib/platform-auth";
 import { PlatformShell } from "./PlatformShell";
 
 export const metadata: Metadata = {
-  title: "SalonBook — Platform operator",
-  description: "Create and configure salons on the SalonBook platform.",
+  title: "BeautyZent — Platform operator",
+  description: "Create and configure businesses on the BeautyZent marketplace.",
 };
 
 export const viewport: Viewport = {
