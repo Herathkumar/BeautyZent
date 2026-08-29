@@ -15,6 +15,7 @@ type PromoSettings = {
   loyaltyPointsPerDollar: number;
   loyaltyCentsPerPoint: number;
   loyaltyMaxRedeemPercent: number;
+  displayCheckoutEnabled: boolean;
   promoBoardEnabled: boolean;
   promoBoardIntervalSec: number;
   promoBoardShowSec: number;
@@ -41,6 +42,7 @@ export function PromotionsSettings() {
     loyaltyPointsPerDollar: 1,
     loyaltyCentsPerPoint: 5,
     loyaltyMaxRedeemPercent: 50,
+    displayCheckoutEnabled: true,
     promoBoardEnabled: false,
     promoBoardIntervalSec: 90,
     promoBoardShowSec: 24,
@@ -107,6 +109,7 @@ export function PromotionsSettings() {
         100,
         Math.max(0, Math.round(Number(next.loyaltyMaxRedeemPercent) || 0))
       ),
+      displayCheckoutEnabled: next.displayCheckoutEnabled !== false,
       promoBoardEnabled: Boolean(next.promoBoardEnabled),
       promoBoardIntervalSec: Math.min(
         600,
