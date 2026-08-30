@@ -923,6 +923,13 @@ html.customer-shell--dark body {
   background: var(--rx-nav);
   border-right: 1px solid var(--rx-line);
 }
+.reception-powered-by .text-champagne,
+.reception-powered-by .beautyzent-name {
+  color: #e8c9a0 !important; /* rose gold to match the Z mark */
+}
+.reception-powered-by .beautyzent-marketplace {
+  color: var(--mint, #7dd3c0) !important;
+}
 .reception-nav__mark {
   display: flex;
   height: 2.4rem;
@@ -947,6 +954,45 @@ html.customer-shell--dark body {
   font-weight: 600;
   color: var(--rx-muted);
 }
+.reception-nav__icon {
+  display: flex;
+  height: 1.85rem;
+  width: 1.85rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.65rem;
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--rx-accent) 14%, transparent);
+  color: var(--rx-accent);
+}
+.reception-nav__icon--calendar {
+  background: color-mix(in srgb, var(--rx-nav-active) 18%, transparent);
+  color: var(--rx-util-ring, #a78bfa);
+}
+.reception-nav__icon--bookings {
+  background: color-mix(in srgb, var(--rx-action-reschedule) 16%, transparent);
+  color: var(--rx-action-reschedule);
+}
+.reception-nav__icon--clients {
+  background: color-mix(in srgb, var(--rx-cta-new) 16%, transparent);
+  color: var(--rx-cta-new);
+}
+.reception-nav__icon--staff {
+  background: color-mix(in srgb, #a855f7 16%, transparent);
+  color: #c084fc;
+}
+.reception-nav__icon--services {
+  background: color-mix(in srgb, var(--rx-action-noshow) 16%, transparent);
+  color: var(--rx-action-noshow);
+}
+.reception-nav__icon--products {
+  background: color-mix(in srgb, var(--rx-action-checkout) 16%, transparent);
+  color: var(--rx-action-checkout);
+}
+.reception-nav__icon--reports {
+  background: color-mix(in srgb, var(--rx-action-checkin) 16%, transparent);
+  color: var(--rx-action-checkin);
+}
 .reception-nav__item:hover {
   color: var(--rx-text);
   background: var(--rx-input);
@@ -955,6 +1001,40 @@ html.customer-shell--dark body {
   color: #fff;
   background: color-mix(in srgb, var(--rx-nav-active) 72%, var(--rx-nav));
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rx-nav-active) 45%, transparent);
+}
+.reception-nav__item.is-active .reception-nav__icon {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+.reception-sign-out {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.9rem;
+  border: 1px solid color-mix(in srgb, #f43f5e 35%, transparent);
+  background: color-mix(in srgb, #f43f5e 12%, transparent);
+  padding: 0.55rem 0.85rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fda4af;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.reception-sign-out:hover {
+  border-color: color-mix(in srgb, #f43f5e 55%, transparent);
+  background: color-mix(in srgb, #f43f5e 20%, transparent);
+  color: #fecdd3;
+}
+.reception-sign-out__icon {
+  display: flex;
+  height: 1.55rem;
+  width: 1.55rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.55rem;
+  background: color-mix(in srgb, #f43f5e 22%, transparent);
+  color: #fb7185;
 }
 .reception-search__kbd {
   position: absolute;
@@ -2804,56 +2884,50 @@ html.customer-shell--dark body {
 .customer-lounge-footer {
   border-color: var(--cd-line) !important;
   overflow: visible;
-  text-align: left !important;
+  text-align: center !important;
 }
 .customer-lounge-footer > div {
-  align-items: center !important;
-  justify-content: space-between !important;
-  text-align: left !important;
   margin-left: 0 !important;
   margin-right: 0 !important;
   max-width: none !important;
   width: 100% !important;
   overflow: visible;
 }
-.customer-lounge-footer > div > div:first-child {
-  text-align: left !important;
-}
 .customer-lounge-footer .zentralab-footer-meta {
   display: none;
 }
-.customer-lounge-footer .beautyzent-footer-contacts {
-  display: flex !important;
-  flex-direction: column;
-  align-items: flex-end;
-  text-align: right;
-  gap: 0.15rem;
-}
-.customer-lounge-footer .beautyzent-footer-contacts a {
+.customer-lounge-footer .beautyzent-footer-web,
+.customer-lounge-footer .beautyzent-footer-email {
   display: inline !important;
   font-size: 0.625rem !important;
   font-weight: 600 !important;
   letter-spacing: 0.2em !important;
-  text-transform: uppercase !important;
   text-decoration: none;
 }
-.customer-lounge-footer .beautyzent-footer-contacts a:first-child {
+.customer-lounge-footer .beautyzent-footer-web {
   color: var(--cd-accent, var(--champagne, #c9a227)) !important;
+  text-transform: uppercase !important;
+  text-align: left !important;
 }
-.customer-lounge-footer .beautyzent-footer-contacts a:last-child {
+.customer-lounge-footer .beautyzent-footer-email {
   color: var(--mint, #7dd3c0) !important;
   font-size: 0.6875rem !important;
   text-transform: none !important;
+  text-align: right !important;
 }
-.customer-lounge-footer .beautyzent-footer-contacts a:hover {
+.customer-lounge-footer .beautyzent-footer-web:hover,
+.customer-lounge-footer .beautyzent-footer-email:hover {
   opacity: 0.8;
 }
 .customer-lounge-footer p.text-xl {
   font-size: 1rem;
 }
 .customer-lounge-footer img {
-  height: 1.75rem;
-  width: 1.75rem;
+  height: 2.05rem !important;
+  width: auto !important;
+  max-height: 2.05rem;
+  object-fit: contain;
+  object-position: left center;
 }
 .customer-promo-board {
   --promo-gold: var(--cd-accent);
@@ -3731,6 +3805,23 @@ html.customer-shell--dark body {
 .stylist-theme .text-cocoa,
 .stylist-theme .text-champagne {
   color: var(--t-accent-strong) !important;
+}
+
+/* Stylist dark: BeautyZent footer uses manager-like gold (not sea-glass teal) */
+html:not(.theme-light) .stylist-theme .stylist-powered-by .text-champagne,
+html:not(.theme-light) .stylist-theme .stylist-powered-by .beautyzent-name,
+html:not(.theme-light) .stylist-theme .stylist-powered-by .beautyzent-footer-web,
+.stylist-theme:not(.stylist-theme--light) .stylist-powered-by .text-champagne,
+.stylist-theme:not(.stylist-theme--light) .stylist-powered-by .beautyzent-name,
+.stylist-theme:not(.stylist-theme--light) .stylist-powered-by .beautyzent-footer-web {
+  color: #e8c9a0 !important;
+}
+
+html:not(.theme-light) .stylist-theme .stylist-powered-by .beautyzent-marketplace,
+html:not(.theme-light) .stylist-theme .stylist-powered-by .beautyzent-footer-email,
+.stylist-theme:not(.stylist-theme--light) .stylist-powered-by .beautyzent-marketplace,
+.stylist-theme:not(.stylist-theme--light) .stylist-powered-by .beautyzent-footer-email {
+  color: #7dd3c0 !important;
 }
 
 .admin-theme .font-medium,

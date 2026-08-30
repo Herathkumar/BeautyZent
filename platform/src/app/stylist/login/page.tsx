@@ -68,7 +68,7 @@ export default async function StylistLoginPage({
         </Link>
       </p>
 
-      <ZentraLabFooter compact />
+      <ZentraLabFooter compact className="stylist-powered-by" />
     </main>
   );
 }

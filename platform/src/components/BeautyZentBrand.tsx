@@ -1,30 +1,34 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+/** Canonical BeautyZent mark — rose-gold Z used across the marketplace. */
+export const BEAUTYZENT_LOGO = "/brand/beautyzent-logo-rose-mark.png";
+/** Metallic gold Z — customer display footers. */
+export const BEAUTYZENT_LOGO_GOLD = "/brand/beautyzent-logo-gold-mark.png";
+
 export const BEAUTYZENT = {
   name: "BeautyZent",
   tagline: "Premium marketplace for beauty businesses",
-  logoLight: "/brand/beautyzent-logo-rose.png",
-  logoDark: "/brand/beautyzent-logo-rose.png",
-  logoMark: "/brand/beautyzent-logo-rose-mark.png",
-  logoRose: "/brand/beautyzent-logo-rose.png",
-  logoRoseMark: "/brand/beautyzent-logo-rose-mark.png",
+  logoLight: BEAUTYZENT_LOGO,
+  logoDark: BEAUTYZENT_LOGO,
+  logoMark: BEAUTYZENT_LOGO,
+  logoRose: BEAUTYZENT_LOGO,
+  logoRoseMark: BEAUTYZENT_LOGO,
+  logoGoldMark: BEAUTYZENT_LOGO_GOLD,
 } as const;
 
 type Size = "sm" | "md" | "lg" | "hero";
 
 const SIZES: Record<Size, { width: number; height: number; className: string }> = {
-  sm: { width: 120, height: 120, className: "h-10 w-10" },
-  md: { width: 160, height: 160, className: "h-14 w-14" },
-  lg: { width: 220, height: 220, className: "h-24 w-24" },
-  hero: { width: 320, height: 320, className: "h-36 w-36 sm:h-44 sm:w-44" },
+  sm: { width: 120, height: 120, className: "h-12 w-12" },
+  md: { width: 160, height: 160, className: "h-16 w-16" },
+  lg: { width: 220, height: 220, className: "h-28 w-28" },
+  hero: { width: 320, height: 320, className: "h-40 w-40 sm:h-48 sm:w-48" },
 };
 
 /**
- * BeautyZent wordmark / mark.
- * - light / dark: full gold lockup with a transparent background
- * - mark: gold Z only, transparent PNG (headers)
- * - rose: rose-gold Z only, transparent PNG (Explore preview)
+ * BeautyZent mark (rose-gold Z). Variants keep sizing/wordmark styling;
+ * the image asset is the same everywhere.
  */
 export function BeautyZentLogo({
   variant = "light",
@@ -34,7 +38,7 @@ export function BeautyZentLogo({
   className = "",
   priority = false,
 }: {
-  variant?: "light" | "dark" | "mark" | "rose";
+  variant?: "light" | "dark" | "mark" | "rose" | "gold";
   size?: Size;
   href?: string | null;
   showWordmark?: boolean;
@@ -42,18 +46,10 @@ export function BeautyZentLogo({
   priority?: boolean;
 }) {
   const dims = SIZES[size];
-  const src =
-    variant === "rose"
-      ? BEAUTYZENT.logoRoseMark
-      : variant === "mark"
-      ? BEAUTYZENT.logoMark
-      : variant === "dark"
-        ? BEAUTYZENT.logoDark
-        : BEAUTYZENT.logoLight;
   const img = (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={src}
+      src={BEAUTYZENT_LOGO}
       alt={BEAUTYZENT.name}
       width={dims.width}
       height={dims.height}

@@ -6,6 +6,7 @@ import { SelfieCamera } from "@/components/SelfieCamera";
 import { FacebookIcon, InstagramIcon } from "@/components/SocialBrandIcons";
 import { facebookUrl, instagramUrl } from "@/lib/social-links";
 import { StylistThemeToggle } from "../StylistThemeToggle";
+import { BeautyZentPoweredBy } from "@/components/ZentraLabFooter";
 
 type Gender = "FEMALE" | "MALE" | "UNSPECIFIED";
 
@@ -602,6 +603,7 @@ export default function StylistAccountPage() {
       </form>
 
       <StylistThemeToggle />
+      <BeautyZentPoweredBy className="mt-6 stylist-powered-by" />
     </main>
   );
 }

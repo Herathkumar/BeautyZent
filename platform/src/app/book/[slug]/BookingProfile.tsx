@@ -7,6 +7,7 @@ import { DEFAULT_CLIENT_AVATAR, MAX_CLIENT_PHOTO_BYTES } from "@/lib/client-phot
 import { fileToBoundedJpegDataUrl } from "@/lib/photo-resize";
 import { BookThemeToggle } from "./BookThemeToggle";
 import { BookingSalonChooser } from "./BookingSalonChooser";
+import { BeautyZentPoweredBy } from "@/components/ZentraLabFooter";
 import type { BookClient } from "./ClientMemberBar";
 
 export function BookingProfile({
@@ -378,6 +379,7 @@ export function BookingProfile({
               />
 
               <BookThemeToggle />
+              <BeautyZentPoweredBy className="mt-4" />
             </>
           ) : (
             <>
@@ -422,6 +424,7 @@ export function BookingProfile({
               </section>
 
               <BookThemeToggle />
+              <BeautyZentPoweredBy className="mt-4" />
             </>
           )}
         </div>

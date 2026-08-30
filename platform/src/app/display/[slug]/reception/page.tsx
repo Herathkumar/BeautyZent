@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import { canAccessReception, getSession } from "@/lib/auth";
+import { managerHasPhoto, managerPhotoUrl } from "@/lib/manager-photo";
 import { prisma } from "@/lib/prisma";
 import { salonLoginContext } from "@/lib/salon-login";
+import { stylistHasPhoto, stylistPhotoUrl } from "@/lib/stylist-photo";
 import { ReceptionLogin } from "@/components/display/ReceptionLogin";
 import { DisplayBoard } from "../DisplayBoard";
 
@@ -38,12 +40,49 @@ export default async function ReceptionDisplayPage({
     );
   }
 
+  const user = await prisma.user.findUnique({
+    where: { id: session.userId },
+    select: {
+      photoMime: true,
+      photoUpdatedAt: true,
+      stylist: {
+        select: {
+          id: true,
+          gender: true,
+          photoMime: true,
+          photoUpdatedAt: true,
+        },
+      },
+    },
+  });
+
+  let staffPhotoUrl: string | null = null;
+  if (user && managerHasPhoto(user)) {
+    staffPhotoUrl = managerPhotoUrl(user);
+  } else if (
+    user?.stylist &&
+    stylistHasPhoto({
+      id: user.stylist.id,
+      gender: user.stylist.gender,
+      photoUpdatedAt: user.stylist.photoUpdatedAt,
+      hasPhoto: Boolean(user.stylist.photoMime && user.stylist.photoUpdatedAt),
+    })
+  ) {
+    staffPhotoUrl = stylistPhotoUrl({
+      id: user.stylist.id,
+      gender: user.stylist.gender,
+      photoUpdatedAt: user.stylist.photoUpdatedAt,
+      hasPhoto: true,
+    });
+  }
+
   return (
     <DisplayBoard
       slug={slug}
       variant="reception"
       staffName={session.name}
       staffRole={session.role}
+      staffPhotoUrl={staffPhotoUrl}
     />
   );
 }

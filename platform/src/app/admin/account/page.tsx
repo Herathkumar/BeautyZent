@@ -7,6 +7,7 @@ import { TabletPinCard } from "@/components/TabletPinCard";
 import { MANAGER_DEFAULT_AVATAR } from "@/lib/manager-photo";
 import { fileToBoundedJpegDataUrl } from "@/lib/photo-resize";
 import { ManagerThemeToggle } from "../ManagerThemeToggle";
+import { BeautyZentPoweredBy } from "@/components/ZentraLabFooter";
 import { SettingToggle } from "@/components/admin/SettingToggle";
 
 async function loadImageElement(file: File): Promise<HTMLImageElement> {
@@ -890,6 +891,7 @@ export default function AdminAccountPage() {
       <TabletPinCard />
 
       <ManagerThemeToggle />
+      <BeautyZentPoweredBy className="mt-6" />
     </main>
   );
 }

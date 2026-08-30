@@ -8,7 +8,7 @@ import {
   ReceptionNewBookingModal,
   ReceptionWalkInModal,
 } from "@/components/display/ReceptionBookingModals";
-import { ZentraLabFooter } from "@/components/ZentraLabFooter";
+import { ZentraLabFooter, BeautyZentPoweredBy } from "@/components/ZentraLabFooter";
 import { CustomerCheckoutOverlay } from "@/components/display/CustomerCheckoutOverlay";
 import {
   CustomerPromotionBoard,
@@ -543,12 +543,15 @@ export function DisplayBoard({
   variant = "customer",
   staffName,
   staffRole,
+  staffPhotoUrl,
 }: {
   slug: string;
   embedded?: boolean;
   variant?: "customer" | "reception";
   staffName?: string;
   staffRole?: string;
+  /** Uploaded selfie for the signed-in reception user; initials used when null. */
+  staffPhotoUrl?: string | null;
 }) {
   const [appointments, setAppointments] = useState<Appt[]>([]);
   const [stylists, setStylists] = useState<DisplayStylist[]>([]);
@@ -1469,6 +1472,7 @@ export function DisplayBoard({
             salonName={salon?.name || "Salon"}
             staffName={staffName}
             staffRole={staffRole}
+            staffPhotoUrl={staffPhotoUrl}
             section={receptionSection}
             onSection={setReceptionSection}
             onSignOut={() => void signOutReception()}
@@ -1894,6 +1898,7 @@ export function DisplayBoard({
             />
             <ZentraLabFooter
               brand="beautyzent"
+              layout="row"
               compact
               className="customer-lounge-footer shrink-0 !mt-0 !px-2 !py-1.5 text-[11px]"
             />
@@ -2030,6 +2035,7 @@ function ReceptionNav({
   salonName,
   staffName,
   staffRole,
+  staffPhotoUrl,
   section,
   onSection,
   onSignOut,
@@ -2037,6 +2043,7 @@ function ReceptionNav({
   salonName: string;
   staffName?: string;
   staffRole?: string;
+  staffPhotoUrl?: string | null;
   section: ReceptionSection;
   onSection: (section: ReceptionSection) => void;
   onSignOut?: () => void;
@@ -2068,7 +2075,9 @@ function ReceptionNav({
               data-testid={`reception-nav-${item.id}`}
               className={`reception-nav__item ${active ? "is-active" : ""}`}
             >
-              <ReceptionNavIcon id={item.id} />
+              <span className={`reception-nav__icon reception-nav__icon--${item.id}`} aria-hidden>
+                <ReceptionNavIcon id={item.id} />
+              </span>
               {item.label}
             </button>
           );
@@ -2076,8 +2085,20 @@ function ReceptionNav({
       </nav>
       <div className="mt-4 border-t border-[color:var(--rx-line)] pt-4" data-testid="reception-signed-in">
         <div className="flex items-center gap-2">
-          <span className="relative flex h-9 w-9 items-center justify-center rounded-full bg-[var(--rx-accent)] text-xs font-bold text-white">
-            {staffInitials(staffName)}
+          <span className="relative flex h-9 w-9 shrink-0 items-center justify-center">
+            <span className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-[var(--rx-accent)] text-xs font-bold text-white">
+              {staffPhotoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={staffPhotoUrl}
+                  alt=""
+                  className="h-full w-full object-cover"
+                  data-testid="reception-signed-in-photo"
+                />
+              ) : (
+                staffInitials(staffName)
+              )}
+            </span>
             <span className="absolute right-0 bottom-0 h-2 w-2 rounded-full bg-emerald-400 ring-2 ring-[color:var(--rx-nav)]" />
           </span>
           <div className="min-w-0">
@@ -2102,12 +2123,34 @@ function ReceptionNav({
           <button
             type="button"
             onClick={onSignOut}
-            className="mt-3 w-full rounded-xl border border-[color:var(--rx-line)] px-3 py-2 text-xs font-semibold text-[color:var(--rx-muted)] hover:text-[color:var(--rx-text)]"
+            className="reception-sign-out mt-3 w-full"
             data-testid="reception-sign-out"
           >
+            <span className="reception-sign-out__icon" aria-hidden>
+              <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M10 7V5.5A1.5 1.5 0 0 1 11.5 4h7A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5h-7A1.5 1.5 0 0 1 10 18.5V17"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M14 12H4m0 0 2.5-2.5M4 12l2.5 2.5"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
             Sign out
           </button>
         ) : null}
+        <BeautyZentPoweredBy
+          className="mt-4 reception-powered-by"
+          showContacts={false}
+          align="left"
+        />
       </div>
     </aside>
   );
