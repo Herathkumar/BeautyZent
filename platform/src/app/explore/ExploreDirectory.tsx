@@ -134,15 +134,15 @@ export function ExploreDirectory() {
           My account
         </Link>
       </div>
-      <header className="mb-8 flex w-full items-start gap-4 sm:gap-5">
+      <header className="mb-8 flex w-full items-center gap-4 sm:gap-5">
         <BeautyZentLogo
           variant="rose"
-          size="hero"
+          size="lg"
           href={null}
           priority
-          className="!h-40 !w-auto max-w-[10rem] shrink-0 object-left object-contain sm:!h-48 sm:max-w-[12rem]"
+          className="!h-[6.5rem] !w-auto max-w-[6.5rem] shrink-0 object-left object-contain sm:!h-28 sm:max-w-[7rem]"
         />
-        <div className="min-w-0 flex-1 pt-1">
+        <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold tracking-[0.18em] text-cocoa uppercase">
             BeautyZent marketplace
           </p>

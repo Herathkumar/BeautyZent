@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { BeautyZentLogo } from "@/components/BeautyZentBrand";
 
 export default function PlatformLoginPage() {
   const router = useRouter();
@@ -31,11 +32,23 @@ export default function PlatformLoginPage() {
 
   return (
     <div className="mx-auto max-w-md space-y-6">
-      <div>
-        <h1 className="font-[family-name:var(--font-display)] text-3xl text-ink">
-          Platform sign in
-        </h1>
-        <p className="mt-1 text-sm text-muted">
+      <div className="space-y-1">
+        <p className="text-xs font-semibold tracking-[0.18em] text-cocoa uppercase">
+          BeautyZent Marketplace
+        </p>
+        <div className="flex items-center gap-3">
+          <BeautyZentLogo
+            variant="rose"
+            size="sm"
+            href={null}
+            priority
+            className="!h-8 !w-auto max-w-[2.25rem] shrink-0 object-left object-contain"
+          />
+          <h1 className="font-[family-name:var(--font-display)] text-3xl leading-none text-ink">
+            Platform sign in
+          </h1>
+        </div>
+        <p className="text-sm text-muted">
           BeautyZent operator access. Managers and staff keep using their own portals.
         </p>
       </div>
