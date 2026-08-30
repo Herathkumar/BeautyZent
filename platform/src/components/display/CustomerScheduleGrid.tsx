@@ -355,6 +355,7 @@ export function CustomerScheduleGrid({
       </div>
 
       <ZentraLabFooter
+        brand="beautyzent"
         compact
         className={`customer-lounge-footer shrink-0 !mt-0 text-[11px] ${compactPad ? "!px-4 !py-1.5 sm:!px-5" : "!px-8 !py-1.5"}`}
       />

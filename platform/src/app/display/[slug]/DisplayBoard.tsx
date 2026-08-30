@@ -1893,6 +1893,7 @@ export function DisplayBoard({
               }
             />
             <ZentraLabFooter
+              brand="beautyzent"
               compact
               className="customer-lounge-footer shrink-0 !mt-0 !px-2 !py-1.5 text-[11px]"
             />
