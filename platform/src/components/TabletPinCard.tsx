@@ -23,7 +23,7 @@ export function TabletPinCard() {
     const data = await res.json();
     setPinSet(Boolean(data.pinSet));
     if (data.slug) {
-      setTabletUrl(`${window.location.origin}/display/${data.slug}`);
+      setTabletUrl(`${window.location.origin}/display/${data.slug}/lounge`);
     }
   }, []);
 

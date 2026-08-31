@@ -48,6 +48,8 @@ const SALON_SELECT = {
   displayViewMode: true,
   displayViewControl: true,
   displayViewRotateSec: true,
+  loungeDisplayEnabled: true,
+  schedulerDisplayEnabled: true,
   claimedAt: true,
   approvedAt: true,
   listingReviewNote: true,
@@ -187,6 +189,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       displayViewMode: normalizeCustomerDisplayView(body.displayViewMode),
       displayViewControl: normalizeCustomerDisplayViewControl(body.displayViewControl),
       displayViewRotateSec: normalizeCustomerDisplayViewRotateSec(body.displayViewRotateSec),
+      loungeDisplayEnabled: body.loungeDisplayEnabled !== false,
+      schedulerDisplayEnabled: body.schedulerDisplayEnabled !== false,
       brandColor: bookingTheme.dark.accent,
       accentColor: bookingTheme.dark.accentStrong,
       ...(listingStatus

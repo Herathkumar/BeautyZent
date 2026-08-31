@@ -341,7 +341,7 @@ test.describe("Walk-in appointments", () => {
     expect(walk.ok(), `walk-in create: ${await walk.text()}`).toBeTruthy();
 
     const customer = await browser.newPage();
-    await customer.goto("/display/fhsalon");
+    await customer.goto("/display/fhsalon/lounge");
     await expect(customer.getByTestId("store-display-board")).toBeVisible({ timeout: 15_000 });
 
     await page.goto("/display/fhsalon/reception");

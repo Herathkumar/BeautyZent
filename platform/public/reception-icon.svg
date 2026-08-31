@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="BeautyZent Reception">
+  <defs>
+    <linearGradient id="rxBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2a1f3d"/>
+      <stop offset="100%" stop-color="#15101f"/>
+    </linearGradient>
+    <linearGradient id="rxLilac" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#e9d5ff"/>
+      <stop offset="100%" stop-color="#a78bfa"/>
+    </linearGradient>
+    <linearGradient id="rxViolet" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#c4b5fd"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" fill="url(#rxBg)"/>
+
+  <!-- Soft glow -->
+  <circle cx="256" cy="210" r="150" fill="#8b5cf6" opacity="0.14"/>
+
+  <!-- Desk / counter top -->
+  <path d="M72 340h368v36c0 18-14 32-32 32H104c-18 0-32-14-32-32v-36Z" fill="url(#rxViolet)" opacity="0.92"/>
+  <rect x="72" y="318" width="368" height="28" rx="10" fill="url(#rxLilac)"/>
+
+  <!-- Schedule card standing on desk -->
+  <rect x="156" y="118" width="200" height="210" rx="28" fill="none" stroke="url(#rxLilac)" stroke-width="18"/>
+  <rect x="188" y="156" width="96" height="22" rx="10" fill="#e9d5ff"/>
+  <rect x="188" y="202" width="136" height="16" rx="8" fill="#c4b5fd" opacity="0.9"/>
+  <rect x="188" y="236" width="118" height="16" rx="8" fill="#a78bfa" opacity="0.75"/>
+  <rect x="188" y="270" width="128" height="16" rx="8" fill="#8b5cf6" opacity="0.55"/>
+
+  <!-- Live / open status pip -->
+  <circle cx="348" cy="168" r="18" fill="#4ade80"/>
+  <circle cx="348" cy="168" r="10" fill="#bbf7d0"/>
+</svg>

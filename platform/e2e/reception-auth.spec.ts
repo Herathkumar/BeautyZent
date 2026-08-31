@@ -172,7 +172,7 @@ test.describe("Customer display theme", () => {
         /* ignore */
       }
     });
-    await page.goto(`/display/${DEMO.slug}`);
+    await page.goto(`/display/${DEMO.slug}/lounge`);
     await expect(page.getByTestId("customer-theme-toggle")).toBeVisible({ timeout: 20_000 });
     await expect(page.locator(".customer-board")).toHaveAttribute("data-customer-theme", "light");
 
@@ -184,7 +184,7 @@ test.describe("Customer display theme", () => {
   });
 
   test("shows chair status beside each stylist", async ({ page }) => {
-    await page.goto(`/display/${DEMO.slug}`);
+    await page.goto(`/display/${DEMO.slug}/lounge`);
     const waits = page.getByTestId("customer-stylist-wait");
     await expect(waits.first()).toBeVisible({ timeout: 20_000 });
     await expect(waits.first()).toHaveAttribute("data-wait-kind", /available|waiting|opens|closed|done/);
@@ -206,7 +206,7 @@ test.describe("Customer display theme", () => {
   });
 
   test("booked cards drag onto that stylist's chair to check in", async ({ page }) => {
-    await page.goto(`/display/${DEMO.slug}`);
+    await page.goto(`/display/${DEMO.slug}/lounge`);
     const drop = page.getByTestId("stylist-chair-drop").first();
     await expect(drop).toBeVisible({ timeout: 20_000 });
     const card = page.locator("[data-testid=customer-appt-card][data-appt-status=BOOKED]").first();

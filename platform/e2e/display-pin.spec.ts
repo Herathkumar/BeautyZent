@@ -107,7 +107,7 @@ test.describe("Store display PIN", () => {
       const guest = await browser.newContext();
       const tablet = await guest.newPage();
       try {
-        await tablet.goto(`/display/${DEMO.slug}`);
+        await tablet.goto(`/display/${DEMO.slug}/lounge`);
         await expect(tablet.getByTestId("display-pin-pad")).toBeVisible({
           timeout: 15_000,
         });
@@ -161,7 +161,7 @@ test.describe("Store display PIN", () => {
       const openGuest = await browser.newContext();
       const openTablet = await openGuest.newPage();
       try {
-        await openTablet.goto(`/display/${DEMO.slug}`);
+        await openTablet.goto(`/display/${DEMO.slug}/lounge`);
         await expect(openTablet.getByTestId("store-display-board")).toBeVisible({
           timeout: 15_000,
         });
@@ -200,7 +200,7 @@ test.describe("Store display PIN", () => {
       const guest = await browser.newContext();
       const tablet = await guest.newPage();
       try {
-        await tablet.goto(`/display/${DEMO.slug}`);
+        await tablet.goto(`/display/${DEMO.slug}/lounge`);
         await enterPinOnPad(tablet, E2E_PIN);
         await expect(tablet.getByText(/incorrect pin/i)).toBeVisible();
         await enterPinOnPad(tablet, nextPin);

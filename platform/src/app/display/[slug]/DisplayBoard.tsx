@@ -541,6 +541,8 @@ export function DisplayBoard({
   /** When true, board sits inside manager chrome (not the tablet URL). */
   embedded = false,
   variant = "customer",
+  /** Fixed Lounge or Schedule TV — no in-app toggle / rotate. */
+  fixedView = null,
   staffName,
   staffRole,
   staffPhotoUrl,
@@ -548,6 +550,7 @@ export function DisplayBoard({
   slug: string;
   embedded?: boolean;
   variant?: "customer" | "reception";
+  fixedView?: CustomerDisplayView | null;
   staffName?: string;
   staffRole?: string;
   /** Uploaded selfie for the signed-in reception user; initials used when null. */
@@ -626,21 +629,24 @@ export function DisplayBoard({
   const displayViewRotateSec = normalizeCustomerDisplayViewRotateSec(salon?.displayViewRotateSec);
 
   useEffect(() => {
-    if (displayViewControl !== "rotate") return;
+    if (fixedView || displayViewControl !== "rotate") return;
     const ms = displayViewRotateSec * 1000;
     const timer = window.setInterval(() => {
       setRotateView((prev) => (prev === "lounge" ? "timeline" : "lounge"));
     }, ms);
     return () => window.clearInterval(timer);
-  }, [displayViewControl, displayViewRotateSec]);
+  }, [fixedView, displayViewControl, displayViewRotateSec]);
 
-  const customerView = resolveCustomerDisplayView({
-    control: displayViewControl,
-    defaultView: normalizeCustomerDisplayView(salon?.displayViewMode),
-    tabletOverride: viewOverride,
-    rotateView,
-  });
-  const showViewToggle = displayViewControl === "manual";
+  const customerView =
+    fixedView ??
+    resolveCustomerDisplayView({
+      control: displayViewControl,
+      defaultView: normalizeCustomerDisplayView(salon?.displayViewMode),
+      tabletOverride: viewOverride,
+      rotateView,
+    });
+  const showViewToggle = !fixedView && displayViewControl === "manual";
+  const promoSurface = fixedView === "timeline" ? "scheduler" : "lounge";
 
   const unlockHeaders = useMemo(() => {
     if (!unlockToken) return {} as Record<string, string>;
@@ -812,7 +818,8 @@ export function DisplayBoard({
 
   const loadPromoBoard = useCallback(async () => {
     try {
-      const r = await fetch(`/api/display/${slug}/promotion-board`, {
+      const q = new URLSearchParams({ surface: promoSurface });
+      const r = await fetch(`/api/display/${slug}/promotion-board?${q}`, {
         credentials: "same-origin",
         headers: unlockHeaders,
       });
@@ -826,7 +833,7 @@ export function DisplayBoard({
     } catch {
       /* ignore */
     }
-  }, [slug, unlockHeaders, lockToPin]);
+  }, [slug, unlockHeaders, lockToPin, promoSurface]);
 
   async function checkoutAction(body: Record<string, unknown>) {
     const seq = ++checkoutWriteSeq.current;

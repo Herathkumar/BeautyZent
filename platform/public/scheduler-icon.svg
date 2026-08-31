@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="BeautyZent Scheduler">
+  <defs>
+    <linearGradient id="scBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1e242c"/>
+      <stop offset="100%" stop-color="#10141a"/>
+    </linearGradient>
+    <linearGradient id="scBlue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#93c5fd"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+    <linearGradient id="scSky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#bfdbfe"/>
+      <stop offset="100%" stop-color="#60a5fa"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" fill="url(#scBg)"/>
+  <circle cx="256" cy="230" r="150" fill="#3b82f6" opacity="0.14"/>
+
+  <!-- Timeline board -->
+  <rect x="88" y="108" width="336" height="296" rx="32" fill="none" stroke="url(#scBlue)" stroke-width="18"/>
+  <!-- Header bar -->
+  <rect x="120" y="140" width="272" height="28" rx="10" fill="url(#scSky)"/>
+  <!-- Column guides -->
+  <rect x="168" y="188" width="8" height="180" rx="4" fill="#60a5fa" opacity="0.35"/>
+  <rect x="252" y="188" width="8" height="180" rx="4" fill="#60a5fa" opacity="0.35"/>
+  <rect x="336" y="188" width="8" height="180" rx="4" fill="#60a5fa" opacity="0.35"/>
+  <!-- Appointment blocks -->
+  <rect x="128" y="200" width="72" height="56" rx="12" fill="url(#scBlue)"/>
+  <rect x="212" y="248" width="72" height="72" rx="12" fill="#93c5fd" opacity="0.85"/>
+  <rect x="296" y="216" width="72" height="48" rx="12" fill="#60a5fa" opacity="0.7"/>
+  <rect x="128" y="288" width="72" height="40" rx="12" fill="#3b82f6" opacity="0.55"/>
+</svg>

@@ -17,7 +17,7 @@ test.describe("Smoke — surfaces load", () => {
   });
 
   test("floor display loads", async ({ page }) => {
-    await page.goto(`/display/${DEMO.slug}`);
+    await page.goto(`/display/${DEMO.slug}/lounge`);
     await expect(page.getByText(/farzana hair salon|salon floor|welcome/i).first()).toBeVisible();
   });
 });

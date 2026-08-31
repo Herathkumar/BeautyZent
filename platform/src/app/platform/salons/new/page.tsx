@@ -118,7 +118,7 @@ export default function NewSalonPage() {
               className={fieldClass}
             />
             <span className="text-xs text-muted">
-              /book/{effectiveSlug || "slug"} · /display/{effectiveSlug || "slug"}
+              /book/{effectiveSlug || "slug"} · /display/{effectiveSlug || "slug"}/lounge · /display/{effectiveSlug || "slug"}/scheduler
             </span>
           </label>
           <div className="grid gap-4 sm:grid-cols-2">

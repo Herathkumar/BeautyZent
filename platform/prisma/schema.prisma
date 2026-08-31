@@ -72,8 +72,17 @@ model Salon {
   loyaltyMaxRedeemPercent Int     @default(50)
   /// Show checkout details overlay on the customer display
   displayCheckoutEnabled  Boolean @default(true)
+  /// Operator: offer Lounge TV app for this salon.
+  loungeDisplayEnabled    Boolean @default(true)
+  /// Operator: offer Scheduler TV app for this salon.
+  schedulerDisplayEnabled Boolean @default(true)
   /// Customer TV promotion board — rotates enabled discount templates.
+  /// Legacy master flag; prefer loungePromoBoardEnabled / schedulerPromoBoardEnabled.
   promoBoardEnabled     Boolean @default(false)
+  /// Promotions carousel on the Lounge TV.
+  loungePromoBoardEnabled    Boolean @default(false)
+  /// Promotions carousel on the Scheduler TV.
+  schedulerPromoBoardEnabled Boolean @default(false)
   /// Seconds between promotion board appearances on the customer display.
   promoBoardIntervalSec Int     @default(90)
   /// How long the full promotion board stays on screen each appearance.

@@ -4,11 +4,9 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  CUSTOMER_VIEW_CONTROL_OPTIONS,
   normalizeCustomerDisplayView,
   normalizeCustomerDisplayViewControl,
   normalizeCustomerDisplayViewRotateSec,
-  type CustomerDisplayViewControl,
 } from "@/lib/customer-display-view";
 import {
   DEFAULT_BOOKING_THEME_ID,
@@ -45,6 +43,8 @@ export type EditableSalon = {
   displayViewMode: string;
   displayViewControl?: string | null;
   displayViewRotateSec?: number | null;
+  loungeDisplayEnabled?: boolean | null;
+  schedulerDisplayEnabled?: boolean | null;
   coverUpdatedAt?: string | Date | null;
 };
 
@@ -71,6 +71,8 @@ export function SalonEditor({ salon }: { salon: EditableSalon }) {
     displayViewMode: normalizeCustomerDisplayView(salon.displayViewMode),
     displayViewControl: normalizeCustomerDisplayViewControl(salon.displayViewControl),
     displayViewRotateSec: normalizeCustomerDisplayViewRotateSec(salon.displayViewRotateSec),
+    loungeDisplayEnabled: salon.loungeDisplayEnabled !== false,
+    schedulerDisplayEnabled: salon.schedulerDisplayEnabled !== false,
   });
   const [managerEmail, setManagerEmail] = useState("");
   const [managerPassword, setManagerPassword] = useState("");
@@ -227,8 +229,8 @@ export function SalonEditor({ salon }: { salon: EditableSalon }) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="grid gap-5">
-      <section className="grid gap-4 rounded-3xl border border-ink/12 bg-white/80 p-5">
+    <form onSubmit={onSubmit} className="grid w-full min-w-0 gap-5">
+      <section className="grid w-full gap-4 rounded-3xl border border-ink/12 bg-white/80 p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-cocoa">Details</h2>
           <SettingToggle
@@ -469,50 +471,32 @@ export function SalonEditor({ salon }: { salon: EditableSalon }) {
         </div>
       </section>
 
-      <section className="grid gap-4 rounded-3xl border border-ink/12 bg-white/80 p-5">
+      <section className="grid w-full gap-4 rounded-3xl border border-ink/12 bg-white/80 p-5">
         <div>
           <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-cocoa">
-            Customer display
+            Store displays
           </h2>
           <p className="mt-1 text-xs text-muted">
-            How the lounge TV picks Lounge vs Schedule. Managers can also change this under
-            Promotions.
+            Enable separate Lounge and Scheduler TVs for this business. Each gets its own app
+            icon and home-screen install. Managers control promotions per TV under Promotions.
           </p>
         </div>
-        <div className="grid gap-2 sm:grid-cols-2">
-          {CUSTOMER_VIEW_CONTROL_OPTIONS.map((option) => {
-            const on = form.displayViewControl === option.id;
-            return (
-              <button
-                key={option.id}
-                type="button"
-                aria-pressed={on}
-                data-testid={`salon-display-control-${option.id}`}
-                onClick={() => set("displayViewControl", option.id as CustomerDisplayViewControl)}
-                className={`rounded-2xl border p-4 text-left ${
-                  on ? "border-ink bg-ink/5" : "border-ink/15 hover:border-ink/40"
-                }`}
-              >
-                <span className="block text-sm font-semibold text-ink">{option.label}</span>
-                <span className="mt-1 block text-xs text-muted">{option.hint}</span>
-              </button>
-            );
-          })}
-        </div>
-        {form.displayViewControl === "rotate" ? (
-          <label className={`${labelClass} max-w-xs`}>
-            Switch every (seconds)
-            <input
-              type="number"
-              min={5}
-              max={600}
-              value={form.displayViewRotateSec}
-              onChange={(e) => set("displayViewRotateSec", Number(e.target.value))}
-              className={fieldClass}
-              data-testid="salon-display-rotate-sec"
-            />
-          </label>
-        ) : null}
+        <SettingToggle
+          label="Lounge display"
+          description={`Waiting-room TV at /display/${form.slug || "slug"}/lounge`}
+          checked={form.loungeDisplayEnabled}
+          onChange={(loungeDisplayEnabled) => set("loungeDisplayEnabled", loungeDisplayEnabled)}
+          testId="salon-lounge-display-enabled"
+        />
+        <SettingToggle
+          label="Scheduler display"
+          description={`Day schedule TV at /display/${form.slug || "slug"}/scheduler`}
+          checked={form.schedulerDisplayEnabled}
+          onChange={(schedulerDisplayEnabled) =>
+            set("schedulerDisplayEnabled", schedulerDisplayEnabled)
+          }
+          testId="salon-scheduler-display-enabled"
+        />
       </section>
 
       <section className="grid gap-5 rounded-3xl border border-ink/12 bg-white/80 p-5">

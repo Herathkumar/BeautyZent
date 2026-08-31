@@ -1,9 +1,5 @@
 import { NextResponse } from "next/server";
 import { getSession, isSalonStaff } from "@/lib/auth";
-import {
-  normalizeCustomerDisplayViewControl,
-  normalizeCustomerDisplayViewRotateSec,
-} from "@/lib/customer-display-view";
 import { prisma } from "@/lib/prisma";
 import { PROMOTION_RULE_TYPES, type PromotionRuleType } from "@/lib/promotions";
 
@@ -38,8 +34,10 @@ function settingsSelect() {
   return {
     ...coreSettingsSelect(),
     displayCheckoutEnabled: true,
-    displayViewControl: true,
-    displayViewRotateSec: true,
+    loungeDisplayEnabled: true,
+    schedulerDisplayEnabled: true,
+    loungePromoBoardEnabled: true,
+    schedulerPromoBoardEnabled: true,
     promoBoardEnabled: true,
     promoBoardIntervalSec: true,
     promoBoardShowSec: true,
@@ -54,13 +52,21 @@ function withBoardDefaults(salon: {
   loyaltyCentsPerPoint: number;
   loyaltyMaxRedeemPercent: number;
   displayCheckoutEnabled?: boolean;
-  displayViewControl?: string | null;
-  displayViewRotateSec?: number | null;
+  loungeDisplayEnabled?: boolean | null;
+  schedulerDisplayEnabled?: boolean | null;
+  loungePromoBoardEnabled?: boolean | null;
+  schedulerPromoBoardEnabled?: boolean | null;
   promoBoardEnabled?: boolean;
   promoBoardIntervalSec?: number;
   promoBoardShowSec?: number;
   promoBoardSlideSec?: number;
 }) {
+  const loungePromo = Boolean(
+    salon.loungePromoBoardEnabled ?? salon.promoBoardEnabled
+  );
+  const schedulerPromo = Boolean(
+    salon.schedulerPromoBoardEnabled ?? salon.promoBoardEnabled
+  );
   return {
     loyaltyEnabled: salon.loyaltyEnabled,
     discountsEnabled: salon.discountsEnabled,
@@ -68,9 +74,11 @@ function withBoardDefaults(salon: {
     loyaltyCentsPerPoint: salon.loyaltyCentsPerPoint,
     loyaltyMaxRedeemPercent: salon.loyaltyMaxRedeemPercent,
     displayCheckoutEnabled: salon.displayCheckoutEnabled !== false,
-    displayViewControl: normalizeCustomerDisplayViewControl(salon.displayViewControl),
-    displayViewRotateSec: normalizeCustomerDisplayViewRotateSec(salon.displayViewRotateSec),
-    promoBoardEnabled: Boolean(salon.promoBoardEnabled),
+    loungeDisplayEnabled: salon.loungeDisplayEnabled !== false,
+    schedulerDisplayEnabled: salon.schedulerDisplayEnabled !== false,
+    loungePromoBoardEnabled: loungePromo,
+    schedulerPromoBoardEnabled: schedulerPromo,
+    promoBoardEnabled: loungePromo || schedulerPromo,
     promoBoardIntervalSec: salon.promoBoardIntervalSec ?? 90,
     promoBoardShowSec: salon.promoBoardShowSec ?? 24,
     promoBoardSlideSec: salon.promoBoardSlideSec ?? 8,
@@ -84,9 +92,9 @@ function isMissingDisplayCheckoutFieldError(err: unknown) {
   );
 }
 
-function isMissingViewControlFieldError(err: unknown) {
+function isMissingSplitDisplayFieldError(err: unknown) {
   const message = err instanceof Error ? err.message : String(err || "");
-  return /Unknown (?:field|arg(?:ument)?) `?displayView(Control|RotateSec)`?|Salon\.displayView(Control|RotateSec)/i.test(
+  return /Unknown (?:field|arg(?:ument)?) `?(lounge|scheduler)(Display|PromoBoard)Enabled`?|Salon\.(lounge|scheduler)(Display|PromoBoard)Enabled/i.test(
     message
   );
 }
@@ -97,6 +105,8 @@ function isMissingPromoBoardFieldError(err: unknown) {
 }
 
 function normalizeSettingsInput(raw: Record<string, unknown>) {
+  const loungePromo = Boolean(raw.loungePromoBoardEnabled ?? raw.promoBoardEnabled);
+  const schedulerPromo = Boolean(raw.schedulerPromoBoardEnabled ?? raw.promoBoardEnabled);
   return {
     loyaltyEnabled: Boolean(raw.loyaltyEnabled),
     discountsEnabled: Boolean(raw.discountsEnabled),
@@ -108,9 +118,9 @@ function normalizeSettingsInput(raw: Record<string, unknown>) {
     ),
     displayCheckoutEnabled:
       raw.displayCheckoutEnabled === undefined ? true : Boolean(raw.displayCheckoutEnabled),
-    displayViewControl: normalizeCustomerDisplayViewControl(raw.displayViewControl),
-    displayViewRotateSec: normalizeCustomerDisplayViewRotateSec(raw.displayViewRotateSec),
-    promoBoardEnabled: Boolean(raw.promoBoardEnabled),
+    loungePromoBoardEnabled: loungePromo,
+    schedulerPromoBoardEnabled: schedulerPromo,
+    promoBoardEnabled: loungePromo || schedulerPromo,
     promoBoardIntervalSec: Math.min(
       600,
       Math.max(30, Math.round(Number(raw.promoBoardIntervalSec ?? 90)))
@@ -153,42 +163,40 @@ export async function GET() {
   }
 
   try {
-    let salon = null as Awaited<ReturnType<typeof prisma.salon.findUnique>> | null;
+    type BoardSettings = Parameters<typeof withBoardDefaults>[0];
+    let salon: BoardSettings | null = null;
     try {
       salon = await prisma.salon.findUnique({
         where: { id: session.salonId },
         select: settingsSelect(),
       });
     } catch (err) {
-      if (isMissingViewControlFieldError(err) || isMissingDisplayCheckoutFieldError(err)) {
+      if (isMissingSplitDisplayFieldError(err)) {
         const {
-          displayCheckoutEnabled: _checkout,
-          displayViewControl: _c,
-          displayViewRotateSec: _r,
+          loungeDisplayEnabled: _a,
+          schedulerDisplayEnabled: _b,
+          loungePromoBoardEnabled: _c,
+          schedulerPromoBoardEnabled: _d,
           ...rest
         } = settingsSelect();
-        const select = isMissingDisplayCheckoutFieldError(err)
-          ? rest
-          : { ...rest, displayCheckoutEnabled: true as const };
         try {
           salon = await prisma.salon.findUnique({
             where: { id: session.salonId },
-            select,
+            select: rest,
           });
         } catch (inner) {
-          if (!isMissingPromoBoardFieldError(inner)) throw inner;
+          if (!isMissingPromoBoardFieldError(inner) && !isMissingDisplayCheckoutFieldError(inner)) {
+            throw inner;
+          }
           salon = await prisma.salon.findUnique({
             where: { id: session.salonId },
             select: coreSettingsSelect(),
           });
         }
-      } else if (isMissingPromoBoardFieldError(err)) {
+      } else if (isMissingPromoBoardFieldError(err) || isMissingDisplayCheckoutFieldError(err)) {
         salon = await prisma.salon.findUnique({
           where: { id: session.salonId },
-          select: {
-            ...coreSettingsSelect(),
-            displayCheckoutEnabled: true,
-          },
+          select: coreSettingsSelect(),
         });
       } else {
         throw err;
@@ -228,7 +236,8 @@ export async function POST(req: Request) {
   if (body.settings) {
     try {
       const payload = normalizeSettingsInput(body.settings as Record<string, unknown>);
-      let salon: Awaited<ReturnType<typeof prisma.salon.update>> | null = null;
+      type BoardSettings = Parameters<typeof withBoardDefaults>[0];
+      let salon: BoardSettings | null = null;
       try {
         salon = await prisma.salon.update({
           where: { id: session.salonId },
@@ -237,47 +246,41 @@ export async function POST(req: Request) {
         });
       } catch (err) {
         let lastErr: unknown = err;
-        if (isMissingViewControlFieldError(lastErr)) {
+        if (isMissingSplitDisplayFieldError(lastErr)) {
           const {
-            displayViewControl: _vc,
-            displayViewRotateSec: _vr,
-            ...withoutView
+            loungePromoBoardEnabled: loungePromo,
+            schedulerPromoBoardEnabled: schedulerPromo,
+            ...rest
           } = payload;
+          const legacyPayload = {
+            ...rest,
+            promoBoardEnabled: Boolean(loungePromo || schedulerPromo),
+          };
           try {
             salon = await prisma.salon.update({
               where: { id: session.salonId },
-              data: withoutView,
-              select: (() => {
-                const {
-                  displayViewControl: _c,
-                  displayViewRotateSec: _r,
-                  ...sel
-                } = settingsSelect();
-                return sel;
-              })(),
+              data: legacyPayload,
+              select: {
+                ...coreSettingsSelect(),
+                displayCheckoutEnabled: true,
+                promoBoardEnabled: true,
+                promoBoardIntervalSec: true,
+                promoBoardShowSec: true,
+                promoBoardSlideSec: true,
+              },
             });
           } catch (inner) {
             lastErr = inner;
           }
         }
         if (!salon && isMissingDisplayCheckoutFieldError(lastErr)) {
-          const {
-            displayCheckoutEnabled: _checkout,
-            displayViewControl: _vc,
-            displayViewRotateSec: _vr,
-            ...rest
-          } = payload;
+          const { displayCheckoutEnabled: _checkout, ...rest } = payload;
           try {
             salon = await prisma.salon.update({
               where: { id: session.salonId },
               data: rest,
               select: (() => {
-                const {
-                  displayCheckoutEnabled: _c,
-                  displayViewControl: _vc2,
-                  displayViewRotateSec: _vr2,
-                  ...sel
-                } = settingsSelect();
+                const { displayCheckoutEnabled: _c, ...sel } = settingsSelect();
                 return sel;
               })(),
             });
@@ -288,6 +291,8 @@ export async function POST(req: Request) {
               promoBoardIntervalSec: _b,
               promoBoardShowSec: _c,
               promoBoardSlideSec: _d,
+              loungePromoBoardEnabled: _e,
+              schedulerPromoBoardEnabled: _f,
               ...corePayload
             } = rest;
             salon = await prisma.salon.update({
@@ -302,8 +307,8 @@ export async function POST(req: Request) {
             promoBoardIntervalSec: _b,
             promoBoardShowSec: _c,
             promoBoardSlideSec: _d,
-            displayViewControl: _vc,
-            displayViewRotateSec: _vr,
+            loungePromoBoardEnabled: _e,
+            schedulerPromoBoardEnabled: _f,
             ...corePayload
           } = payload;
           salon = await prisma.salon.update({
@@ -317,6 +322,9 @@ export async function POST(req: Request) {
         } else if (!salon) {
           throw lastErr;
         }
+      }
+      if (!salon) {
+        return NextResponse.json({ error: "Could not save settings" }, { status: 500 });
       }
       return NextResponse.json({
         settings: withBoardDefaults(salon),

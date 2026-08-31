@@ -15,9 +15,7 @@ test.describe("Platform operator console", () => {
       await expect(card.getByText(/stylists/i)).toBeVisible();
       await expect(card.getByText(/services/i)).toBeVisible();
       await expect(card.getByRole("link", { name: /^configure$/i })).toBeVisible();
-      await expect(card.getByRole("link", { name: /^book$/i })).toBeVisible();
-      await expect(card.getByRole("link", { name: /^display$/i })).toBeVisible();
-      await expect(card.getByRole("link", { name: /^reception$/i })).toBeVisible();
+      await expect(card.getByRole("link", { name: /^preview$/i })).toBeVisible();
     }
   });
 
@@ -30,14 +28,16 @@ test.describe("Platform operator console", () => {
       await expect(page.getByRole("heading", { name: tenant.name })).toBeVisible();
       await expect(page.getByText(tenant.managerEmail)).toBeVisible();
       await expect(page.getByText(tenant.stylistEmail)).toBeVisible();
+      await expect(page.getByRole("link", { name: /^lounge$/i })).toBeVisible();
+      await expect(page.getByRole("link", { name: /^scheduler$/i })).toBeVisible();
+      await expect(page.getByRole("link", { name: /^reception$/i })).toBeVisible();
       await expect(
-        page.getByRole("link", { name: /client booking/i })
-      ).toHaveAttribute("href", new RegExp(`/book/${tenant.slug}`));
-      await expect(page.getByRole("link", { name: /customer display/i })).toHaveAttribute(
-        "href",
-        new RegExp(`/display/${tenant.slug}`)
-      );
-      await expect(page.getByRole("link", { name: /reception desk/i })).toHaveAttribute(
+        page.getByRole("link", { name: /^lounge$/i })
+      ).toHaveAttribute("href", new RegExp(`/display/${tenant.slug}/lounge`));
+      await expect(
+        page.getByRole("link", { name: /^scheduler$/i })
+      ).toHaveAttribute("href", new RegExp(`/display/${tenant.slug}/scheduler`));
+      await expect(page.getByRole("link", { name: /^reception$/i })).toHaveAttribute(
         "href",
         new RegExp(`/display/${tenant.slug}/reception`)
       );
@@ -45,7 +45,7 @@ test.describe("Platform operator console", () => {
         "href",
         new RegExp(`salon=${tenant.slug}`)
       );
-      await expect(page.getByRole("link", { name: /stylist app/i })).toHaveAttribute(
+      await expect(page.getByRole("link", { name: /^stylist$/i })).toHaveAttribute(
         "href",
         new RegExp(`salon=${tenant.slug}`)
       );
@@ -54,7 +54,7 @@ test.describe("Platform operator console", () => {
     }
   });
 
-  test("salon detail picks the default customer display layout", async ({ page }) => {
+  test("salon detail enables lounge and scheduler displays", async ({ page }) => {
     await platformLogin(page);
     const tenant = TENANTS[0];
     await page
@@ -63,19 +63,10 @@ test.describe("Platform operator console", () => {
       .getByRole("link", { name: /^configure$/i })
       .click();
 
-    const lounge = page.getByTestId("salon-display-view-lounge");
-    const timeline = page.getByTestId("salon-display-view-timeline");
+    const lounge = page.getByTestId("salon-lounge-display-enabled");
+    const scheduler = page.getByTestId("salon-scheduler-display-enabled");
     await expect(lounge).toBeVisible();
-    await expect(timeline).toBeVisible();
-    await expect(lounge).toHaveAttribute("aria-pressed", "true");
-
-    await timeline.click();
-    await expect(timeline).toHaveAttribute("aria-pressed", "true");
-    await expect(lounge).toHaveAttribute("aria-pressed", "false");
-
-    // Leave the tenant on the lounge default for the other specs.
-    await lounge.click();
-    await expect(lounge).toHaveAttribute("aria-pressed", "true");
+    await expect(scheduler).toBeVisible();
   });
 
   test("new salon form loads", async ({ page }) => {

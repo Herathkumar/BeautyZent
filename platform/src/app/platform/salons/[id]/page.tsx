@@ -43,6 +43,8 @@ export default async function SalonDetailPage({
       displayViewMode: true,
       displayViewControl: true,
       displayViewRotateSec: true,
+      loungeDisplayEnabled: true,
+      schedulerDisplayEnabled: true,
       coverUpdatedAt: true,
     },
   });
@@ -55,7 +57,7 @@ export default async function SalonDetailPage({
   });
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="w-full space-y-6">
       <div>
         <Link href="/platform" className="text-sm text-cocoa">
           ← All salons
@@ -72,57 +74,82 @@ export default async function SalonDetailPage({
         </p>
       ) : null}
 
-      <section className="grid gap-2 rounded-3xl border border-ink/12 bg-white/80 p-5 text-sm">
-        <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-cocoa">Portals</h2>
-        <div className="flex flex-wrap gap-2">
-          <a
-            href={`/book/${salon.slug}`}
-            target="_blank"
-            rel="noreferrer"
-            className="rounded-full border border-ink/20 px-4 py-2 text-ink-soft hover:border-ink"
-          >
-            Client booking
-          </a>
-          <a
-            href={`/display/${salon.slug}`}
-            target="_blank"
-            rel="noreferrer"
-            className="rounded-full border border-ink/20 px-4 py-2 text-ink-soft hover:border-ink"
-          >
-            Customer display
-          </a>
-          <a
-            href={`/display/${salon.slug}/reception`}
-            target="_blank"
-            rel="noreferrer"
-            className="rounded-full border border-ink/20 px-4 py-2 text-ink-soft hover:border-ink"
-          >
-            Reception desk
-          </a>
-          <a
-            href={`/manager/login?salon=${encodeURIComponent(salon.slug)}`}
-            target="_blank"
-            rel="noreferrer"
-            className="rounded-full border border-ink/20 px-4 py-2 text-ink-soft hover:border-ink"
-          >
-            Manager
-          </a>
-          <a
-            href={`/stylist/login?salon=${encodeURIComponent(salon.slug)}`}
-            target="_blank"
-            rel="noreferrer"
-            className="rounded-full border border-ink/20 px-4 py-2 text-ink-soft hover:border-ink"
-          >
-            Stylist app
-          </a>
+      <section className="w-full rounded-3xl border border-ink/12 bg-white/80 p-5">
+        <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-cocoa">Apps</h2>
+        <div className="mt-4 grid w-full grid-cols-3 gap-x-2 gap-y-5 sm:grid-cols-3 sm:gap-x-3 lg:grid-cols-6">
+          {(
+            [
+              {
+                name: "Client",
+                href: `/book/${salon.slug}`,
+                icon: "/book-icon.svg",
+                show: true,
+              },
+              {
+                name: "Lounge",
+                href: `/display/${salon.slug}/lounge`,
+                icon: "/lounge-icon.svg",
+                show: salon.loungeDisplayEnabled !== false,
+              },
+              {
+                name: "Scheduler",
+                href: `/display/${salon.slug}/scheduler`,
+                icon: "/scheduler-icon.svg",
+                show: salon.schedulerDisplayEnabled !== false,
+              },
+              {
+                name: "Reception",
+                href: `/display/${salon.slug}/reception`,
+                icon: "/reception-icon.svg",
+                show: true,
+              },
+              {
+                name: "Manager",
+                href: `/manager/login?salon=${encodeURIComponent(salon.slug)}`,
+                icon: "/manager-icon.svg",
+                show: true,
+              },
+              {
+                name: "Stylist",
+                href: `/stylist/login?salon=${encodeURIComponent(salon.slug)}`,
+                icon: "/stylist-icon.svg",
+                show: true,
+              },
+            ] as const
+          )
+            .filter((app) => app.show)
+            .map((app) => (
+            <a
+              key={app.name}
+              href={app.href}
+              target="_blank"
+              rel="noreferrer"
+              className="group flex min-w-0 flex-col items-center gap-1.5 text-center no-underline"
+            >
+              <span className="relative block h-[3.85rem] w-[3.85rem] overflow-hidden rounded-[1.05rem] bg-[#1a1512] shadow-[0_8px_18px_rgba(40,28,18,0.12)] transition duration-150 group-hover:-translate-y-0.5 group-hover:shadow-[0_12px_22px_rgba(40,28,18,0.16)] sm:h-16 sm:w-16 sm:rounded-[1.15rem]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={app.icon}
+                  alt=""
+                  width={64}
+                  height={64}
+                  className="h-full w-full object-cover"
+                />
+              </span>
+              <span className="max-w-[4.75rem] text-[11px] leading-tight font-medium text-ink-soft sm:text-xs">
+                {app.name}
+              </span>
+            </a>
+          ))}
         </div>
-        <p className="text-xs text-muted">
+        <p className="mt-4 text-xs text-muted">
           Manager and stylist open this salon&apos;s login. Sign in with an account from this
-          salon — a session from another shop will not be reused.
+          salon — a session from another shop will not be reused. Lounge and Scheduler are
+          separate TVs — enable them under Store displays below.
         </p>
       </section>
 
-      <section className="grid gap-2 rounded-3xl border border-ink/12 bg-white/80 p-5 text-sm">
+      <section className="grid w-full gap-2 rounded-3xl border border-ink/12 bg-white/80 p-5 text-sm">
         <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-cocoa">Logins</h2>
         {staff.length === 0 ? (
           <p className="text-muted">No staff accounts yet.</p>
