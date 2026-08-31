@@ -2,11 +2,6 @@ import Link from "next/link";
 import { BeautyZentMarketHeader } from "@/components/BeautyZentBrand";
 import { ExploreDirectory } from "./ExploreDirectory";
 
-export const metadata = {
-  title: "Explore businesses — BeautyZent",
-  description: "Find salons, barbers, spas, and book online on BeautyZent.",
-};
-
 export default function ExplorePage() {
   return (
     <main className="min-h-screen bg-[#f7f2ec]">

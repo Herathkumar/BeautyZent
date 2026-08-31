@@ -21,7 +21,7 @@ export async function GET(
     scope: `/book/${slug}`,
     display: "standalone",
     orientation: "any",
-    background_color: "#0c0b0a",
+    background_color: "#0a1630",
     theme_color: "#0c0b0a",
     icons: [
       {
@@ -35,12 +35,6 @@ export async function GET(
         sizes: "512x512",
         type: "image/png",
         purpose: "any maskable",
-      },
-      {
-        src: "/book-icon.svg",
-        sizes: "any",
-        type: "image/svg+xml",
-        purpose: "any",
       },
     ],
   };

@@ -227,10 +227,8 @@ html.stylist-shell--light .app-splash--stylist .app-splash-spinner {
   }
 }
 
-/* Compact gold Z — thin 3D mark that yaws horizontally. */
+/* Exact icon gold Z — yaw horizontally (no extrusion slices). */
 .gold-logo-spin {
-  --gold-depth: 4px;
-  --slice-n: 4;
   display: grid;
   place-items: center;
   perspective: 900px;
@@ -242,7 +240,6 @@ html.stylist-shell--light .app-splash--stylist .app-splash-spinner {
 .gold-logo-spin__world {
   width: 100%;
   height: 100%;
-  transform: none;
   transform-style: preserve-3d;
   -webkit-transform-style: preserve-3d;
 }
@@ -253,17 +250,8 @@ html.stylist-shell--light .app-splash--stylist .app-splash-spinner {
   height: 100%;
   transform-style: preserve-3d;
   -webkit-transform-style: preserve-3d;
-  animation: gold-logo-yaw 3.2s linear infinite;
+  animation: gold-logo-yaw 2.8s linear infinite;
   will-change: transform;
-}
-
-.gold-logo-spin__slice {
-  position: absolute;
-  inset: 0;
-  background: url("/brand/beautyzent-logo-gold-mark.png") center / contain no-repeat;
-  transform: translateZ(calc((var(--i) / var(--slice-n) - 0.5) * var(--gold-depth)));
-  filter: brightness(0.72) saturate(1.05);
-  pointer-events: none;
 }
 
 .gold-logo-spin__face {
@@ -278,13 +266,13 @@ html.stylist-shell--light .app-splash--stylist .app-splash-spinner {
 }
 
 .gold-logo-spin__face--front {
-  transform: translateZ(calc(var(--gold-depth) / 2 + 0.4px));
-  filter: drop-shadow(0 4px 8px rgba(196, 160, 86, 0.18));
+  transform: translateZ(1px);
+  filter: drop-shadow(0 6px 14px rgba(196, 160, 86, 0.28));
 }
 
 .gold-logo-spin__face--back {
-  transform: rotateY(180deg) translateZ(calc(var(--gold-depth) / 2 + 0.4px));
-  filter: brightness(0.94);
+  transform: rotateY(180deg) translateZ(1px);
+  filter: brightness(0.92);
 }
 
 @keyframes gold-logo-yaw {

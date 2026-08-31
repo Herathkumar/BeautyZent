@@ -33,7 +33,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       icon: [
         { url: "/book-icon-192.png", sizes: "192x192", type: "image/png" },
         { url: "/book-icon-512.png", sizes: "512x512", type: "image/png" },
-        { url: "/book-icon.svg", type: "image/svg+xml" },
       ],
       apple: [{ url: "/book-icon-180.png", sizes: "180x180", type: "image/png" }],
     },

@@ -1,12 +1,7 @@
 "use client";
 
-import type { CSSProperties } from "react";
-
-/** Transparent 3D gold Z — used for client-app launch and loading. */
+/** Exact gold Z cut from the client app icon — client launch + loading. */
 export const GOLD_Z_LOGO_SRC = "/brand/beautyzent-logo-gold-mark.png";
-
-/** Extra planes between front and back — thin gold edge, not a heavy slab. */
-const EXTRUDE_SLICES = 5;
 
 type SpinProps = {
   /** Visual size in px. Apple-style splash is ~80. */
@@ -15,34 +10,17 @@ type SpinProps = {
   label?: string;
 };
 
-/** Compact gold Z that yaws horizontally with a thin 3D edge. */
+/** Exact icon Z, yawing horizontally (built-in gold shading — no fake extrusion). */
 export function GoldLogoSpin({ size = 80, className = "", label = "Loading" }: SpinProps) {
-  const depth = Math.max(3, Math.round(size * 0.045));
-
   return (
     <div
       className={`gold-logo-spin ${className}`.trim()}
-      style={
-        {
-          width: size,
-          height: size,
-          "--gold-depth": `${depth}px`,
-          "--slice-n": EXTRUDE_SLICES - 1,
-        } as CSSProperties
-      }
+      style={{ width: size, height: size }}
       role="status"
       aria-label={label}
     >
       <div className="gold-logo-spin__world">
         <div className="gold-logo-spin__stage">
-          {Array.from({ length: EXTRUDE_SLICES }, (_, i) => (
-            <span
-              key={i}
-              className="gold-logo-spin__slice"
-              style={{ ["--i" as string]: i }}
-              aria-hidden
-            />
-          ))}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={GOLD_Z_LOGO_SRC}

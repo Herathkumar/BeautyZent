@@ -8,8 +8,11 @@ export const metadata: Metadata = {
   description:
     "BeautyZent marketplace for salons, barbers, spas, and similar businesses — book online and run your shop.",
   icons: {
-    icon: [{ url: "/brand/beautyzent-logo-rose-mark.png", type: "image/png" }],
-    apple: [{ url: "/brand/beautyzent-logo-rose-mark.png" }],
+    icon: [
+      { url: "/explore-icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/explore-icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/explore-icon-180.png", sizes: "180x180", type: "image/png" }],
   },
   formatDetection: {
     telephone: false,
@@ -152,11 +155,9 @@ const BOOT_SCRIPT = `
       el.setAttribute("role","status");
       if(book){
         el.style.cssText="position:fixed;inset:0;z-index:9999;display:grid;place-items:center;pointer-events:none;background:#0c0b0a";
-        var slices="",i=0;
-        for(i=0;i<5;i++){slices+='<span class="gold-logo-spin__slice" style="--i:'+i+'"></span>';}
-        el.innerHTML='<div class="gold-logo-spin" style="width:80px;height:80px;--gold-depth:4px;--slice-n:4" role="status" aria-label="Loading"><div class="gold-logo-spin__world"><div class="gold-logo-spin__stage">'+slices+'<img src="/brand/beautyzent-logo-gold-mark.png" alt="" width="80" height="80" class="gold-logo-spin__face gold-logo-spin__face--front"/><img src="/brand/beautyzent-logo-gold-mark.png" alt="" width="80" height="80" class="gold-logo-spin__face gold-logo-spin__face--back"/></div></div></div>';
+        el.innerHTML='<div class="gold-logo-spin" style="width:80px;height:80px" role="status" aria-label="Loading"><div class="gold-logo-spin__world"><div class="gold-logo-spin__stage"><img src="/brand/beautyzent-logo-gold-mark.png" alt="" width="80" height="80" class="gold-logo-spin__face gold-logo-spin__face--front"/><img src="/brand/beautyzent-logo-gold-mark.png" alt="" width="80" height="80" class="gold-logo-spin__face gold-logo-spin__face--back"/></div></div></div>';
         var css=document.createElement("style");
-        css.textContent=".gold-logo-spin{display:grid;place-items:center;perspective:900px;perspective-origin:50% 50%;overflow:visible}.gold-logo-spin__world{width:100%;height:100%;transform-style:preserve-3d}.gold-logo-spin__stage{position:relative;width:100%;height:100%;transform-style:preserve-3d;animation:gold-logo-yaw 3.2s linear infinite}.gold-logo-spin__slice{position:absolute;inset:0;background:url(/brand/beautyzent-logo-gold-mark.png) center/contain no-repeat;transform:translateZ(calc((var(--i)/var(--slice-n) - .5)*var(--gold-depth)));filter:brightness(.72)}.gold-logo-spin__face{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;backface-visibility:hidden}.gold-logo-spin__face--front{transform:translateZ(calc(var(--gold-depth)/2 + .4px));filter:drop-shadow(0 4px 8px rgba(196,160,86,.18))}.gold-logo-spin__face--back{transform:rotateY(180deg) translateZ(calc(var(--gold-depth)/2 + .4px));filter:brightness(.94)}@keyframes gold-logo-yaw{to{transform:rotateY(360deg)}}@media (prefers-reduced-motion:reduce){.gold-logo-spin__stage{animation:none}}";
+        css.textContent=".gold-logo-spin{display:grid;place-items:center;perspective:900px;perspective-origin:50% 50%;overflow:visible}.gold-logo-spin__world{width:100%;height:100%;transform-style:preserve-3d}.gold-logo-spin__stage{position:relative;width:100%;height:100%;transform-style:preserve-3d;animation:gold-logo-yaw 2.8s linear infinite}.gold-logo-spin__face{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;backface-visibility:hidden}.gold-logo-spin__face--front{transform:translateZ(1px);filter:drop-shadow(0 6px 14px rgba(196,160,86,.28))}.gold-logo-spin__face--back{transform:rotateY(180deg) translateZ(1px);filter:brightness(.92)}@keyframes gold-logo-yaw{to{transform:rotateY(360deg)}}@media (prefers-reduced-motion:reduce){.gold-logo-spin__stage{animation:none}}";
         document.documentElement.appendChild(css);
         document.documentElement.appendChild(el);
       }else{

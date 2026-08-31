@@ -19,9 +19,7 @@ const jobs = [
   { svg: "display-icon.svg", png: "display-icon-180.png", size: 180 },
   { svg: "display-icon.svg", png: "display-icon-192.png", size: 192 },
   { svg: "display-icon.svg", png: "display-icon-512.png", size: 512 },
-  { svg: "book-icon.svg", png: "book-icon-180.png", size: 180 },
-  { svg: "book-icon.svg", png: "book-icon-192.png", size: 192 },
-  { svg: "book-icon.svg", png: "book-icon-512.png", size: 512 },
+  // Client book icons come from brand/beautyzent-client-icon.jpg via render-book-icon.mjs
 ];
 
 const browser = await chromium.launch();

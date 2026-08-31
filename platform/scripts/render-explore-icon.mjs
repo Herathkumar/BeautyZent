@@ -1,23 +1,15 @@
-﻿/**
- * Resize clean full-bleed BeautyZent client iOS icon to PWA sizes.
- * Source: public/brand/beautyzent-client-icon.png (square, no baked corners)
- */
-import { chromium } from "@playwright/test";
+﻿import { chromium } from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const publicDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../public");
-const srcPath = path.join(publicDir, "brand", "beautyzent-client-icon.png");
-if (!fs.existsSync(srcPath)) {
-  console.error("Missing", srcPath);
-  process.exit(1);
-}
+const srcPath = path.join(publicDir, "brand", "beautyzent-explore-icon.png");
 const srcDataUrl = `data:image/png;base64,${fs.readFileSync(srcPath).toString("base64")}`;
 const jobs = [
-  { png: "book-icon-180.png", size: 180 },
-  { png: "book-icon-192.png", size: 192 },
-  { png: "book-icon-512.png", size: 512 },
+  { png: "explore-icon-180.png", size: 180 },
+  { png: "explore-icon-192.png", size: 192 },
+  { png: "explore-icon-512.png", size: 512 },
 ];
 
 const browser = await chromium.launch();
@@ -38,12 +30,10 @@ for (const job of jobs) {
   const dataUrl = await page.evaluate(({ size }) => {
     const img = window.__img;
     const c = document.getElementById("c");
-    c.width = size;
-    c.height = size;
+    c.width = size; c.height = size;
     const ctx = c.getContext("2d");
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
-    // Full-bleed square — iOS / Console apply the rounded mask
     ctx.fillStyle = "#0a1a3a";
     ctx.fillRect(0, 0, size, size);
     ctx.drawImage(img, 0, 0, size, size);

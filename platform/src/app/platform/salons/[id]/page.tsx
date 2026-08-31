@@ -126,7 +126,7 @@ export default async function SalonDetailPage({
               rel="noreferrer"
               className="group flex min-w-0 flex-col items-center gap-1.5 text-center no-underline"
             >
-              <span className="relative block h-[3.85rem] w-[3.85rem] overflow-hidden rounded-[1.05rem] bg-[#1a1512] shadow-[0_8px_18px_rgba(40,28,18,0.12)] transition duration-150 group-hover:-translate-y-0.5 group-hover:shadow-[0_12px_22px_rgba(40,28,18,0.16)] sm:h-16 sm:w-16 sm:rounded-[1.15rem]">
+              <span className="relative block h-[3.85rem] w-[3.85rem] overflow-hidden rounded-[22.37%] bg-[#0a1a3a] shadow-[0_8px_18px_rgba(40,28,18,0.12)] transition duration-150 group-hover:-translate-y-0.5 group-hover:shadow-[0_12px_22px_rgba(40,28,18,0.16)] sm:h-16 sm:w-16">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={app.icon}
