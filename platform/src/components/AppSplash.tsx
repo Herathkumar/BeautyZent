@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { GoldLogoSpin } from "@/components/GoldLogoSpin";
 import {
   resolveSplashName,
   slugFromPathname,
@@ -82,9 +83,15 @@ export function AppSplash({ variant, brandName, slug, brandColor, accentColor }:
   return (
     <div className={`app-splash ${v.className}`} role="status" aria-live="polite" aria-busy="true">
       <div className="app-splash-inner">
-        <p className="app-splash-brand">{name}</p>
-        <p className="app-splash-label">{v.label}</p>
-        <div className="app-splash-spinner" aria-hidden />
+        {variant === "book" ? (
+          <GoldLogoSpin size={80} label="Loading" />
+        ) : (
+          <>
+            <p className="app-splash-brand">{name}</p>
+            <p className="app-splash-label">{v.label}</p>
+            <div className="app-splash-spinner" aria-hidden />
+          </>
+        )}
       </div>
     </div>
   );

@@ -2,13 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useConfirm } from "@/components/ConfirmDialog";
-import { CLIENT_CANCEL_HOURS } from "@/lib/client-booking";
-import { formatCad } from "@/lib/money";
 import { FacebookIcon, InstagramIcon } from "@/components/SocialBrandIcons";
 import { facebookUrl, instagramUrl } from "@/lib/social-links";
 import { LookPhoto, LookPhotoStrip, LookPhotoViewer } from "./LookPhotos";
 import { StylePreviewPanel, StylePrefDraft } from "./StylePreviewPanel";
 import { readStyleDraft, writeStyleDraft } from "./style-draft-storage";
+import { LuxeCrown, LuxeOrnament, LuxeSheet } from "./luxe";
+import { GoldLogoLoader } from "@/components/GoldLogoSpin";
 
 type StylistInfo = {
   id: string;
@@ -49,6 +49,25 @@ function phoneHref(phone: string) {
   return `tel:${phone.replace(/[^\d+]/g, "")}`;
 }
 
+function googleCalendarUrl(
+  r: Pick<Row, "startsAt" | "endsAt" | "service" | "stylist">,
+  salonName?: string | null
+) {
+  const start = new Date(r.startsAt)
+    .toISOString()
+    .replace(/[-:]/g, "")
+    .replace(/\.\d{3}Z$/, "Z");
+  const end = new Date(r.endsAt)
+    .toISOString()
+    .replace(/[-:]/g, "")
+    .replace(/\.\d{3}Z$/, "Z");
+  const title = encodeURIComponent(
+    `${r.service.name} at ${salonName?.trim() || "Salon"}`
+  );
+  const details = encodeURIComponent(`with ${r.stylist.name}`);
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start}/${end}&details=${details}`;
+}
+
 function StylistThumb({
   stylist,
   onOpen,
@@ -69,7 +88,7 @@ function StylistThumb({
         alt=""
         width={52}
         height={52}
-        className="h-[52px] w-[52px] rounded-full object-cover ring-2 ring-[rgba(201,180,232,0.45)]"
+        className="h-[52px] w-[52px] book-luxe-glow-avatar rounded-full object-cover"
       />
       <p className="w-full truncate text-center text-[10px] font-medium leading-tight text-muted">
         {stylist.name}
@@ -207,13 +226,18 @@ export function BookingMyBookings({
   open,
   onClose,
   timezone,
+  salonName,
   initialTab = "visits",
+  highlightId = null,
 }: {
   slug: string;
   open: boolean;
   onClose: () => void;
   timezone?: string;
+  salonName?: string | null;
   initialTab?: MemberTab;
+  /** Scroll / mark the booking just created. */
+  highlightId?: string | null;
 }) {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(false);
@@ -223,6 +247,7 @@ export function BookingMyBookings({
   const [viewing, setViewing] = useState<{ rowId: string; photoId: string } | null>(
     null
   );
+  const [visitFilter, setVisitFilter] = useState<"upcoming" | "past">("upcoming");
   const [styleEditId, setStyleEditId] = useState<string | null>(null);
   const [styleDraft, setStyleDraft] = useState<StylePrefDraft | null>(null);
   const [styleBusy, setStyleBusy] = useState(false);
@@ -253,6 +278,12 @@ export function BookingMyBookings({
       .catch((e) => setError(e instanceof Error ? e.message : "Could not load"))
       .finally(() => setLoading(false));
   }, [open, slug]);
+
+  useEffect(() => {
+    if (!open || !highlightId || loading) return;
+    const el = document.querySelector('[data-testid="booking-confirmed"]');
+    el?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [open, highlightId, loading, rows]);
 
   function setPhotos(rowId: string, photos: LookPhoto[]) {
     setRows((prev) => prev.map((r) => (r.id === rowId ? { ...r, photos } : r)));
@@ -415,8 +446,8 @@ export function BookingMyBookings({
 
   function dateLine(r: Row, withTime: boolean) {
     return new Date(r.startsAt).toLocaleString("en-CA", {
-      weekday: withTime ? "short" : undefined,
-      month: "short",
+      weekday: withTime ? "long" : undefined,
+      month: withTime ? "long" : "short",
       day: "numeric",
       year: withTime ? undefined : "numeric",
       hour: withTime ? "numeric" : undefined,
@@ -425,34 +456,43 @@ export function BookingMyBookings({
     });
   }
 
+  function timeLine(r: Row) {
+    return new Date(r.startsAt).toLocaleTimeString("en-CA", {
+      hour: "numeric",
+      minute: "2-digit",
+      timeZone: timezone,
+    });
+  }
+
+  function statusTone(status: string) {
+    if (status === "CANCELLED") return "book-luxe-status--cancelled";
+    if (status === "NO_SHOW") return "book-luxe-status--noshow";
+    return "book-luxe-status--done";
+  }
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/55 sm:items-center sm:p-3">
-      <div
-        className="book-card flex h-[92dvh] w-full max-w-lg flex-col rounded-t-3xl shadow-[0_24px_80px_rgba(0,0,0,0.45)] sm:h-auto sm:max-h-[88dvh] sm:rounded-3xl"
-        role="dialog"
-        aria-label="My bookings"
-      >
-        <div className="shrink-0 px-5 pt-4">
-          <div
-            aria-hidden
-            className="mx-auto mb-3 h-1 w-10 rounded-full bg-[color:var(--line)] sm:hidden"
-          />
+    <LuxeSheet label={tab === "visits" ? "My bookings" : "My look book"}>
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="shrink-0 px-5 pt-[max(0.85rem,env(safe-area-inset-top))]">
           <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold tracking-[0.16em] text-champagne uppercase">
-                Member
-              </p>
-              <h2 className="mt-1 font-[family-name:var(--font-display)] text-2xl">
-                {tab === "visits" ? "My bookings" : "My look book"}
-              </h2>
-            </div>
             <button
               type="button"
               onClick={onClose}
-              className="rounded-full border border-[color:var(--line)] px-3 py-1.5 text-sm text-muted"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--champagne)]/45 text-champagne"
+              aria-label="Close"
             >
-              Close
+              ←
             </button>
+            <div className="min-w-0 text-center">
+              <h2 className="book-luxe-title text-3xl">
+                {tab === "visits" ? "My Bookings" : "My Look Book"}
+              </h2>
+              <LuxeOrnament className="mx-auto mt-2 max-w-[8rem]" />
+              {tab === "lookbook" ? (
+                <p className="book-luxe-kicker mt-2">Your past visits & style journey</p>
+              ) : null}
+            </div>
+            <span className="h-9 w-9" aria-hidden />
           </div>
 
           <div className="mt-4 flex gap-1 rounded-full border border-[color:var(--line)] p-1">
@@ -461,9 +501,7 @@ export function BookingMyBookings({
               onClick={() => setTab("visits")}
               data-testid="member-tab-visits"
               className={`flex-1 rounded-full px-3 py-2 text-sm font-semibold transition ${
-                tab === "visits"
-                  ? "bg-[rgba(201,180,232,0.16)] text-champagne"
-                  : "text-muted"
+                tab === "visits" ? "bg-[rgb(var(--t-accent-rgb)/0.16)] text-champagne" : "text-muted"
               }`}
             >
               Visits
@@ -473,188 +511,217 @@ export function BookingMyBookings({
               onClick={() => setTab("lookbook")}
               data-testid="member-tab-lookbook"
               className={`flex-1 rounded-full px-3 py-2 text-sm font-semibold transition ${
-                tab === "lookbook"
-                  ? "bg-[rgba(201,180,232,0.16)] text-champagne"
-                  : "text-muted"
+                tab === "lookbook" ? "bg-[rgb(var(--t-accent-rgb)/0.16)] text-champagne" : "text-muted"
               }`}
             >
               Look book{photoCount ? ` · ${photoCount}` : ""}
             </button>
           </div>
+
+          {tab === "visits" ? (
+            <div className="book-luxe-tabs mt-4">
+              <button
+                type="button"
+                className={visitFilter === "upcoming" ? "is-on" : ""}
+                onClick={() => setVisitFilter("upcoming")}
+              >
+                Upcoming
+              </button>
+              <button
+                type="button"
+                className={visitFilter === "past" ? "is-on" : ""}
+                onClick={() => setVisitFilter("past")}
+              >
+                Past
+              </button>
+            </div>
+          ) : null}
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
-          {loading ? <p className="text-sm text-muted">Loading…</p> : null}
+        <div className="book-luxe-sheet-scroll px-5 pt-4">
+          {loading ? <GoldLogoLoader size={64} label="Loading bookings" /> : null}
           {error ? <p className="mb-3 text-sm text-[#f5a8a8]">{error}</p> : null}
 
           {tab === "visits" ? (
             <>
-              <p className="text-xs text-muted">
-                Free cancel online until {CLIENT_CANCEL_HOURS}h before your visit.
-              </p>
-
-              <section className="mt-4 space-y-3">
-                <h3 className="text-xs font-semibold tracking-wide text-muted uppercase">
-                  Upcoming
-                </h3>
-                {upcoming.length === 0 ? (
-                  <p className="text-sm text-muted">No upcoming visits.</p>
-                ) : (
-                  upcoming.map((r) => (
-                    <div
-                      key={r.id}
-                      className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--color-cream)] px-4 py-3"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-ink">{r.service.name}</p>
-                          <p className="mt-1 text-sm font-medium text-champagne">
-                            {dateLine(r, true)}
-                          </p>
-                          <p className="mt-1 text-xs text-muted">
-                            {formatCad(r.service.priceCents)} · {statusLabel(r.status)}
-                          </p>
+              {visitFilter === "upcoming" ? (
+                <section className="space-y-3">
+                  {upcoming.length === 0 ? (
+                    <p className="text-sm text-muted">No upcoming visits.</p>
+                  ) : (
+                    upcoming.map((r) => (
+                      <div
+                        key={r.id}
+                        data-testid={
+                          highlightId === r.id ? "booking-confirmed" : "booking-card"
+                        }
+                        className="book-luxe-card rounded-2xl px-4 py-4"
+                      >
+                        <div className="flex items-start gap-3">
+                          <StylistThumb
+                            stylist={r.stylist}
+                            onOpen={() => setStylistCard(r.stylist)}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="font-[family-name:var(--font-display)] text-xl leading-tight">
+                              {r.service.name}
+                            </p>
+                            <p className="mt-1 flex items-center gap-1 text-sm text-muted">
+                              with {r.stylist.name}
+                              <LuxeCrown className="h-3.5 w-3.5 text-[#8a6a3e]" />
+                            </p>
+                            <div className="mt-3 space-y-1 border-t border-[#d4b483]/40 pt-2 text-sm">
+                              <p>{dateLine(r, true)}</p>
+                              <p>{timeLine(r)}</p>
+                            </div>
+                          </div>
+                          <span className="text-lg text-[#c9a87c]" aria-hidden>
+                            ›
+                          </span>
                         </div>
-                        <StylistThumb
-                          stylist={r.stylist}
-                          onOpen={() => setStylistCard(r.stylist)}
-                        />
-                      </div>
-                      {r.stylePref?.url && styleEditId !== r.id ? (
-                        <button
-                          type="button"
-                          onClick={() => setStyleViewer(r.stylePref!.url)}
-                          className="mt-3 flex w-full items-center gap-2 text-left"
-                        >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={r.stylePref.url}
-                            alt="Preferred look"
-                            className="h-12 w-12 rounded-lg object-cover ring-1 ring-[rgba(201,180,232,0.45)]"
-                          />
-                          <p className="text-xs text-muted">
-                            Preferred look
-                            {r.stylePref.prompt ? ` · ${r.stylePref.prompt}` : ""}
-                            <span className="mt-0.5 block font-semibold text-champagne">
-                              Tap to view
-                            </span>
-                          </p>
-                        </button>
-                      ) : null}
+                        {r.stylePref?.url && styleEditId !== r.id ? (
+                          <button
+                            type="button"
+                            onClick={() => setStyleViewer(r.stylePref!.url)}
+                            className="mt-3 flex w-full items-center gap-2 text-left"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={r.stylePref.url}
+                              alt="Preferred look"
+                              className="h-12 w-12 rounded-lg object-cover ring-1 ring-[#d4b483]/45"
+                            />
+                            <p className="text-xs text-muted">
+                              Preferred look
+                              {r.stylePref.prompt ? ` · ${r.stylePref.prompt}` : ""}
+                              <span className="mt-0.5 block font-semibold">Tap to view</span>
+                            </p>
+                          </button>
+                        ) : null}
 
-                      {styleEditId === r.id ? (
-                        <div className="mt-3 space-y-2">
-                          <StylePreviewPanel
-                            slug={slug}
-                            isMember
-                            value={styleDraft}
-                            onChange={setStyleDraft}
-                          />
-                          <div className="flex flex-wrap gap-2">
-                            <button
-                              type="button"
-                              disabled={styleBusy || !styleDraft}
-                              onClick={() => void saveStylePref(r.id)}
-                              className="btn-solid rounded-full px-4 py-2 text-xs font-semibold disabled:opacity-60"
-                            >
-                              {styleBusy ? "Saving…" : "Save to booking"}
-                            </button>
-                            {r.stylePref ? (
+                        {styleEditId === r.id ? (
+                          <div className="mt-3 space-y-2">
+                            <StylePreviewPanel
+                              slug={slug}
+                              isMember
+                              value={styleDraft}
+                              onChange={setStyleDraft}
+                            />
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                type="button"
+                                disabled={styleBusy || !styleDraft}
+                                onClick={() => void saveStylePref(r.id)}
+                                className="btn-solid rounded-full px-4 py-2 text-xs font-semibold disabled:opacity-60"
+                              >
+                                {styleBusy ? "Saving…" : "Save to booking"}
+                              </button>
+                              {r.stylePref ? (
+                                <button
+                                  type="button"
+                                  disabled={styleBusy}
+                                  onClick={() => void removeStylePref(r.id)}
+                                  className="rounded-full border border-[rgba(245,168,168,0.4)] px-4 py-2 text-xs font-semibold text-[#b54a3c]"
+                                >
+                                  Remove
+                                </button>
+                              ) : null}
                               <button
                                 type="button"
                                 disabled={styleBusy}
-                                onClick={() => void removeStylePref(r.id)}
-                                className="rounded-full border border-[rgba(245,168,168,0.4)] px-4 py-2 text-xs font-semibold text-[#f5a8a8]"
+                                onClick={() => {
+                                  setStyleEditId(null);
+                                  setStyleDraft(null);
+                                }}
+                                className="rounded-full border border-[#d4b483]/50 px-4 py-2 text-xs font-semibold"
                               >
-                                Remove
+                                Close editor
                               </button>
-                            ) : null}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <a
+                              href={googleCalendarUrl(r, salonName)}
+                              target="_blank"
+                              rel="noreferrer"
+                              data-testid="booking-add-calendar"
+                              className="btn-solid inline-flex rounded-full px-3 py-1.5 text-xs font-semibold"
+                            >
+                              Add to calendar
+                            </a>
                             <button
                               type="button"
-                              disabled={styleBusy}
-                              onClick={() => {
-                                setStyleEditId(null);
-                                setStyleDraft(null);
-                              }}
-                              className="rounded-full border border-[color:var(--line)] px-4 py-2 text-xs font-semibold text-champagne"
+                              onClick={() => openStyleEdit(r)}
+                              className="rounded-full border border-[#d4b483]/50 px-3 py-1.5 text-xs font-semibold"
                             >
-                              Close editor
+                              {r.stylePref ? "Update style preview" : "Add style preview"}
                             </button>
                           </div>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => openStyleEdit(r)}
-                          className="mt-3 mr-2 rounded-full border border-[color:var(--line)] bg-[color:var(--color-cream)] px-3 py-1.5 text-xs font-semibold text-champagne"
-                        >
-                          {r.stylePref ? "Update style preview" : "Add style preview"}
-                        </button>
-                      )}
+                        )}
 
-                      {r.canCancel ? (
-                        <button
-                          type="button"
-                          disabled={busyId === r.id}
-                          onClick={() => cancel(r.id)}
-                          className="mt-3 rounded-full border border-[rgba(181,74,60,0.4)] px-3 py-1.5 text-xs font-semibold text-[#b54a3c]"
-                        >
-                          {busyId === r.id ? "Cancelling…" : "Cancel booking"}
-                        </button>
-                      ) : null}
-                    </div>
-                  ))
-                )}
-              </section>
-
-              {past.length > 0 ? (
-                <section className="mt-6 space-y-3">
-                  <h3 className="text-xs font-semibold tracking-wide text-muted uppercase">
-                    Past
-                  </h3>
-                  {past.slice(0, 12).map((r) => (
-                    <div
-                      key={r.id}
-                      className="rounded-2xl border border-[color:var(--line)] px-4 py-3"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold text-ink">
-                            {r.service.name}
-                          </p>
-                          <p className="text-xs text-muted">
-                            {dateLine(r, false)} · {statusLabel(r.status)}
-                          </p>
-                        </div>
-                        <StylistThumb
-                          stylist={r.stylist}
-                          onOpen={() => setStylistCard(r.stylist)}
-                        />
+                        {r.canCancel ? (
+                          <button
+                            type="button"
+                            disabled={busyId === r.id}
+                            onClick={() => cancel(r.id)}
+                            className="mt-3 rounded-full border border-[rgba(181,74,60,0.4)] px-3 py-1.5 text-xs font-semibold text-[#b54a3c]"
+                          >
+                            {busyId === r.id ? "Cancelling…" : "Cancel booking"}
+                          </button>
+                        ) : null}
                       </div>
-                      {r.canAddPhotos || r.photos.length > 0 ? (
-                        <LookPhotoStrip
-                          slug={slug}
-                          appointmentId={r.id}
-                          photos={r.photos}
-                          canAdd={r.canAddPhotos}
-                          compact
-                          onPhotosChange={(photos) => setPhotos(r.id, photos)}
-                          onOpen={(photo) => setViewing({ rowId: r.id, photoId: photo.id })}
-                        />
-                      ) : null}
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </section>
-              ) : null}
+              ) : (
+                <section className="space-y-3">
+                  {past.length === 0 ? (
+                    <p className="text-sm text-muted">No past visits yet.</p>
+                  ) : (
+                    past.slice(0, 12).map((r) => (
+                      <div key={r.id} className="book-luxe-card rounded-2xl px-4 py-3">
+                        <div className="flex items-start gap-3">
+                          <StylistThumb
+                            stylist={r.stylist}
+                            onOpen={() => setStylistCard(r.stylist)}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="font-[family-name:var(--font-display)] text-lg leading-tight">
+                              {r.service.name}
+                            </p>
+                            <p className="mt-0.5 flex items-center gap-1 text-xs text-muted">
+                              with {r.stylist.name}
+                              <LuxeCrown className="h-3 w-3 text-[#8a6a3e]" />
+                            </p>
+                            <p className="mt-1 text-xs text-muted">
+                              {dateLine(r, false)} · {timeLine(r)}
+                            </p>
+                          </div>
+                          <span className={`book-luxe-status ${statusTone(r.status)}`}>
+                            {statusLabel(r.status)}
+                          </span>
+                        </div>
+                        {r.canAddPhotos || r.photos.length > 0 ? (
+                          <LookPhotoStrip
+                            slug={slug}
+                            appointmentId={r.id}
+                            photos={r.photos}
+                            canAdd={r.canAddPhotos}
+                            compact
+                            onPhotosChange={(photos) => setPhotos(r.id, photos)}
+                            onOpen={(photo) => setViewing({ rowId: r.id, photoId: photo.id })}
+                          />
+                        ) : null}
+                      </div>
+                    ))
+                  )}
+                </section>
+              )}
             </>
           ) : (
             <>
-              <p className="text-xs text-muted">
-                Keep a photo record of every look — the cut, the colour, the notes
-                you want to repeat next time. Only you can see these.
-              </p>
-
-              <div className="mt-4">
+              <div className="mt-1">
                 <StylePreviewPanel
                   slug={slug}
                   isMember
@@ -668,45 +735,47 @@ export function BookingMyBookings({
               </div>
 
               {photoVisits.length === 0 ? (
-                <p className="mt-6 text-sm text-muted">
-                  Visit photos appear here after your first appointment. Come back to
-                  add them — or try a style preview above anytime.
-                </p>
+                <div className="book-luxe-empty mt-6 px-4 py-8 text-center">
+                  <span className="book-luxe-empty__plus" aria-hidden>
+                    +
+                  </span>
+                  <p className="mt-2 text-sm font-semibold">Your look book is waiting</p>
+                  <p className="text-xs">Visit photos appear here after your first appointment.</p>
+                </div>
               ) : (
-                <div className="mt-4 space-y-4">
+                <div className="relative mt-5 space-y-4 pl-4">
+                  <span
+                    className="absolute top-2 bottom-2 left-[7px] w-px bg-[#d4b483]/55"
+                    aria-hidden
+                  />
                   {photoVisits.map((r) => (
-                    <section
-                      key={r.id}
-                      className="rounded-2xl border border-[color:var(--line)] px-4 py-3"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold text-ink">
-                            {r.service.name}
-                          </p>
-                          <p className="text-xs text-muted">
-                            {dateLine(r, false)}
-                          </p>
+                    <section key={r.id} className="relative">
+                      <span
+                        className="absolute top-7 -left-[13px] h-2.5 w-2.5 rounded-full border border-[#d4b483] bg-transparent"
+                        aria-hidden
+                      />
+                      <div className="book-luxe-card rounded-2xl px-4 py-3">
+                        <div className="flex items-start gap-3">
+                          <StylistThumb
+                            stylist={r.stylist}
+                            onOpen={() => setStylistCard(r.stylist)}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="font-[family-name:var(--font-display)] text-lg">
+                              {r.service.name}
+                            </p>
+                            <p className="text-xs text-muted">{dateLine(r, false)}</p>
+                          </div>
                         </div>
-                        <StylistThumb
-                          stylist={r.stylist}
-                          onOpen={() => setStylistCard(r.stylist)}
+                        <LookPhotoStrip
+                          slug={slug}
+                          appointmentId={r.id}
+                          photos={r.photos}
+                          canAdd={r.canAddPhotos}
+                          onPhotosChange={(photos) => setPhotos(r.id, photos)}
+                          onOpen={(photo) => setViewing({ rowId: r.id, photoId: photo.id })}
                         />
                       </div>
-                      <LookPhotoStrip
-                        slug={slug}
-                        appointmentId={r.id}
-                        photos={r.photos}
-                        canAdd={r.canAddPhotos}
-                        onPhotosChange={(photos) => setPhotos(r.id, photos)}
-                        onOpen={(photo) => setViewing({ rowId: r.id, photoId: photo.id })}
-                      />
-                      {r.photos.length === 0 ? (
-                        <p className="mt-2 text-xs text-muted">
-                          No photos yet — add one so you can show your stylist next
-                          time.
-                        </p>
-                      ) : null}
                     </section>
                   ))}
                 </div>
@@ -767,7 +836,7 @@ export function BookingMyBookings({
             <button
               type="button"
               onClick={() => setStyleViewer(null)}
-              className="rounded-full bg-[#e0d0f5] px-4 py-2 text-sm font-semibold text-[#17121f]"
+              className="btn-solid rounded-full px-4 py-2 text-sm font-semibold"
             >
               Close
             </button>
@@ -786,6 +855,6 @@ export function BookingMyBookings({
           </button>
         </div>
       ) : null}
-    </div>
+    </LuxeSheet>
   );
 }

@@ -107,7 +107,7 @@ export async function bookOnlineForTenant(
   await form.getByLabel(/^email/i).fill(opts.email ?? `qa.${tenant.slug}.${Date.now()}@example.com`);
   await form.getByRole("button", { name: /confirm reservation/i }).click();
   await expect(page.getByTestId("booking-confirmed")).toBeVisible({ timeout: 20_000 });
-  await expect(page.getByRole("heading", { name: /you.?re booked/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /add to calendar/i })).toBeVisible();
 }
 
 async function resolveStylistAndService(page: Page, tenant: Tenant) {

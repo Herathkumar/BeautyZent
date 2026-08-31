@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import type { PromoBoardTemplate } from "@/lib/promotion-board";
 import { formatCad } from "@/lib/money";
+import { LuxeCrown, LuxeOrnament, LuxeSheet, MemberBadge, memberTierFromPoints, memberTierLabel } from "./luxe";
+import { GoldLogoLoader } from "@/components/GoldLogoSpin";
 
 type OfferProgress = {
   kind: "visits";
@@ -137,7 +139,11 @@ function OfferCard({
             Sign in
           </button>
         </div>
-      ) : null}
+      ) : (
+        <button type="button" className="btn-solid mt-3 rounded-full px-4 py-2 text-xs font-bold tracking-[0.14em]">
+          CLAIM
+        </button>
+      )}
     </article>
   );
 }
@@ -184,68 +190,84 @@ export function BookingRewards({
   const valuePer100 = loyalty ? formatCad(100 * (loyalty.centsPerPoint || 5)) : null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/55 sm:items-center sm:p-3">
-      <div
-        className="book-theme book-card flex h-[92dvh] w-full max-w-lg flex-col rounded-t-3xl shadow-[0_24px_80px_rgba(0,0,0,0.45)] sm:h-auto sm:max-h-[88dvh] sm:rounded-3xl"
-        role="dialog"
-        aria-label="Rewards"
-        data-testid="book-rewards"
-      >
-        <div className="shrink-0 px-5 pt-4">
-          <div
-            aria-hidden
-            className="mx-auto mb-3 h-1 w-10 rounded-full bg-[color:var(--line)] sm:hidden"
-          />
+    <LuxeSheet label="My Wallet">
+      <div className="flex min-h-0 flex-1 flex-col" data-testid="book-rewards">
+        <div className="shrink-0 px-5 pt-[max(0.85rem,env(safe-area-inset-top))]">
           <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold tracking-[0.16em] text-champagne uppercase">
-                {salonName?.trim() || data?.salonName || "Salon"}
-              </p>
-              <h2 className="mt-1 font-[family-name:var(--font-display)] text-2xl">
-                Rewards
-              </h2>
-            </div>
             <button
               type="button"
               onClick={onClose}
-              className="rounded-full border border-[color:var(--line)] px-3 py-1.5 text-sm text-muted"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--champagne)]/45 text-champagne"
+              aria-label="Close"
             >
-              Close
+              ←
             </button>
+            <div className="min-w-0 text-center">
+              <h2 className="book-luxe-title text-3xl">My Wallet</h2>
+              <LuxeOrnament className="mx-auto mt-2 max-w-[8rem]" />
+              <p className="mt-2 text-xs text-muted">
+                {salonName?.trim() || data?.salonName || "Exclusive perks"}
+              </p>
+            </div>
+            <span className="h-9 w-9" aria-hidden />
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
-          {loading ? <p className="py-8 text-center text-muted">Loading rewards…</p> : null}
+        <div className="book-luxe-sheet-scroll space-y-5 px-5 pt-4">
+          {loading ? <GoldLogoLoader size={64} label="Loading rewards" /> : null}
           {error ? <p className="text-sm text-[#f5a8a8]">{error}</p> : null}
 
           {!loading && loyalty?.enabled ? (
-            <section
-              className="rounded-3xl border border-[color:var(--line)] bg-[linear-gradient(160deg,color-mix(in_srgb,var(--champagne)_18%,transparent),transparent_55%)] p-5"
-              data-testid="book-loyalty-card"
-            >
-              <p className="text-[10px] font-semibold tracking-[0.16em] text-champagne uppercase">
-                Loyalty rewards
-              </p>
+            <section data-testid="book-loyalty-card">
+              {signedIn ? (
+                <div className="book-luxe-member mb-4">
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[color:var(--champagne)]/55 font-[family-name:var(--font-display)] text-lg text-champagne">
+                    {(loyalty.clientName || "M")
+                      .split(" ")
+                      .map((p) => p[0])
+                      .join("")
+                      .slice(0, 2)
+                      .toUpperCase()}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[11px] text-muted">Member</span>
+                    <span className="block font-[family-name:var(--font-display)] text-xl text-white">
+                      {loyalty.clientName || "Member"}
+                    </span>
+                    <span className="mt-0.5 inline-flex items-center gap-1 text-xs font-semibold text-champagne">
+                      <LuxeCrown className="h-3.5 w-3.5" />
+                      {memberTierLabel(memberTierFromPoints(loyalty.points))}
+                      <span aria-hidden>›</span>
+                    </span>
+                  </span>
+                  <MemberBadge tier={memberTierFromPoints(loyalty.points)} />
+                </div>
+              ) : null}
+              <div className="rounded-3xl border-2 border-[color:var(--champagne)]/55 p-5">
+              <p className="book-luxe-kicker">Rewards points balance</p>
               {signedIn && loyalty.points != null ? (
                 <>
-                  <p className="mt-2 font-[family-name:var(--font-display)] text-4xl text-ink tabular-nums">
-                    {formatCad(loyalty.redeemValueCents ?? 0)}
+                  <p className="mt-2 font-[family-name:var(--font-display)] text-5xl text-champagne tabular-nums">
+                    {loyalty.points.toLocaleString()}
                   </p>
                   <p className="mt-1 text-sm text-muted">
-                    {loyalty.points} pts ready to redeem at checkout
+                    {formatCad(loyalty.redeemValueCents ?? 0)} ready to redeem at checkout
                   </p>
+                  {loyalty.visitCount != null ? (
+                    <p className="mt-2 text-xs text-champagne">
+                      Visit streak · {loyalty.visitCount} visit
+                      {loyalty.visitCount === 1 ? "" : "s"}
+                    </p>
+                  ) : null}
                   {!loyalty.isMember ? (
                     <p className="mt-3 text-sm text-champagne">
                       Ask reception to verify your membership for member-only offers.
                     </p>
-                  ) : (
-                    <p className="mt-3 text-sm text-muted">Member account active</p>
-                  )}
+                  ) : null}
                 </>
               ) : (
                 <>
-                  <h3 className="mt-2 font-[family-name:var(--font-display)] text-2xl text-ink">
+                  <h3 className="mt-2 font-[family-name:var(--font-display)] text-2xl text-white">
                     Earn as you visit
                   </h3>
                   <p className="mt-2 text-sm text-muted">
@@ -273,7 +295,7 @@ export function BookingRewards({
                     <button
                       type="button"
                       onClick={onJoinRequest}
-                      className="rounded-full border border-[color:var(--line)] px-5 py-2.5 text-sm font-semibold text-champagne"
+                      className="rounded-full border border-[color:var(--champagne)]/45 px-5 py-2.5 text-sm font-semibold text-champagne"
                     >
                       Join
                     </button>
@@ -281,18 +303,19 @@ export function BookingRewards({
                 </>
               )}
 
-              <div className="mt-4 grid gap-2 rounded-2xl border border-[color:var(--line)] bg-[color:var(--panel)]/60 p-3 text-xs text-muted sm:grid-cols-2">
+              <div className="mt-4 grid gap-2 rounded-2xl border border-[color:var(--line)] p-3 text-xs text-muted sm:grid-cols-2">
                 <p>
-                  Earn <span className="text-ink">{loyalty.pointsPerDollar}</span> point
+                  Earn <span className="text-white">{loyalty.pointsPerDollar}</span> point
                   {loyalty.pointsPerDollar === 1 ? "" : "s"} per $1 spent
                 </p>
                 <p>
                   Redeem up to{" "}
-                  <span className="text-ink">{loyalty.maxRedeemPercent}%</span> of a visit
+                  <span className="text-white">{loyalty.maxRedeemPercent}%</span> of a visit
                 </p>
                 <p className="sm:col-span-2">
                   100 pts ≈ {valuePer100} off at checkout
                 </p>
+              </div>
               </div>
             </section>
           ) : null}
@@ -306,8 +329,8 @@ export function BookingRewards({
           {!loading && offers ? (
             <section className="space-y-3">
               <div>
-                <h3 className="font-[family-name:var(--font-display)] text-xl text-ink">
-                  Current offers
+                <h3 className="font-[family-name:var(--font-display)] text-xl text-white">
+                  Offers & promotions
                 </h3>
                 <p className="mt-1 text-sm text-muted">
                   Promotions set up by the salon — applied at reception checkout when you
@@ -339,6 +362,6 @@ export function BookingRewards({
           ) : null}
         </div>
       </div>
-    </div>
+    </LuxeSheet>
   );
 }

@@ -5,10 +5,17 @@ import { SelfieCamera } from "@/components/SelfieCamera";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { DEFAULT_CLIENT_AVATAR, MAX_CLIENT_PHOTO_BYTES } from "@/lib/client-photo";
 import { fileToBoundedJpegDataUrl } from "@/lib/photo-resize";
-import { BookThemeToggle } from "./BookThemeToggle";
 import { BookingSalonChooser } from "./BookingSalonChooser";
-import { BeautyZentPoweredBy } from "@/components/ZentraLabFooter";
 import type { BookClient } from "./ClientMemberBar";
+import {
+  LuxeCrown,
+  LuxeOrnament,
+  LuxeSheet,
+  MemberBadge,
+  memberTierFromPoints,
+  memberTierLabel,
+  pointsToNextTier,
+} from "./luxe";
 
 export function BookingProfile({
   slug,
@@ -41,6 +48,8 @@ export function BookingProfile({
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [loyaltyPoints, setLoyaltyPoints] = useState<number | null>(null);
+  const [loyaltyLoaded, setLoyaltyLoaded] = useState(false);
 
   const clientId = client?.id ?? null;
   // Keyed on the member id so saving a rename doesn't refetch and wipe its own
@@ -49,6 +58,8 @@ export function BookingProfile({
     if (!open || !clientId) return;
     setMessage("");
     setError("");
+    setLoyaltyPoints(null);
+    setLoyaltyLoaded(false);
     fetch(`/api/public/${slug}/profile`)
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
@@ -60,6 +71,15 @@ export function BookingProfile({
         setHasPhoto(Boolean(d.client.hasPhoto));
       })
       .catch(() => null);
+    fetch(`/api/public/${slug}/loyalty`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        setLoyaltyPoints(
+          typeof d?.loyalty?.points === "number" ? d.loyalty.points : 0
+        );
+      })
+      .catch(() => setLoyaltyPoints(0))
+      .finally(() => setLoyaltyLoaded(true));
   }, [open, slug, clientId]);
 
   async function onPickPhoto(file: File | null) {
@@ -164,55 +184,51 @@ export function BookingProfile({
   if (!open) return null;
 
   const displayName = name.trim() || client?.name || "Your name";
+  const currentTier = memberTierFromPoints(loyaltyPoints);
+  const tierProgress = pointsToNextTier(loyaltyPoints);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/55 sm:items-center sm:p-3">
+    <LuxeSheet label="Profile">
       <div
-        className="book-theme book-card flex h-[92dvh] w-full max-w-lg flex-col rounded-t-3xl shadow-[0_24px_80px_rgba(0,0,0,0.45)] sm:h-auto sm:max-h-[88dvh] sm:rounded-3xl"
-        role="dialog"
-        aria-label="Profile"
+        className="flex min-h-0 flex-1 flex-col"
         data-testid="book-profile"
       >
-        <div className="shrink-0 px-5 pt-4">
-          <div
-            aria-hidden
-            className="mx-auto mb-3 h-1 w-10 rounded-full bg-[color:var(--line)] sm:hidden"
-          />
+        <div className="shrink-0 px-5 pt-[max(0.85rem,env(safe-area-inset-top))]">
           <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold tracking-[0.16em] text-champagne uppercase">
-                {salonName?.trim() || "Client"}
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--champagne)]/45 text-champagne"
+              aria-label="Close"
+            >
+              ←
+            </button>
+            <div className="min-w-0 text-center">
+              <p className="flex items-center justify-center gap-1 font-[family-name:var(--font-display)] text-xl text-white">
+                <LuxeCrown className="h-4 w-4 text-champagne" />
+                {salonName?.trim() || "BeautyZent"}
               </p>
-              <h2 className="mt-1 font-[family-name:var(--font-display)] text-2xl">
-                Profile
-              </h2>
+              <LuxeOrnament className="mx-auto mt-2 max-w-[7rem]" />
             </div>
-            <div className="flex shrink-0 items-center gap-2">
-              {client ? (
-                <button
-                  type="button"
-                  onClick={signOut}
-                  data-testid="client-sign-out"
-                  className="rounded-full border border-[color:var(--champagne)]/45 px-3 py-1.5 text-sm font-semibold text-champagne hover:bg-[color:var(--champagne)]/10"
-                >
-                  Log out
-                </button>
-              ) : null}
+            {client ? (
               <button
                 type="button"
-                onClick={onClose}
-                className="rounded-full border border-[color:var(--line)] px-3 py-1.5 text-sm text-muted"
+                onClick={signOut}
+                data-testid="client-sign-out"
+                className="rounded-full border border-[color:var(--champagne)]/45 px-2.5 py-1.5 text-xs font-semibold text-champagne"
               >
-                Close
+                Log out
               </button>
-            </div>
+            ) : (
+              <span className="h-9 w-9" aria-hidden />
+            )}
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+        <div className="book-luxe-sheet-scroll space-y-5 px-5 pt-4">
           {client ? (
             <>
-              <section className="book-card rounded-3xl px-5 py-6">
+              <section className="rounded-3xl border border-[color:var(--line)] px-5 py-6">
                 <div className="flex flex-col items-center text-center">
                   <button
                     type="button"
@@ -229,9 +245,9 @@ export function BookingProfile({
                       width={112}
                       height={112}
                       data-testid="client-photo-preview"
-                      className="h-28 w-28 rounded-full object-cover shadow-[0_12px_40px_rgba(0,0,0,0.35)] ring-[5px] ring-[#c9b4e8]/50"
+                      className="h-28 w-28 book-luxe-glow-avatar rounded-full object-cover"
                     />
-                    <span className="absolute right-1 bottom-1 rounded-full bg-[#17121f] px-2 py-0.5 text-[10px] font-semibold tracking-wide text-[#e0d0f5] ring-1 ring-[#c9b4e8]/40">
+                    <span className="absolute right-0 bottom-1 rounded-full bg-[linear-gradient(135deg,#e8c99a,#c9a87c)] px-2.5 py-0.5 text-[10px] font-semibold tracking-wide text-[#1a1512]">
                       {photoBusy ? "…" : hasPhoto ? "Update" : "Selfie"}
                     </span>
                   </button>
@@ -271,10 +287,65 @@ export function BookingProfile({
                     </div>
                   ) : null}
 
-                  <h3 className="mt-4 font-[family-name:var(--font-display)] text-3xl leading-tight text-ink">
+                  <h3 className="mt-4 font-[family-name:var(--font-display)] text-3xl leading-tight text-white">
                     {displayName}
                   </h3>
-                  <p className="mt-1 break-all text-sm text-muted">{email || "—"}</p>
+
+                  {loyaltyLoaded && loyaltyPoints != null ? (
+                    <div
+                      className="book-luxe-tier-progress"
+                      data-testid="profile-member-tier"
+                    >
+                      <div className="flex flex-col items-center gap-1">
+                        <MemberBadge tier={currentTier} />
+                        <p className="text-[10px] font-semibold tracking-[0.14em] text-champagne uppercase">
+                          {memberTierLabel(currentTier)}
+                        </p>
+                      </div>
+                      {tierProgress ? (
+                        <>
+                          <div className="book-luxe-tier-progress__meta">
+                            <p className="book-luxe-tier-progress__arrow" aria-hidden>
+                              →
+                            </p>
+                            <p className="mt-1 text-xs text-muted">
+                              <span className="font-semibold tabular-nums text-champagne">
+                                {tierProgress.remaining.toLocaleString()}
+                              </span>{" "}
+                              {tierProgress.remaining === 1 ? "pt" : "pts"} to{" "}
+                              {memberTierLabel(tierProgress.next).replace(
+                                / Member$/i,
+                                ""
+                              )}
+                            </p>
+                            <p className="mt-0.5 text-[10px] text-muted">
+                              Balance · {loyaltyPoints.toLocaleString()} pts
+                            </p>
+                          </div>
+                          <div className="flex flex-col items-center gap-1">
+                            <MemberBadge
+                              tier={tierProgress.next}
+                              className="book-luxe-badge--sm"
+                            />
+                            <p className="text-[10px] font-semibold tracking-[0.12em] text-muted uppercase">
+                              Next
+                            </p>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="book-luxe-tier-progress__meta">
+                          <p className="text-xs text-champagne">Top tier reached</p>
+                          <p className="mt-0.5 text-[10px] text-muted">
+                            Balance · {loyaltyPoints.toLocaleString()} pts
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-xs text-muted">Loading membership…</p>
+                  )}
+
+                  <p className="mt-3 break-all text-sm text-muted">{email || "—"}</p>
                   {phone.trim() ? (
                     <p className="mt-0.5 text-sm text-champagne">{phone.trim()}</p>
                   ) : null}
@@ -346,10 +417,11 @@ export function BookingProfile({
                       Your email is your sign-in and can&apos;t be changed here — ask the
                       salon if it needs updating.
                     </p>
-                    <div className="flex flex-wrap gap-2 pt-1">
+                    <div className="book-luxe-sheet-footer flex flex-wrap gap-2">
                       <button
                         type="submit"
                         disabled={saving}
+                        data-testid="client-save-profile"
                         className="btn-solid rounded-full px-6 py-2.5 text-sm font-semibold disabled:opacity-60"
                       >
                         {saving ? "Saving…" : "Save profile"}
@@ -377,13 +449,10 @@ export function BookingProfile({
                 currentSlug={slug}
                 enabled={Boolean(client)}
               />
-
-              <BookThemeToggle />
-              <BeautyZentPoweredBy className="mt-4" />
             </>
           ) : (
             <>
-              <section className="book-card rounded-3xl px-5 py-6 text-center">
+              <section className="rounded-3xl border border-[color:var(--line)] px-5 py-6 text-center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={DEFAULT_CLIENT_AVATAR}
@@ -422,13 +491,10 @@ export function BookingProfile({
                   </button>
                 </div>
               </section>
-
-              <BookThemeToggle />
-              <BeautyZentPoweredBy className="mt-4" />
             </>
           )}
         </div>
       </div>
-    </div>
+    </LuxeSheet>
   );
 }

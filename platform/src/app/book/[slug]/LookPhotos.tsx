@@ -112,13 +112,15 @@ export function LookPhotoStrip({
             disabled={busy}
             onClick={() => inputRef.current?.click()}
             data-testid="look-photo-add"
-            className={`${size} flex flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-[rgba(201,180,232,0.5)] text-champagne disabled:opacity-60`}
+            aria-label={busy ? "Saving photo" : "Add photo"}
+            title={busy ? "Saving…" : "Add photo — Highlight this look"}
+            className={`book-luxe-empty book-luxe-empty--tile ${size} disabled:opacity-60`}
           >
-            <span aria-hidden className="text-lg leading-none">
+            <span className="book-luxe-empty__plus" aria-hidden>
               {busy ? "…" : "+"}
             </span>
-            <span className="text-[10px] font-semibold tracking-wide uppercase">
-              {busy ? "Saving" : "Photo"}
+            <span className="text-[10px] font-semibold leading-tight">
+              {busy ? "Saving" : "Add photo"}
             </span>
           </button>
         ) : null}

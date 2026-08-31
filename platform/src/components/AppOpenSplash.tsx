@@ -5,9 +5,9 @@ import { AppSplash } from "./AppSplash";
 import { writeSalonBrand } from "@/lib/salon-branding";
 import {
   applyMarketplaceBookTheme,
-  isMarketplaceBookSession,
+  MARKETPLACE_BOOK_THEME_ID,
 } from "@/lib/marketplace-book-theme";
-import { applySalonThemeId, DEFAULT_BOOKING_THEME_ID, DEFAULT_MANAGER_THEME_ID, DEFAULT_STYLIST_THEME_ID } from "@/lib/salon-themes";
+import { applySalonThemeId, DEFAULT_MANAGER_THEME_ID, DEFAULT_STYLIST_THEME_ID } from "@/lib/salon-themes";
 
 type Variant = "manager" | "stylist" | "display" | "book";
 
@@ -56,7 +56,7 @@ export function AppOpenSplash({
         name: brandName.trim(),
         brandColor,
         accentColor,
-        bookingThemeId: themeIds?.bookingThemeId ?? null,
+        bookingThemeId: MARKETPLACE_BOOK_THEME_ID,
         managerThemeId: themeIds?.managerThemeId ?? null,
         stylistThemeId: themeIds?.stylistThemeId ?? null,
       });
@@ -64,10 +64,8 @@ export function AppOpenSplash({
 
     // Only paint when we know the pack — never fall back to defaults here or we
     // clobber a correct theme (manager splash has no themeIds and was resetting to cocoa).
-    if (variant === "book" && isMarketplaceBookSession()) {
+    if (variant === "book") {
       applyMarketplaceBookTheme();
-    } else if (variant === "book" && themeIds?.bookingThemeId) {
-      applySalonThemeId(themeIds.bookingThemeId, DEFAULT_BOOKING_THEME_ID);
     } else if (variant === "manager" && themeIds?.managerThemeId) {
       applySalonThemeId(themeIds.managerThemeId, DEFAULT_MANAGER_THEME_ID);
     } else if (variant === "stylist" && themeIds?.stylistThemeId) {
@@ -98,7 +96,7 @@ export function AppOpenSplash({
     clearBootSplash();
 
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const holdMs = reduceMotion ? 80 : 520;
+    const holdMs = reduceMotion ? 80 : variant === "book" ? 1500 : 520;
     const fadeMs = reduceMotion ? 0 : 220;
     let fadeTimer = 0;
 

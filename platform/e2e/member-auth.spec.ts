@@ -12,28 +12,16 @@ import {
 } from "./helpers";
 
 test.describe("Booking member auth", () => {
-  test("guest can switch theme from Profile without signing in", async ({ page }) => {
+  test("client app is locked to the gold luxury look", async ({ page }) => {
     await page.goto(`/book/${DEMO.slug}`);
-    await page.getByTestId("book-nav-profile").click();
+    await expect(page.locator("html")).toHaveAttribute("data-salon-theme", "cocoa");
+    await expect(page.locator("html")).toHaveClass(/book-shell--marketplace/);
+    await expect(page.locator("html")).not.toHaveClass(/book-shell--light/);
 
+    await page.getByTestId("book-nav-profile").click();
     const profile = page.getByTestId("book-profile");
     await expect(profile).toBeVisible();
-    await expect(profile.getByText(/browsing as a guest/i)).toBeVisible();
-
-    await profile.getByTestId("book-theme-light").click();
-    await expect
-      .poll(() =>
-        page.evaluate(() => window.localStorage.getItem("fhsalon-book-theme"))
-      )
-      .toBe("light");
-    await expect(page.locator("html")).toHaveClass(/book-shell--light/);
-
-    await profile.getByTestId("book-theme-dark").click();
-    await expect
-      .poll(() =>
-        page.evaluate(() => window.localStorage.getItem("fhsalon-book-theme"))
-      )
-      .toBe("dark");
+    await expect(profile.getByTestId("book-theme-toggle")).toHaveCount(0);
   });
 
   test("sign out clears Your details fields", async ({ page }) => {

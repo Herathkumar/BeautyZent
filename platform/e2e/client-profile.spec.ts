@@ -59,8 +59,7 @@ test.describe("FHS Client profile", () => {
     const renamed = await page.request.get(`/api/public/${DEMO.slug}/profile`);
     expect((await renamed.json()).client.name).toBe(newName);
 
-    // Appearance lives here now
-    await expect(profile.getByTestId("book-theme-toggle")).toBeVisible();
+    await expect(profile.getByTestId("book-theme-toggle")).toHaveCount(0);
 
     await profile.getByTestId("client-sign-out").scrollIntoViewIfNeeded();
     const loggedOut = page.waitForResponse(

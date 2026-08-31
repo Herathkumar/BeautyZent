@@ -9,11 +9,11 @@ import {
   validateSlug,
 } from "@/lib/platform-salons";
 import {
-  DEFAULT_BOOKING_THEME_ID,
   DEFAULT_MANAGER_THEME_ID,
   DEFAULT_STYLIST_THEME_ID,
   normalizeThemeId,
 } from "@/lib/salon-themes";
+import { MARKETPLACE_BOOK_THEME_ID } from "@/lib/marketplace-book-theme";
 
 export async function GET() {
   const session = await getPlatformSession();
@@ -99,7 +99,7 @@ export async function POST(req: Request) {
     phone: body.phone ? String(body.phone).trim() : null,
     email: body.email ? String(body.email).trim() : null,
     address: body.address ? String(body.address).trim() : null,
-    bookingThemeId: normalizeThemeId(body.bookingThemeId, DEFAULT_BOOKING_THEME_ID),
+    bookingThemeId: MARKETPLACE_BOOK_THEME_ID,
     managerThemeId: normalizeThemeId(body.managerThemeId, DEFAULT_MANAGER_THEME_ID),
     stylistThemeId: normalizeThemeId(body.stylistThemeId, DEFAULT_STYLIST_THEME_ID),
     managerName: String(body.managerName || "Salon Manager").trim(),

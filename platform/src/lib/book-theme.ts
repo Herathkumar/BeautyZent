@@ -46,12 +46,8 @@ export function applyBookTheme(theme: BookThemePreference) {
   // Drives which half of the salon's theme pack is active (see salon-themes.css).
   root.classList.toggle("theme-light", theme === "light");
 
-  document.querySelectorAll(".book-theme").forEach((el) => {
-    el.classList.toggle("book-theme--light", theme === "light");
-    el.setAttribute("data-book-theme", theme);
-  });
-
-  // Keep the current salon pack (indigo/noir/…) — only flip light/dark half.
+  // Keep the current salon pack — only flip light/dark half on <html>.
+  // Do not mutate .book-theme nodes: that races streaming hydration on <main>.
   const packId = root.getAttribute("data-salon-theme") || DEFAULT_BOOKING_THEME_ID;
   refreshSalonThemePaint(packId);
   setThemeColorMeta("--t-bg-2", theme === "light" ? BOOK_THEME_LIGHT : BOOK_THEME_DARK);

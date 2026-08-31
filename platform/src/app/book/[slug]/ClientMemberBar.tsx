@@ -261,6 +261,41 @@ export function ClientMemberBar({
               Not now
             </button>
           </div>
+          {mode === "signin" ? (
+            <p className="sm:col-span-2 text-sm text-muted">
+              New here?{" "}
+              <button
+                type="button"
+                data-testid="member-switch-join"
+                className="font-semibold text-champagne underline-offset-2 hover:underline"
+                onClick={() => {
+                  setMode("join");
+                  setPurpose("join");
+                  setError("");
+                  setMsg("");
+                }}
+              >
+                Join free
+              </button>
+            </p>
+          ) : (
+            <p className="sm:col-span-2 text-sm text-muted">
+              Already a member?{" "}
+              <button
+                type="button"
+                data-testid="member-switch-signin"
+                className="font-semibold text-champagne underline-offset-2 hover:underline"
+                onClick={() => {
+                  setMode("signin");
+                  setPurpose("signin");
+                  setError("");
+                  setMsg("");
+                }}
+              >
+                Sign in
+              </button>
+            </p>
+          )}
         </div>
       ) : null}
 
@@ -302,7 +337,26 @@ export function ClientMemberBar({
         </div>
       ) : null}
 
-      {error ? <p className="mt-3 text-sm text-[#f5a8a8]">{error}</p> : null}
+      {error ? (
+        <div className="mt-3 space-y-2">
+          <p className="text-sm text-[#f5a8a8]">{error}</p>
+          {mode === "signin" && /no member account|join/i.test(error) ? (
+            <button
+              type="button"
+              data-testid="member-join-from-error"
+              onClick={() => {
+                setMode("join");
+                setPurpose("join");
+                setError("");
+                setMsg("");
+              }}
+              className="btn-solid rounded-full px-4 py-2.5 text-sm font-semibold"
+            >
+              Join free
+            </button>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }

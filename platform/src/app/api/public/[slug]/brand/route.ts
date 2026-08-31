@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { MARKETPLACE_BOOK_THEME_ID } from "@/lib/marketplace-book-theme";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -41,7 +42,7 @@ export async function GET(
         slug: salon.slug,
         brandColor: salon.brandColor,
         accentColor: salon.accentColor,
-        bookingThemeId: salon.bookingThemeId,
+        bookingThemeId: MARKETPLACE_BOOK_THEME_ID,
         managerThemeId: salon.managerThemeId,
         stylistThemeId: salon.stylistThemeId,
       },

@@ -115,7 +115,7 @@ async function seedDemoSalon(passwordHash: string) {
     update: {
       name: "Demo Hair Studio",
       // Deliberately unlike FHSalon so per-tenant theming is obvious side by side.
-      bookingThemeId: "indigo",
+      bookingThemeId: "cocoa",
       managerThemeId: "laurel",
       stylistThemeId: "ember",
     },
@@ -129,7 +129,7 @@ async function seedDemoSalon(passwordHash: string) {
       openHour: 10,
       closeHour: 19,
       slotMinutes: 30,
-      bookingThemeId: "indigo",
+      bookingThemeId: "cocoa",
       managerThemeId: "laurel",
       stylistThemeId: "ember",
     },
@@ -229,7 +229,7 @@ async function seedAarabySalon(passwordHash: string) {
     where: { slug: "aaraby-beauty" },
     update: {
       name: "Aaraby's Beauty Parlor",
-      bookingThemeId: "ember",
+      bookingThemeId: "cocoa",
       managerThemeId: "cocoa",
       stylistThemeId: "seaglass",
     },
@@ -243,7 +243,7 @@ async function seedAarabySalon(passwordHash: string) {
       openHour: 9,
       closeHour: 23,
       slotMinutes: 30,
-      bookingThemeId: "ember",
+      bookingThemeId: "cocoa",
       managerThemeId: "cocoa",
       stylistThemeId: "seaglass",
     },
@@ -347,7 +347,7 @@ async function main() {
       phone: "905-920-2277",
       address: "8 Taywood Crt, Dundas, ON L9H 7A2",
       // The original Farzana palettes, now expressed as theme packs.
-      bookingThemeId: "plum",
+      bookingThemeId: "cocoa",
       managerThemeId: "cocoa",
       stylistThemeId: "seaglass",
     },
@@ -361,7 +361,7 @@ async function main() {
       openHour: 9,
       closeHour: 18,
       slotMinutes: 30,
-      bookingThemeId: "plum",
+      bookingThemeId: "cocoa",
       managerThemeId: "cocoa",
       stylistThemeId: "seaglass",
     },

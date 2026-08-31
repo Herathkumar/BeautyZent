@@ -93,26 +93,17 @@ const BOOT_SCRIPT = `
       if(light) root.classList.add("stylist-shell--light");
     }
     else if(book){
-      root.classList.add("book-shell");
+      root.classList.add("book-shell","book-shell--marketplace");
+      themeId="cocoa";
       try{
-        var fromExplore=/[?&]from=explore(?:&|$)/.test(location.search||"");
-        var fromMarket=false;
-        try{ fromMarket=fromExplore||sessionStorage.getItem("fhsalon-book-from-market")==="1"; }catch(e){ fromMarket=fromExplore; }
-        if(fromExplore){ try{ sessionStorage.setItem("fhsalon-book-from-market","1"); }catch(e){} }
-        if(fromMarket){
-          themeId="cocoa";
-          light=true;
-          root.classList.add("book-shell--light","book-shell--marketplace");
-          try{ localStorage.setItem("fhsalon-book-theme","light"); }catch(e){}
-        }else{
-          themeId=(cached&&cached.bookingThemeId)||"plum";
-          var bt=localStorage.getItem("fhsalon-book-theme")||"dark";
-          light=bt==="light"||(bt==="system"&&window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches);
-          if(light) root.classList.add("book-shell--light");
+        if(/[?&]from=explore(?:&|$)/.test(location.search||"")){
+          try{ sessionStorage.setItem("fhsalon-book-from-market","1"); }catch(e){}
         }
-      }catch(e){
-        themeId=(cached&&cached.bookingThemeId)||"plum";
-      }
+        try{
+          localStorage.setItem("fhsalon-book-luxe-v3","1");
+          localStorage.setItem("fhsalon-book-theme","dark");
+        }catch(e){}
+      }catch(e){}
     }
     else if(display||demo){
       root.classList.add("display-shell");
@@ -159,12 +150,23 @@ const BOOT_SCRIPT = `
       var el=document.createElement("div");
       el.id="fhsalon-boot-splash";
       el.setAttribute("role","status");
-      el.style.cssText="position:fixed;inset:0;z-index:9999;display:grid;place-items:center;padding:2rem;pointer-events:none;background:"+bg+";color:"+fg+";font-family:Georgia,serif";
-      el.innerHTML='<div style="text-align:center"><p style="margin:0;font-size:1.75rem;letter-spacing:.02em">'+brand.replace(/[<>&]/g,"")+'</p><p style="margin:.5rem 0 1rem;font:600 .75rem Outfit,system-ui,sans-serif;letter-spacing:.18em;text-transform:uppercase;opacity:.72">'+label+'</p><div style="width:1.5rem;height:1.5rem;margin:0 auto;border:2px solid rgba(127,127,127,.25);border-top-color:currentColor;border-radius:50%;animation:fhsalon-boot-spin .75s linear infinite"></div></div>';
-      var css=document.createElement("style");
-      css.textContent="@keyframes fhsalon-boot-spin{to{transform:rotate(360deg)}}";
-      document.documentElement.appendChild(css);
-      document.documentElement.appendChild(el);
+      if(book){
+        el.style.cssText="position:fixed;inset:0;z-index:9999;display:grid;place-items:center;pointer-events:none;background:#0c0b0a";
+        var slices="",i=0;
+        for(i=0;i<5;i++){slices+='<span class="gold-logo-spin__slice" style="--i:'+i+'"></span>';}
+        el.innerHTML='<div class="gold-logo-spin" style="width:80px;height:80px;--gold-depth:4px;--slice-n:4" role="status" aria-label="Loading"><div class="gold-logo-spin__world"><div class="gold-logo-spin__stage">'+slices+'<img src="/brand/beautyzent-logo-gold-mark.png" alt="" width="80" height="80" class="gold-logo-spin__face gold-logo-spin__face--front"/><img src="/brand/beautyzent-logo-gold-mark.png" alt="" width="80" height="80" class="gold-logo-spin__face gold-logo-spin__face--back"/></div></div></div>';
+        var css=document.createElement("style");
+        css.textContent=".gold-logo-spin{display:grid;place-items:center;perspective:900px;perspective-origin:50% 50%;overflow:visible}.gold-logo-spin__world{width:100%;height:100%;transform-style:preserve-3d}.gold-logo-spin__stage{position:relative;width:100%;height:100%;transform-style:preserve-3d;animation:gold-logo-yaw 3.2s linear infinite}.gold-logo-spin__slice{position:absolute;inset:0;background:url(/brand/beautyzent-logo-gold-mark.png) center/contain no-repeat;transform:translateZ(calc((var(--i)/var(--slice-n) - .5)*var(--gold-depth)));filter:brightness(.72)}.gold-logo-spin__face{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;backface-visibility:hidden}.gold-logo-spin__face--front{transform:translateZ(calc(var(--gold-depth)/2 + .4px));filter:drop-shadow(0 4px 8px rgba(196,160,86,.18))}.gold-logo-spin__face--back{transform:rotateY(180deg) translateZ(calc(var(--gold-depth)/2 + .4px));filter:brightness(.94)}@keyframes gold-logo-yaw{to{transform:rotateY(360deg)}}@media (prefers-reduced-motion:reduce){.gold-logo-spin__stage{animation:none}}";
+        document.documentElement.appendChild(css);
+        document.documentElement.appendChild(el);
+      }else{
+        el.style.cssText="position:fixed;inset:0;z-index:9999;display:grid;place-items:center;padding:2rem;pointer-events:none;background:"+bg+";color:"+fg+";font-family:Georgia,serif";
+        el.innerHTML='<div style="text-align:center"><p style="margin:0;font-size:1.75rem;letter-spacing:.02em">'+brand.replace(/[<>&]/g,"")+'</p><p style="margin:.5rem 0 1rem;font:600 .75rem Outfit,system-ui,sans-serif;letter-spacing:.18em;text-transform:uppercase;opacity:.72">'+label+'</p><div style="width:1.5rem;height:1.5rem;margin:0 auto;border:2px solid rgba(127,127,127,.25);border-top-color:currentColor;border-radius:50%;animation:fhsalon-boot-spin .75s linear infinite"></div></div>';
+        var css=document.createElement("style");
+        css.textContent="@keyframes fhsalon-boot-spin{to{transform:rotate(360deg)}}";
+        document.documentElement.appendChild(css);
+        document.documentElement.appendChild(el);
+      }
       setTimeout(function(){ var n=document.getElementById("fhsalon-boot-splash"); if(n) n.remove(); },2500);
     }
 

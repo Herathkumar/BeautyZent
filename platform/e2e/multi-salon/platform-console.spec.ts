@@ -49,6 +49,9 @@ test.describe("Platform operator console", () => {
         "href",
         new RegExp(`salon=${tenant.slug}`)
       );
+      await expect(page.getByTestId("theme-picker-booking")).toHaveCount(0);
+      await expect(page.getByTestId("theme-picker-manager")).toBeVisible();
+      await expect(page.getByTestId("theme-picker-stylist")).toBeVisible();
       await page.getByRole("link", { name: /all salons/i }).click();
       await expect(page.getByRole("heading", { name: /^salons$/i })).toBeVisible();
     }
@@ -67,6 +70,8 @@ test.describe("Platform operator console", () => {
     const scheduler = page.getByTestId("salon-scheduler-display-enabled");
     await expect(lounge).toBeVisible();
     await expect(scheduler).toBeVisible();
+    await expect(page.getByTestId("theme-picker-booking")).toHaveCount(0);
+    await expect(page.getByRole("radio", { name: /booking app/i })).toHaveCount(0);
   });
 
   test("new salon form loads", async ({ page }) => {
@@ -74,5 +79,8 @@ test.describe("Platform operator console", () => {
     await page.getByRole("link", { name: /new salon/i }).click();
     await expect(page).toHaveURL(/\/platform\/salons\/new/);
     await expect(page.getByRole("heading", { name: /new salon/i })).toBeVisible();
+    await expect(page.getByTestId("theme-picker-booking")).toHaveCount(0);
+    await expect(page.getByTestId("theme-picker-manager")).toBeVisible();
+    await expect(page.getByTestId("theme-picker-stylist")).toBeVisible();
   });
 });

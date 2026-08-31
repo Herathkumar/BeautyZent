@@ -3,8 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { MARKETPLACE_BOOK_THEME_ID } from "@/lib/marketplace-book-theme";
 import {
-  DEFAULT_BOOKING_THEME_ID,
   DEFAULT_MANAGER_THEME_ID,
   DEFAULT_STYLIST_THEME_ID,
 } from "@/lib/salon-themes";
@@ -33,7 +33,6 @@ export default function NewSalonPage() {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [address, setAddress] = useState("");
-  const [bookingThemeId, setBookingThemeId] = useState(DEFAULT_BOOKING_THEME_ID);
   const [managerThemeId, setManagerThemeId] = useState(DEFAULT_MANAGER_THEME_ID);
   const [stylistThemeId, setStylistThemeId] = useState(DEFAULT_STYLIST_THEME_ID);
   const [managerName, setManagerName] = useState("Salon Manager");
@@ -62,7 +61,7 @@ export default function NewSalonPage() {
         phone,
         email,
         address,
-        bookingThemeId,
+        bookingThemeId: MARKETPLACE_BOOK_THEME_ID,
         managerThemeId,
         stylistThemeId,
         managerName,
@@ -194,13 +193,6 @@ export default function NewSalonPage() {
             <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-cocoa">Themes</h2>
             <p className="mt-1 text-xs text-muted">{THEME_PICKER_HINT}</p>
           </div>
-          <ThemePicker
-            name="booking"
-            legend="Booking app"
-            hint="What clients see at /book/{slug}."
-            value={bookingThemeId}
-            onChange={setBookingThemeId}
-          />
           <ThemePicker
             name="manager"
             legend="Manager app"

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { SelfieCamera } from "@/components/SelfieCamera";
 import { fileToJpegDataUrl } from "@/lib/photo-resize";
+import { LuxeSparkle } from "./luxe";
 
 export type StylePrefDraft = {
   imageBase64: string;
@@ -44,6 +45,8 @@ export function StylePreviewPanel({
   const [remaining, setRemaining] = useState<number | null>(null);
   const [presetId, setPresetId] = useState("");
   const [customPrompt, setCustomPrompt] = useState("");
+  const [compareOpen, setCompareOpen] = useState(false);
+  const [split, setSplit] = useState(52);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -179,6 +182,7 @@ export function StylePreviewPanel({
         source: "AI",
         prompt: data.prompt || customPrompt || presetId,
       });
+      setCompareOpen(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Style AI failed");
     } finally {
@@ -267,21 +271,37 @@ export function StylePreviewPanel({
       ) : null}
 
       {preview ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={preview}
-          alt="Style preview"
-          className="mx-auto max-h-64 w-full max-w-xs rounded-2xl object-cover ring-2 ring-[rgba(201,180,232,0.4)]"
-        />
+        <button
+          type="button"
+          onClick={() => setCompareOpen(true)}
+          className="relative block w-full overflow-hidden rounded-2xl"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={preview}
+            alt="Style preview"
+            className="mx-auto max-h-64 w-full object-cover"
+          />
+          {value?.source === "AI" ? (
+            <span className="absolute inset-x-0 bottom-0 bg-black/55 px-3 py-2 text-center text-xs font-semibold tracking-[0.14em] text-champagne uppercase">
+              Tap for before / after
+            </span>
+          ) : null}
+        </button>
       ) : (
-        <div className="rounded-2xl border border-dashed border-[color:var(--line)] px-4 py-8 text-center text-sm text-muted">
-          No photo yet — add one to try styles.
+        <div className="book-luxe-empty px-4 py-8 text-center">
+          <span className="book-luxe-empty__plus" aria-hidden>
+            +
+          </span>
+          <p className="mt-2 text-sm font-semibold">Add a portrait</p>
+          <p className="text-xs">Soft light, then try an AI look</p>
         </div>
       )}
 
       <div className="space-y-2 border-t border-[color:var(--line)] pt-3">
-        <p className="text-xs font-semibold tracking-wide text-champagne uppercase">
-          Try with AI {aiConfigured ? "(free)" : "(setup needed)"}
+        <p className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-champagne uppercase">
+          <LuxeSparkle className="h-3 w-3" />
+          AI style suggestions {aiConfigured ? "" : "(setup needed)"}
         </p>
         <div className="flex flex-wrap gap-2">
           {presets.map((p) => (
@@ -331,6 +351,57 @@ export function StylePreviewPanel({
       </div>
 
       {error ? <p className="text-sm text-[#b54a3c]">{error}</p> : null}
+
+      {compareOpen && preview ? (
+        <div
+          className="fixed inset-0 z-[96] flex flex-col bg-black/94"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Style before and after"
+        >
+          <div className="flex items-center justify-between px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
+            <p className="book-luxe-kicker">Style preview</p>
+            <button
+              type="button"
+              onClick={() => setCompareOpen(false)}
+              className="btn-solid rounded-full px-4 py-2 text-sm font-semibold"
+            >
+              Close
+            </button>
+          </div>
+          <div className="relative mx-auto mt-4 min-h-0 w-full max-w-lg flex-1 px-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
+            <div className="relative h-full overflow-hidden rounded-[1.4rem] border border-[color:var(--champagne)]/35">
+              {basePhoto ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={basePhoto} alt="Before" className="absolute inset-0 h-full w-full object-cover" />
+              ) : null}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={preview}
+                alt="After"
+                className="absolute inset-0 h-full w-full object-cover"
+                style={{ clipPath: `inset(0 ${100 - split}% 0 0)` }}
+              />
+              <div
+                className="absolute inset-y-0 w-0.5 bg-[#e8c99a] shadow-[0_0_16px_rgba(232,201,154,0.7)]"
+                style={{ left: `${split}%` }}
+                aria-hidden
+              />
+            </div>
+            <label className="mt-4 block text-center text-xs text-champagne">
+              Slide to compare
+              <input
+                type="range"
+                min={8}
+                max={92}
+                value={split}
+                onChange={(e) => setSplit(Number(e.target.value))}
+                className="mt-2 w-full accent-[#e8c99a]"
+              />
+            </label>
+          </div>
+        </div>
+      ) : null}
       {value && !isStudio ? (
         <p className="text-xs font-medium text-champagne">
           Saved for this booking

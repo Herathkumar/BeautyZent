@@ -12,9 +12,8 @@ test.describe("Client online booking flow", () => {
       date: nextOpenDate(),
     });
 
-    await expect(page.getByRole("button", { name: /book another/i })).toBeVisible();
     await expect(page.getByRole("link", { name: /add to calendar/i })).toBeVisible();
-    await expect(page.getByTestId("booking-next-steps")).toBeVisible();
+    await expect(page.getByTestId("booking-next-steps")).toHaveCount(0);
   });
 
   test("new admin service appears with stylists (regression)", async ({ page }) => {

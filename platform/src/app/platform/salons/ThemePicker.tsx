@@ -106,4 +106,4 @@ export function ThemePicker({
 }
 
 export const THEME_PICKER_HINT =
-  "Dark palette shown; the strip below is its light companion. Staff and clients still toggle light/dark in-app.";
+  "Dark palette shown; the strip below is its light companion. Staff still toggle light/dark in-app. The client booking app is always the gold luxury look.";

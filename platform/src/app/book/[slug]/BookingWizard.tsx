@@ -10,13 +10,20 @@ import { BookingMyBookings, MemberTab } from "./BookingMyBookings";
 import { BookingProfile } from "./BookingProfile";
 import { BookingRewards } from "./BookingRewards";
 import { BookClient, ClientMemberBar } from "./ClientMemberBar";
-import { StylePreviewPanel, StylePrefDraft } from "./StylePreviewPanel";
-import {
-  clearStyleDraft,
-  readStyleDraft,
-  writeStyleDraft,
-} from "./style-draft-storage";
+import { StylePrefDraft } from "./StylePreviewPanel";
+import { clearStyleDraft, readStyleDraft } from "./style-draft-storage";
+import { BOOK_NOTIFY_EVENT } from "./BookMarketNav";
 import { SettingToggle } from "@/components/admin/SettingToggle";
+import { GoldLogoLoader } from "@/components/GoldLogoSpin";
+import { serviceIconSrc } from "@/lib/service-icons";
+import {
+  LuxeCrown,
+  LuxeOrnament,
+  LuxeSparkle,
+  MemberBadge,
+  memberTierFromPoints,
+  memberTierLabel,
+} from "./luxe";
 
 type Service = {
   id: string;
@@ -191,7 +198,6 @@ export function BookingWizard({ slug }: { slug: string }) {
   const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
   const [stylePref, setStylePref] = useState<StylePrefDraft | null>(null);
-  const [styleAttachOpen, setStyleAttachOpen] = useState(false);
   const [saveAsMember, setSaveAsMember] = useState(true);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -205,7 +211,8 @@ export function BookingWizard({ slug }: { slug: string }) {
   const [profileOpen, setProfileOpen] = useState(false);
   const [rewardsOpen, setRewardsOpen] = useState(false);
   const [counts, setCounts] = useState({ upcoming: 0, photos: 0 });
-  const [done, setDone] = useState<{
+  const [loyaltyPoints, setLoyaltyPoints] = useState<number | null>(null);
+  const [justBooked, setJustBooked] = useState<{
     id: string;
     stylist: string;
     service: string;
@@ -234,14 +241,34 @@ export function BookingWizard({ slug }: { slug: string }) {
     setShowBookings(false);
     setSaveAsMember(true);
     setCounts({ upcoming: 0, photos: 0 });
+    setLoyaltyPoints(null);
   }, []);
 
   useEffect(() => {
-    const draft = readStyleDraft(slug);
-    if (draft) {
-      setStylePref(draft);
-      setStyleAttachOpen(true);
+    if (!client) {
+      setLoyaltyPoints(null);
+      return;
     }
+    let cancelled = false;
+    fetch(`/api/public/${slug}/loyalty`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (cancelled) return;
+        setLoyaltyPoints(
+          typeof d?.loyalty?.points === "number" ? d.loyalty.points : 0
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setLoyaltyPoints(0);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [slug, client, rewardsOpen, profileOpen, justBooked]);
+
+  useEffect(() => {
+    const draft = readStyleDraft(slug);
+    if (draft) setStylePref(draft);
   }, [slug]);
 
   useEffect(() => {
@@ -363,7 +390,7 @@ export function BookingWizard({ slug }: { slug: string }) {
     return () => {
       cancelled = true;
     };
-  }, [slug, client, showBookings, done]);
+  }, [slug, client, showBookings, justBooked]);
 
   useEffect(() => {
     if (!client?.preferredStylistId || stylistId || serviceIds.length === 0) return;
@@ -438,16 +465,37 @@ export function BookingWizard({ slug }: { slug: string }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(typeof data.error === "string" ? data.error : "Booking failed");
-      setDone({
-        id: data.appointment.id,
-        stylist: data.appointment.stylist,
-        service: data.appointment.service,
-        startsAt: data.appointment.startsAt,
-        priceCents: data.appointment.priceCents,
-        durationMin: data.appointment.durationMin,
-      });
+      try {
+        navigator.vibrate?.([18, 40, 24]);
+      } catch {
+        /* haptic optional */
+      }
       clearStyleDraft(slug);
+      setServiceIds([]);
+      setStylistId("");
+      setStartsAt("");
+      setNotes("");
+      setStylePref(null);
       setJoinPrompt(Boolean(data.suggestJoin && saveAsMember && email));
+
+      const booked = {
+        id: data.appointment.id as string,
+        stylist: data.appointment.stylist as string,
+        service: data.appointment.service as string,
+        startsAt: data.appointment.startsAt as string,
+        priceCents: data.appointment.priceCents as number | undefined,
+        durationMin: data.appointment.durationMin as number | undefined,
+      };
+
+      if (client) {
+        setJustBooked(booked);
+        setMemberTab("visits");
+        setShowBookings(true);
+        setProfileOpen(false);
+        setRewardsOpen(false);
+      } else {
+        setJustBooked(booked);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Booking failed");
     } finally {
@@ -479,16 +527,32 @@ export function BookingWizard({ slug }: { slug: string }) {
     setShowBookings(true);
   }
 
+  useEffect(() => {
+    function onNotify() {
+      if (!client) {
+        requestMemberForm("signin");
+        return;
+      }
+      setProfileOpen(false);
+      setRewardsOpen(false);
+      setMemberTab("visits");
+      setShowBookings(true);
+    }
+    window.addEventListener(BOOK_NOTIFY_EVENT, onNotify);
+    return () => window.removeEventListener(BOOK_NOTIFY_EVENT, onNotify);
+  }, [client]);
+
   function selectTab(key: BookTabKey) {
     if (key === "book") {
       setShowBookings(false);
       setProfileOpen(false);
       setRewardsOpen(false);
+      setJustBooked(null);
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
     if (key === "profile") {
-      // Guests still get Profile — it holds Appearance and the join prompt.
+      // Guests still get Profile — it holds the join prompt.
       setShowBookings(false);
       setRewardsOpen(false);
       setProfileOpen(true);
@@ -520,7 +584,12 @@ export function BookingWizard({ slug }: { slug: string }) {
         slug={slug}
         open={showBookings}
         initialTab={memberTab}
-        onClose={() => setShowBookings(false)}
+        salonName={salon?.name}
+        highlightId={justBooked?.id ?? null}
+        onClose={() => {
+          setShowBookings(false);
+          setJustBooked(null);
+        }}
         timezone={salon?.timezone}
       />
       <BookingRewards
@@ -557,71 +626,91 @@ export function BookingWizard({ slug }: { slug: string }) {
   );
 
   if (loading) {
-    return <p className="py-12 text-center text-muted">Loading booking…</p>;
+    return <GoldLogoLoader size={80} label="Loading booking" />;
   }
 
-  if (done) {
+  if (justBooked && !client) {
+    const endsAt = new Date(
+      new Date(justBooked.startsAt).getTime() +
+        (justBooked.durationMin || selectedTotalMin || 30) * 60000
+    );
+    const start = new Date(justBooked.startsAt)
+      .toISOString()
+      .replace(/[-:]/g, "")
+      .replace(/\.\d{3}Z$/, "Z");
+    const end = endsAt
+      .toISOString()
+      .replace(/[-:]/g, "")
+      .replace(/\.\d{3}Z$/, "Z");
     const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
-      `${done.service} at ${salon?.name || "Salon"}`
-    )}&dates=${new Date(done.startsAt)
-      .toISOString()
-      .replace(/[-:]/g, "")
-      .replace(/\.\d{3}Z$/, "Z")}/${new Date(
-      new Date(done.startsAt).getTime() + (done.durationMin || selectedTotalMin || 30) * 60000
-    )
-      .toISOString()
-      .replace(/[-:]/g, "")
-      .replace(/\.\d{3}Z$/, "Z")}`;
+      `${justBooked.service} at ${salon?.name || "Salon"}`
+    )}&dates=${start}/${end}&details=${encodeURIComponent(`with ${justBooked.stylist}`)}`;
+    const when = new Date(justBooked.startsAt).toLocaleString("en-CA", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      timeZone: salon?.timezone,
+    });
+    const timeOnly = new Date(justBooked.startsAt).toLocaleTimeString("en-CA", {
+      hour: "numeric",
+      minute: "2-digit",
+      timeZone: salon?.timezone,
+    });
 
     return (
-      <div className="space-y-5 pb-24" data-testid="booking-confirmed">
-        <div className="book-card rounded-3xl p-7 text-center shadow-[0_20px_60px_rgba(0,0,0,0.3)] sm:p-8">
-          <p className="text-xs font-semibold tracking-[0.22em] text-champagne uppercase">
-            Confirmed
-          </p>
-          <h2 className="mt-3 font-[family-name:var(--font-display)] text-4xl">
-            You&apos;re booked
-          </h2>
-          <p className="mx-auto mt-4 max-w-md text-lg text-muted">
-            {done.service} with {done.stylist}
-            <br />
-            <span className="mt-2 inline-block text-[#e0d0f5]">
-              {new Date(done.startsAt).toLocaleString("en-CA", {
-                weekday: "long",
-                month: "long",
-                day: "numeric",
-                hour: "numeric",
-                minute: "2-digit",
-                timeZone: salon?.timezone,
-              })}
+      <div className="space-y-5 pb-24">
+        <div
+          data-testid="booking-confirmed"
+          className="book-luxe-card rounded-2xl px-4 py-4"
+        >
+          <div className="flex items-start gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="font-[family-name:var(--font-display)] text-xl leading-tight">
+                {justBooked.service}
+              </p>
+              <p className="mt-1 flex items-center gap-1 text-sm text-muted">
+                with {justBooked.stylist}
+                <LuxeCrown className="h-3.5 w-3.5 text-[#8a6a3e]" />
+              </p>
+              <div className="mt-3 space-y-1 border-t border-[#d4b483]/40 pt-2 text-sm">
+                <p>{when}</p>
+                <p>{timeOnly}</p>
+              </div>
+            </div>
+            <span className="text-lg text-[#c9a87c]" aria-hidden>
+              ›
             </span>
-          </p>
+          </div>
           {stylePref?.imageBase64 ? (
-            <div className="mx-auto mt-5 max-w-[200px]">
+            <div className="mt-3 flex items-center gap-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={stylePref.imageBase64}
-                alt="Preferred look shared with stylist"
-                className="rounded-2xl object-cover ring-2 ring-[rgba(201,180,232,0.45)]"
+                alt=""
+                className="h-12 w-12 rounded-lg object-cover ring-1 ring-[#d4b483]/45"
               />
-              <p className="mt-2 text-xs text-muted">Preferred look sent to your stylist</p>
+              <p className="text-xs text-muted">
+                Preferred look
+                <span className="mt-0.5 block font-semibold">Shared with your stylist</span>
+              </p>
             </div>
           ) : null}
-          <p className="mt-3 text-xs text-muted">
-            Ref · {done.id.slice(-8).toUpperCase()} · Free cancel until {CLIENT_CANCEL_HOURS}h
-            before
-          </p>
-          {salon?.phone ? (
-            <p className="mt-5 text-sm text-muted">
-              Questions?{" "}
-              <a className="font-semibold text-champagne" href={`tel:${salon.phone}`}>
-                Call {salon.phone}
-              </a>
-            </p>
-          ) : null}
+          <div className="mt-3 flex flex-wrap gap-2">
+            <a
+              href={calendarUrl}
+              target="_blank"
+              rel="noreferrer"
+              data-testid="booking-add-calendar"
+              className="btn-solid inline-flex rounded-full px-3 py-1.5 text-xs font-semibold"
+            >
+              Add to calendar
+            </a>
+          </div>
         </div>
 
-        {joinPrompt && !client ? (
+        {joinPrompt ? (
           <PostBookJoin
             slug={slug}
             name={name}
@@ -630,110 +719,13 @@ export function BookingWizard({ slug }: { slug: string }) {
             onJoined={(c) => {
               onClientChange(c);
               setJoinPrompt(false);
-              setProfileOpen(true);
+              setJustBooked((prev) => prev);
+              setMemberTab("visits");
+              setShowBookings(true);
             }}
             onSkip={() => setJoinPrompt(false)}
           />
         ) : null}
-
-        <section className="book-card rounded-3xl p-5 sm:p-6" data-testid="booking-next-steps">
-          <p className="text-xs font-semibold tracking-[0.18em] text-champagne uppercase">
-            What&apos;s next
-          </p>
-          <h3 className="mt-1 font-[family-name:var(--font-display)] text-2xl">
-            {client ? `Welcome back, ${client.name.split(" ")[0]}` : "While you wait"}
-          </h3>
-          <p className="mt-1 text-sm text-muted">
-            {client
-              ? "Manage this visit, book again, or tweak how booking looks on this device."
-              : "Save the date, book someone else, or join so your details are ready next time."}
-          </p>
-
-          <div className="mt-5 grid gap-2.5 sm:grid-cols-2">
-            <a
-              href={calendarUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="btn-solid rounded-2xl px-4 py-3.5 text-center text-sm font-semibold"
-            >
-              Add to calendar
-            </a>
-            <button
-              type="button"
-              className="rounded-2xl border border-[rgba(201,180,232,0.4)] px-4 py-3.5 text-sm font-semibold text-champagne"
-              onClick={() => {
-                setDone(null);
-                setJoinPrompt(false);
-                setServiceIds([]);
-                setStylistId("");
-                setStartsAt("");
-                setNotes("");
-                setStylePref(null);
-                setError("");
-              }}
-            >
-              Book another
-            </button>
-
-            {client ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => openMemberTab("visits")}
-                  className="rounded-2xl border border-[rgba(201,180,232,0.4)] px-4 py-3.5 text-sm font-semibold text-champagne"
-                >
-                  View my bookings
-                </button>
-                <button
-                  type="button"
-                  onClick={() => openMemberTab("lookbook")}
-                  className="rounded-2xl border border-[rgba(201,180,232,0.4)] px-4 py-3.5 text-sm font-semibold text-champagne"
-                >
-                  My look book
-                </button>
-              </>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  setJoinPrompt(true);
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                }}
-                className="rounded-2xl border border-[rgba(201,180,232,0.4)] px-4 py-3.5 text-sm font-semibold text-champagne"
-              >
-                Join free — no password
-              </button>
-            )}
-
-            <button
-              type="button"
-              onClick={() => setProfileOpen(true)}
-              className="rounded-2xl border border-[rgba(201,180,232,0.4)] px-4 py-3.5 text-sm font-semibold text-champagne"
-            >
-              Profile &amp; appearance
-            </button>
-
-            {salon?.phone ? (
-              <a
-                href={`tel:${salon.phone}`}
-                className="rounded-2xl border border-[rgba(201,180,232,0.4)] px-4 py-3.5 text-center text-sm font-semibold text-champagne"
-              >
-                Call the salon
-              </a>
-            ) : null}
-
-            <a
-              href={
-                process.env.NEXT_PUBLIC_MARKETING_URL || "https://www.fhsalon.ca"
-              }
-              target="_blank"
-              rel="noreferrer"
-              className="rounded-2xl border border-[rgba(201,180,232,0.4)] px-4 py-3.5 text-center text-sm font-semibold text-champagne sm:col-span-2"
-            >
-              Visit salon website
-            </a>
-          </div>
-        </section>
 
         {appChrome}
       </div>
@@ -752,88 +744,36 @@ export function BookingWizard({ slug }: { slug: string }) {
         openSignInMode={signInMode}
       />
 
-      <div className="mt-4 space-y-3">
-        {!styleAttachOpen ? (
-          <div className="book-card flex flex-wrap items-center justify-between gap-3 rounded-2xl p-4">
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-ink">Style preview</p>
-              <p className="mt-0.5 text-xs text-muted">
-                Optional — attach a look for your stylist. Try AI styles in Look book.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {client ? (
-                <button
-                  type="button"
-                  onClick={() => openMemberTab("lookbook")}
-                  className="rounded-full border border-[color:var(--line)] px-3 py-1.5 text-xs font-semibold text-champagne"
-                >
-                  Open Look book
-                </button>
-              ) : null}
-              <button
-                type="button"
-                onClick={() => setStyleAttachOpen(true)}
-                data-testid="book-attach-style"
-                className="btn-solid rounded-full px-4 py-1.5 text-xs font-semibold"
-              >
-                {stylePref ? "Edit attached look" : "Attach style preview"}
-              </button>
-            </div>
-            {stylePref?.imageBase64 ? (
-              <button
-                type="button"
-                onClick={() => setStyleAttachOpen(true)}
-                className="flex w-full items-center gap-3 text-left"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={stylePref.imageBase64}
-                  alt=""
-                  className="h-14 w-14 rounded-xl object-cover ring-1 ring-[rgba(201,180,232,0.45)]"
-                />
-                <span className="text-xs text-muted">
-                  Look ready to send with this booking
-                  <span className="mt-0.5 block font-semibold text-champagne">Tap to change</span>
-                </span>
-              </button>
-            ) : null}
-          </div>
-        ) : (
-          <div className="space-y-2">
-            <StylePreviewPanel
-              slug={slug}
-              isMember={Boolean(client)}
-              variant="attach"
-              value={stylePref}
-              onChange={(next) => {
-                setStylePref(next);
-                writeStyleDraft(slug, next);
-              }}
-            />
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setStyleAttachOpen(false)}
-                className="rounded-full border border-[color:var(--line)] px-4 py-2 text-xs font-semibold text-champagne"
-              >
-                {stylePref ? "Done attaching" : "Close"}
-              </button>
-              {client ? (
-                <button
-                  type="button"
-                  onClick={() => openMemberTab("lookbook")}
-                  className="rounded-full border border-[color:var(--line)] px-4 py-2 text-xs font-semibold text-muted"
-                >
-                  Open Look book studio
-                </button>
-              ) : null}
-            </div>
-          </div>
-        )}
-      </div>
+      {client ? (
+        <button
+          type="button"
+          onClick={() => setProfileOpen(true)}
+          className="book-luxe-member mb-4 w-full text-left"
+        >
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[color:var(--champagne)]/55 font-[family-name:var(--font-display)] text-lg text-champagne">
+            {client.name
+              .split(" ")
+              .map((p) => p[0])
+              .join("")
+              .slice(0, 2)
+              .toUpperCase()}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[11px] text-muted">Member</span>
+            <span className="block font-[family-name:var(--font-display)] text-xl leading-tight text-white">
+              {client.name}
+            </span>
+            <span className="mt-0.5 inline-flex items-center gap-1 text-xs font-semibold text-champagne">
+              <LuxeCrown className="h-3.5 w-3.5" />
+              {memberTierLabel(memberTierFromPoints(loyaltyPoints))}
+              <span aria-hidden>›</span>
+            </span>
+          </span>
+          <MemberBadge tier={memberTierFromPoints(loyaltyPoints)} />
+        </button>
+      ) : null}
 
-      <form onSubmit={submit} className="mt-6 space-y-8 pb-52">
+      <form onSubmit={submit} className="mt-5 space-y-8 pb-52">
         <div className="flex flex-wrap gap-2">
           {STEPS.map((label, i) => {
             const reachable =
@@ -862,18 +802,22 @@ export function BookingWizard({ slug }: { slug: string }) {
         </div>
 
         <section className="space-y-4">
-          <div>
-            <h2 className="font-[family-name:var(--font-display)] text-2xl">Choose services</h2>
-            <p className="mt-1 text-sm text-muted">
-              Tap one or more — duration and price add up for a single visit.
+          <div className="text-center">
+            <h2 className="book-luxe-title font-[family-name:var(--font-display)] text-3xl">
+              Choose services
+            </h2>
+            <LuxeOrnament className="mx-auto mt-3 max-w-[11rem]" />
+            <p className="book-luxe-kicker mt-3">
+              Select services for a perfect experience
             </p>
           </div>
           {serviceGroups.map((group) => (
             <div key={group.key} className="space-y-2">
-              <h3 className="text-xs font-semibold tracking-[0.18em] text-champagne uppercase">
+              <h3 className="flex items-center gap-2 font-[family-name:var(--font-display)] text-lg text-white">
+                <LuxeSparkle className="h-3 w-3 text-champagne" />
                 {group.label}
               </h3>
-              <div className="grid gap-3">
+              <div className="grid gap-2">
                 {group.items.map((s) => {
                   const selected = serviceIds.includes(s.id);
                   return (
@@ -882,33 +826,30 @@ export function BookingWizard({ slug }: { slug: string }) {
                       type="button"
                       onClick={() => toggleService(s.id)}
                       aria-pressed={selected}
-                      className={`book-card rounded-2xl px-4 py-4 text-left ${
+                      className={`book-luxe-card rounded-[1.15rem] px-3.5 py-3.5 text-left ${
                         selected ? "is-selected" : ""
                       }`}
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-baseline justify-between gap-3">
-                            <span className="text-lg font-semibold">{s.name}</span>
-                            <span className="shrink-0 text-sm text-champagne">
-                              {formatCad(s.priceCents)}
-                            </span>
-                          </div>
-                          <p className="mt-1 text-sm text-muted">{s.durationMin} min</p>
-                          {s.description ? (
-                            <p className="mt-2 text-sm text-white/65">{s.description}</p>
-                          ) : null}
-                        </div>
-                        <span
-                          className={`mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border text-xs ${
-                            selected
-                              ? "border-[#e0d0f5] bg-[#e0d0f5] text-[#17121f]"
-                              : "border-[rgba(201,180,232,0.45)] text-transparent"
-                          }`}
-                          aria-hidden
-                        >
-                          ✓
+                      <div className="flex items-center gap-3">
+                        <span className="book-luxe-service-icon" aria-hidden>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={serviceIconSrc(s.name)} alt="" />
                         </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block font-[family-name:var(--font-display)] text-[1.05rem] leading-tight">
+                            {s.name}
+                          </span>
+                          <span className="mt-0.5 block text-sm text-muted">
+                            {s.durationMin} min
+                          </span>
+                        </span>
+                        <span className="shrink-0 font-[family-name:var(--font-display)] text-[1.15rem]">
+                          {formatCad(s.priceCents)}
+                        </span>
+                        <span
+                          className={`book-luxe-radio ${selected ? "is-on" : ""}`}
+                          aria-hidden
+                        />
                       </div>
                     </button>
                   );
@@ -1156,7 +1097,11 @@ export function BookingWizard({ slug }: { slug: string }) {
           <div className="book-sticky-summary">
             <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-3 px-4 py-3">
               <div className="min-w-0 text-sm">
-                <p className="truncate font-semibold text-white">
+                <p className="book-luxe-kicker flex items-center gap-2">
+                  <span className="book-luxe-ornament__diamond" aria-hidden />
+                  Running total
+                </p>
+                <p className="truncate text-xs text-muted">
                   {[
                     selectedServiceLabel || null,
                     stylistId === ANY_STYLIST_ID
@@ -1177,8 +1122,11 @@ export function BookingWizard({ slug }: { slug: string }) {
                     .join(" · ")}
                 </p>
                 {selectedServices.length > 0 ? (
-                  <p className="text-xs text-[#e0d0f5]">
-                    {selectedTotalMin} min · {formatCad(selectedTotalCents)}
+                  <p className="font-[family-name:var(--font-display)] text-2xl leading-tight text-champagne">
+                    {formatCad(selectedTotalCents)}
+                    <span className="ml-2 text-xs font-sans tracking-normal text-muted">
+                      {selectedTotalMin} min
+                    </span>
                   </p>
                 ) : null}
               </div>

@@ -534,8 +534,8 @@ export const SALON_THEMES: SalonTheme[] = [
 
 export const SALON_THEME_IDS = SALON_THEMES.map((t) => t.id);
 
-/** Keeps FHSalon looking exactly as it does today; new salons inherit these too. */
-export const DEFAULT_BOOKING_THEME_ID = "plum";
+/** Client booking app is always the cocoa gold luxury pack. */
+export const DEFAULT_BOOKING_THEME_ID = "cocoa";
 export const DEFAULT_MANAGER_THEME_ID = "cocoa";
 export const DEFAULT_STYLIST_THEME_ID = "seaglass";
 
@@ -672,18 +672,6 @@ export function applySalonThemeId(id: string | null | undefined, fallback: strin
   injectLiveThemeStyle(theme, light);
   paintDock(root, theme.dark);
   paintPalette(root, light ? theme.light : theme.dark);
-
-  // Keep remapped shell aliases in sync on .book-theme / .admin-theme / .stylist-theme.
-  document.querySelectorAll(".book-theme, .admin-theme, .stylist-theme").forEach((node) => {
-    const el = node as HTMLElement;
-    el.style.setProperty("--champagne", "var(--t-accent)");
-    el.style.setProperty("--cocoa", "var(--t-accent-strong)");
-    el.style.setProperty("--color-champagne", "var(--t-accent)");
-    el.style.setProperty("--color-cocoa", "var(--t-accent-strong)");
-    el.style.setProperty("--color-cream", "var(--t-bg-1)");
-    el.style.setProperty("--ink", "var(--t-text)");
-    el.style.setProperty("--muted", "var(--t-muted)");
-  });
 }
 
 /** Re-paint the current pack after light/dark toggle flips `.theme-light`. */

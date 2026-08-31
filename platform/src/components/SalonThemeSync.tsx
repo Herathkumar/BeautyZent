@@ -4,7 +4,6 @@ import { useLayoutEffect } from "react";
 import { writeSalonBrand, type SalonBrand } from "@/lib/salon-branding";
 import {
   applyMarketplaceBookTheme,
-  isMarketplaceBookSession,
   MARKETPLACE_BOOK_THEME_ID,
 } from "@/lib/marketplace-book-theme";
 import { applySalonThemeId } from "@/lib/salon-themes";
@@ -44,7 +43,7 @@ export function SalonThemeSync({
   const accentColor = brand?.accentColor ?? null;
 
   useLayoutEffect(() => {
-    if (isMarketplaceBookSession()) {
+    if (themeField === "bookingThemeId") {
       applyMarketplaceBookTheme();
     } else {
       applySalonThemeId(themeId, fallbackThemeId);
@@ -56,7 +55,8 @@ export function SalonThemeSync({
           name,
           brandColor,
           accentColor,
-          bookingThemeId,
+          bookingThemeId:
+            themeField === "bookingThemeId" ? MARKETPLACE_BOOK_THEME_ID : bookingThemeId,
           managerThemeId,
           stylistThemeId,
         },
@@ -74,8 +74,13 @@ export function SalonThemeSync({
       .then((r) => (r.ok ? r.json() : null))
       .then((data: { salon?: SalonBrand } | null) => {
         if (cancelled || !data?.salon) return;
-        writeSalonBrand(data.salon, { staff });
-        if (isMarketplaceBookSession()) {
+        writeSalonBrand(
+          themeField === "bookingThemeId"
+            ? { ...data.salon, bookingThemeId: MARKETPLACE_BOOK_THEME_ID }
+            : data.salon,
+          { staff }
+        );
+        if (themeField === "bookingThemeId") {
           applyMarketplaceBookTheme();
           return;
         }

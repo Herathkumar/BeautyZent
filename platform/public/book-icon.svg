@@ -1,30 +1,53 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="FHS Client">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Client">
   <defs>
-    <linearGradient id="fhsClientBg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#2a2038"/>
-      <stop offset="100%" stop-color="#14101c"/>
+    <linearGradient id="bzClientBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2a221c"/>
+      <stop offset="100%" stop-color="#0c0b0a"/>
     </linearGradient>
-    <linearGradient id="fhsClientLilac" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#e0d0f5"/>
-      <stop offset="100%" stop-color="#9b7ec4"/>
+    <linearGradient id="bzClientGold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f0c987"/>
+      <stop offset="100%" stop-color="#c9a87c"/>
     </linearGradient>
-    <clipPath id="fhsClientDisc">
-      <circle cx="256" cy="256" r="132"/>
-    </clipPath>
   </defs>
 
-  <rect width="512" height="512" fill="url(#fhsClientBg)"/>
+  <rect width="512" height="512" fill="url(#bzClientBg)"/>
+  <circle cx="256" cy="236" r="150" fill="#c9a87c" opacity="0.1"/>
 
-  <!-- Member ring -->
-  <circle cx="256" cy="256" r="152" fill="none" stroke="url(#fhsClientLilac)" stroke-width="18" opacity="0.55"/>
-
-  <!-- Client portrait, clipped to the avatar disc -->
-  <g clip-path="url(#fhsClientDisc)">
-    <circle cx="256" cy="256" r="132" fill="#35264a"/>
-    <circle cx="256" cy="216" r="58" fill="url(#fhsClientLilac)"/>
-    <circle cx="256" cy="412" r="112" fill="url(#fhsClientLilac)"/>
-  </g>
-
-  <!-- Salon sparkle -->
-  <path d="M386 108l14 38 38 14-38 14-14 38-14-38-38-14 38-14z" fill="#e0d0f5"/>
+  <!-- Thin calligraphic Z — stroke weight matches lounge / reception icons -->
+  <path
+    d="M150 156 C214 128 318 126 368 158"
+    fill="none"
+    stroke="url(#bzClientGold)"
+    stroke-width="18"
+    stroke-linecap="round"
+  />
+  <path
+    d="M356 164 L156 348"
+    fill="none"
+    stroke="url(#bzClientGold)"
+    stroke-width="18"
+    stroke-linecap="round"
+  />
+  <path
+    d="M156 348 C220 386 328 388 372 354"
+    fill="none"
+    stroke="url(#bzClientGold)"
+    stroke-width="18"
+    stroke-linecap="round"
+  />
+  <!-- Light left flourish -->
+  <path
+    d="M176 248 C138 228 132 196 156 184"
+    fill="none"
+    stroke="url(#bzClientGold)"
+    stroke-width="12"
+    stroke-linecap="round"
+  />
+  <path
+    d="M170 268 C142 278 128 304 148 318"
+    fill="none"
+    stroke="url(#bzClientGold)"
+    stroke-width="10"
+    stroke-linecap="round"
+  />
 </svg>

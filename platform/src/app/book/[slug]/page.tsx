@@ -2,10 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { BookMarketNav } from "./BookMarketNav";
 import { BookingWizard } from "./BookingWizard";
-
-function telHref(phone: string) {
-  return `tel:${phone.replace(/[^\d+]/g, "")}`;
-}
+import { LuxeKickerLined, LuxeOrnament } from "./luxe";
 
 export default async function BookPage({
   params,
@@ -17,7 +14,10 @@ export default async function BookPage({
   const { slug } = await params;
   const { from } = await searchParams;
   const fromExplore = from === "explore";
-  const salon = await prisma.salon.findUnique({ where: { slug } });
+  const salon = await prisma.salon.findUnique({
+    where: { slug },
+    select: { id: true, name: true, coverUpdatedAt: true },
+  });
 
   if (!salon) {
     return (
@@ -32,44 +32,26 @@ export default async function BookPage({
     );
   }
 
+  const coverUrl = salon.coverUpdatedAt
+    ? `/api/public/cover/${salon.id}?t=${salon.coverUpdatedAt.getTime()}`
+    : "/display-promo.jpg";
+
   return (
     <main className="book-theme flex min-h-screen flex-col">
-      <BookMarketNav salonName={salon.name} fromExplore={fromExplore} />
+      <BookMarketNav fromExplore={fromExplore} />
       <div className="mx-auto w-full max-w-2xl flex-1 px-4 pb-[calc(var(--book-nav-h)+0.5rem)] pt-4 sm:px-6">
-        <section className="book-hero relative mb-5 overflow-hidden rounded-3xl">
-          <div className="book-hero-media absolute inset-0">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/display-promo.jpg"
-              alt=""
-              className="book-hero-img h-full w-full object-cover"
-            />
-            <div className="book-hero-overlay absolute inset-0" />
-          </div>
-          <div className="relative space-y-2 px-5 py-5 sm:px-7 sm:py-6">
-            <p className="book-hero-kicker text-xs font-semibold tracking-[0.22em] uppercase">
-              Book your visit
-            </p>
-            <h1 className="book-hero-title font-[family-name:var(--font-display)] text-3xl leading-none sm:text-4xl">
-              {salon.name}
-            </h1>
-            <p className="book-hero-copy max-w-xl text-sm sm:text-base">
-              Guest or member — pick a service, provider, and time. Members keep a
-              photo look book of every visit.
-            </p>
-            {(salon.phone || salon.address) && (
-              <p className="book-hero-meta text-xs sm:text-sm">
-                {salon.phone ? (
-                  <a href={telHref(salon.phone)} className="underline-offset-2 hover:underline">
-                    {salon.phone}
-                  </a>
-                ) : null}
-                {salon.phone && salon.address ? " · " : ""}
-                {salon.address}
-              </p>
-            )}
-          </div>
+        <section className="book-home-cover mb-5" aria-hidden>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={coverUrl} alt="" />
         </section>
+
+        <header className="mb-5 text-center">
+          <LuxeKickerLined>Book your visit</LuxeKickerLined>
+          <h1 className="mt-2 font-[family-name:var(--font-display)] text-[1.85rem] leading-none text-white sm:text-4xl">
+            {salon.name}
+          </h1>
+          <LuxeOrnament className="mx-auto mt-3 max-w-[9rem]" />
+        </header>
 
         <BookingWizard slug={slug} />
       </div>

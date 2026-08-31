@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
+import { MARKETPLACE_BOOK_THEME_ID } from "@/lib/marketplace-book-theme";
 import {
-  DEFAULT_BOOKING_THEME_ID,
   DEFAULT_MANAGER_THEME_ID,
   DEFAULT_STYLIST_THEME_ID,
   getSalonTheme,
@@ -89,7 +89,8 @@ export type CreateSalonInput = {
   phone?: string | null;
   email?: string | null;
   address?: string | null;
-  bookingThemeId: string;
+  /** Ignored — client booking app is always cocoa gold luxury. */
+  bookingThemeId?: string;
   managerThemeId: string;
   stylistThemeId: string;
   managerName: string;
@@ -113,7 +114,7 @@ export type CreateSalonInput = {
 export async function createSalonWithManager(input: CreateSalonInput) {
   const passwordHash = await bcrypt.hash(input.managerPassword, 10);
 
-  const bookingTheme = getSalonTheme(input.bookingThemeId, DEFAULT_BOOKING_THEME_ID);
+  const bookingTheme = getSalonTheme(MARKETPLACE_BOOK_THEME_ID, MARKETPLACE_BOOK_THEME_ID);
   const listingStatus = normalizeListingStatus(input.listingStatus ?? "PUBLISHED");
   const businessType = normalizeBusinessType(input.businessType ?? "SALON");
   const active = input.active ?? listingStatus === "PUBLISHED";
@@ -129,7 +130,7 @@ export async function createSalonWithManager(input: CreateSalonInput) {
       phone: input.phone || null,
       email: input.email || null,
       address: input.address || null,
-      bookingThemeId: normalizeThemeId(input.bookingThemeId, DEFAULT_BOOKING_THEME_ID),
+      bookingThemeId: MARKETPLACE_BOOK_THEME_ID,
       managerThemeId: normalizeThemeId(input.managerThemeId, DEFAULT_MANAGER_THEME_ID),
       stylistThemeId: normalizeThemeId(input.stylistThemeId, DEFAULT_STYLIST_THEME_ID),
       // Legacy splash/API fields — keep in sync with booking pack accent.

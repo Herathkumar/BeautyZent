@@ -3,7 +3,6 @@ import { AppOpenSplash } from "@/components/AppOpenSplash";
 import { SalonThemeSync } from "@/components/SalonThemeSync";
 import { MARKETPLACE_BOOK_THEME_ID } from "@/lib/marketplace-book-theme";
 import { prisma } from "@/lib/prisma";
-import { DEFAULT_BOOKING_THEME_ID, normalizeThemeId } from "@/lib/salon-themes";
 import { BookThemeBoot } from "./BookThemeToggle";
 
 export const dynamic = "force-dynamic";
@@ -48,7 +47,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export const viewport: Viewport = {
-  themeColor: "#f3ebe3",
+  themeColor: "#0c0b0a",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -69,20 +68,19 @@ export default async function BookLayout({ children, params }: Props) {
     },
   });
   const brand = salon?.active ? salon : null;
-  const themeId = normalizeThemeId(brand?.bookingThemeId, DEFAULT_BOOKING_THEME_ID);
-  const marketTheme = MARKETPLACE_BOOK_THEME_ID;
+  const themeId = MARKETPLACE_BOOK_THEME_ID;
 
   return (
     <BookThemeBoot>
-      {/* Before paint: Explore arrivals use cocoa, never the salon booking pack. */}
+      {/* Before paint: client app is always cocoa gold luxury, never a salon pack or light mode. */}
       <script
         dangerouslySetInnerHTML={{
-          __html: `(function(){try{var r=document.documentElement;var m=/[?&]from=explore(?:&|$)/.test(location.search)||sessionStorage.getItem("fhsalon-book-from-market")==="1";if(/[?&]from=explore(?:&|$)/.test(location.search)){try{sessionStorage.setItem("fhsalon-book-from-market","1");}catch(e){}}if(m){r.setAttribute("data-salon-theme","${marketTheme}");r.classList.add("book-shell","book-shell--light","theme-light","book-shell--marketplace");try{localStorage.setItem("fhsalon-book-theme","light");}catch(e){}}else{r.setAttribute("data-salon-theme","${themeId}");}}catch(e){document.documentElement.setAttribute("data-salon-theme","${themeId}");}})();`,
+          __html: `(function(){try{var r=document.documentElement;if(/[?&]from=explore(?:&|$)/.test(location.search)){try{sessionStorage.setItem("fhsalon-book-from-market","1");}catch(e){}}r.setAttribute("data-salon-theme","${themeId}");r.classList.add("book-shell","book-shell--marketplace");r.classList.remove("book-shell--light","theme-light");try{localStorage.setItem("fhsalon-book-luxe-v3","1");localStorage.setItem("fhsalon-book-theme","dark");}catch(e){}}catch(e){document.documentElement.setAttribute("data-salon-theme","${themeId}");}})();`,
         }}
       />
       <SalonThemeSync
         themeId={themeId}
-        fallbackThemeId={DEFAULT_BOOKING_THEME_ID}
+        fallbackThemeId={MARKETPLACE_BOOK_THEME_ID}
         slug={slug}
         themeField="bookingThemeId"
         brand={
@@ -92,7 +90,7 @@ export default async function BookLayout({ children, params }: Props) {
                 name: brand.name,
                 brandColor: brand.brandColor,
                 accentColor: brand.accentColor,
-                bookingThemeId: brand.bookingThemeId,
+                bookingThemeId: MARKETPLACE_BOOK_THEME_ID,
                 managerThemeId: brand.managerThemeId,
                 stylistThemeId: brand.stylistThemeId,
               }

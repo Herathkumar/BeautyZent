@@ -13,8 +13,8 @@ import {
   normalizeBusinessType,
   normalizeListingStatus,
 } from "@/lib/marketplace";
+import { MARKETPLACE_BOOK_THEME_ID } from "@/lib/marketplace-book-theme";
 import {
-  DEFAULT_BOOKING_THEME_ID,
   DEFAULT_MANAGER_THEME_ID,
   DEFAULT_STYLIST_THEME_ID,
   getSalonTheme,
@@ -155,10 +155,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     });
   }
 
-  const bookingThemeId = normalizeThemeId(body.bookingThemeId, DEFAULT_BOOKING_THEME_ID);
+  const bookingThemeId = MARKETPLACE_BOOK_THEME_ID;
   const managerThemeId = normalizeThemeId(body.managerThemeId, DEFAULT_MANAGER_THEME_ID);
   const stylistThemeId = normalizeThemeId(body.stylistThemeId, DEFAULT_STYLIST_THEME_ID);
-  const bookingTheme = getSalonTheme(bookingThemeId, DEFAULT_BOOKING_THEME_ID);
+  const bookingTheme = getSalonTheme(bookingThemeId, MARKETPLACE_BOOK_THEME_ID);
 
   const listingStatus =
     body.listingStatus != null

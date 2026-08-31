@@ -4,7 +4,6 @@ import { getPlatformSession } from "@/lib/platform-auth";
 import { prisma } from "@/lib/prisma";
 import { businessTypeLabel } from "@/lib/marketplace";
 import {
-  DEFAULT_BOOKING_THEME_ID,
   DEFAULT_MANAGER_THEME_ID,
   DEFAULT_STYLIST_THEME_ID,
   getSalonTheme,
@@ -32,7 +31,6 @@ export default async function PlatformHomePage() {
       timezone: true,
       openHour: true,
       closeHour: true,
-      bookingThemeId: true,
       managerThemeId: true,
       stylistThemeId: true,
       _count: { select: { stylists: true, services: true, appointments: true } },
@@ -124,7 +122,6 @@ export default async function PlatformHomePage() {
             <ul className="flex flex-wrap gap-1.5">
               {(
                 [
-                  ["Booking", salon.bookingThemeId, DEFAULT_BOOKING_THEME_ID],
                   ["Manager", salon.managerThemeId, DEFAULT_MANAGER_THEME_ID],
                   ["Staff", salon.stylistThemeId, DEFAULT_STYLIST_THEME_ID],
                 ] as const

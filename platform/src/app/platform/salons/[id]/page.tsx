@@ -82,7 +82,7 @@ export default async function SalonDetailPage({
               {
                 name: "Client",
                 href: `/book/${salon.slug}`,
-                icon: "/book-icon.svg",
+                icon: "/book-icon-192.png",
                 show: true,
               },
               {

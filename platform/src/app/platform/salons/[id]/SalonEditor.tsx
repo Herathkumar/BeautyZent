@@ -8,8 +8,8 @@ import {
   normalizeCustomerDisplayViewControl,
   normalizeCustomerDisplayViewRotateSec,
 } from "@/lib/customer-display-view";
+import { MARKETPLACE_BOOK_THEME_ID } from "@/lib/marketplace-book-theme";
 import {
-  DEFAULT_BOOKING_THEME_ID,
   DEFAULT_MANAGER_THEME_ID,
   DEFAULT_STYLIST_THEME_ID,
   normalizeThemeId,
@@ -65,7 +65,6 @@ export function SalonEditor({ salon }: { salon: EditableSalon }) {
     closeHour: salon.closeHour,
     closedDays: salon.closedDays?.length ? salon.closedDays : [0],
     slotMinutes: salon.slotMinutes,
-    bookingThemeId: normalizeThemeId(salon.bookingThemeId, DEFAULT_BOOKING_THEME_ID),
     managerThemeId: normalizeThemeId(salon.managerThemeId, DEFAULT_MANAGER_THEME_ID),
     stylistThemeId: normalizeThemeId(salon.stylistThemeId, DEFAULT_STYLIST_THEME_ID),
     displayViewMode: normalizeCustomerDisplayView(salon.displayViewMode),
@@ -110,7 +109,12 @@ export function SalonEditor({ salon }: { salon: EditableSalon }) {
     const res = await fetch(`/api/platform/salons/${salon.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, managerEmail, managerPassword }),
+      body: JSON.stringify({
+        ...form,
+        bookingThemeId: MARKETPLACE_BOOK_THEME_ID,
+        managerEmail,
+        managerPassword,
+      }),
     });
     const data = await res.json().catch(() => ({}));
     setSaving(false);
@@ -127,7 +131,7 @@ export function SalonEditor({ salon }: { salon: EditableSalon }) {
         slug: form.slug,
         name: form.name,
         address: form.address || null,
-        bookingThemeId: form.bookingThemeId,
+        bookingThemeId: MARKETPLACE_BOOK_THEME_ID,
         managerThemeId: form.managerThemeId,
         stylistThemeId: form.stylistThemeId,
       });
@@ -504,13 +508,6 @@ export function SalonEditor({ salon }: { salon: EditableSalon }) {
           <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-cocoa">Themes</h2>
           <p className="mt-1 text-xs text-muted">{THEME_PICKER_HINT}</p>
         </div>
-        <ThemePicker
-          name="booking"
-          legend="Booking app"
-          hint={`What clients see at /book/${form.slug || "slug"}.`}
-          value={form.bookingThemeId}
-          onChange={(id) => set("bookingThemeId", id)}
-        />
         <ThemePicker
           name="manager"
           legend="Manager app"
