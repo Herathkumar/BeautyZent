@@ -11,6 +11,7 @@ import {
 import { getAvailableSlots } from "@/lib/slots";
 import { calendarDateInTz } from "@/lib/salon-time";
 import { isE2eFixtureStylist } from "@/lib/display-schedule";
+import { decodeStylePhoto, normalizeStylePrompt } from "@/lib/style-prefs";
 
 const stylePrefSchema = z.object({
   imageBase64: z.string().min(20),

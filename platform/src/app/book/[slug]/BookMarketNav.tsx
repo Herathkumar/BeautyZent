@@ -3,8 +3,6 @@
 import { useLayoutEffect } from "react";
 import { applyMarketplaceBookTheme } from "@/lib/marketplace-book-theme";
 
-export const BOOK_NOTIFY_EVENT = "beautyzent-book-notify";
-
 /**
  * Marketplace chrome on the booking app: back to Explore + cocoa luxury theme.
  */
@@ -44,29 +42,7 @@ export function BookMarketNav({
             Elevate your beauty
           </p>
         </div>
-        <button
-          type="button"
-          className="book-chrome-btn"
-          data-testid="book-notify"
-          aria-label="Notifications"
-          onClick={() => window.dispatchEvent(new Event(BOOK_NOTIFY_EVENT))}
-        >
-          <svg viewBox="0 0 24 24" className="h-[1.15rem] w-[1.15rem]" fill="none" aria-hidden>
-            <path
-              d="M6.2 16.6h11.6l-1.15-1.65V10.5a4.65 4.65 0 1 0-9.3 0v4.45L6.2 16.6Z"
-              stroke="currentColor"
-              strokeWidth="1.55"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M10.1 18.35a1.95 1.95 0 0 0 3.8 0"
-              stroke="currentColor"
-              strokeWidth="1.55"
-              strokeLinecap="round"
-            />
-          </svg>
-          <span className="book-chrome-btn__dot" aria-hidden />
-        </button>
+        <span className="h-[2.4rem] w-[2.4rem] shrink-0" aria-hidden />
       </div>
     </header>
   );

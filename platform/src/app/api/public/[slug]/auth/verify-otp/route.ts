@@ -8,6 +8,7 @@ import {
   listClientMembershipsByEmail,
   normalizeEmail,
 } from "@/lib/client-auth";
+import { clientPhotoUrl } from "@/lib/client-photo";
 
 const bodySchema = z.object({
   email: z.string().email(),
@@ -131,6 +132,7 @@ export async function POST(
       phone: client.phone,
       email: client.email,
       preferredStylistId: client.preferredStylistId,
+      photoUrl: clientPhotoUrl(slug, client),
     },
     accountId: account?.id ?? null,
     salons,

@@ -47,30 +47,37 @@ async function issueCookie(session: PlatformSession) {
 
 export async function platformLogin(email: string, password: string) {
   const normalized = email.toLowerCase().trim();
-
-  const admin = await prisma.platformAdmin.findUnique({ where: { email: normalized } });
-  if (admin?.active && (await bcrypt.compare(password, admin.passwordHash))) {
-    await prisma.platformAdmin.update({
-      where: { id: admin.id },
-      data: { lastLoginAt: new Date() },
-    });
-    const session: PlatformSession = { adminId: admin.id, email: admin.email, name: admin.name };
-    await issueCookie(session);
-    return session;
-  }
-
   const fromEnv = envAdmin();
-  if (fromEnv && fromEnv.email === normalized && fromEnv.password === password) {
-    const session: PlatformSession = {
-      adminId: `env:${fromEnv.email}`,
-      email: fromEnv.email,
-      name: fromEnv.name,
-    };
-    await issueCookie(session);
-    return session;
+
+  async function loginFromEnv() {
+    if (fromEnv && fromEnv.email === normalized && fromEnv.password === password) {
+      const session: PlatformSession = {
+        adminId: `env:${fromEnv.email}`,
+        email: fromEnv.email,
+        name: fromEnv.name,
+      };
+      await issueCookie(session);
+      return session;
+    }
+    return null;
   }
 
-  return null;
+  try {
+    const admin = await prisma.platformAdmin.findUnique({ where: { email: normalized } });
+    if (admin?.active && (await bcrypt.compare(password, admin.passwordHash))) {
+      await prisma.platformAdmin.update({
+        where: { id: admin.id },
+        data: { lastLoginAt: new Date() },
+      });
+      const session: PlatformSession = { adminId: admin.id, email: admin.email, name: admin.name };
+      await issueCookie(session);
+      return session;
+    }
+  } catch {
+    // DB down or not seeded yet — env credentials still work for local dev.
+  }
+
+  return loginFromEnv();
 }
 
 export async function platformLogout() {

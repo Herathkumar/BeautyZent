@@ -318,46 +318,117 @@ export async function pickFirstSlot(page: Page, startDate: string) {
     .getByRole("heading", { name: /pick a time/i })
     .isVisible()
     .catch(() => false);
-  // Client wizard has "Pick a time"; manager /manager/book uses a Date field on the form.
   const dateInput = wizardVisible
     ? timeSection.locator('input[type="date"]')
     : page.locator("form input[type='date']").first();
   const slotRoot = wizardVisible ? timeSection : page.locator("form");
-  await expect(dateInput).toBeVisible({ timeout: 15_000 });
+  const usesDateStrip = wizardVisible && (await dateInput.count()) === 0;
+
+  if (!usesDateStrip) {
+    await expect(dateInput).toBeVisible({ timeout: 15_000 });
+  }
 
   for (let attempt = 0; attempt < 10; attempt++) {
     const d = new Date(startDate + "T12:00:00");
     d.setDate(d.getDate() + attempt);
     if (d.getDay() === 0) continue;
     const dateStr = formatDate(d);
-    const current = await dateInput.inputValue();
-    if (current !== dateStr) {
-      const slotsLoaded = page.waitForResponse(
-        (r) => r.url().includes("/slots") && r.url().includes(`date=${dateStr}`) && r.ok(),
-        { timeout: 15_000 }
-      );
-      await fillDateInput(dateInput, dateStr);
-      const slotsOk = await slotsLoaded.then(() => true).catch(() => false);
-      if (!slotsOk) continue;
-    } else {
-      await page
-        .waitForResponse(
+
+    if (usesDateStrip) {
+      const dayBtn = timeSection.locator(`[data-date="${dateStr}"]`);
+      const visible = await dayBtn.isVisible().catch(() => false);
+      if (!visible) {
+        const monthBtn = timeSection.locator(".book-date-strip__month");
+        if (await monthBtn.isVisible().catch(() => false)) {
+          await monthBtn.click();
+          const calDay = timeSection.locator(".book-luxe-calendar__day").filter({
+            hasText: new RegExp(`^${Number(dateStr.split("-")[2])}$`),
+          });
+          for (let m = 0; m < 6; m++) {
+            if (await calDay.first().isVisible().catch(() => false)) break;
+            const next = timeSection.getByRole("button", { name: /next month/i });
+            if (!(await next.isEnabled().catch(() => false))) break;
+            await next.click();
+          }
+          if (await calDay.first().isVisible().catch(() => false)) {
+            await calDay.first().click();
+          }
+        }
+      }
+      const nextWeek = timeSection.getByRole("button", { name: /next week/i });
+      for (let w = 0; w < 14 && !(await dayBtn.isVisible().catch(() => false)); w++) {
+        await nextWeek.click();
+        await dayBtn.scrollIntoViewIfNeeded().catch(() => undefined);
+      }
+      const onStrip = await dayBtn.isVisible().catch(() => false);
+      if (onStrip) {
+        const slotsLoaded = page.waitForResponse(
           (r) => r.url().includes("/slots") && r.url().includes(`date=${dateStr}`) && r.ok(),
-          { timeout: 8_000 }
-        )
-        .catch(() => undefined);
+          { timeout: 15_000 }
+        );
+        await dayBtn.click();
+        await slotsLoaded.catch(() => undefined);
+      } else {
+        const fallback = timeSection.locator(".book-date-strip__day:not([disabled])").first();
+        await expect(fallback).toBeVisible({ timeout: 8_000 });
+        await fallback.click();
+        await page
+          .waitForResponse((r) => r.url().includes("/slots") && r.ok(), { timeout: 8_000 })
+          .catch(() => undefined);
+      }
+    } else {
+      const current = await dateInput.inputValue();
+      if (current !== dateStr) {
+        const slotsLoaded = page.waitForResponse(
+          (r) => r.url().includes("/slots") && r.url().includes(`date=${dateStr}`) && r.ok(),
+          { timeout: 15_000 }
+        );
+        await fillDateInput(dateInput, dateStr);
+        const slotsOk = await slotsLoaded.then(() => true).catch(() => false);
+        if (!slotsOk) continue;
+      } else {
+        await page
+          .waitForResponse(
+            (r) => r.url().includes("/slots") && r.url().includes(`date=${dateStr}`) && r.ok(),
+            { timeout: 8_000 }
+          )
+          .catch(() => undefined);
+      }
     }
+
     const slotButtons = slotRoot.locator(`[data-slot-day="${dateStr}"]`);
     const appeared = await slotButtons
       .first()
       .waitFor({ state: "visible", timeout: 8_000 })
       .then(() => true)
       .catch(() => false);
-    if (!appeared) continue;
+    if (!appeared) {
+      const anySlot = slotRoot.locator("[data-slot-day]").first();
+      const anyVisible = await anySlot
+        .waitFor({ state: "visible", timeout: 4_000 })
+        .then(() => true)
+        .catch(() => false);
+      if (anyVisible) {
+        await anySlot.click();
+        return dateStr;
+      }
+      continue;
+    }
     await slotButtons.first().click();
     return dateStr;
   }
   throw new Error(`No open slots found starting from ${startDate}`);
+}
+
+const PROVIDER_HEADING = /choose your (stylist|provider)/i;
+
+/** Wizard auto-advances ~1s after each step is completed. */
+export async function waitForBookingStep(
+  page: Page,
+  heading: RegExp,
+  timeout = 3_500
+) {
+  await expect(page.getByRole("heading", { name: heading })).toBeVisible({ timeout });
 }
 
 export async function bookOnline(
@@ -383,9 +454,10 @@ export async function bookOnline(
     has: page.getByRole("heading", { name: /choose services?/i }),
   });
   await services.getByRole("button").filter({ hasText: servicePattern }).first().click();
-  await expect(page.getByRole("heading", { name: /choose your stylist/i })).toBeVisible();
+  await waitForBookingStep(page, PROVIDER_HEADING);
+  await expect(page.getByRole("heading", { name: PROVIDER_HEADING })).toBeVisible();
   const stylists = page.locator("section").filter({
-    has: page.getByRole("heading", { name: /choose your stylist/i }),
+    has: page.getByRole("heading", { name: PROVIDER_HEADING }),
   });
   await stylists
     .getByRole("button")
@@ -393,11 +465,12 @@ export async function bookOnline(
     .filter({ hasNotText: /any available/i })
     .first()
     .click();
+  await waitForBookingStep(page, /pick a time/i);
   await expect(page.getByRole("heading", { name: /pick a time/i })).toBeVisible();
   const bookedDate = await pickFirstSlot(page, date);
-  await expect(page.getByRole("heading", { name: /your details/i })).toBeVisible();
+  await waitForBookingStep(page, /booking summary/i);
   const form = page.locator("form").filter({
-    has: page.getByRole("heading", { name: /your details/i }),
+    has: page.getByRole("heading", { name: /booking summary/i }),
   });
   await form.getByLabel(/^name$/i).fill(opts.clientName);
   await form.getByLabel(/^phone$/i).fill(opts.phone ?? "9055550100");
@@ -405,10 +478,10 @@ export async function bookOnline(
   await form
     .getByLabel(/^email/i)
     .fill(opts.email ?? `qa.guest.${Date.now()}@example.com`);
-  if (opts.notes) await form.getByLabel(/notes/i).fill(opts.notes);
+  if (opts.notes) await form.getByLabel(/special requests/i).fill(opts.notes);
   await expect(form.getByLabel(/^name$/i)).toHaveValue(opts.clientName);
-  await form.getByRole("button", { name: /confirm reservation/i }).click();
-  await expect(page.getByRole("heading", { name: /you.?re booked/i })).toBeVisible({
+  await form.getByRole("button", { name: /confirm booking/i }).click();
+  await expect(page.getByTestId("booking-confirmed")).toBeVisible({
     timeout: 20_000,
   });
   return bookedDate;

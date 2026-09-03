@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getClientSessionForSalon } from "@/lib/client-auth";
+import { clientPhotoUrl } from "@/lib/client-photo";
 
 export async function GET(
   _req: Request,
@@ -22,8 +23,22 @@ export async function GET(
       email: true,
       preferredStylistId: true,
       memberAt: true,
+      photoData: true,
+      photoUpdatedAt: true,
     },
   });
 
-  return NextResponse.json({ client });
+  if (!client) return NextResponse.json({ client: null });
+
+  return NextResponse.json({
+    client: {
+      id: client.id,
+      name: client.name,
+      phone: client.phone,
+      email: client.email,
+      preferredStylistId: client.preferredStylistId,
+      memberAt: client.memberAt,
+      photoUrl: clientPhotoUrl(slug, client),
+    },
+  });
 }

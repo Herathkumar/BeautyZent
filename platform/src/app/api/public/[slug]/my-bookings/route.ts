@@ -125,7 +125,7 @@ export async function GET(
           : null,
       };
     })
-    .sort((a, b) => b.startsAt.getTime() - a.startsAt.getTime())
+    .sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime())
     .slice(0, 40);
 
   return NextResponse.json({

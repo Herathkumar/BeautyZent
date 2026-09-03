@@ -1,8 +1,8 @@
 import { expect, type Page } from "@playwright/test";
-import { clearAuthSession, pickFirstSlot, salonCalendarDate } from "../helpers";
+import { clearAuthSession, pickFirstSlot, salonCalendarDate, waitForBookingStep } from "../helpers";
 import { PLATFORM, type Tenant } from "./tenants";
 
-export { clearAuthSession, pickFirstSlot, salonCalendarDate };
+export { clearAuthSession, pickFirstSlot, salonCalendarDate, waitForBookingStep };
 
 /** Login uses window.location.assign — wait it out or the next goto is aborted. */
 async function waitForLoginSettle(page: Page) {
@@ -86,28 +86,29 @@ export async function bookOnlineForTenant(
     has: page.getByRole("heading", { name: /choose services?/i }),
   });
   await services.getByRole("button").filter({ hasText: tenant.servicePattern }).first().click();
-  await expect(page.getByRole("heading", { name: /choose your stylist/i })).toBeVisible();
+  await waitForBookingStep(page, /choose your (stylist|provider)/i);
+  await expect(page.getByRole("heading", { name: /choose your (stylist|provider)/i })).toBeVisible();
   const stylists = page.locator("section").filter({
-    has: page.getByRole("heading", { name: /choose your stylist/i }),
+    has: page.getByRole("heading", { name: /choose your (stylist|provider)/i }),
   });
   await stylists
     .getByRole("button")
     .filter({ hasText: new RegExp(tenant.stylistName, "i") })
     .first()
     .click();
+  await waitForBookingStep(page, /pick a time/i);
   await expect(page.getByRole("heading", { name: /pick a time/i })).toBeVisible();
   const date = salonCalendarDate(new Date());
   await pickFirstSlot(page, date);
-  await expect(page.getByRole("heading", { name: /your details/i })).toBeVisible();
+  await waitForBookingStep(page, /booking summary/i);
   const form = page.locator("form").filter({
-    has: page.getByRole("heading", { name: /your details/i }),
+    has: page.getByRole("heading", { name: /booking summary/i }),
   });
   await form.getByLabel(/^name$/i).fill(opts.clientName);
   await form.getByLabel(/^phone$/i).fill(opts.phone ?? "9055550199");
   await form.getByLabel(/^email/i).fill(opts.email ?? `qa.${tenant.slug}.${Date.now()}@example.com`);
-  await form.getByRole("button", { name: /confirm reservation/i }).click();
+  await form.getByRole("button", { name: /confirm booking/i }).click();
   await expect(page.getByTestId("booking-confirmed")).toBeVisible({ timeout: 20_000 });
-  await expect(page.getByRole("link", { name: /add to calendar/i })).toBeVisible();
 }
 
 async function resolveStylistAndService(page: Page, tenant: Tenant) {

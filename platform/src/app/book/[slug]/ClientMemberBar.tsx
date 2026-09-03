@@ -12,6 +12,7 @@ export type BookClient = {
   phone: string | null;
   email: string | null;
   preferredStylistId: string | null;
+  photoUrl?: string | null;
 };
 
 type Mode = "closed" | "signin" | "join" | "code" | "choose";
@@ -189,10 +190,10 @@ export function ClientMemberBar({
           </p>
           <p className="mt-1 text-sm text-muted">
             {mode === "join"
-              ? "Join to save your details and keep a photo look book of every visit."
+              ? "Join to save your details and build your BeautyAI style journal."
               : mode === "code"
                 ? msg || "Check your email for the code."
-                : "Sign in to see your visits and your look book."}
+                : "Sign in to see your visits and BeautyAI."}
           </p>
         </div>
         <button

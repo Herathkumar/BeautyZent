@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title,
     description:
-      "Book your visit, manage appointments, and keep a photo look book of every visit.",
+      "Book your visit, manage appointments, and explore BeautyAI for every visit.",
     manifest: `/book/${slug}/manifest`,
     appleWebApp: {
       capable: true,

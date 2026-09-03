@@ -6,8 +6,9 @@ import { FacebookIcon, InstagramIcon } from "@/components/SocialBrandIcons";
 import { facebookUrl, instagramUrl } from "@/lib/social-links";
 import { LookPhoto, LookPhotoStrip, LookPhotoViewer } from "./LookPhotos";
 import { StylePreviewPanel, StylePrefDraft } from "./StylePreviewPanel";
+import { StylistLiveSchedule } from "./StylistLiveSchedule";
 import { readStyleDraft, writeStyleDraft } from "./style-draft-storage";
-import { LuxeCrown, LuxeOrnament, LuxeSheet } from "./luxe";
+import { LuxeSheet } from "./luxe";
 import { GoldLogoLoader } from "@/components/GoldLogoSpin";
 
 type StylistInfo = {
@@ -40,6 +41,7 @@ type Row = {
 };
 
 export type MemberTab = "visits" | "lookbook";
+type VisitsSegment = "upcoming" | "past";
 
 function statusLabel(status: string) {
   return status.replace("_", " ").toLowerCase();
@@ -66,6 +68,270 @@ function googleCalendarUrl(
   );
   const details = encodeURIComponent(`with ${r.stylist.name}`);
   return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start}/${end}&details=${details}`;
+}
+
+function formatVisitDate(startsAt: string, timeZone: string) {
+  return new Intl.DateTimeFormat("en-CA", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone,
+  }).format(new Date(startsAt));
+}
+
+function formatVisitTimeRange(startsAt: string, endsAt: string, timeZone: string) {
+  const opts: Intl.DateTimeFormatOptions = {
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone,
+  };
+  const start = new Intl.DateTimeFormat("en-CA", opts).format(new Date(startsAt));
+  const end = new Intl.DateTimeFormat("en-CA", opts).format(new Date(endsAt));
+  return `${start} – ${end}`;
+}
+
+function IconCalendar({ className = "" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" aria-hidden>
+      <rect x="2" y="3" width="12" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.1" />
+      <path d="M5 1.5v2.5M11 1.5v2.5M2 6.5h12" stroke="currentColor" strokeWidth="1.1" />
+    </svg>
+  );
+}
+
+function IconClock({ className = "" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" aria-hidden>
+      <circle cx="8" cy="8" r="5.75" stroke="currentColor" strokeWidth="1.1" />
+      <path d="M8 5v3.2l2 1.3" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconEye({ className = "" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" aria-hidden>
+      <path
+        d="M1.5 8s2.2-4 6.5-4 6.5 4 6.5 4-2.2 4-6.5 4-6.5-4-6.5-4Z"
+        stroke="currentColor"
+        strokeWidth="1.1"
+      />
+      <circle cx="8" cy="8" r="1.75" stroke="currentColor" strokeWidth="1.1" />
+    </svg>
+  );
+}
+
+function IconCalendarPlus({ className = "" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" aria-hidden>
+      <rect x="2" y="3" width="12" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.1" />
+      <path d="M5 1.5v2.5M11 1.5v2.5M2 6.5h12M8 9v3M6.5 10.5H9.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function BookingStylistAvatar({
+  stylist,
+  onOpen,
+}: {
+  stylist: StylistInfo;
+  onOpen: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="book-luxe-booking-avatar-btn shrink-0"
+      aria-label={`View ${stylist.name} profile`}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={stylist.photoUrl} alt="" className="book-luxe-booking-avatar" />
+    </button>
+  );
+}
+
+function VisitBookingCard({
+  row,
+  timeZone,
+  salonName,
+  slug,
+  highlight,
+  busyId,
+  styleEditId,
+  styleDraft,
+  styleBusy,
+  onOpenStylist,
+  onCancel,
+  onOpenStyleEdit,
+  onSaveStylePref,
+  onRemoveStylePref,
+  onCloseStyleEdit,
+  onViewStylePref,
+  onStyleDraftChange,
+  onPhotosChange,
+  onOpenPhoto,
+  showPastExtras,
+}: {
+  row: Row;
+  timeZone: string;
+  salonName?: string | null;
+  slug: string;
+  highlight?: boolean;
+  busyId: string | null;
+  styleEditId: string | null;
+  styleDraft: StylePrefDraft | null;
+  styleBusy: boolean;
+  onOpenStylist: () => void;
+  onCancel: (id: string) => void;
+  onOpenStyleEdit: (row: Row) => void;
+  onSaveStylePref: (id: string) => void;
+  onRemoveStylePref: (id: string) => void;
+  onCloseStyleEdit: () => void;
+  onViewStylePref: (url: string) => void;
+  onStyleDraftChange: (next: StylePrefDraft | null) => void;
+  onPhotosChange: (photos: LookPhoto[]) => void;
+  onOpenPhoto: (photo: LookPhoto) => void;
+  showPastExtras?: boolean;
+}) {
+  const isUpcoming = ["BOOKED", "CHECKED_IN"].includes(row.status);
+  const editing = styleEditId === row.id;
+
+  return (
+    <article
+      data-testid={highlight ? "booking-confirmed" : "booking-card"}
+      className="book-luxe-booking-card"
+    >
+      <div className="flex items-start gap-3">
+        <BookingStylistAvatar stylist={row.stylist} onOpen={onOpenStylist} />
+        <div className="min-w-0 flex-1">
+          <h3 className="book-luxe-booking-card__title font-[family-name:var(--font-display)]">
+            {row.service.name}
+          </h3>
+          <p className="book-luxe-booking-card__stylist">with {row.stylist.name}</p>
+          <div className="book-luxe-booking-card__meta">
+            <p>
+              <IconCalendar className="book-luxe-booking-card__icon" />
+              {formatVisitDate(row.startsAt, timeZone)}
+            </p>
+            <p>
+              <IconClock className="book-luxe-booking-card__icon" />
+              {formatVisitTimeRange(row.startsAt, row.endsAt, timeZone)}
+            </p>
+          </div>
+        </div>
+        {showPastExtras && !isUpcoming ? (
+          <span className={`book-luxe-status ${statusTone(row.status)}`}>
+            {statusLabel(row.status)}
+          </span>
+        ) : null}
+      </div>
+
+      {row.stylePref?.url && !editing ? (
+        <button
+          type="button"
+          onClick={() => onViewStylePref(row.stylePref!.url)}
+          className="book-luxe-booking-style-thumb"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={row.stylePref.url} alt="Preferred look" />
+          <span>
+            Preferred look
+            {row.stylePref.prompt ? ` · ${row.stylePref.prompt}` : ""}
+          </span>
+        </button>
+      ) : null}
+
+      {editing ? (
+        <div className="mt-3 space-y-2">
+          <StylePreviewPanel
+            slug={slug}
+            isMember
+            value={styleDraft}
+            onChange={onStyleDraftChange}
+          />
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={styleBusy || !styleDraft}
+              onClick={() => onSaveStylePref(row.id)}
+              className="book-luxe-booking-action book-luxe-booking-action--solid"
+            >
+              {styleBusy ? "Saving…" : "Save to booking"}
+            </button>
+            {row.stylePref ? (
+              <button
+                type="button"
+                disabled={styleBusy}
+                onClick={() => onRemoveStylePref(row.id)}
+                className="book-luxe-booking-action book-luxe-booking-action--outline"
+              >
+                Remove
+              </button>
+            ) : null}
+            <button
+              type="button"
+              disabled={styleBusy}
+              onClick={onCloseStyleEdit}
+              className="book-luxe-booking-action book-luxe-booking-action--outline"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      ) : isUpcoming ? (
+        <div className="book-luxe-booking-actions">
+          <a
+            href={googleCalendarUrl(row, salonName)}
+            target="_blank"
+            rel="noreferrer"
+            data-testid="booking-add-calendar"
+            className="book-luxe-booking-action book-luxe-booking-action--solid"
+          >
+            <IconCalendarPlus className="h-3.5 w-3.5" />
+            Add to calendar
+          </a>
+          <button
+            type="button"
+            onClick={() => onOpenStyleEdit(row)}
+            className="book-luxe-booking-action book-luxe-booking-action--outline"
+          >
+            <IconEye className="h-3.5 w-3.5" />
+            {row.stylePref ? "Update style preview" : "Add style preview"}
+          </button>
+        </div>
+      ) : null}
+
+      {showPastExtras && (row.canAddPhotos || row.photos.length > 0) ? (
+        <LookPhotoStrip
+          slug={slug}
+          appointmentId={row.id}
+          photos={row.photos}
+          canAdd={row.canAddPhotos}
+          compact
+          onPhotosChange={onPhotosChange}
+          onOpen={onOpenPhoto}
+        />
+      ) : null}
+
+      {row.canCancel ? (
+        <button
+          type="button"
+          disabled={busyId === row.id}
+          onClick={() => onCancel(row.id)}
+          className="book-luxe-booking-cancel"
+        >
+          {busyId === row.id ? "Cancelling…" : "Cancel booking"}
+        </button>
+      ) : null}
+    </article>
+  );
+}
+
+function statusTone(status: string) {
+  if (status === "CANCELLED") return "book-luxe-status--cancelled";
+  if (status === "NO_SHOW") return "book-luxe-status--noshow";
+  return "book-luxe-status--done";
 }
 
 function StylistThumb({
@@ -98,9 +364,11 @@ function StylistThumb({
 }
 
 function StylistProfileCard({
+  slug,
   stylist,
   onClose,
 }: {
+  slug: string;
   stylist: StylistInfo;
   onClose: () => void;
 }) {
@@ -138,7 +406,7 @@ function StylistProfileCard({
             alt={`${stylist.name} photo`}
             width={112}
             height={112}
-            className="h-28 w-28 rounded-full object-cover shadow-[0_12px_40px_rgba(0,0,0,0.25)] ring-[5px] ring-[rgba(201,180,232,0.55)]"
+            className="h-28 w-28 rounded-full object-cover shadow-[0_12px_40px_rgba(0,0,0,0.25)] ring-[5px] ring-[rgb(var(--t-accent-rgb)/0.55)]"
           />
           <h3 className="mt-4 font-[family-name:var(--font-display)] text-3xl leading-tight text-ink">
             {stylist.name}
@@ -174,6 +442,15 @@ function StylistProfileCard({
               “{bio}”
             </p>
           ) : null}
+
+          <div className="mt-5 w-full text-left">
+            <StylistLiveSchedule
+              slug={slug}
+              stylistId={stylist.id}
+              stylistName={stylist.name}
+              compact
+            />
+          </div>
 
           <div className="mt-5 grid w-full gap-2">
             {phone ? (
@@ -244,10 +521,10 @@ export function BookingMyBookings({
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [tab, setTab] = useState<MemberTab>(initialTab);
+  const [visitsSegment, setVisitsSegment] = useState<VisitsSegment>("upcoming");
   const [viewing, setViewing] = useState<{ rowId: string; photoId: string } | null>(
     null
   );
-  const [visitFilter, setVisitFilter] = useState<"upcoming" | "past">("upcoming");
   const [styleEditId, setStyleEditId] = useState<string | null>(null);
   const [styleDraft, setStyleDraft] = useState<StylePrefDraft | null>(null);
   const [styleBusy, setStyleBusy] = useState(false);
@@ -257,7 +534,10 @@ export function BookingMyBookings({
   const confirm = useConfirm();
 
   useEffect(() => {
-    if (open) setTab(initialTab);
+    if (open) {
+      setTab(initialTab);
+      if (initialTab === "visits") setVisitsSegment("upcoming");
+    }
   }, [open, initialTab]);
 
   useEffect(() => {
@@ -418,24 +698,29 @@ export function BookingMyBookings({
 
   const upcoming = useMemo(
     () =>
-      rows.filter(
-        (r) =>
-          ["BOOKED", "CHECKED_IN"].includes(r.status) &&
-          new Date(r.startsAt).getTime() >= Date.now() - 60_000
-      ),
+      rows
+        .filter(
+          (r) =>
+            ["BOOKED", "CHECKED_IN"].includes(r.status) &&
+            new Date(r.startsAt).getTime() >= Date.now() - 60_000
+        )
+        .sort(
+          (a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime()
+        ),
     [rows]
   );
   const past = useMemo(
-    () => rows.filter((r) => !upcoming.includes(r)),
+    () =>
+      rows
+        .filter((r) => !upcoming.some((u) => u.id === r.id))
+        .sort(
+          (a, b) => new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime()
+        ),
     [rows, upcoming]
   );
   const photoVisits = useMemo(
     () => past.filter((r) => r.canAddPhotos || r.photos.length > 0),
     [past]
-  );
-  const photoCount = useMemo(
-    () => rows.reduce((sum, r) => sum + r.photos.length, 0),
-    [rows]
   );
 
   const viewingRow = viewing ? rows.find((r) => r.id === viewing.rowId) ?? null : null;
@@ -443,6 +728,31 @@ export function BookingMyBookings({
     viewingRow?.photos.find((p) => p.id === viewing?.photoId) ?? null;
 
   if (!open) return null;
+
+  const cardProps = (r: Row, highlight?: boolean) => ({
+    row: r,
+    timeZone: timezone || "America/Toronto",
+    salonName,
+    slug,
+    highlight,
+    busyId,
+    styleEditId,
+    styleDraft,
+    styleBusy,
+    onOpenStylist: () => setStylistCard(r.stylist),
+    onCancel: cancel,
+    onOpenStyleEdit: openStyleEdit,
+    onSaveStylePref: (id: string) => void saveStylePref(id),
+    onRemoveStylePref: (id: string) => void removeStylePref(id),
+    onCloseStyleEdit: () => {
+      setStyleEditId(null);
+      setStyleDraft(null);
+    },
+    onViewStylePref: setStyleViewer,
+    onStyleDraftChange: setStyleDraft,
+    onPhotosChange: (photos: LookPhoto[]) => setPhotos(r.id, photos),
+    onOpenPhoto: (photo: LookPhoto) => setViewing({ rowId: r.id, photoId: photo.id }),
+  });
 
   function dateLine(r: Row, withTime: boolean) {
     return new Date(r.startsAt).toLocaleString("en-CA", {
@@ -456,81 +766,31 @@ export function BookingMyBookings({
     });
   }
 
-  function timeLine(r: Row) {
-    return new Date(r.startsAt).toLocaleTimeString("en-CA", {
-      hour: "numeric",
-      minute: "2-digit",
-      timeZone: timezone,
-    });
-  }
-
-  function statusTone(status: string) {
-    if (status === "CANCELLED") return "book-luxe-status--cancelled";
-    if (status === "NO_SHOW") return "book-luxe-status--noshow";
-    return "book-luxe-status--done";
-  }
-
   return (
-    <LuxeSheet label={tab === "visits" ? "My bookings" : "My look book"}>
+    <LuxeSheet label={tab === "visits" ? "My bookings" : "BeautyAI"}>
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="shrink-0 px-5 pt-[max(0.85rem,env(safe-area-inset-top))]">
-          <div className="flex items-start justify-between gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--champagne)]/45 text-champagne"
-              aria-label="Close"
-            >
-              ←
-            </button>
-            <div className="min-w-0 text-center">
-              <h2 className="book-luxe-title text-3xl">
-                {tab === "visits" ? "My Bookings" : "My Look Book"}
-              </h2>
-              <LuxeOrnament className="mx-auto mt-2 max-w-[8rem]" />
-              {tab === "lookbook" ? (
-                <p className="book-luxe-kicker mt-2">Your past visits & style journey</p>
-              ) : null}
-            </div>
-            <span className="h-9 w-9" aria-hidden />
-          </div>
-
-          <div className="mt-4 flex gap-1 rounded-full border border-[color:var(--line)] p-1">
-            <button
-              type="button"
-              onClick={() => setTab("visits")}
-              data-testid="member-tab-visits"
-              className={`flex-1 rounded-full px-3 py-2 text-sm font-semibold transition ${
-                tab === "visits" ? "bg-[rgb(var(--t-accent-rgb)/0.16)] text-champagne" : "text-muted"
-              }`}
-            >
-              Visits
-            </button>
-            <button
-              type="button"
-              onClick={() => setTab("lookbook")}
-              data-testid="member-tab-lookbook"
-              className={`flex-1 rounded-full px-3 py-2 text-sm font-semibold transition ${
-                tab === "lookbook" ? "bg-[rgb(var(--t-accent-rgb)/0.16)] text-champagne" : "text-muted"
-              }`}
-            >
-              Look book{photoCount ? ` · ${photoCount}` : ""}
-            </button>
+          <div className="book-luxe-bookings-header">
+            <h2 className="book-luxe-bookings-header__title font-[family-name:var(--font-display)]">
+              {tab === "visits" ? "My Bookings" : "BeautyAI"}
+            </h2>
           </div>
 
           {tab === "visits" ? (
-            <div className="book-luxe-tabs mt-4">
+            <div className="book-luxe-segment mt-4">
               <button
                 type="button"
-                className={visitFilter === "upcoming" ? "is-on" : ""}
-                onClick={() => setVisitFilter("upcoming")}
+                onClick={() => setVisitsSegment("upcoming")}
+                data-testid="member-tab-upcoming"
+                className={visitsSegment === "upcoming" ? "is-on" : ""}
               >
                 Upcoming
               </button>
               <button
                 type="button"
-                className={visitFilter === "past" ? "is-on" : ""}
-                onClick={() => setVisitFilter("past")}
+                onClick={() => setVisitsSegment("past")}
+                data-testid="member-tab-past"
+                className={visitsSegment === "past" ? "is-on" : ""}
               >
                 Past
               </button>
@@ -543,182 +803,30 @@ export function BookingMyBookings({
           {error ? <p className="mb-3 text-sm text-[#f5a8a8]">{error}</p> : null}
 
           {tab === "visits" ? (
-            <>
-              {visitFilter === "upcoming" ? (
-                <section className="space-y-3">
-                  {upcoming.length === 0 ? (
-                    <p className="text-sm text-muted">No upcoming visits.</p>
-                  ) : (
-                    upcoming.map((r) => (
-                      <div
-                        key={r.id}
-                        data-testid={
-                          highlightId === r.id ? "booking-confirmed" : "booking-card"
-                        }
-                        className="book-luxe-card rounded-2xl px-4 py-4"
-                      >
-                        <div className="flex items-start gap-3">
-                          <StylistThumb
-                            stylist={r.stylist}
-                            onOpen={() => setStylistCard(r.stylist)}
-                          />
-                          <div className="min-w-0 flex-1">
-                            <p className="font-[family-name:var(--font-display)] text-xl leading-tight">
-                              {r.service.name}
-                            </p>
-                            <p className="mt-1 flex items-center gap-1 text-sm text-muted">
-                              with {r.stylist.name}
-                              <LuxeCrown className="h-3.5 w-3.5 text-[#8a6a3e]" />
-                            </p>
-                            <div className="mt-3 space-y-1 border-t border-[#d4b483]/40 pt-2 text-sm">
-                              <p>{dateLine(r, true)}</p>
-                              <p>{timeLine(r)}</p>
-                            </div>
-                          </div>
-                          <span className="text-lg text-[#c9a87c]" aria-hidden>
-                            ›
-                          </span>
-                        </div>
-                        {r.stylePref?.url && styleEditId !== r.id ? (
-                          <button
-                            type="button"
-                            onClick={() => setStyleViewer(r.stylePref!.url)}
-                            className="mt-3 flex w-full items-center gap-2 text-left"
-                          >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={r.stylePref.url}
-                              alt="Preferred look"
-                              className="h-12 w-12 rounded-lg object-cover ring-1 ring-[#d4b483]/45"
-                            />
-                            <p className="text-xs text-muted">
-                              Preferred look
-                              {r.stylePref.prompt ? ` · ${r.stylePref.prompt}` : ""}
-                              <span className="mt-0.5 block font-semibold">Tap to view</span>
-                            </p>
-                          </button>
-                        ) : null}
-
-                        {styleEditId === r.id ? (
-                          <div className="mt-3 space-y-2">
-                            <StylePreviewPanel
-                              slug={slug}
-                              isMember
-                              value={styleDraft}
-                              onChange={setStyleDraft}
-                            />
-                            <div className="flex flex-wrap gap-2">
-                              <button
-                                type="button"
-                                disabled={styleBusy || !styleDraft}
-                                onClick={() => void saveStylePref(r.id)}
-                                className="btn-solid rounded-full px-4 py-2 text-xs font-semibold disabled:opacity-60"
-                              >
-                                {styleBusy ? "Saving…" : "Save to booking"}
-                              </button>
-                              {r.stylePref ? (
-                                <button
-                                  type="button"
-                                  disabled={styleBusy}
-                                  onClick={() => void removeStylePref(r.id)}
-                                  className="rounded-full border border-[rgba(245,168,168,0.4)] px-4 py-2 text-xs font-semibold text-[#b54a3c]"
-                                >
-                                  Remove
-                                </button>
-                              ) : null}
-                              <button
-                                type="button"
-                                disabled={styleBusy}
-                                onClick={() => {
-                                  setStyleEditId(null);
-                                  setStyleDraft(null);
-                                }}
-                                className="rounded-full border border-[#d4b483]/50 px-4 py-2 text-xs font-semibold"
-                              >
-                                Close editor
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="mt-3 flex flex-wrap gap-2">
-                            <a
-                              href={googleCalendarUrl(r, salonName)}
-                              target="_blank"
-                              rel="noreferrer"
-                              data-testid="booking-add-calendar"
-                              className="btn-solid inline-flex rounded-full px-3 py-1.5 text-xs font-semibold"
-                            >
-                              Add to calendar
-                            </a>
-                            <button
-                              type="button"
-                              onClick={() => openStyleEdit(r)}
-                              className="rounded-full border border-[#d4b483]/50 px-3 py-1.5 text-xs font-semibold"
-                            >
-                              {r.stylePref ? "Update style preview" : "Add style preview"}
-                            </button>
-                          </div>
-                        )}
-
-                        {r.canCancel ? (
-                          <button
-                            type="button"
-                            disabled={busyId === r.id}
-                            onClick={() => cancel(r.id)}
-                            className="mt-3 rounded-full border border-[rgba(181,74,60,0.4)] px-3 py-1.5 text-xs font-semibold text-[#b54a3c]"
-                          >
-                            {busyId === r.id ? "Cancelling…" : "Cancel booking"}
-                          </button>
-                        ) : null}
-                      </div>
-                    ))
-                  )}
-                </section>
+            <section className="space-y-3 pb-4">
+              {visitsSegment === "upcoming" ? (
+                upcoming.length === 0 ? (
+                  <p className="text-sm text-muted">No upcoming visits.</p>
+                ) : (
+                  upcoming.map((r) => (
+                    <VisitBookingCard
+                      key={r.id}
+                      {...cardProps(r, highlightId === r.id)}
+                    />
+                  ))
+                )
+              ) : past.length === 0 ? (
+                <p className="text-sm text-muted">No past visits yet.</p>
               ) : (
-                <section className="space-y-3">
-                  {past.length === 0 ? (
-                    <p className="text-sm text-muted">No past visits yet.</p>
-                  ) : (
-                    past.slice(0, 12).map((r) => (
-                      <div key={r.id} className="book-luxe-card rounded-2xl px-4 py-3">
-                        <div className="flex items-start gap-3">
-                          <StylistThumb
-                            stylist={r.stylist}
-                            onOpen={() => setStylistCard(r.stylist)}
-                          />
-                          <div className="min-w-0 flex-1">
-                            <p className="font-[family-name:var(--font-display)] text-lg leading-tight">
-                              {r.service.name}
-                            </p>
-                            <p className="mt-0.5 flex items-center gap-1 text-xs text-muted">
-                              with {r.stylist.name}
-                              <LuxeCrown className="h-3 w-3 text-[#8a6a3e]" />
-                            </p>
-                            <p className="mt-1 text-xs text-muted">
-                              {dateLine(r, false)} · {timeLine(r)}
-                            </p>
-                          </div>
-                          <span className={`book-luxe-status ${statusTone(r.status)}`}>
-                            {statusLabel(r.status)}
-                          </span>
-                        </div>
-                        {r.canAddPhotos || r.photos.length > 0 ? (
-                          <LookPhotoStrip
-                            slug={slug}
-                            appointmentId={r.id}
-                            photos={r.photos}
-                            canAdd={r.canAddPhotos}
-                            compact
-                            onPhotosChange={(photos) => setPhotos(r.id, photos)}
-                            onOpen={(photo) => setViewing({ rowId: r.id, photoId: photo.id })}
-                          />
-                        ) : null}
-                      </div>
-                    ))
-                  )}
-                </section>
+                past.slice(0, 12).map((r) => (
+                  <VisitBookingCard
+                    key={r.id}
+                    {...cardProps(r)}
+                    showPastExtras
+                  />
+                ))
               )}
-            </>
+            </section>
           ) : (
             <>
               <div className="mt-1">
@@ -735,11 +843,11 @@ export function BookingMyBookings({
               </div>
 
               {photoVisits.length === 0 ? (
-                <div className="book-luxe-empty mt-6 px-4 py-8 text-center">
+                <div className="book-luxe-empty book-luxe-empty--dark mt-6 px-4 py-8 text-center">
                   <span className="book-luxe-empty__plus" aria-hidden>
                     +
                   </span>
-                  <p className="mt-2 text-sm font-semibold">Your look book is waiting</p>
+                  <p className="mt-2 text-sm font-semibold">BeautyAI is ready for you</p>
                   <p className="text-xs">Visit photos appear here after your first appointment.</p>
                 </div>
               ) : (
@@ -820,6 +928,7 @@ export function BookingMyBookings({
 
       {stylistCard ? (
         <StylistProfileCard
+          slug={slug}
           stylist={stylistCard}
           onClose={() => setStylistCard(null)}
         />

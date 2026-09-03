@@ -10,16 +10,25 @@ import { BookingMyBookings, MemberTab } from "./BookingMyBookings";
 import { BookingProfile } from "./BookingProfile";
 import { BookingRewards } from "./BookingRewards";
 import { BookClient, ClientMemberBar } from "./ClientMemberBar";
-import { StylePrefDraft } from "./StylePreviewPanel";
-import { clearStyleDraft, readStyleDraft } from "./style-draft-storage";
-import { BOOK_NOTIFY_EVENT } from "./BookMarketNav";
+import { StylePrefDraft, StylePreviewPanel } from "./StylePreviewPanel";
+import { StylistLiveSchedule, StylistScheduleSheet } from "./StylistLiveSchedule";
+import { clearStyleDraft, readStyleDraft, writeStyleDraft } from "./style-draft-storage";
 import { SettingToggle } from "@/components/admin/SettingToggle";
 import { GoldLogoLoader } from "@/components/GoldLogoSpin";
 import { serviceIconSrc } from "@/lib/service-icons";
 import {
+  BookingConfirmedOverlay,
+  BookingDateStrip,
+  BookingStepper,
+  BookingSummaryCard,
+  formatBookingSummaryDate,
+  formatBookingSummaryTime,
+  LuxeContinueButton,
+  LuxeStepContinueButton,
   LuxeCrown,
   LuxeOrnament,
   LuxeSparkle,
+  LuxeStarRow,
   MemberBadge,
   memberTierFromPoints,
   memberTierLabel,
@@ -183,7 +192,7 @@ function PostBookJoin({
   );
 }
 
-export function BookingWizard({ slug }: { slug: string }) {
+export function BookingWizard({ slug, coverUrl }: { slug: string; coverUrl?: string }) {
   const [salon, setSalon] = useState<Salon | null>(null);
   const [services, setServices] = useState<Service[]>([]);
   const [stylists, setStylists] = useState<Stylist[]>([]);
@@ -219,6 +228,15 @@ export function BookingWizard({ slug }: { slug: string }) {
     startsAt: string;
     priceCents?: number;
     durationMin?: number;
+  } | null>(null);
+  const [focusedStep, setFocusedStep] = useState(0);
+  const [providerPickToken, setProviderPickToken] = useState(0);
+  const [scheduleStylist, setScheduleStylist] = useState<Stylist | null>(null);
+  const [bookQuote, setBookQuote] = useState<{
+    catalogSubtotalCents: number;
+    discountCents: number;
+    discountLabel: string | null;
+    chargedCents: number;
   } | null>(null);
 
   const wasMember = useRef(false);
@@ -265,6 +283,10 @@ export function BookingWizard({ slug }: { slug: string }) {
       cancelled = true;
     };
   }, [slug, client, rewardsOpen, profileOpen, justBooked]);
+
+  useEffect(() => {
+    if (client) setJoinPrompt(false);
+  }, [client]);
 
   useEffect(() => {
     const draft = readStyleDraft(slug);
@@ -410,6 +432,37 @@ export function BookingWizard({ slug }: { slug: string }) {
   const activeStep =
     serviceIds.length === 0 ? 0 : !stylistId ? 1 : !startsAt ? 2 : 3;
 
+  const salonTz = salon?.timezone || "America/Toronto";
+
+  useEffect(() => {
+    if (focusedStep !== 3 || serviceIds.length === 0) {
+      setBookQuote(null);
+      return;
+    }
+    let cancelled = false;
+    const q = new URLSearchParams({ serviceIds: serviceIds.join(",") });
+    fetch(`/api/public/${slug}/book/quote?${q}`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!cancelled) setBookQuote(data?.quote ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setBookQuote(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [focusedStep, slug, serviceIds, client]);
+
+  useEffect(() => {
+    setFocusedStep((f) => Math.min(f, activeStep));
+  }, [activeStep]);
+
+  function advanceStep(next: number) {
+    setFocusedStep(next);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   function toggleService(id: string) {
     setServiceIds((prev) => {
       const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
@@ -420,20 +473,18 @@ export function BookingWizard({ slug }: { slug: string }) {
   }
 
   function goToStep(i: number) {
-    if (i <= 0) {
-      setServiceIds([]);
-      setStylistId("");
-      setStartsAt("");
-      return;
-    }
-    if (i === 1) {
-      setStylistId("");
-      setStartsAt("");
-      return;
-    }
-    if (i === 2) {
-      setStartsAt("");
-    }
+    setFocusedStep(i);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  useEffect(() => {
+    if (focusedStep === 1) setProviderPickToken(0);
+  }, [focusedStep]);
+
+  function selectProvider(id: string) {
+    setStylistId(id);
+    setStartsAt("");
+    if (focusedStep === 1) setProviderPickToken((t) => t + 1);
   }
 
   async function submit(e: React.FormEvent) {
@@ -463,8 +514,18 @@ export function BookingWizard({ slug }: { slug: string }) {
             : null,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(typeof data.error === "string" ? data.error : "Booking failed");
+      const text = await res.text();
+      const data = text ? (JSON.parse(text) as Record<string, unknown>) : {};
+      if (!res.ok) {
+        const err = data.error;
+        throw new Error(
+          typeof err === "string"
+            ? err
+            : res.status === 409
+              ? "That time was just taken. Pick another slot."
+              : "Booking failed"
+        );
+      }
       try {
         navigator.vibrate?.([18, 40, 24]);
       } catch {
@@ -476,7 +537,7 @@ export function BookingWizard({ slug }: { slug: string }) {
       setStartsAt("");
       setNotes("");
       setStylePref(null);
-      setJoinPrompt(Boolean(data.suggestJoin && saveAsMember && email));
+      setJoinPrompt(Boolean(!client && data.suggestJoin && saveAsMember && email));
 
       const booked = {
         id: data.appointment.id as string,
@@ -487,15 +548,7 @@ export function BookingWizard({ slug }: { slug: string }) {
         durationMin: data.appointment.durationMin as number | undefined,
       };
 
-      if (client) {
-        setJustBooked(booked);
-        setMemberTab("visits");
-        setShowBookings(true);
-        setProfileOpen(false);
-        setRewardsOpen(false);
-      } else {
-        setJustBooked(booked);
-      }
+      setJustBooked(booked);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Booking failed");
     } finally {
@@ -526,21 +579,6 @@ export function BookingWizard({ slug }: { slug: string }) {
     setMemberTab(tab);
     setShowBookings(true);
   }
-
-  useEffect(() => {
-    function onNotify() {
-      if (!client) {
-        requestMemberForm("signin");
-        return;
-      }
-      setProfileOpen(false);
-      setRewardsOpen(false);
-      setMemberTab("visits");
-      setShowBookings(true);
-    }
-    window.addEventListener(BOOK_NOTIFY_EVENT, onNotify);
-    return () => window.removeEventListener(BOOK_NOTIFY_EVENT, onNotify);
-  }, [client]);
 
   function selectTab(key: BookTabKey) {
     if (key === "book") {
@@ -597,6 +635,7 @@ export function BookingWizard({ slug }: { slug: string }) {
         salonName={salon?.name}
         open={rewardsOpen}
         signedIn={Boolean(client)}
+        photoUrl={client?.photoUrl}
         onClose={() => setRewardsOpen(false)}
         onSignInRequest={() => {
           setRewardsOpen(false);
@@ -622,114 +661,30 @@ export function BookingWizard({ slug }: { slug: string }) {
         badge={{ visits: counts.upcoming, lookbook: counts.photos }}
         onSelect={selectTab}
       />
+      <StylistScheduleSheet
+        open={Boolean(scheduleStylist)}
+        onClose={() => setScheduleStylist(null)}
+        slug={slug}
+        stylistId={scheduleStylist?.id || ""}
+        stylistName={scheduleStylist?.name || ""}
+        photoUrl={scheduleStylist?.photoUrl}
+        bio={scheduleStylist?.bio}
+        date={date || undefined}
+        onBook={
+          scheduleStylist
+            ? () => {
+                selectProvider(scheduleStylist.id);
+                setScheduleStylist(null);
+                advanceStep(2);
+              }
+            : undefined
+        }
+      />
     </>
   );
 
   if (loading) {
     return <GoldLogoLoader size={80} label="Loading booking" />;
-  }
-
-  if (justBooked && !client) {
-    const endsAt = new Date(
-      new Date(justBooked.startsAt).getTime() +
-        (justBooked.durationMin || selectedTotalMin || 30) * 60000
-    );
-    const start = new Date(justBooked.startsAt)
-      .toISOString()
-      .replace(/[-:]/g, "")
-      .replace(/\.\d{3}Z$/, "Z");
-    const end = endsAt
-      .toISOString()
-      .replace(/[-:]/g, "")
-      .replace(/\.\d{3}Z$/, "Z");
-    const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
-      `${justBooked.service} at ${salon?.name || "Salon"}`
-    )}&dates=${start}/${end}&details=${encodeURIComponent(`with ${justBooked.stylist}`)}`;
-    const when = new Date(justBooked.startsAt).toLocaleString("en-CA", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      timeZone: salon?.timezone,
-    });
-    const timeOnly = new Date(justBooked.startsAt).toLocaleTimeString("en-CA", {
-      hour: "numeric",
-      minute: "2-digit",
-      timeZone: salon?.timezone,
-    });
-
-    return (
-      <div className="space-y-5 pb-24">
-        <div
-          data-testid="booking-confirmed"
-          className="book-luxe-card rounded-2xl px-4 py-4"
-        >
-          <div className="flex items-start gap-3">
-            <div className="min-w-0 flex-1">
-              <p className="font-[family-name:var(--font-display)] text-xl leading-tight">
-                {justBooked.service}
-              </p>
-              <p className="mt-1 flex items-center gap-1 text-sm text-muted">
-                with {justBooked.stylist}
-                <LuxeCrown className="h-3.5 w-3.5 text-[#8a6a3e]" />
-              </p>
-              <div className="mt-3 space-y-1 border-t border-[#d4b483]/40 pt-2 text-sm">
-                <p>{when}</p>
-                <p>{timeOnly}</p>
-              </div>
-            </div>
-            <span className="text-lg text-[#c9a87c]" aria-hidden>
-              ›
-            </span>
-          </div>
-          {stylePref?.imageBase64 ? (
-            <div className="mt-3 flex items-center gap-2">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={stylePref.imageBase64}
-                alt=""
-                className="h-12 w-12 rounded-lg object-cover ring-1 ring-[#d4b483]/45"
-              />
-              <p className="text-xs text-muted">
-                Preferred look
-                <span className="mt-0.5 block font-semibold">Shared with your stylist</span>
-              </p>
-            </div>
-          ) : null}
-          <div className="mt-3 flex flex-wrap gap-2">
-            <a
-              href={calendarUrl}
-              target="_blank"
-              rel="noreferrer"
-              data-testid="booking-add-calendar"
-              className="btn-solid inline-flex rounded-full px-3 py-1.5 text-xs font-semibold"
-            >
-              Add to calendar
-            </a>
-          </div>
-        </div>
-
-        {joinPrompt ? (
-          <PostBookJoin
-            slug={slug}
-            name={name}
-            phone={phone}
-            email={email}
-            onJoined={(c) => {
-              onClientChange(c);
-              setJoinPrompt(false);
-              setJustBooked((prev) => prev);
-              setMemberTab("visits");
-              setShowBookings(true);
-            }}
-            onSkip={() => setJoinPrompt(false)}
-          />
-        ) : null}
-
-        {appChrome}
-      </div>
-    );
   }
 
   return (
@@ -750,13 +705,13 @@ export function BookingWizard({ slug }: { slug: string }) {
           onClick={() => setProfileOpen(true)}
           className="book-luxe-member mb-4 w-full text-left"
         >
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[color:var(--champagne)]/55 font-[family-name:var(--font-display)] text-lg text-champagne">
-            {client.name
-              .split(" ")
-              .map((p) => p[0])
-              .join("")
-              .slice(0, 2)
-              .toUpperCase()}
+          <span className="book-luxe-member__avatar shrink-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={client.photoUrl || "/avatars/client-neutral.svg"}
+              alt=""
+              className="h-full w-full rounded-full object-cover"
+            />
           </span>
           <span className="min-w-0 flex-1">
             <span className="block text-[11px] text-muted">Member</span>
@@ -773,114 +728,96 @@ export function BookingWizard({ slug }: { slug: string }) {
         </button>
       ) : null}
 
-      <form onSubmit={submit} className="mt-5 space-y-8 pb-52">
-        <div className="flex flex-wrap gap-2">
-          {STEPS.map((label, i) => {
-            const reachable =
-              i === 0 ||
-              (i === 1 && serviceIds.length > 0) ||
-              (i === 2 && stylistId) ||
-              (i === 3 && startsAt) ||
-              i < activeStep;
-            return (
-              <button
-                key={label}
-                type="button"
-                disabled={!reachable && i > activeStep}
-                onClick={() => {
-                  if (i < activeStep) goToStep(i);
-                }}
-                className={`book-step ${
-                  i === activeStep ? "is-active" : i < activeStep ? "is-done" : ""
-                }`}
-              >
-                <span aria-hidden>{i < activeStep ? "✓" : i + 1}</span>
-                {label}
-              </button>
-            );
-          })}
-        </div>
+      <form onSubmit={submit} className="mt-5 space-y-6 pb-52">
+        <BookingStepper
+          steps={STEPS}
+          activeIndex={focusedStep}
+          onStepClick={(i) => {
+            goToStep(i);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+        />
 
-        <section className="space-y-4">
-          <div className="text-center">
-            <h2 className="book-luxe-title font-[family-name:var(--font-display)] text-3xl">
-              Choose services
-            </h2>
-            <LuxeOrnament className="mx-auto mt-3 max-w-[11rem]" />
-            <p className="book-luxe-kicker mt-3">
-              Select services for a perfect experience
-            </p>
-          </div>
-          {serviceGroups.map((group) => (
-            <div key={group.key} className="space-y-2">
-              <h3 className="flex items-center gap-2 font-[family-name:var(--font-display)] text-lg text-white">
-                <LuxeSparkle className="h-3 w-3 text-champagne" />
-                {group.label}
-              </h3>
-              <div className="grid gap-2">
-                {group.items.map((s) => {
-                  const selected = serviceIds.includes(s.id);
-                  return (
-                    <button
-                      key={s.id}
-                      type="button"
-                      onClick={() => toggleService(s.id)}
-                      aria-pressed={selected}
-                      className={`book-luxe-card rounded-[1.15rem] px-3.5 py-3.5 text-left ${
-                        selected ? "is-selected" : ""
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="book-luxe-service-icon" aria-hidden>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={serviceIconSrc(s.name)} alt="" />
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block font-[family-name:var(--font-display)] text-[1.05rem] leading-tight">
-                            {s.name}
-                          </span>
-                          <span className="mt-0.5 block text-sm text-muted">
-                            {s.durationMin} min
-                          </span>
-                        </span>
-                        <span className="shrink-0 font-[family-name:var(--font-display)] text-[1.15rem]">
-                          {formatCad(s.priceCents)}
-                        </span>
-                        <span
-                          className={`book-luxe-radio ${selected ? "is-on" : ""}`}
-                          aria-hidden
-                        />
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
+        {focusedStep === 0 ? (
+          <section className="space-y-4">
+            <div className="text-center">
+              <h2 className="book-luxe-title font-[family-name:var(--font-display)] text-3xl">
+                Choose services
+              </h2>
+              <LuxeOrnament className="mx-auto mt-3 max-w-[11rem]" />
+              <p className="book-luxe-kicker mt-3">
+                Select services for a perfect experience
+              </p>
             </div>
-          ))}
-          {serviceIds.length > 0 ? (
-            <p className="text-sm text-[#e0d0f5]">
-              {serviceIds.length} selected · {selectedTotalMin} min ·{" "}
-              {formatCad(selectedTotalCents)}
-            </p>
-          ) : null}
-        </section>
+            {serviceGroups.map((group) => (
+              <div key={group.key} className="space-y-2">
+                <h3 className="flex items-center gap-2 font-[family-name:var(--font-display)] text-lg text-champagne">
+                  <LuxeSparkle className="h-3 w-3" />
+                  {group.label}
+                </h3>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {group.items.map((s) => {
+                    const selected = serviceIds.includes(s.id);
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => toggleService(s.id)}
+                        aria-pressed={selected}
+                        className={`book-luxe-card rounded-[1.15rem] px-3.5 py-3.5 text-left ${
+                          selected ? "is-selected" : ""
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="book-luxe-service-icon" aria-hidden>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={serviceIconSrc(s.name)} alt="" />
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block font-[family-name:var(--font-display)] text-[1.02rem] leading-tight">
+                              {s.name}
+                            </span>
+                            <span className="mt-0.5 block text-sm text-muted">
+                              {s.durationMin} min
+                            </span>
+                          </span>
+                          <span
+                            className={`book-luxe-radio ${selected ? "is-on" : ""}`}
+                            aria-hidden
+                          />
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+            {serviceIds.length > 0 ? (
+              <p className="text-center text-sm text-muted">
+                {serviceIds.length} selected · {selectedTotalMin} min ·{" "}
+                {formatCad(selectedTotalCents)}
+              </p>
+            ) : null}
+            <LuxeStepContinueButton
+              fromLabel="Service"
+              toLabel="Provider"
+              ready={serviceIds.length > 0}
+              onAdvance={() => advanceStep(1)}
+              autoAdvance={false}
+            />
+          </section>
+        ) : null}
 
-        {serviceIds.length > 0 ? (
-          <section className="space-y-3">
-            <div className="flex flex-wrap items-end justify-between gap-2">
-              <h2 className="font-[family-name:var(--font-display)] text-2xl">
+        {focusedStep === 1 ? (
+          <section className="space-y-4">
+            <div className="text-center">
+              <h2 className="book-luxe-title font-[family-name:var(--font-display)] text-3xl">
                 Choose your provider
               </h2>
-              <button
-                type="button"
-                className="text-xs font-semibold text-champagne underline-offset-2 hover:underline"
-                onClick={() => goToStep(0)}
-              >
-                Change services
-              </button>
+              <LuxeOrnament className="mx-auto mt-3 max-w-[11rem]" />
             </div>
             {filteredStylists.length === 0 ? (
-              <div className="book-card rounded-2xl px-4 py-5 text-sm text-muted">
+              <div className="book-luxe-card rounded-2xl px-4 py-5 text-sm text-muted">
                 No provider is available for this selection yet.{" "}
                 <button
                   type="button"
@@ -892,259 +829,302 @@ export function BookingWizard({ slug }: { slug: string }) {
                 , or refresh the page and try again.
               </div>
             ) : (
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-2.5">
                 <button
                   type="button"
-                  onClick={() => {
-                    setStylistId(ANY_STYLIST_ID);
-                    setStartsAt("");
-                  }}
-                  className={`book-card rounded-2xl px-4 py-4 text-left sm:col-span-2 ${
+                  onClick={() => selectProvider(ANY_STYLIST_ID)}
+                  className={`book-luxe-provider ${
                     stylistId === ANY_STYLIST_ID ? "is-selected" : ""
                   }`}
                 >
-                  <p className="font-semibold">Any available provider</p>
-                  <p className="mt-1 text-sm text-muted">
-                    We’ll match you to the first open chair for your time.
-                  </p>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-[family-name:var(--font-display)] text-lg text-champagne">
+                        Any available provider
+                      </p>
+                      <p className="mt-1 text-sm text-muted">
+                        We&apos;ll match you to the first open chair for your time.
+                      </p>
+                    </div>
+                    <span
+                      className={`book-luxe-radio ${stylistId === ANY_STYLIST_ID ? "is-on" : ""}`}
+                      aria-hidden
+                    />
+                  </div>
                 </button>
-                {filteredStylists.map((s) => (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => {
-                      setStylistId(s.id);
-                      setStartsAt("");
-                    }}
-                    className={`book-card rounded-2xl px-4 py-4 text-left ${
-                      stylistId === s.id ? "is-selected" : ""
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={s.photoUrl || "/avatars/stylist-neutral.svg"}
-                        alt={`${s.name} photo`}
-                        width={56}
-                        height={56}
-                        className="h-14 w-14 shrink-0 rounded-full object-cover ring-2 ring-[#e0d0f5]/35"
-                      />
-                      <div className="min-w-0">
-                        <p className="flex items-center gap-2 font-semibold">
-                          <span
-                            className="inline-block h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-[#e0d0f5]/50"
-                            style={{ background: s.color }}
-                            aria-hidden
+                {filteredStylists.map((s) => {
+                  const selected = stylistId === s.id;
+                  return (
+                    <div
+                      key={s.id}
+                      className={`book-luxe-provider ${selected ? "is-selected" : ""}`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => selectProvider(s.id)}
+                        className="flex w-full items-center gap-3 text-left"
+                      >
+                        <span className="book-luxe-glow-avatar shrink-0">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={s.photoUrl || "/avatars/stylist-neutral.svg"}
+                            alt=""
+                            width={52}
+                            height={52}
+                            className="h-[3.25rem] w-[3.25rem] rounded-full object-cover"
                           />
-                          {s.name}
-                        </p>
-                        {s.bio ? <p className="mt-1 text-sm text-muted">{s.bio}</p> : null}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block font-[family-name:var(--font-display)] text-lg text-champagne">
+                            {s.name}
+                          </span>
+                          {s.bio ? (
+                            <span className="mt-0.5 block text-sm text-muted">{s.bio}</span>
+                          ) : null}
+                          <LuxeStarRow className="mt-1.5" />
+                        </span>
+                        <span
+                          className={`book-luxe-radio ${selected ? "is-on" : ""}`}
+                          aria-hidden
+                        />
+                      </button>
+                      <div className="mt-2 flex justify-end border-t border-[color:var(--line)] pt-2">
+                        <button
+                          type="button"
+                          onClick={() => setScheduleStylist(s)}
+                          className="text-xs font-semibold text-champagne underline-offset-2 hover:underline"
+                          data-testid={`stylist-schedule-${s.id}`}
+                        >
+                          Live schedule
+                        </button>
                       </div>
                     </div>
-                  </button>
-                ))}
+                  );
+                })}
               </div>
             )}
+            <LuxeStepContinueButton
+              fromLabel="Provider"
+              toLabel="Time"
+              ready={providerPickToken > 0}
+              onAdvance={() => advanceStep(2)}
+            />
           </section>
         ) : null}
 
-        {stylistId ? (
-          <section className="space-y-3">
-            <div className="flex flex-wrap items-end justify-between gap-2">
-              <h2 className="font-[family-name:var(--font-display)] text-2xl">Pick a time</h2>
-              <button
-                type="button"
-                className="text-xs font-semibold text-champagne underline-offset-2 hover:underline"
-                onClick={() => goToStep(1)}
-              >
-                Change stylist
-              </button>
+        {focusedStep === 2 ? (
+          <section className="space-y-4">
+            <div className="text-center">
+              <h2 className="book-luxe-title font-[family-name:var(--font-display)] text-3xl">
+                Pick a time
+              </h2>
+              <LuxeOrnament className="mx-auto mt-3 max-w-[11rem]" />
+              {selectedStylist ? (
+                <p className="book-luxe-kicker mt-3">with {selectedStylist.name}</p>
+              ) : stylistId === ANY_STYLIST_ID ? (
+                <p className="book-luxe-kicker mt-3">Any available provider</p>
+              ) : null}
             </div>
-            <input
-              type="date"
-              value={date}
-              min={minDate}
-              onChange={(e) => {
-                const next = e.target.value;
-                if (!next) return;
+            <BookingDateStrip
+              selected={date}
+              timeZone={salonTz}
+              minDate={minDate}
+              onSelect={(next) => {
                 setDate(next);
                 setStartsAt("");
               }}
-              onClick={(e) => {
-                try {
-                  e.currentTarget.showPicker?.();
-                } catch {
-                  /* native icon still works */
-                }
-              }}
-              className="w-full rounded-2xl border border-ink/15 px-4 py-3"
             />
+            {selectedStylist ? (
+              <StylistLiveSchedule
+                slug={slug}
+                stylistId={selectedStylist.id}
+                stylistName={selectedStylist.name}
+                date={date}
+                compact
+              />
+            ) : null}
             {slots.length > 0 ? (
               <button
                 type="button"
                 onClick={pickNextSlot}
-                className="rounded-full border border-[rgba(201,180,232,0.4)] px-4 py-2 text-xs font-semibold text-[#e0d0f5]"
+                className="w-full rounded-full border border-champagne/35 px-4 py-2 text-xs font-semibold text-champagne"
               >
                 Next available ·{" "}
                 {new Date(slots[0]).toLocaleTimeString("en-CA", {
                   hour: "numeric",
                   minute: "2-digit",
-                  timeZone: salon?.timezone || "America/Toronto",
+                  timeZone: salonTz,
                 })}
               </button>
             ) : null}
-            <div className="flex flex-wrap gap-2">
-              {slots.length === 0 ? (
-                <p className="text-sm text-muted">No open slots this day. Try another date.</p>
-              ) : null}
-              {slots.map((slot) => (
-                <button
-                  key={slot}
-                  type="button"
-                  data-slot-day={calendarDateInTz(
-                    salon?.timezone || "America/Toronto",
-                    new Date(slot)
-                  )}
-                  onClick={() => setStartsAt(slot)}
-                  className={`book-slot rounded-full px-4 py-2.5 text-sm ${
-                    startsAt === slot ? "is-selected" : ""
-                  }`}
-                >
-                  {new Date(slot).toLocaleTimeString("en-CA", {
-                    hour: "numeric",
-                    minute: "2-digit",
-                    timeZone: salon?.timezone || "America/Toronto",
-                  })}
-                </button>
-              ))}
-            </div>
+            {slots.length === 0 ? (
+              <p className="text-center text-sm text-muted">
+                No open slots this day. Try another date.
+              </p>
+            ) : (
+              <div className="book-luxe-slots">
+                {slots.map((slot) => (
+                  <button
+                    key={slot}
+                    type="button"
+                    data-slot-day={calendarDateInTz(salonTz, new Date(slot))}
+                    onClick={() => setStartsAt(slot)}
+                    className={`book-slot rounded-xl px-2 py-2.5 text-xs sm:text-sm ${
+                      startsAt === slot ? "is-selected" : ""
+                    }`}
+                  >
+                    {new Date(slot).toLocaleTimeString("en-CA", {
+                      hour: "numeric",
+                      minute: "2-digit",
+                      timeZone: salonTz,
+                    })}
+                  </button>
+                ))}
+              </div>
+            )}
+            <LuxeStepContinueButton
+              fromLabel="Time"
+              toLabel="Details"
+              ready={Boolean(startsAt)}
+              onAdvance={() => advanceStep(3)}
+            />
           </section>
         ) : null}
 
-        {startsAt ? (
-          <section className="space-y-3">
-            <h2 className="font-[family-name:var(--font-display)] text-2xl">Your details</h2>
+        {focusedStep === 3 ? (
+          <section className="space-y-4">
+            <BookingSummaryCard
+              serviceLabel={selectedServiceLabel}
+              servicePriceCents={selectedTotalCents}
+              providerName={
+                stylistId === ANY_STYLIST_ID
+                  ? "Any available provider"
+                  : selectedStylist?.name || "—"
+              }
+              dateLabel={formatBookingSummaryDate(date, salonTz)}
+              timeLabel={
+                startsAt ? formatBookingSummaryTime(startsAt, salonTz) : "—"
+              }
+              subtotalCents={bookQuote?.catalogSubtotalCents ?? selectedTotalCents}
+              discountCents={bookQuote?.discountCents ?? 0}
+              discountLabel={bookQuote?.discountLabel}
+              memberTier={
+                client && loyaltyPoints != null
+                  ? memberTierLabel(memberTierFromPoints(loyaltyPoints))
+                  : null
+              }
+              totalCents={bookQuote?.chargedCents ?? selectedTotalCents}
+              notes={notes}
+              onNotesChange={setNotes}
+              stylePreview={
+                <StylePreviewPanel
+                  slug={slug}
+                  isMember={Boolean(client)}
+                  value={stylePref}
+                  onChange={(next) => {
+                    setStylePref(next);
+                    writeStyleDraft(slug, next);
+                  }}
+                  variant="summary"
+                />
+              }
+            />
             {client ? (
-              <p className="text-sm text-[#e0d0f5]">
-                Signed in as {client.name} — details filled for you.
+              <p className="text-center text-sm text-muted">
+                Signed in as {client.name} — contact details on file.
               </p>
             ) : (
-              <p className="text-sm text-muted">
-                Booking as guest is fine. You can join anytime with email OTP.
-              </p>
-            )}
-            <div className="book-card grid gap-3 rounded-2xl p-4 sm:grid-cols-2">
-              <label className="grid gap-1.5 text-sm">
-                Name
-                <input
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="rounded-xl border px-3 py-2.5"
-                  autoComplete="name"
-                />
-              </label>
-              <label className="grid gap-1.5 text-sm">
-                Phone
-                <input
-                  required
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="rounded-xl border px-3 py-2.5"
-                  autoComplete="tel"
-                  inputMode="tel"
-                />
-              </label>
-              <label className="grid gap-1.5 text-sm sm:col-span-2">
-                Email {client ? "" : "(recommended)"}
-                <input
-                  type="email"
-                  required={saveAsMember && !client}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="rounded-xl border px-3 py-2.5"
-                  autoComplete="email"
-                />
-              </label>
-              <label className="grid gap-1.5 text-sm sm:col-span-2">
-                Notes for your stylist (optional)
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  rows={3}
-                  placeholder="e.g. haircut with head massage"
-                  className="rounded-xl border px-3 py-2.5"
-                />
-              </label>
-              {!client ? (
+              <div className="book-luxe-summary-contact grid gap-3 sm:grid-cols-2">
+                <label className="grid gap-1.5 text-sm">
+                  Name
+                  <input
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="rounded-xl border border-champagne/25 bg-transparent px-3 py-2.5"
+                    autoComplete="name"
+                  />
+                </label>
+                <label className="grid gap-1.5 text-sm">
+                  Phone
+                  <input
+                    required
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="rounded-xl border border-champagne/25 bg-transparent px-3 py-2.5"
+                    autoComplete="tel"
+                    inputMode="tel"
+                  />
+                </label>
+                <label className="grid gap-1.5 text-sm sm:col-span-2">
+                  Email (recommended)
+                  <input
+                    type="email"
+                    required={saveAsMember}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="rounded-xl border border-champagne/25 bg-transparent px-3 py-2.5"
+                    autoComplete="email"
+                  />
+                </label>
                 <SettingToggle
                   label="Save my profile after booking"
                   description={`Email code — no password. Cancel free until ${CLIENT_CANCEL_HOURS}h before.`}
                   checked={saveAsMember}
                   onChange={setSaveAsMember}
                 />
-              ) : null}
-            </div>
+              </div>
+            )}
+            <LuxeContinueButton
+              type="submit"
+              disabled={submitting || !startsAt || !name.trim() || !phone.trim()}
+            >
+              {submitting ? "Booking…" : "Confirm booking →"}
+            </LuxeContinueButton>
           </section>
         ) : null}
 
         {error ? <p className="text-sm text-[#f5a8a8]">{error}</p> : null}
-
-        {(selectedServices.length > 0 ||
-          selectedStylist ||
-          stylistId === ANY_STYLIST_ID ||
-          startsAt) && (
-          <div className="book-sticky-summary">
-            <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-3 px-4 py-3">
-              <div className="min-w-0 text-sm">
-                <p className="book-luxe-kicker flex items-center gap-2">
-                  <span className="book-luxe-ornament__diamond" aria-hidden />
-                  Running total
-                </p>
-                <p className="truncate text-xs text-muted">
-                  {[
-                    selectedServiceLabel || null,
-                    stylistId === ANY_STYLIST_ID
-                      ? "Any stylist"
-                      : selectedStylist?.name,
-                    startsAt
-                      ? new Date(startsAt).toLocaleString("en-CA", {
-                          weekday: "short",
-                          month: "short",
-                          day: "numeric",
-                          hour: "numeric",
-                          minute: "2-digit",
-                          timeZone: salon?.timezone,
-                        })
-                      : null,
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </p>
-                {selectedServices.length > 0 ? (
-                  <p className="font-[family-name:var(--font-display)] text-2xl leading-tight text-champagne">
-                    {formatCad(selectedTotalCents)}
-                    <span className="ml-2 text-xs font-sans tracking-normal text-muted">
-                      {selectedTotalMin} min
-                    </span>
-                  </p>
-                ) : null}
-              </div>
-              {startsAt ? (
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="btn-solid shrink-0 rounded-full px-5 py-3 text-sm font-semibold disabled:opacity-60"
-                >
-                  {submitting ? "Booking…" : "Confirm reservation"}
-                </button>
-              ) : (
-                <span className="text-xs text-muted">Keep going →</span>
-              )}
-            </div>
-          </div>
-        )}
       </form>
+
+      {joinPrompt && !justBooked && !client ? (
+        <PostBookJoin
+          slug={slug}
+          name={name}
+          phone={phone}
+          email={email}
+          onJoined={(c) => {
+            onClientChange(c);
+            setJoinPrompt(false);
+            setMemberTab("visits");
+            setShowBookings(true);
+          }}
+          onSkip={() => setJoinPrompt(false)}
+        />
+      ) : null}
+
+      {justBooked ? (
+        <BookingConfirmedOverlay
+          coverUrl={coverUrl}
+          stylist={justBooked.stylist}
+          startsAt={justBooked.startsAt}
+          timeZone={salonTz}
+          onViewAppointment={() => {
+            setMemberTab("visits");
+            setShowBookings(true);
+            setProfileOpen(false);
+            setRewardsOpen(false);
+            setJustBooked(null);
+          }}
+          onBackHome={() => {
+            setJustBooked(null);
+            setFocusedStep(0);
+            if (joinPrompt) {
+              /* keep join prompt visible below */
+            }
+          }}
+        />
+      ) : null}
 
       {appChrome}
     </>

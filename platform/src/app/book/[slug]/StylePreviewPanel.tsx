@@ -25,8 +25,8 @@ type Props = {
   isMember: boolean;
   value: StylePrefDraft | null;
   onChange: (next: StylePrefDraft | null) => void;
-  /** studio = Look book playground; attach = booking / visit (default). */
-  variant?: "studio" | "attach";
+  /** studio = Look book playground; attach = booking / visit; summary = compact inside booking summary. */
+  variant?: "studio" | "attach" | "summary";
 };
 
 export function StylePreviewPanel({
@@ -192,34 +192,126 @@ export function StylePreviewPanel({
 
   const preview = value?.imageBase64 || basePhoto;
   const isStudio = variant === "studio";
+  const isSummary = variant === "summary";
 
-  return (
-    <div className="book-card space-y-3 rounded-2xl p-4" data-testid={isStudio ? "style-preview-studio" : "style-preview-attach"}>
-      <div>
-        <h3 className="font-semibold text-ink">
-          {isStudio ? "Style preview studio" : "Style preview"}
+  const panelTitle = isStudio
+    ? "Style preview studio"
+    : "Style preview";
+  const panelHint = isStudio
+    ? "Try looks with AI, upload inspo, or reuse a past visit photo. Attach one when you book or on an upcoming visit."
+    : isSummary
+      ? "Optional — show your stylist the look you want"
+      : "Optional — show your stylist the look you want. Upload, pick a past look, or try free AI styles.";
+  const cameraLabel = isStudio ? "Camera / gallery" : "Camera";
+  const uploadLabel = isStudio ? "Upload photo" : "Upload";
+  const statusMessage = value
+    ? isStudio
+      ? `Ready to attach${
+          value.source === "AI"
+            ? " · AI preview"
+            : value.source === "LOOKBOOK"
+              ? " · from BeautyAI"
+              : " · upload"
+        }${value.prompt ? ` · ${value.prompt}` : ""}. Open Book or an upcoming visit to attach it.`
+      : isSummary
+        ? `Attached to this booking${
+            value.source === "AI"
+              ? " · AI preview"
+              : value.source === "LOOKBOOK"
+                ? " · from BeautyAI"
+                : " · upload"
+          }${value.prompt ? ` · ${value.prompt}` : ""}`
+        : `Saved for this booking${
+            value.source === "AI"
+              ? " · AI preview"
+              : value.source === "LOOKBOOK"
+                ? " · from BeautyAI"
+                : " · upload"
+          }${value.prompt ? ` · ${value.prompt}` : ""}`
+    : null;
+
+  const compareDialog =
+    compareOpen && preview ? (
+      <div
+        className="fixed inset-0 z-[96] flex flex-col bg-black/94"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Style before and after"
+      >
+        <div className="flex items-center justify-between px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
+          <p className="book-luxe-kicker">Style preview</p>
+          <button
+            type="button"
+            onClick={() => setCompareOpen(false)}
+            className="btn-solid rounded-full px-4 py-2 text-sm font-semibold"
+          >
+            Close
+          </button>
+        </div>
+        <div className="relative mx-auto mt-4 min-h-0 w-full max-w-lg flex-1 px-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <div className="relative h-full overflow-hidden rounded-[1.4rem] border border-[color:var(--champagne)]/35">
+            {basePhoto ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={basePhoto} alt="Before" className="absolute inset-0 h-full w-full object-cover" />
+            ) : null}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={preview}
+              alt="After"
+              className="absolute inset-0 h-full w-full object-cover"
+              style={{ clipPath: `inset(0 ${100 - split}% 0 0)` }}
+            />
+            <div
+              className="absolute inset-y-0 w-0.5 bg-[#e8c99a] shadow-[0_0_16px_rgba(232,201,154,0.7)]"
+              style={{ left: `${split}%` }}
+              aria-hidden
+            />
+          </div>
+          <label className="mt-4 block text-center text-xs text-champagne">
+            Slide to compare
+            <input
+              type="range"
+              min={8}
+              max={92}
+              value={split}
+              onChange={(e) => setSplit(Number(e.target.value))}
+              className="mt-2 w-full accent-[#e8c99a]"
+            />
+          </label>
+        </div>
+      </div>
+    ) : null;
+
+  const luxePanel = (
+    <div
+      className={`book-style-preview--luxe${isStudio ? " book-style-preview--studio" : ""}${
+        isSummary ? " book-style-preview--compact-head" : ""
+      }`}
+      data-testid={
+        isStudio ? "style-preview-studio" : isSummary ? "style-preview-summary" : "style-preview-attach"
+      }
+    >
+      <div className="book-style-preview__head">
+        <h3 className="book-style-preview__heading font-[family-name:var(--font-display)]">
+          {panelTitle}
         </h3>
-        <p className="mt-1 text-sm text-muted">
-          {isStudio
-            ? "Try looks with AI, upload inspo, or reuse a past visit photo. Attach one when you book or on an upcoming visit."
-            : "Optional — show your stylist the look you want. Upload, pick a past look, or try free AI styles."}
-        </p>
+        <p className="book-style-preview__hint">{panelHint}</p>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="book-style-preview__actions">
         <button
           type="button"
           onClick={() => setCameraOpen(true)}
-          className="rounded-full border border-[color:var(--line)] bg-[color:var(--color-cream)] px-3 py-1.5 text-xs font-semibold text-champagne"
+          className="book-style-preview__chip"
         >
-          Camera / gallery
+          {cameraLabel}
         </button>
         <button
           type="button"
           onClick={() => fileRef.current?.click()}
-          className="rounded-full border border-[color:var(--line)] bg-[color:var(--color-cream)] px-3 py-1.5 text-xs font-semibold text-champagne"
+          className="book-style-preview__chip"
         >
-          Upload photo
+          {uploadLabel}
         </button>
         {value || basePhoto ? (
           <button
@@ -229,7 +321,7 @@ export function StylePreviewPanel({
               onChange(null);
               setError("");
             }}
-            className="rounded-full border border-[rgba(181,74,60,0.4)] px-3 py-1.5 text-xs font-semibold text-[#b54a3c]"
+            className="book-style-preview__chip is-danger"
           >
             Remove
           </button>
@@ -248,22 +340,19 @@ export function StylePreviewPanel({
       />
 
       {isMember && lookPhotos.length > 0 ? (
-        <div className="space-y-2">
-          <p className="text-xs font-semibold tracking-wide text-champagne uppercase">
-            From your look book
-          </p>
-          <div className="flex gap-2 overflow-x-auto pb-1">
+        <div className="book-style-preview__lookbook-wrap">
+          <p className="book-style-preview__lookbook-label">From BeautyAI</p>
+          <div className="book-style-preview__lookbook">
             {lookPhotos.map((p) => (
               <button
                 key={p.id}
                 type="button"
                 disabled={busy}
                 onClick={() => void pickLookPhoto(p.url)}
-                className="shrink-0 overflow-hidden rounded-xl ring-2 ring-transparent hover:ring-[rgba(201,180,232,0.55)]"
-                title={p.caption || "Look book photo"}
+                title={p.caption || "BeautyAI photo"}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p.url} alt="" className="h-16 w-16 object-cover" />
+                <img src={p.url} alt="" />
               </button>
             ))}
           </div>
@@ -274,22 +363,16 @@ export function StylePreviewPanel({
         <button
           type="button"
           onClick={() => setCompareOpen(true)}
-          className="relative block w-full overflow-hidden rounded-2xl"
+          className="book-style-preview__preview"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={preview}
-            alt="Style preview"
-            className="mx-auto max-h-64 w-full object-cover"
-          />
+          <img src={preview} alt="Style preview" />
           {value?.source === "AI" ? (
-            <span className="absolute inset-x-0 bottom-0 bg-black/55 px-3 py-2 text-center text-xs font-semibold tracking-[0.14em] text-champagne uppercase">
-              Tap for before / after
-            </span>
+            <span className="book-style-preview__preview-badge">Tap for before / after</span>
           ) : null}
         </button>
       ) : (
-        <div className="book-luxe-empty px-4 py-8 text-center">
+        <div className="book-luxe-empty book-luxe-empty--dark px-4 py-8 text-center">
           <span className="book-luxe-empty__plus" aria-hidden>
             +
           </span>
@@ -298,12 +381,12 @@ export function StylePreviewPanel({
         </div>
       )}
 
-      <div className="space-y-2 border-t border-[color:var(--line)] pt-3">
-        <p className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-champagne uppercase">
+      <div className="book-style-preview__ai">
+        <p className="book-style-preview__ai-label">
           <LuxeSparkle className="h-3 w-3" />
           AI style suggestions {aiConfigured ? "" : "(setup needed)"}
         </p>
-        <div className="flex flex-wrap gap-2">
+        <div className="book-style-preview__presets">
           {presets.map((p) => (
             <button
               key={p.id}
@@ -312,10 +395,8 @@ export function StylePreviewPanel({
                 setPresetId(p.id);
                 setCustomPrompt("");
               }}
-              className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
-                presetId === p.id && !customPrompt.trim()
-                  ? "btn-solid"
-                  : "border border-[color:var(--line)] bg-[color:var(--color-cream)] text-champagne"
+              className={`book-style-preview__chip ${
+                presetId === p.id && !customPrompt.trim() ? "is-active" : ""
               }`}
             >
               {p.label}
@@ -327,105 +408,38 @@ export function StylePreviewPanel({
           onChange={(e) => setCustomPrompt(e.target.value)}
           placeholder="Or describe a look (e.g. soft curtain bangs)"
           maxLength={200}
-          className="w-full rounded-xl border px-3 py-2.5 text-sm"
+          className="book-style-preview__prompt"
         />
         <button
           type="button"
           disabled={busy}
           onClick={() => void runAi()}
-          className="btn-solid w-full rounded-2xl px-4 py-3 text-sm font-semibold disabled:opacity-70"
+          className="book-style-preview__generate"
         >
           {busy ? "Working…" : "Generate style preview"}
         </button>
         {!preview ? (
-          <p className="text-xs text-muted">Add a photo above, then generate a style.</p>
+          <p className="book-style-preview__status">Add a photo above, then generate a style.</p>
         ) : null}
         {remaining !== null ? (
-          <p className="text-xs text-muted">{remaining} free AI tries left today</p>
+          <p className="book-style-preview__status">{remaining} free AI tries left today</p>
         ) : null}
         {!aiConfigured ? (
-          <p className="text-xs text-muted">
-            AI needs a Gemini API key on the server. Upload and look book still work.
+          <p className="book-style-preview__status">
+            AI needs a Gemini API key on the server. Upload and BeautyAI still work.
           </p>
         ) : null}
       </div>
 
-      {error ? <p className="text-sm text-[#b54a3c]">{error}</p> : null}
+      {statusMessage ? <p className="book-style-preview__status">{statusMessage}</p> : null}
+      {error ? <p className="text-sm text-[#e8a8a0]">{error}</p> : null}
+    </div>
+  );
 
-      {compareOpen && preview ? (
-        <div
-          className="fixed inset-0 z-[96] flex flex-col bg-black/94"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Style before and after"
-        >
-          <div className="flex items-center justify-between px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
-            <p className="book-luxe-kicker">Style preview</p>
-            <button
-              type="button"
-              onClick={() => setCompareOpen(false)}
-              className="btn-solid rounded-full px-4 py-2 text-sm font-semibold"
-            >
-              Close
-            </button>
-          </div>
-          <div className="relative mx-auto mt-4 min-h-0 w-full max-w-lg flex-1 px-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
-            <div className="relative h-full overflow-hidden rounded-[1.4rem] border border-[color:var(--champagne)]/35">
-              {basePhoto ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={basePhoto} alt="Before" className="absolute inset-0 h-full w-full object-cover" />
-              ) : null}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={preview}
-                alt="After"
-                className="absolute inset-0 h-full w-full object-cover"
-                style={{ clipPath: `inset(0 ${100 - split}% 0 0)` }}
-              />
-              <div
-                className="absolute inset-y-0 w-0.5 bg-[#e8c99a] shadow-[0_0_16px_rgba(232,201,154,0.7)]"
-                style={{ left: `${split}%` }}
-                aria-hidden
-              />
-            </div>
-            <label className="mt-4 block text-center text-xs text-champagne">
-              Slide to compare
-              <input
-                type="range"
-                min={8}
-                max={92}
-                value={split}
-                onChange={(e) => setSplit(Number(e.target.value))}
-                className="mt-2 w-full accent-[#e8c99a]"
-              />
-            </label>
-          </div>
-        </div>
-      ) : null}
-      {value && !isStudio ? (
-        <p className="text-xs font-medium text-champagne">
-          Saved for this booking
-          {value.source === "AI"
-            ? " · AI preview"
-            : value.source === "LOOKBOOK"
-              ? " · from look book"
-              : " · upload"}
-          {value.prompt ? ` · ${value.prompt}` : ""}
-        </p>
-      ) : null}
-      {value && isStudio ? (
-        <p className="text-xs font-medium text-champagne">
-          Ready to attach
-          {value.source === "AI"
-            ? " · AI preview"
-            : value.source === "LOOKBOOK"
-              ? " · from look book"
-              : " · upload"}
-          {value.prompt ? ` · ${value.prompt}` : ""}
-          . Open Book or an upcoming visit to attach it.
-        </p>
-      ) : null}
-
+  return (
+    <>
+      {isStudio ? <div className="book-luxe-card rounded-2xl p-4">{luxePanel}</div> : luxePanel}
+      {compareDialog}
       <SelfieCamera
         open={cameraOpen}
         onClose={() => setCameraOpen(false)}
@@ -435,6 +449,6 @@ export function StylePreviewPanel({
           await setFromFile(file, "UPLOAD");
         }}
       />
-    </div>
+    </>
   );
 }

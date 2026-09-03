@@ -64,7 +64,7 @@ async function createPastVisit(
 
 test.describe("Client look book", () => {
   test.describe.configure({ timeout: 180_000 });
-  test("app tab bar switches between Book, Visits and Look book", async ({ page }) => {
+  test("app tab bar switches between Home, Bookings and BeautyAI", async ({ page }) => {
     await page.goto(`/book/${DEMO.slug}`);
 
     await expect(page.getByTestId("book-nav-book")).toBeVisible();
@@ -78,7 +78,7 @@ test.describe("Client look book", () => {
     await expect(page.getByRole("dialog", { name: /my bookings/i })).toHaveCount(0);
   });
 
-  test("member uploads a photo to a past visit and sees it in the look book", async ({
+  test("member uploads a photo to a past visit and sees it in BeautyAI", async ({
     page,
     browser,
   }) => {
@@ -96,7 +96,7 @@ test.describe("Client look book", () => {
 
     const sheet = page.getByRole("dialog", { name: /my bookings/i });
     await expect(sheet).toBeVisible({ timeout: 15_000 });
-    await expect(sheet.getByRole("heading", { name: /my look book/i })).toBeVisible();
+    await expect(sheet.getByRole("heading", { name: /beautyai/i })).toBeVisible();
     await expect(sheet.getByTestId("look-photo-add").first()).toBeVisible({
       timeout: 20_000,
     });

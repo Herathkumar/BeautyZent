@@ -44,8 +44,10 @@ export function LookPhotoStrip({
   onOpen: (photo: LookPhoto) => void;
   compact?: boolean;
 }) {
+  const confirm = useConfirm();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [busy, setBusy] = useState(false);
+  const [removingId, setRemovingId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const full = photos.length >= MAX_PHOTOS_PER_APPOINTMENT;
 
@@ -82,28 +84,72 @@ export function LookPhotoStrip({
     }
   }
 
+  async function remove(photo: LookPhoto) {
+    const ok = await confirm({
+      title: "Delete this photo?",
+      message: "It will be removed from BeautyAI.",
+      confirmLabel: "Delete",
+      cancelLabel: "Keep",
+      tone: "danger",
+    });
+    if (!ok) return;
+    setError("");
+    setRemovingId(photo.id);
+    try {
+      const res = await fetch(
+        `/api/public/${slug}/my-bookings/${appointmentId}/photos/${photo.id}`,
+        { method: "DELETE" }
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Delete failed");
+      onPhotosChange(photos.filter((p) => p.id !== photo.id));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Delete failed");
+    } finally {
+      setRemovingId(null);
+    }
+  }
+
   const size = compact ? "h-16 w-16" : "h-20 w-20";
 
   return (
     <div className={compact ? "mt-2" : "mt-3"}>
       <div className="flex flex-wrap items-center gap-2">
         {photos.map((p) => (
-          <button
-            key={p.id}
-            type="button"
-            onClick={() => onOpen(p)}
-            aria-label="View photo"
-            data-testid="look-photo-thumb"
-            className={`${size} overflow-hidden rounded-xl border border-[color:var(--line)] bg-black/10`}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={p.url}
-              alt={p.caption || "Visit photo"}
-              className="h-full w-full object-cover"
-              loading="lazy"
-            />
-          </button>
+          <div key={p.id} className="look-photo-thumb">
+            <button
+              type="button"
+              onClick={() => onOpen(p)}
+              aria-label="View photo"
+              data-testid="look-photo-thumb"
+              className={`${size} overflow-hidden rounded-xl border border-[rgb(var(--t-accent-rgb)/0.28)] bg-black/20`}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={p.url}
+                alt={p.caption || "Visit photo"}
+                className="h-full w-full object-cover"
+                loading="lazy"
+              />
+            </button>
+            <button
+              type="button"
+              disabled={busy || removingId === p.id}
+              onClick={() => void remove(p)}
+              aria-label="Remove photo"
+              data-testid="look-photo-remove"
+              className="look-photo-thumb__remove"
+            >
+              <svg viewBox="0 0 12 12" fill="none" aria-hidden>
+                <path
+                  d="M2.5 2.5l7 7M9.5 2.5l-7 7"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+          </div>
         ))}
 
         {canAdd && !full ? (
@@ -114,7 +160,7 @@ export function LookPhotoStrip({
             data-testid="look-photo-add"
             aria-label={busy ? "Saving photo" : "Add photo"}
             title={busy ? "Saving…" : "Add photo — Highlight this look"}
-            className={`book-luxe-empty book-luxe-empty--tile ${size} disabled:opacity-60`}
+            className={`book-luxe-empty book-luxe-empty--dark book-luxe-empty--tile ${size} disabled:opacity-60`}
           >
             <span className="book-luxe-empty__plus" aria-hidden>
               {busy ? "…" : "+"}
@@ -215,7 +261,7 @@ export function LookPhotoViewer({
   async function remove() {
     const ok = await confirm({
       title: "Delete this photo?",
-      message: "It will be removed from your look book.",
+      message: "It will be removed from BeautyAI.",
       confirmLabel: "Delete",
       cancelLabel: "Keep",
       tone: "danger",

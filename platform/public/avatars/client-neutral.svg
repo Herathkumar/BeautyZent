@@ -1,12 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-label="Client avatar">
   <defs>
     <linearGradient id="clientBg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#35264a"/>
-      <stop offset="100%" stop-color="#1f1830"/>
+      <stop offset="0%" stop-color="#2a2218"/>
+      <stop offset="100%" stop-color="#14110e"/>
     </linearGradient>
-    <linearGradient id="clientLilac" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#e0d0f5"/>
-      <stop offset="100%" stop-color="#9b7ec4"/>
+    <linearGradient id="clientGold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f0d7b0"/>
+      <stop offset="55%" stop-color="#d4b483"/>
+      <stop offset="100%" stop-color="#b8905c"/>
     </linearGradient>
     <clipPath id="clientDisc">
       <circle cx="80" cy="80" r="80"/>
@@ -14,7 +15,7 @@
   </defs>
   <g clip-path="url(#clientDisc)">
     <rect width="160" height="160" fill="url(#clientBg)"/>
-    <circle cx="80" cy="66" r="26" fill="url(#clientLilac)"/>
-    <circle cx="80" cy="158" r="52" fill="url(#clientLilac)"/>
+    <circle cx="80" cy="66" r="26" fill="url(#clientGold)"/>
+    <circle cx="80" cy="158" r="52" fill="url(#clientGold)"/>
   </g>
 </svg>

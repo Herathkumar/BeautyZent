@@ -6,6 +6,7 @@ import {
   issueClientSession,
   normalizeEmail,
 } from "@/lib/client-auth";
+import { clientPhotoUrl } from "@/lib/client-photo";
 
 const bodySchema = z.object({
   slug: z.string().min(1),
@@ -58,6 +59,7 @@ export async function POST(req: Request) {
       phone: client.phone,
       email: client.email,
       preferredStylistId: client.preferredStylistId,
+      photoUrl: clientPhotoUrl(salon.slug, client),
     },
   });
 }

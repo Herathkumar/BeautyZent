@@ -1,0 +1,214 @@
+/* Claim form — sits on explore-luxe marketplace chrome */
+
+.claim-luxe__form {
+  display: grid;
+  gap: 1rem;
+  margin-top: 0.25rem;
+}
+
+.claim-luxe__card {
+  margin-top: 0.25rem;
+  border-radius: 24px;
+  background: var(--explore-card);
+  padding: 1.5rem 1.25rem 1.6rem;
+  box-shadow: 0 12px 32px rgba(44, 36, 32, 0.08);
+}
+
+.claim-luxe__label {
+  display: grid;
+  gap: 0.4rem;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--explore-ink);
+}
+
+.claim-luxe__input,
+.claim-luxe__label select,
+.claim-luxe__label textarea {
+  width: 100%;
+  border: 1px solid var(--explore-line);
+  border-radius: 14px;
+  background: #fff;
+  padding: 0.78rem 1rem;
+  font-family: var(--explore-body);
+  font-size: 0.95rem;
+  font-weight: 400;
+  color: var(--explore-ink);
+  outline: none;
+}
+
+.claim-luxe__label select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' stroke='%236B5E57' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  padding-right: 2.4rem;
+}
+
+.claim-luxe__input:focus,
+.claim-luxe__label select:focus,
+.claim-luxe__label textarea:focus {
+  border-color: var(--explore-gold);
+  box-shadow: 0 0 0 3px rgb(201 161 123 / 0.18);
+}
+
+.claim-luxe__hint {
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--explore-muted);
+}
+
+.claim-luxe__row {
+  display: grid;
+  gap: 1rem;
+}
+
+.claim-luxe__cover {
+  display: grid;
+  gap: 0.85rem;
+  border: 1px solid var(--explore-line);
+  border-radius: 20px;
+  background: var(--explore-cream);
+  padding: 1.1rem 1rem;
+}
+
+.claim-luxe__cover h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--explore-ink);
+}
+
+.claim-luxe__preview {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  background: var(--explore-peach);
+}
+
+.claim-luxe__preview img {
+  aspect-ratio: 16 / 10;
+  width: 100%;
+  object-fit: cover;
+}
+
+.claim-luxe__badge {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+  border-radius: 9999px;
+  background: rgb(255 255 255 / 0.94);
+  padding: 0.25rem 0.65rem;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--explore-gold-soft);
+}
+
+.claim-luxe__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.claim-luxe__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.85rem;
+  border-radius: 9999px;
+  padding: 0.7rem 1.25rem;
+  font-family: var(--explore-body);
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.claim-luxe__btn--rose {
+  border: none;
+  background: var(--explore-gold);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(201, 161, 123, 0.25);
+}
+
+.claim-luxe__btn--rose:hover {
+  background: var(--explore-gold-soft);
+}
+
+.claim-luxe__btn--peach {
+  border: 1px solid var(--explore-blush);
+  background: var(--explore-peach);
+  color: var(--explore-ink);
+}
+
+.claim-luxe__btn--peach:hover {
+  background: #fff;
+}
+
+.claim-luxe__btn--ghost {
+  border: 1px solid var(--explore-blush);
+  background: #fff;
+  color: var(--explore-gold-soft);
+}
+
+.claim-luxe__btn--ghost:hover {
+  background: var(--explore-peach);
+  color: var(--explore-ink);
+}
+
+.claim-luxe__btn--remove {
+  border: 1px solid rgb(138 74 55 / 0.25);
+  background: transparent;
+  color: #8a4a37;
+}
+
+.claim-luxe__ai {
+  display: grid;
+  gap: 0.65rem;
+  border-top: 1px solid var(--explore-line);
+  padding-top: 0.9rem;
+}
+
+.claim-luxe__section-label {
+  margin: 0.5rem 0 0;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--explore-gold);
+}
+
+.claim-luxe__error {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #8a4a37;
+}
+
+.claim-luxe__submit {
+  width: 100%;
+  min-height: 3.1rem;
+  margin-top: 0.35rem;
+}
+
+.claim-luxe__btn:disabled,
+.claim-luxe__submit:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.claim-luxe__done-cta {
+  margin-top: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .claim-luxe__card {
+    padding: 2rem 1.75rem 1.85rem;
+  }
+
+  .claim-luxe__row {
+    grid-template-columns: 1fr 1fr;
+  }
+}

@@ -85,3 +85,52 @@ export function addCalendarDays(ymd: string, delta: number, timeZone = DEFAULT_T
 export function weekDayKeys(mondayYmd: string, timeZone = DEFAULT_TZ) {
   return upcomingCalendarDays(7, timeZone, mondayYmd);
 }
+
+/** Sunday (YYYY-MM-DD) of the week containing `ymd` in salon TZ. */
+export function sundayOfWeekContaining(ymd: string, timeZone = DEFAULT_TZ) {
+  const dow = dayOfWeekInTz(ymd, timeZone);
+  return addCalendarDays(ymd, -dow, timeZone);
+}
+
+/** Seven calendar days starting from a Sunday in salon TZ. */
+export function weekDayKeysFromSunday(sundayYmd: string, timeZone = DEFAULT_TZ) {
+  return upcomingCalendarDays(7, timeZone, sundayYmd);
+}
+
+/** YYYY-MM-01 for the month containing `ymd`. */
+export function firstDayOfMonth(ymd: string, timeZone = DEFAULT_TZ) {
+  const [y, m] = ymd.split("-").map(Number);
+  return `${y}-${String(m).padStart(2, "0")}-01`;
+}
+
+/** Number of days in the month containing `ymd`. */
+export function daysInCalendarMonth(ymd: string, timeZone = DEFAULT_TZ) {
+  const [y, m] = ymd.split("-").map(Number);
+  for (let d = 31; d >= 28; d--) {
+    const dt = new TZDate(y!, m! - 1, d, 12, 0, 0, 0, timeZone);
+    if (dt.getMonth() === m! - 1) return d;
+  }
+  return 30;
+}
+
+/** Month grid cells (Sun-start week); `null` pads leading blanks. */
+export function monthGrid(anchorYmd: string, timeZone = DEFAULT_TZ): Array<string | null> {
+  const first = firstDayOfMonth(anchorYmd, timeZone);
+  const [y, m] = first.split("-").map(Number);
+  const lead = dayOfWeekInTz(first, timeZone);
+  const count = daysInCalendarMonth(anchorYmd, timeZone);
+  const out: Array<string | null> = [];
+  for (let i = 0; i < lead; i++) out.push(null);
+  for (let d = 1; d <= count; d++) {
+    const dt = new TZDate(y!, m! - 1, d, 12, 0, 0, 0, timeZone);
+    out.push(calendarDateInTz(timeZone, dt));
+  }
+  return out;
+}
+
+export function addCalendarMonths(ymd: string, delta: number, timeZone = DEFAULT_TZ) {
+  const first = firstDayOfMonth(ymd, timeZone);
+  const [y, m] = first.split("-").map(Number);
+  const dt = new TZDate(y!, m! - 1 + delta, 1, 12, 0, 0, 0, timeZone);
+  return calendarDateInTz(timeZone, dt);
+}

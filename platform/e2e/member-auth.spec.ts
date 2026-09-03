@@ -9,6 +9,7 @@ import {
   nextOpenDate,
   pickFirstSlot,
   todayDate,
+  waitForBookingStep,
 } from "./helpers";
 
 test.describe("Booking member auth", () => {
@@ -24,7 +25,7 @@ test.describe("Booking member auth", () => {
     await expect(profile.getByTestId("book-theme-toggle")).toHaveCount(0);
   });
 
-  test("sign out clears Your details fields", async ({ page }) => {
+  test("sign out clears guest contact fields on summary step", async ({ page }) => {
     const stamp = Date.now();
     const name = `QA Member ${stamp}`;
     const email = `qa.member.${stamp}@example.com`;
@@ -45,28 +46,30 @@ test.describe("Booking member auth", () => {
       .filter({ hasText: /men'?s haircut|women'?s trim|beard/i })
       .first()
       .click();
+    await waitForBookingStep(page, /choose your (stylist|provider)/i);
     const stylists = page.locator("section").filter({
-      has: page.getByRole("heading", { name: /choose your stylist/i }),
+      has: page.getByRole("heading", { name: /choose your (stylist|provider)/i }),
     });
     await stylists
       .getByRole("button")
       .filter({ hasText: /farzana|aisha|omar|aadil/i })
       .first()
       .click();
+    await waitForBookingStep(page, /pick a time/i);
     await expect(page.getByRole("heading", { name: /pick a time/i })).toBeVisible();
 
     await pickFirstSlot(page, nextOpenDate());
+    await waitForBookingStep(page, /booking summary/i);
 
-    await expect(page.getByRole("heading", { name: /your details/i })).toBeVisible();
-    await expect(page.getByLabel(/^name$/i)).toHaveValue(name);
-    await expect(page.getByLabel(/^email/i)).toHaveValue(email);
+    await expect(page.getByRole("heading", { name: /booking summary/i })).toBeVisible();
+    await expect(page.getByText(`Signed in as ${name}`)).toBeVisible();
 
     await page.getByRole("button", { name: /^sign out$/i }).click();
     await expect(page.getByRole("button", { name: /^join free$/i })).toBeVisible({
       timeout: 10_000,
     });
 
-    // Details step may still be open, but member PII must be cleared
+    // Summary step may still be open; guest contact fields should appear cleared
     await expect(page.getByLabel(/^name$/i)).toHaveValue("");
     await expect(page.getByLabel(/^phone$/i)).toHaveValue("");
     await expect(page.getByLabel(/^email/i)).toHaveValue("");

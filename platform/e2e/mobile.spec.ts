@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { adminLogin, DEMO, stylistLogin } from "./helpers";
+import { adminLogin, DEMO, stylistLogin, waitForBookingStep } from "./helpers";
 
 // Chromium + phone viewport (avoids needing WebKit installed)
 test.use({
@@ -18,7 +18,7 @@ test.describe("Mobile viewport", () => {
       has: page.getByRole("heading", { name: /choose services?/i }),
     });
     await services.getByRole("button").filter({ hasText: /haircut|trim|beard/i }).first().click();
-    await expect(page.getByRole("heading", { name: /choose your stylist/i })).toBeVisible();
+    await waitForBookingStep(page, /choose your (stylist|provider)/i);
   });
 
   test("stylist portal bottom nav on phone", async ({ page }) => {

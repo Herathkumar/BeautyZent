@@ -174,7 +174,7 @@ const BOOT_SCRIPT = `
     /* Fonts after first paint — blocking Google CSS was delaying mobile opens. */
     var fl=document.createElement("link");
     fl.rel="stylesheet";
-    fl.href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,450;9..144,520;9..144,560&family=Outfit:wght@400;500;600&display=swap";
+    fl.href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,450;9..144,520;9..144,560&family=Playfair+Display:wght@500;600&family=Inter:wght@400;500&family=Outfit:wght@400;500;600&display=swap";
     document.head.appendChild(fl);
   }catch(e){}
 })();

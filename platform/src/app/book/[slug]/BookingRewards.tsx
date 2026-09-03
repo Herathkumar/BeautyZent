@@ -153,6 +153,7 @@ export function BookingRewards({
   salonName,
   open,
   signedIn,
+  photoUrl,
   onClose,
   onSignInRequest,
   onJoinRequest,
@@ -161,6 +162,7 @@ export function BookingRewards({
   salonName?: string | null;
   open: boolean;
   signedIn: boolean;
+  photoUrl?: string | null;
   onClose: () => void;
   onSignInRequest: () => void;
   onJoinRequest: () => void;
@@ -193,15 +195,7 @@ export function BookingRewards({
     <LuxeSheet label="My Wallet">
       <div className="flex min-h-0 flex-1 flex-col" data-testid="book-rewards">
         <div className="shrink-0 px-5 pt-[max(0.85rem,env(safe-area-inset-top))]">
-          <div className="flex items-start justify-between gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--champagne)]/45 text-champagne"
-              aria-label="Close"
-            >
-              ←
-            </button>
+          <div className="book-luxe-bookings-header">
             <div className="min-w-0 text-center">
               <h2 className="book-luxe-title text-3xl">My Wallet</h2>
               <LuxeOrnament className="mx-auto mt-2 max-w-[8rem]" />
@@ -209,7 +203,6 @@ export function BookingRewards({
                 {salonName?.trim() || data?.salonName || "Exclusive perks"}
               </p>
             </div>
-            <span className="h-9 w-9" aria-hidden />
           </div>
         </div>
 
@@ -221,13 +214,13 @@ export function BookingRewards({
             <section data-testid="book-loyalty-card">
               {signedIn ? (
                 <div className="book-luxe-member mb-4">
-                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[color:var(--champagne)]/55 font-[family-name:var(--font-display)] text-lg text-champagne">
-                    {(loyalty.clientName || "M")
-                      .split(" ")
-                      .map((p) => p[0])
-                      .join("")
-                      .slice(0, 2)
-                      .toUpperCase()}
+                  <span className="book-luxe-member__avatar shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={photoUrl || "/avatars/client-neutral.svg"}
+                      alt=""
+                      className="h-full w-full rounded-full object-cover"
+                    />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-[11px] text-muted">Member</span>

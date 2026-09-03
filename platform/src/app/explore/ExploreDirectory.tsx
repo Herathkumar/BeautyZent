@@ -81,6 +81,50 @@ function slotLabel(iso: string, timeZone: string) {
   }).format(new Date(iso));
 }
 
+function formatHour(hour: number) {
+  return `${String(hour).padStart(2, "0")}:00`;
+}
+
+function IconSearch({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden className={className}>
+      <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="1.5" />
+      <path d="m16 16 4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconPin({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden className={className}>
+      <path
+        d="M12 21s6.5-5.2 6.5-11a6.5 6.5 0 1 0-13 0c0 5.8 6.5 11 6.5 11Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
+      <circle cx="12" cy="10" r="2.25" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
+function IconClock({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden className={className}>
+      <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M12 8v4.5l3 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconCalendar({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden className={className}>
+      <rect x="4" y="5" width="16" height="15" rx="2.5" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M4 10h16M9 3v4M15 3v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function ExploreDirectory() {
   const [q, setQ] = useState("");
   const [city, setCity] = useState("");
@@ -93,6 +137,7 @@ export function ExploreDirectory() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [businesses, setBusinesses] = useState<BusinessCard[]>([]);
+  const [hasSearched, setHasSearched] = useState(false);
 
   const load = useCallback(async () => {
     setBusy(true);
@@ -124,80 +169,76 @@ export function ExploreDirectory() {
     void load();
   }, [load]);
 
+  function applySearch() {
+    setHasSearched(true);
+    setApplied({
+      q: q.trim(),
+      city: city.trim(),
+      type,
+      date,
+      maxPrice,
+      rewardsOnly,
+      sort,
+      requestId: Date.now(),
+    });
+  }
+
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6">
-      <div className="mb-4 flex justify-end">
-        <Link
-          href="/account"
-          className="rounded-full border border-ink/15 bg-white/80 px-4 py-2 text-sm font-semibold text-ink"
-        >
-          My account
-        </Link>
-      </div>
-      <header className="mb-8 flex w-full items-center gap-4 sm:gap-5">
+    <div className="explore-luxe__shell">
+      <header className="explore-luxe__hero">
         <BeautyZentLogo
           variant="rose"
           size="lg"
           href={null}
           priority
-          className="!h-[6.5rem] !w-auto max-w-[6.5rem] shrink-0 object-left object-contain sm:!h-28 sm:max-w-[7rem]"
+          className="explore-luxe__hero-mark"
         />
-        <div className="min-w-0 flex-1">
-          <p className="text-xs font-semibold tracking-[0.18em] text-cocoa uppercase">
-            BeautyZent marketplace
-          </p>
-          <h1 className="mt-2 font-[family-name:var(--font-display)] text-4xl leading-tight text-ink">
+        <div className="explore-luxe__hero-copy">
+          <p className="explore-luxe__kicker">BeautyZent marketplace</p>
+          <h1 className="explore-luxe__title">
             Explore businesses
           </h1>
-          <p className="mt-3 text-muted">
-            Find salons, barbers, spas, and other beauty businesses. Book online when
-            you&apos;re ready.
+          <p className="explore-luxe__lede">
+            Discover trusted beauty, wellness and lifestyle businesses near you.
           </p>
         </div>
       </header>
 
       <form
-        className="mb-5 grid gap-3 rounded-3xl border border-ink/12 bg-white/80 p-4"
+        className="explore-luxe__search"
         onSubmit={(e) => {
           e.preventDefault();
-          setApplied({
-            q: q.trim(),
-            city: city.trim(),
-            type,
-            date,
-            maxPrice,
-            rewardsOnly,
-            sort,
-            requestId: Date.now(),
-          });
+          applySearch();
         }}
       >
-        <div className="grid gap-3 sm:grid-cols-[1.3fr_1fr_1fr]">
-          <label className="grid gap-1 text-xs font-medium text-muted">
-            Business or service
+        <label className="explore-luxe__field">
+          <span>Business or service</span>
+          <span className="explore-luxe__field-control">
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Haircut, massage, nails…"
-              className="rounded-xl border border-ink/15 px-3 py-2.5 text-sm text-ink"
             />
-          </label>
-          <label className="grid gap-1 text-xs font-medium text-muted">
-            Location
+            <IconSearch className="explore-luxe__field-icon" />
+          </span>
+        </label>
+
+        <label className="explore-luxe__field">
+          <span>Location</span>
+          <span className="explore-luxe__field-control">
             <input
               value={city}
               onChange={(e) => setCity(e.target.value)}
               placeholder="Toronto"
-              className="rounded-xl border border-ink/15 px-3 py-2.5 text-sm text-ink"
             />
-          </label>
-          <label className="grid gap-1 text-xs font-medium text-muted">
-            Business type
-            <select
-              value={type}
-              onChange={(e) => setType(e.target.value)}
-              className="rounded-xl border border-ink/15 px-3 py-2.5 text-sm text-ink"
-            >
+            <IconPin className="explore-luxe__field-icon" />
+          </span>
+        </label>
+
+        <label className="explore-luxe__field">
+          <span>Business type</span>
+          <span className="explore-luxe__field-control">
+            <select value={type} onChange={(e) => setType(e.target.value)}>
               <option value="">All types</option>
               {BUSINESS_TYPES.map((t) => (
                 <option key={t.id} value={t.id}>
@@ -205,26 +246,26 @@ export function ExploreDirectory() {
                 </option>
               ))}
             </select>
-          </label>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-[1fr_0.8fr_1fr_auto]">
-          <label className="grid gap-1 text-xs font-medium text-muted">
-            Available on
+          </span>
+        </label>
+
+        <label className="explore-luxe__field">
+          <span>Available on</span>
+          <span className="explore-luxe__field-control">
             <input
               type="date"
               min={localToday()}
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="rounded-xl border border-ink/15 px-3 py-2.5 text-sm text-ink"
             />
-          </label>
-          <label className="grid gap-1 text-xs font-medium text-muted">
-            Max price
-            <select
-              value={maxPrice}
-              onChange={(e) => setMaxPrice(e.target.value)}
-              className="rounded-xl border border-ink/15 px-3 py-2.5 text-sm text-ink"
-            >
+            <IconCalendar className="explore-luxe__field-icon" />
+          </span>
+        </label>
+
+        <label className="explore-luxe__field">
+          <span>Max price</span>
+          <span className="explore-luxe__field-control">
+            <select value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)}>
               <option value="">Any price</option>
               <option value="25">Up to $25</option>
               <option value="50">Up to $50</option>
@@ -232,42 +273,32 @@ export function ExploreDirectory() {
               <option value="100">Up to $100</option>
               <option value="150">Up to $150</option>
             </select>
-          </label>
-          <label className="grid gap-1 text-xs font-medium text-muted">
-            Sort
-            <select
-              value={sort}
-              onChange={(e) => setSort(e.target.value)}
-              className="rounded-xl border border-ink/15 px-3 py-2.5 text-sm text-ink"
-            >
+          </span>
+        </label>
+
+        <label className="explore-luxe__field">
+          <span>Sort</span>
+          <span className="explore-luxe__field-control">
+            <select value={sort} onChange={(e) => setSort(e.target.value)}>
               <option value="name">Business name</option>
               <option value="price">Lowest price</option>
               <option value="availability" disabled={!date}>
                 Earliest availability
               </option>
             </select>
-          </label>
-          <div className="flex items-end">
-            <button
-              type="submit"
-              disabled={busy}
-              className="btn-solid w-full rounded-full px-6 py-2.5 text-sm font-semibold disabled:opacity-60"
-            >
-              {busy ? "Searching…" : "Search"}
-            </button>
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <label className="inline-flex items-center gap-2 text-sm text-ink-soft">
+          </span>
+        </label>
+
+        <div className="explore-luxe__search-extras">
+          <label className="explore-luxe__check">
             <input
               type="checkbox"
               checked={rewardsOnly}
               onChange={(e) => setRewardsOnly(e.target.checked)}
-              className="h-4 w-4 accent-[#8d4f59]"
             />
             Rewards and offers only
           </label>
-          {(q || city || type || date || maxPrice || rewardsOnly || sort !== "name") ? (
+          {q || city || type || date || maxPrice || rewardsOnly || sort !== "name" ? (
             <button
               type="button"
               onClick={() => {
@@ -278,146 +309,161 @@ export function ExploreDirectory() {
                 setMaxPrice("");
                 setRewardsOnly(false);
                 setSort("name");
+                setHasSearched(false);
                 setApplied({ ...EMPTY_FILTERS, requestId: Date.now() });
               }}
-              className="text-sm font-medium text-cocoa underline-offset-2 hover:underline"
+              className="explore-luxe__clear"
             >
               Clear filters
             </button>
           ) : null}
         </div>
+
+        <button type="submit" disabled={busy} className="explore-luxe__search-btn">
+          {busy ? "Searching…" : "Search"}
+        </button>
       </form>
 
-      {error ? <p className="mb-4 text-sm text-[#8a4a37]">{error}</p> : null}
+      {error ? <p className="explore-luxe__error">{error}</p> : null}
 
-      {!busy && !error ? (
-        <p className="mb-4 text-sm text-muted">
-          {businesses.length} {businesses.length === 1 ? "business" : "businesses"} found
-          {applied.date ? ` with availability on ${applied.date}` : ""}.
-        </p>
-      ) : null}
-
-      {!busy && businesses.length === 0 ? (
-        <p className="rounded-3xl border border-dashed border-ink/20 bg-white/60 p-8 text-center text-sm text-muted">
-          No published businesses match yet.{" "}
-          <Link href="/claim" className="font-semibold text-ink underline-offset-2 hover:underline">
-            List your business
-          </Link>
-        </p>
-      ) : null}
-
-      <div className="grid items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {businesses.map((b) => {
-          const bookHref = `/book/${encodeURIComponent(b.slug)}?from=explore`;
-          const menuHref = `/explore/${encodeURIComponent(b.slug)}`;
-          return (
-          <article
-            key={b.id}
-            className="flex h-full flex-col overflow-hidden rounded-3xl border border-ink/12 bg-white/90 shadow-[0_12px_40px_rgba(0,0,0,0.06)]"
-          >
-            {/* Absolute img locks 16:10 so different cover files don't stretch the card. */}
-            <div className="relative aspect-[16/10] w-full shrink-0 overflow-hidden bg-[#f3eee8]">
-              <Link
-                href={menuHref}
-                className="absolute inset-0"
-                aria-label={`View ${b.name} menu`}
-              >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={b.coverUrl || "/display-promo.jpg"}
-                  alt=""
-                  className="absolute inset-0 h-full w-full object-cover"
-                />
-              </Link>
-              <div className="absolute right-3 top-3 z-10">
-                <FavoriteBusinessButton salonId={b.id} compact />
-              </div>
+      <section className="explore-luxe__results" aria-live="polite">
+        {!busy && !error ? (
+          <div className="explore-luxe__results-head">
+            <div className="explore-luxe__results-brand">
+              <span className="explore-luxe__crown" aria-hidden>
+                ♛
+              </span>
+              <p className="explore-luxe__results-wordmark">
+                BeautyZent
+              </p>
+              <p className="explore-luxe__results-sub">Marketplace</p>
             </div>
-            <div className="flex flex-1 flex-col gap-1.5 p-4">
-              <p className="text-[0.68rem] font-semibold tracking-[0.14em] text-cocoa uppercase">
-                {b.businessTypeLabel}
-              </p>
-              <h2 className="line-clamp-2 font-[family-name:var(--font-display)] text-xl leading-tight text-ink">
-                <Link href={menuHref} className="hover:underline">
-                  {b.name}
-                </Link>
-              </h2>
-              <p className="truncate text-sm text-muted">
-                {[b.city, b.region].filter(Boolean).join(", ") ||
-                  b.address ||
-                  "Location coming soon"}
-              </p>
-              {b.description?.trim() ? (
-                <p className="line-clamp-2 text-sm text-ink-soft">{b.description.trim()}</p>
-              ) : null}
-              <p className="text-xs text-muted">
-                Hours {b.openHour}:00–{b.closeHour}:00
-              </p>
-              {b.matchedServices[0] ? (
-                <p className="line-clamp-1 text-xs text-ink-soft">
-                  {b.matchedServices[0].name} · from{" "}
-                  <span className="font-semibold text-ink">
-                    {formatCad(b.minPriceCents ?? b.matchedServices[0].priceCents)}
-                  </span>
-                </p>
-              ) : null}
-              {b.availability ? (
-                <div className="mt-1 rounded-xl bg-[#e7f0e6] px-3 py-2 text-xs text-[#3f6b43]">
-                  <span className="font-semibold">
-                    Available {slotLabel(b.availability.earliestAt, b.timezone)}
-                  </span>
-                  <span> · {b.availability.serviceName}</span>
-                </div>
-              ) : null}
-              {b.rewards?.hasRewards ? (
-                <div
-                  className="mt-1 flex items-center justify-between gap-3 rounded-xl border border-[#c9a87c]/35 bg-[linear-gradient(135deg,#fbf6ef,#f3ebe3)] px-3 py-2"
-                  data-testid={`explore-rewards-${b.slug}`}
-                >
-                  <span className="text-[0.65rem] font-semibold tracking-[0.12em] text-cocoa uppercase">
-                    Rewards available
-                  </span>
-                  <span className="shrink-0 text-xs text-ink-soft">
-                    {b.rewards.loyaltyEnabled ? "Loyalty" : ""}
-                    {b.rewards.loyaltyEnabled &&
-                    b.rewards.promotions.length + b.rewards.morePromotions > 0
-                      ? " · "
-                      : ""}
-                    {b.rewards.promotions.length + b.rewards.morePromotions > 0
-                      ? `${b.rewards.promotions.length + b.rewards.morePromotions} offer${
-                          b.rewards.promotions.length + b.rewards.morePromotions === 1 ? "" : "s"
-                        }`
-                      : ""}
-                  </span>
-                </div>
-              ) : null}
-              <div className="mt-auto grid grid-cols-2 gap-2 pt-4">
-                <Link
-                  href={menuHref}
-                  className="inline-flex h-11 items-center justify-center rounded-full border border-ink/15 px-4 text-center text-sm font-semibold text-ink"
-                  data-testid={`explore-menu-${b.slug}`}
-                >
-                  Menu
-                </Link>
-                <Link
-                  href={bookHref}
-                  className="btn-solid inline-flex h-11 items-center justify-center rounded-full px-4 text-center text-sm font-semibold"
-                  data-testid={`explore-book-${b.slug}`}
-                >
-                  Book
-                </Link>
-              </div>
+            <p className="explore-luxe__results-meta">
+              {hasSearched ? "Search results" : "Nearby businesses"}
+              {" · "}
+              {businesses.length} {businesses.length === 1 ? "business" : "businesses"} found
+              {applied.date ? ` · ${applied.date}` : ""}
+            </p>
+            <div className="explore-luxe__ornament" aria-hidden>
+              <span />
+              <i />
+              <span />
             </div>
-          </article>
-          );
-        })}
-      </div>
+          </div>
+        ) : null}
 
-      <p className="mt-10 text-center text-sm text-muted">
+        {!busy && businesses.length === 0 ? (
+          <p className="explore-luxe__empty">
+            No published businesses match yet.{" "}
+            <Link href="/claim">List your business</Link>
+          </p>
+        ) : null}
+
+        <div className="explore-luxe__cards">
+          {businesses.map((b) => {
+            const bookHref = `/book/${encodeURIComponent(b.slug)}?from=explore`;
+            const menuHref = `/explore/${encodeURIComponent(b.slug)}`;
+            const place =
+              [b.city, b.region].filter(Boolean).join(", ") ||
+              b.address ||
+              "Location coming soon";
+
+            return (
+              <article key={b.id} className="explore-luxe__card">
+                <div className="explore-luxe__card-media">
+                  <Link href={menuHref} aria-label={`View ${b.name} menu`}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={b.coverUrl || "/display-promo.jpg"} alt="" />
+                  </Link>
+                  <div className="explore-luxe__fav">
+                    <FavoriteBusinessButton salonId={b.id} compact />
+                  </div>
+                </div>
+
+                <div className="explore-luxe__card-body">
+                  <p className="explore-luxe__card-type">{b.businessTypeLabel}</p>
+                  <h2 className="explore-luxe__card-name">
+                    <Link href={menuHref}>{b.name}</Link>
+                  </h2>
+
+                  <p className="explore-luxe__card-place">
+                    <IconPin className="h-3.5 w-3.5 shrink-0" />
+                    <span>{place}</span>
+                  </p>
+
+                  <div className="explore-luxe__card-rule" aria-hidden />
+
+                  <p className="explore-luxe__card-hours">
+                    <IconClock className="h-3.5 w-3.5 shrink-0" />
+                    <span className="explore-luxe__hours-label">Hours</span>
+                    <span className="explore-luxe__hours-value">
+                      {formatHour(b.openHour)}–{formatHour(b.closeHour)}
+                    </span>
+                  </p>
+
+                  {b.matchedServices[0] ? (
+                    <p className="explore-luxe__card-service">
+                      {b.matchedServices[0].name} • from{" "}
+                      {formatCad(b.minPriceCents ?? b.matchedServices[0].priceCents)}
+                    </p>
+                  ) : null}
+
+                  {b.availability ? (
+                    <p className="explore-luxe__card-avail">
+                      Available {slotLabel(b.availability.earliestAt, b.timezone)} ·{" "}
+                      {b.availability.serviceName}
+                    </p>
+                  ) : null}
+
+                  {b.rewards?.hasRewards ? (
+                    <div
+                      className="explore-luxe__card-rewards"
+                      data-testid={`explore-rewards-${b.slug}`}
+                    >
+                      <span>Rewards available</span>
+                      <span>
+                        {b.rewards.loyaltyEnabled ? "Loyalty" : ""}
+                        {b.rewards.loyaltyEnabled &&
+                        b.rewards.promotions.length + b.rewards.morePromotions > 0
+                          ? " · "
+                          : ""}
+                        {b.rewards.promotions.length + b.rewards.morePromotions > 0
+                          ? `${b.rewards.promotions.length + b.rewards.morePromotions} offer${
+                              b.rewards.promotions.length + b.rewards.morePromotions === 1
+                                ? ""
+                                : "s"
+                            }`
+                          : ""}
+                      </span>
+                    </div>
+                  ) : null}
+
+                  <div className="explore-luxe__card-actions">
+                    <Link
+                      href={menuHref}
+                      className="explore-luxe__btn-menu"
+                      data-testid={`explore-menu-${b.slug}`}
+                    >
+                      Menu
+                    </Link>
+                    <Link
+                      href={bookHref}
+                      className="explore-luxe__btn-book"
+                      data-testid={`explore-book-${b.slug}`}
+                    >
+                      Book
+                    </Link>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      <p className="explore-luxe__footer">
         Own a shop?{" "}
-        <Link href="/claim" className="font-semibold text-ink underline-offset-2 hover:underline">
-          Claim or create your business
-        </Link>
+        <Link href="/claim">Claim or create your business ›</Link>
       </p>
     </div>
   );

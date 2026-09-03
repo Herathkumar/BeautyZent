@@ -2,12 +2,25 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import {
-  BeautyZentLogo,
-  BeautyZentMarketHeader,
-} from "@/components/BeautyZentBrand";
+import { BeautyZentLogo } from "@/components/BeautyZentBrand";
 import { BUSINESS_TYPES } from "@/lib/marketplace";
 import { fileToBoundedJpegDataUrl } from "@/lib/photo-resize";
+import "../explore/explore-luxe.css";
+import "./claim-luxe.css";
+
+function IconProfile({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden className={className}>
+      <circle cx="12" cy="8.5" r="3.5" stroke="currentColor" strokeWidth="1.5" />
+      <path
+        d="M5.5 20a6.5 6.5 0 0 1 13 0"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
 
 export default function ClaimBusinessPage() {
   const [busy, setBusy] = useState(false);
@@ -100,59 +113,54 @@ export default function ClaimBusinessPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f7f2ec]">
-      <BeautyZentMarketHeader
-        right={
-          <>
-            <Link href="/explore" className="text-muted hover:text-ink">
-              ← Explore
+    <main className="explore-luxe min-h-screen">
+      <header className="explore-luxe__topbar">
+        <div className="explore-luxe__topbar-inner explore-luxe__topbar-inner--end">
+          <nav className="explore-luxe__top-links" aria-label="Marketplace">
+            <Link href="/">Home</Link>
+            <Link href="/explore">Explore</Link>
+            <Link href="/account" className="explore-luxe__account-btn">
+              <IconProfile className="h-4 w-4" />
+              My account
             </Link>
-            <Link href="/platform/login" className="text-muted hover:text-ink">
-              Platform login
-            </Link>
-          </>
-        }
-      />
+          </nav>
+        </div>
+      </header>
 
-      <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
-        <header className="flex items-center gap-5">
-          <BeautyZentLogo variant="rose" size="lg" href={null} priority />
-          <div>
-            <p className="text-xs font-semibold tracking-[0.18em] text-cocoa uppercase">
-              BeautyZent Marketplace
-            </p>
-            <h1 className="mt-2 font-[family-name:var(--font-display)] text-4xl text-ink">
-              Claim or create
-            </h1>
-            <p className="mt-3 text-muted">
-              List your beauty business for review. After a platform admin publishes it,
-              clients can find you on Explore and book online.
+      <div className="explore-luxe__shell">
+        <header className="explore-luxe__hero">
+          <BeautyZentLogo
+            variant="rose"
+            size="lg"
+            href={null}
+            priority
+            className="explore-luxe__hero-mark"
+          />
+          <div className="explore-luxe__hero-copy">
+            <p className="explore-luxe__kicker">BeautyZent marketplace</p>
+            <h1 className="explore-luxe__title">Grow with ease</h1>
+            <p className="explore-luxe__lede">
+              Claim your listing, get discovered, and fill your chair with ready-to-book
+              clients.
             </p>
           </div>
         </header>
 
         {done ? (
-          <div className="mt-8 rounded-3xl border border-ink/12 bg-white p-6">
-            <h2 className="font-[family-name:var(--font-display)] text-2xl text-ink">
-              Submitted
-            </h2>
-            <p className="mt-2 text-sm text-muted">
-              <strong className="text-ink">{done.name}</strong> (`/{done.slug}`) is pending
-              approval. Sign in at the manager portal after it&apos;s published.
+          <div className="claim-luxe__card">
+            <p className="explore-luxe__kicker">Submitted</p>
+            <h2 className="explore-luxe__title">You&apos;re in review</h2>
+            <p className="explore-luxe__lede">
+              <strong>{done.name}</strong> (`/{done.slug}`) is pending approval. Sign in at
+              the manager portal after it&apos;s published.
             </p>
-            <Link
-              href="/explore"
-              className="btn-solid mt-5 inline-flex rounded-full px-5 py-2.5 text-sm font-semibold"
-            >
+            <Link href="/explore" className="claim-luxe__btn claim-luxe__btn--rose claim-luxe__done-cta">
               Back to Explore
             </Link>
           </div>
         ) : (
-          <form
-            onSubmit={submit}
-            className="mt-8 grid gap-4 rounded-3xl border border-ink/12 bg-white p-5 sm:p-6"
-          >
-            <label className="grid gap-1 text-sm">
+          <form onSubmit={submit} className="claim-luxe__card claim-luxe__form">
+            <label className="claim-luxe__label">
               Business name
               <input
                 required
@@ -170,26 +178,25 @@ export default function ClaimBusinessPage() {
                     );
                   }
                 }}
-                className="rounded-xl border border-ink/15 px-3 py-2.5"
+                className="claim-luxe__input"
               />
             </label>
-            <label className="grid gap-1 text-sm">
+            <label className="claim-luxe__label">
               Booking URL slug
               <input
                 required
                 value={form.slug}
                 onChange={(e) => setField("slug", e.target.value)}
-                className="rounded-xl border border-ink/15 px-3 py-2.5"
+                className="claim-luxe__input"
                 pattern="[a-z0-9-]{3,40}"
               />
-              <span className="text-xs text-muted">/book/{form.slug || "your-slug"}</span>
+              <span className="claim-luxe__hint">/book/{form.slug || "your-slug"}</span>
             </label>
-            <label className="grid gap-1 text-sm">
+            <label className="claim-luxe__label">
               Business type
               <select
                 value={form.businessType}
                 onChange={(e) => setField("businessType", e.target.value)}
-                className="rounded-xl border border-ink/15 px-3 py-2.5"
               >
                 {BUSINESS_TYPES.map((t) => (
                   <option key={t.id} value={t.id}>
@@ -198,60 +205,58 @@ export default function ClaimBusinessPage() {
                 ))}
               </select>
             </label>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="grid gap-1 text-sm">
+            <div className="claim-luxe__row">
+              <label className="claim-luxe__label">
                 City
                 <input
                   required
                   value={form.city}
                   onChange={(e) => setField("city", e.target.value)}
-                  className="rounded-xl border border-ink/15 px-3 py-2.5"
+                  className="claim-luxe__input"
                 />
               </label>
-              <label className="grid gap-1 text-sm">
+              <label className="claim-luxe__label">
                 Region
                 <input
                   value={form.region}
                   onChange={(e) => setField("region", e.target.value)}
-                  className="rounded-xl border border-ink/15 px-3 py-2.5"
+                  className="claim-luxe__input"
                 />
               </label>
             </div>
-            <label className="grid gap-1 text-sm">
+            <label className="claim-luxe__label">
               Short description
               <textarea
                 value={form.description}
                 onChange={(e) => setField("description", e.target.value)}
                 rows={3}
-                className="rounded-xl border border-ink/15 px-3 py-2.5"
                 maxLength={500}
               />
             </label>
-            <section className="grid gap-3 rounded-2xl border border-ink/12 bg-[#fbf8f4] p-4">
+            <section className="claim-luxe__cover">
               <div>
-                <p className="text-sm font-semibold text-ink">Business card cover</p>
-                <p className="mt-0.5 text-xs text-muted">
+                <h3>Business card cover</h3>
+                <p className="claim-luxe__hint">
                   Upload your own photo or generate one with AI. You can change it later from
                   Manager Account.
                 </p>
               </div>
               {coverImage ? (
-                <div className="relative overflow-hidden rounded-2xl border border-ink/10 bg-[#f3eee8]">
+                <div className="claim-luxe__preview">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={coverImage}
                     alt="Business card cover preview"
-                    className="aspect-[16/10] w-full object-cover"
                     data-testid="claim-cover-preview"
                   />
-                  <span className="absolute right-2 top-2 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-semibold tracking-wide text-cocoa uppercase">
+                  <span className="claim-luxe__badge">
                     {coverSource === "ai" ? "AI preview" : "Uploaded"}
                   </span>
                 </div>
               ) : null}
-              <div className="flex flex-wrap gap-2">
+              <div className="claim-luxe__actions">
                 <label
-                  className={`relative inline-flex cursor-pointer items-center justify-center overflow-hidden rounded-full border border-ink/15 bg-white px-4 py-2 text-sm font-semibold text-ink hover:border-cocoa ${
+                  className={`claim-luxe__btn claim-luxe__btn--peach relative overflow-hidden ${
                     coverBusy ? "pointer-events-none opacity-50" : ""
                   }`}
                 >
@@ -279,14 +284,14 @@ export default function ClaimBusinessPage() {
                       setCoverSource("");
                       setCoverError("");
                     }}
-                    className="rounded-full border border-[#8a4a37]/25 px-4 py-2 text-sm text-[#8a4a37] disabled:opacity-50"
+                    className="claim-luxe__btn claim-luxe__btn--remove"
                   >
                     Remove
                   </button>
                 ) : null}
               </div>
-              <div className="grid gap-2 border-t border-ink/10 pt-3">
-                <label className="grid gap-1 text-sm">
+              <div className="claim-luxe__ai">
+                <label className="claim-luxe__label">
                   Generate with AI
                   <textarea
                     value={coverPrompt}
@@ -294,12 +299,11 @@ export default function ClaimBusinessPage() {
                     rows={2}
                     maxLength={400}
                     placeholder="Example: A bright modern salon with cream chairs, plants, and warm lighting"
-                    className="rounded-xl border border-ink/15 bg-white px-3 py-2.5"
                     data-testid="claim-cover-ai-prompt"
                   />
                 </label>
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-xs text-muted">Up to 3 AI previews per hour</span>
+                  <span className="claim-luxe__hint">Up to 3 AI previews per hour</span>
                   <button
                     type="button"
                     disabled={
@@ -308,55 +312,53 @@ export default function ClaimBusinessPage() {
                       coverPrompt.trim().length < 8
                     }
                     onClick={() => void generateCover()}
-                    className="rounded-full border border-cocoa/35 bg-white px-4 py-2 text-sm font-semibold text-cocoa hover:bg-cocoa/5 disabled:opacity-50"
+                    className="claim-luxe__btn claim-luxe__btn--ghost"
                     data-testid="claim-cover-generate"
                   >
                     {coverBusy ? "Working…" : coverSource === "ai" ? "Generate again" : "Generate cover"}
                   </button>
                 </div>
               </div>
-              {coverError ? <p className="text-sm text-[#8a4a37]">{coverError}</p> : null}
+              {coverError ? <p className="claim-luxe__error">{coverError}</p> : null}
             </section>
-            <label className="grid gap-1 text-sm">
+            <label className="claim-luxe__label">
               Address
               <input
                 value={form.address}
                 onChange={(e) => setField("address", e.target.value)}
-                className="rounded-xl border border-ink/15 px-3 py-2.5"
+                className="claim-luxe__input"
               />
             </label>
-            <label className="grid gap-1 text-sm">
+            <label className="claim-luxe__label">
               Phone
               <input
                 value={form.phone}
                 onChange={(e) => setField("phone", e.target.value)}
-                className="rounded-xl border border-ink/15 px-3 py-2.5"
+                className="claim-luxe__input"
               />
             </label>
 
-            <p className="mt-2 text-xs font-semibold tracking-[0.14em] text-cocoa uppercase">
-              Manager login
-            </p>
-            <label className="grid gap-1 text-sm">
+            <p className="claim-luxe__section-label">Manager login</p>
+            <label className="claim-luxe__label">
               Your name
               <input
                 required
                 value={form.managerName}
                 onChange={(e) => setField("managerName", e.target.value)}
-                className="rounded-xl border border-ink/15 px-3 py-2.5"
+                className="claim-luxe__input"
               />
             </label>
-            <label className="grid gap-1 text-sm">
+            <label className="claim-luxe__label">
               Work email
               <input
                 required
                 type="email"
                 value={form.managerEmail}
                 onChange={(e) => setField("managerEmail", e.target.value)}
-                className="rounded-xl border border-ink/15 px-3 py-2.5"
+                className="claim-luxe__input"
               />
             </label>
-            <label className="grid gap-1 text-sm">
+            <label className="claim-luxe__label">
               Password (min 8)
               <input
                 required
@@ -364,16 +366,16 @@ export default function ClaimBusinessPage() {
                 minLength={8}
                 value={form.managerPassword}
                 onChange={(e) => setField("managerPassword", e.target.value)}
-                className="rounded-xl border border-ink/15 px-3 py-2.5"
+                className="claim-luxe__input"
               />
             </label>
 
-            {error ? <p className="text-sm text-[#8a4a37]">{error}</p> : null}
+            {error ? <p className="claim-luxe__error">{error}</p> : null}
 
             <button
               type="submit"
               disabled={busy}
-              className="btn-solid mt-2 rounded-full px-5 py-3 text-sm font-semibold disabled:opacity-60"
+              className="claim-luxe__btn claim-luxe__btn--rose claim-luxe__submit"
             >
               {busy ? "Submitting…" : "Submit for review"}
             </button>

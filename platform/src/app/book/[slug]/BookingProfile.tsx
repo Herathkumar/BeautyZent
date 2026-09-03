@@ -99,6 +99,9 @@ export function BookingProfile({
       setPhotoUrl(data.photoUrl);
       setHasPhoto(true);
       setMessage(data.message || "Selfie saved.");
+      if (client) {
+        onClientChange({ ...client, photoUrl: data.photoUrl });
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save photo");
     } finally {
@@ -126,6 +129,9 @@ export function BookingProfile({
       setPhotoUrl(data.photoUrl);
       setHasPhoto(false);
       setMessage(data.message || "Photo removed.");
+      if (client) {
+        onClientChange({ ...client, photoUrl: data.photoUrl });
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not remove photo");
     } finally {
@@ -194,15 +200,7 @@ export function BookingProfile({
         data-testid="book-profile"
       >
         <div className="shrink-0 px-5 pt-[max(0.85rem,env(safe-area-inset-top))]">
-          <div className="flex items-start justify-between gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--champagne)]/45 text-champagne"
-              aria-label="Close"
-            >
-              ←
-            </button>
+          <div className="book-luxe-bookings-header">
             <div className="min-w-0 text-center">
               <p className="flex items-center justify-center gap-1 font-[family-name:var(--font-display)] text-xl text-white">
                 <LuxeCrown className="h-4 w-4 text-champagne" />
@@ -215,13 +213,11 @@ export function BookingProfile({
                 type="button"
                 onClick={signOut}
                 data-testid="client-sign-out"
-                className="rounded-full border border-[color:var(--champagne)]/45 px-2.5 py-1.5 text-xs font-semibold text-champagne"
+                className="absolute right-0 top-1/2 -translate-y-1/2 rounded-full border border-[color:var(--champagne)]/45 px-2.5 py-1.5 text-xs font-semibold text-champagne"
               >
                 Log out
               </button>
-            ) : (
-              <span className="h-9 w-9" aria-hidden />
-            )}
+            ) : null}
           </div>
         </div>
 
@@ -465,8 +461,8 @@ export function BookingProfile({
                   You&apos;re browsing as a guest
                 </h3>
                 <p className="mt-2 text-sm text-muted">
-                  Join free to add a photo, save your details, and keep a look book of
-                  every visit. No password — just an email code.
+                  Join free to add a photo, save your details, and build your BeautyAI
+                  style journal. No password — just an email code.
                 </p>
                 <div className="mt-5 grid gap-2.5 sm:grid-cols-2">
                   <button

@@ -47,13 +47,13 @@ export default async function BookPage({
 
         <header className="mb-5 text-center">
           <LuxeKickerLined>Book your visit</LuxeKickerLined>
-          <h1 className="mt-2 font-[family-name:var(--font-display)] text-[1.85rem] leading-none text-white sm:text-4xl">
+          <h1 className="mt-2 font-[family-name:var(--font-display)] text-[1.85rem] leading-none text-champagne sm:text-4xl">
             {salon.name}
           </h1>
           <LuxeOrnament className="mx-auto mt-3 max-w-[9rem]" />
         </header>
 
-        <BookingWizard slug={slug} />
+        <BookingWizard slug={slug} coverUrl={coverUrl} />
       </div>
     </main>
   );

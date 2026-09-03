@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { BeautyZentMarketHeader } from "@/components/BeautyZentBrand";
 import { FavoriteBusinessButton } from "@/components/FavoriteBusinessButton";
 import { businessTypeLabel, isPublicListing } from "@/lib/marketplace";
 import { formatCad } from "@/lib/money";
@@ -8,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import type { PromotionRuleType } from "@/lib/promotions";
 import { generatePromotionRuleLabel } from "@/lib/promotions";
 import { serviceImageUrl } from "@/lib/service-image";
+import { serviceIconSrc } from "@/lib/service-icons";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +15,32 @@ function categoryLabel(category: string) {
   if (category === "WOMEN") return "Women";
   if (category === "MEN") return "Men";
   return "Other";
+}
+
+function formatHour(hour: number) {
+  return `${String(hour).padStart(2, "0")}:00`;
+}
+
+function IconPin({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden className={className}>
+      <path
+        d="M12 21s6.5-5.2 6.5-11a6.5 6.5 0 1 0-13 0c0 5.8 6.5 11 6.5 11Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
+      <circle cx="12" cy="10" r="2.25" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
+function IconClock({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden className={className}>
+      <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M12 8v4.5l3 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
 }
 
 export async function generateMetadata({
@@ -110,162 +136,151 @@ export default async function ExploreBusinessMenuPage({
   ].filter((g) => g.items.length > 0);
 
   return (
-    <main className="min-h-screen bg-[#f7f2ec]">
-      <BeautyZentMarketHeader
-        right={
-          <>
-            <Link href="/explore" className="text-muted hover:text-ink">
-              ← Explore
-            </Link>
-            <Link href="/account" className="text-muted hover:text-ink">
+    <main className="explore-luxe explore-menu min-h-screen">
+      <header className="explore-luxe__topbar">
+        <div className="explore-luxe__topbar-inner explore-menu__topbar-inner">
+          <nav className="explore-luxe__top-links" aria-label="Business">
+            <Link href="/">Home</Link>
+            <Link href="/explore">Explore</Link>
+            <a href={bookHref}>Book</a>
+            <Link href="/account" className="explore-luxe__account-btn">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden className="h-4 w-4">
+                <circle cx="12" cy="8.5" r="3.5" stroke="currentColor" strokeWidth="1.5" />
+                <path
+                  d="M5.5 20a6.5 6.5 0 0 1 13 0"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
+              </svg>
               My account
             </Link>
-            <a href={bookHref} className="font-semibold text-ink hover:underline">
-              Book
-            </a>
-          </>
-        }
-      />
+          </nav>
+        </div>
+      </header>
 
-      <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
-        <article className="overflow-hidden rounded-3xl border border-ink/12 bg-white/90 shadow-[0_12px_40px_rgba(0,0,0,0.06)]">
-          <div className="relative aspect-[16/10] w-full bg-[#f3eee8]">
+      <div className="explore-menu__shell">
+        <section className="explore-menu__hero">
+          <div className="explore-menu__cover">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={coverUrl || "/display-promo.jpg"}
-              alt=""
-              className="absolute inset-0 h-full w-full object-cover"
-            />
+            <img src={coverUrl || "/display-promo.jpg"} alt="" />
           </div>
-          <div className="space-y-3 p-5 sm:p-6">
-            <p className="text-[0.68rem] font-semibold tracking-[0.14em] text-cocoa uppercase">
-              {businessTypeLabel(salon.businessType)}
-            </p>
-            <h1 className="font-[family-name:var(--font-display)] text-3xl leading-tight text-ink sm:text-4xl">
+
+          <article className="explore-menu__intro">
+            <p className="explore-menu__type">{businessTypeLabel(salon.businessType)}</p>
+            <h1 className="explore-menu__name">
               {salon.name}
             </h1>
-            <p className="text-sm text-muted">{location}</p>
-            {salon.description?.trim() ? (
-              <p className="text-sm text-ink-soft">{salon.description.trim()}</p>
-            ) : null}
-            <p className="text-xs text-muted">
-              Hours {salon.openHour}:00–{salon.closeHour}:00
+            <p className="explore-menu__meta">
+              <IconPin className="h-3.5 w-3.5 shrink-0" />
+              <span>{location}</span>
             </p>
-            <div className="flex flex-wrap gap-2 pt-1">
-              <a
-                href={bookHref}
-                className="btn-solid rounded-full px-5 py-2.5 text-sm font-semibold"
-              >
+            <p className="explore-menu__meta">
+              <IconClock className="h-3.5 w-3.5 shrink-0" />
+              <span>
+                Hours {formatHour(salon.openHour)}–{formatHour(salon.closeHour)}
+              </span>
+            </p>
+            {salon.description?.trim() ? (
+              <p className="explore-menu__desc">{salon.description.trim()}</p>
+            ) : null}
+
+            <div className="explore-menu__actions">
+              <a href={bookHref} className="explore-luxe__btn-book">
                 Book a visit
               </a>
-              <FavoriteBusinessButton salonId={salon.id} />
-              <Link
-                href="/explore"
-                className="rounded-full border border-ink/15 px-5 py-2.5 text-sm font-semibold text-ink"
-              >
-                Back to Explore
-              </Link>
+              <div className="explore-menu__save">
+                <FavoriteBusinessButton salonId={salon.id} />
+              </div>
             </div>
-          </div>
-        </article>
+            <Link href="/explore" className="explore-luxe__btn-menu explore-menu__back">
+              Back to Explore
+            </Link>
+          </article>
+        </section>
 
         {hasRewards ? (
-          <section
-            id="rewards"
-            className="mt-8 rounded-3xl border border-[#c9a87c]/35 bg-[linear-gradient(135deg,#fbf6ef,#f3ebe3)] p-5 sm:p-6"
-          >
-            <h2 className="font-[family-name:var(--font-display)] text-2xl text-ink">
-              Rewards & promotions
-            </h2>
-            <p className="mt-1 text-sm text-muted">
-              Available when you book and check out as a member or guest (rules vary).
-            </p>
-            <ul className="mt-4 space-y-2">
+          <section id="rewards" className="explore-menu__rewards">
+            <h2>Rewards & promotions</h2>
+            <p>Available when you book and check out as a member or guest.</p>
+            <ul>
               {salon.loyaltyEnabled ? (
-                <li className="rounded-2xl border border-ink/10 bg-white/80 px-4 py-3 text-sm text-ink">
-                  <span className="font-semibold">Loyalty points</span>
-                  <span className="mt-1 block text-muted">
+                <li>
+                  <strong>Loyalty points</strong>
+                  <span>
                     Earn {salon.loyaltyPointsPerDollar} pt
                     {salon.loyaltyPointsPerDollar === 1 ? "" : "s"} per $1 · 100 pts ≈{" "}
-                    {valuePer100} off · redeem up to {salon.loyaltyMaxRedeemPercent}% of a
-                    visit
+                    {valuePer100} off · redeem up to {salon.loyaltyMaxRedeemPercent}% of a visit
                   </span>
                 </li>
               ) : null}
               {promotions.map((p) => (
-                <li
-                  key={p.id}
-                  className="rounded-2xl border border-ink/10 bg-white/80 px-4 py-3 text-sm font-medium text-ink"
-                >
-                  {p.label}
+                <li key={p.id}>
+                  <strong>{p.label}</strong>
                 </li>
               ))}
             </ul>
           </section>
         ) : null}
 
-        <section className="mt-8">
-          <h2 className="font-[family-name:var(--font-display)] text-2xl text-ink">
+        <section className="explore-menu__services">
+          <h2 className="explore-menu__services-title">
             Service menu
           </h2>
-          <p className="mt-1 text-sm text-muted">
+          <p className="explore-menu__services-lede">
             Browse what they offer, then book when you&apos;re ready.
           </p>
 
           {groups.length === 0 ? (
-            <p className="mt-6 rounded-3xl border border-dashed border-ink/20 bg-white/60 p-8 text-center text-sm text-muted">
+            <p className="explore-menu__empty">
               No services listed yet. You can still{" "}
-              <a href={bookHref} className="font-semibold text-ink underline-offset-2 hover:underline">
-                open booking
-              </a>
-              .
+              <a href={bookHref}>open booking</a>.
             </p>
           ) : (
-            <div className="mt-5 space-y-6">
-              {groups.map((group) => (
-                <div key={group.key}>
+            <div className="explore-menu__groups">
+              {groups.map((group, groupIndex) => (
+                <div key={group.key} className="explore-menu__group">
                   {groups.length > 1 ? (
-                    <h3 className="mb-3 text-xs font-semibold tracking-[0.16em] text-cocoa uppercase">
+                    <h3 className="explore-menu__group-label">
                       {categoryLabel(group.key)}
                     </h3>
                   ) : null}
-                  <ul className="space-y-3">
-                    {group.items.map((s) => {
+                  <ul className="explore-menu__list">
+                    {group.items.map((s, itemIndex) => {
                       const hasImage = Boolean(s.imageUpdatedAt && s.imageMime);
                       const imageUrl = serviceImageUrl({
                         id: s.id,
                         hasImage,
                         imageUpdatedAt: s.imageUpdatedAt,
                       });
+                      const popular = groupIndex < 2 && itemIndex === 0;
                       return (
                         <li
                           key={s.id}
-                          className="flex gap-3 rounded-2xl border border-ink/10 bg-white/90 p-3 sm:p-4"
+                          className={`explore-menu__item${popular ? " is-popular" : ""}`}
                         >
                           {hasImage ? (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={imageUrl}
-                              alt=""
-                              className="h-16 w-16 shrink-0 rounded-xl object-cover"
-                            />
+                            <img src={imageUrl} alt="" className="explore-menu__thumb" />
                           ) : (
-                            <div className="h-16 w-16 shrink-0 rounded-xl bg-[#f3eee8]" />
+                            <span className="explore-menu__thumb explore-menu__thumb--empty">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={serviceIconSrc(s.name)} alt="" />
+                            </span>
                           )}
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-start justify-between gap-3">
-                              <p className="font-semibold text-ink">{s.name}</p>
-                              <p className="shrink-0 text-sm font-semibold text-ink">
-                                {formatCad(s.priceCents)}
-                              </p>
-                            </div>
+                          <div className="explore-menu__item-copy">
+                            <p className="explore-menu__item-name">
+                              {s.name}
+                              {popular ? (
+                                <span className="explore-menu__badge">Most booked</span>
+                              ) : null}
+                            </p>
+                            <p className="explore-menu__item-duration">{s.durationMin} min</p>
                             {s.description?.trim() ? (
-                              <p className="mt-1 line-clamp-2 text-sm text-muted">
-                                {s.description.trim()}
-                              </p>
+                              <p className="explore-menu__item-desc">{s.description.trim()}</p>
                             ) : null}
-                            <p className="mt-1 text-xs text-muted">{s.durationMin} min</p>
                           </div>
+                          <p className="explore-menu__item-price">{formatCad(s.priceCents)}</p>
                         </li>
                       );
                     })}
@@ -276,11 +291,8 @@ export default async function ExploreBusinessMenuPage({
           )}
         </section>
 
-        <div className="mt-8 flex justify-center pb-10">
-          <a
-            href={bookHref}
-            className="btn-solid rounded-full px-8 py-3 text-sm font-semibold"
-          >
+        <div className="explore-menu__footer-cta">
+          <a href={bookHref} className="explore-luxe__btn-book explore-menu__book-wide">
             Book at {salon.name}
           </a>
         </div>

@@ -16,7 +16,7 @@ export async function GET(
     name,
     short_name: name,
     description:
-      "Book your salon visit, manage appointments, and keep a photo look book of every visit.",
+      "Book your salon visit, manage appointments, and explore BeautyAI for every visit.",
     start_url: `/book/${slug}`,
     scope: `/book/${slug}`,
     display: "standalone",

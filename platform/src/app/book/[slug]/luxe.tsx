@@ -1,6 +1,15 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { formatCad } from "@/lib/money";
+import {
+  addCalendarDays,
+  addCalendarMonths,
+  firstDayOfMonth,
+  monthGrid,
+  upcomingCalendarDays,
+  zonedDateTime,
+} from "@/lib/salon-time";
 
 export function LuxeOrnament({ className = "" }: { className?: string }) {
   return (
@@ -284,6 +293,600 @@ export function LuxeSheet({
   return (
     <div className="book-luxe-sheet book-theme" role="dialog" aria-label={label}>
       <div className="book-luxe-sheet__panel">{children}</div>
+    </div>
+  );
+}
+
+export function LuxeStarRow({ className = "" }: { className?: string }) {
+  return (
+    <span className={`book-luxe-stars ${className}`.trim()} aria-hidden>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <svg key={i} viewBox="0 0 16 16" fill="currentColor">
+          <path d="M8 1.2 9.1 6.9 14.8 8 9.1 9.1 8 14.8 6.9 9.1 1.2 8 6.9 6.9 8 1.2Z" />
+        </svg>
+      ))}
+    </span>
+  );
+}
+
+export function BookingStepper({
+  steps,
+  activeIndex,
+  onStepClick,
+}: {
+  steps: readonly string[];
+  activeIndex: number;
+  onStepClick?: (index: number) => void;
+}) {
+  const spotlightLeft = `${((activeIndex + 0.5) / steps.length) * 100}%`;
+
+  return (
+    <nav className="book-luxe-stepper" aria-label="Booking progress">
+      <div className="book-luxe-stepper__track" aria-hidden />
+      <div
+        className="book-luxe-stepper__spotlight"
+        style={{ left: spotlightLeft }}
+        aria-hidden
+      >
+        <span className="book-luxe-stepper__glow" />
+        <span className="book-luxe-stepper__marker book-luxe-stepper__marker--active" />
+      </div>
+      {steps.map((label, i) => {
+        const done = i < activeIndex;
+        const active = i === activeIndex;
+        const canGoBack = Boolean(onStepClick && done);
+        return (
+          <button
+            key={label}
+            type="button"
+            className={`book-luxe-stepper__step ${active ? "is-active" : ""} ${done ? "is-done" : ""}`}
+            disabled={!canGoBack}
+            onClick={() => canGoBack && onStepClick?.(i)}
+            aria-current={active ? "step" : undefined}
+          >
+            <span className="book-luxe-stepper__marker-wrap" aria-hidden>
+              <span className="book-luxe-stepper__marker" />
+            </span>
+            <span className="book-luxe-stepper__label">{label}</span>
+          </button>
+        );
+      })}
+    </nav>
+  );
+}
+
+export function LuxeContinueButton({
+  children,
+  disabled,
+  onClick,
+  type = "button",
+}: {
+  children: React.ReactNode;
+  disabled?: boolean;
+  onClick?: () => void;
+  type?: "button" | "submit";
+}) {
+  return (
+    <button
+      type={type}
+      disabled={disabled}
+      onClick={onClick}
+      className="book-luxe-continue"
+    >
+      {children}
+    </button>
+  );
+}
+
+const STEP_ADVANCE_MS = 1050;
+
+export function LuxeStepContinueButton({
+  fromLabel,
+  toLabel,
+  ready,
+  onAdvance,
+  autoAdvance = true,
+}: {
+  fromLabel: string;
+  toLabel: string;
+  ready: boolean;
+  onAdvance: () => void;
+  autoAdvance?: boolean;
+}) {
+  const [animating, setAnimating] = useState(false);
+  const wasReady = useRef(ready);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const skipAnimRef = useRef(false);
+  const onAdvanceRef = useRef(onAdvance);
+  onAdvanceRef.current = onAdvance;
+
+  const clearTimer = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    if (ready && !wasReady.current && autoAdvance) {
+      skipAnimRef.current = false;
+      setAnimating(true);
+      timerRef.current = setTimeout(() => {
+        if (!skipAnimRef.current) onAdvanceRef.current();
+        setAnimating(false);
+        timerRef.current = null;
+      }, STEP_ADVANCE_MS);
+    }
+    if (!ready) {
+      clearTimer();
+      setAnimating(false);
+      skipAnimRef.current = false;
+    }
+    wasReady.current = ready;
+    return clearTimer;
+  }, [ready, autoAdvance]);
+
+  function handleClick() {
+    skipAnimRef.current = true;
+    clearTimer();
+    setAnimating(false);
+    onAdvance();
+  }
+
+  return (
+    <div className="book-luxe-continue-row">
+      <button
+        type="button"
+        disabled={!ready}
+        onClick={handleClick}
+        className={`book-luxe-continue${animating ? " is-glowing" : ""}${
+          ready ? " is-ready" : ""
+        }`}
+        aria-live="polite"
+      >
+        <span className="book-luxe-continue__inner">
+          <span className="book-luxe-continue__prefix">Continue to</span>
+          <span className="book-luxe-continue__slide" aria-hidden={animating}>
+            <span
+              className={`book-luxe-continue__word${
+                animating ? " book-luxe-continue__word--out" : ""
+              }`}
+            >
+              {animating ? fromLabel : toLabel}
+            </span>
+            {animating ? (
+              <span className="book-luxe-continue__word book-luxe-continue__word--in">
+                {toLabel}
+              </span>
+            ) : null}
+          </span>
+          <span className="book-luxe-continue__arrow" aria-hidden>
+            →
+          </span>
+        </span>
+      </button>
+    </div>
+  );
+}
+
+export function BookingDateStrip({
+  selected,
+  timeZone,
+  minDate,
+  maxDate,
+  onSelect,
+}: {
+  selected: string;
+  timeZone: string;
+  minDate: string;
+  /** Last bookable day (YYYY-MM-DD). Defaults to 90 days after minDate. */
+  maxDate?: string;
+  onSelect: (ymd: string) => void;
+}) {
+  const lastDate = maxDate ?? addCalendarDays(minDate, 90, timeZone);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [viewMonth, setViewMonth] = useState(selected);
+  const calendarId = useId();
+
+  const days = useMemo(() => {
+    const all = upcomingCalendarDays(91, timeZone, minDate);
+    return all.filter((ymd) => ymd <= lastDate);
+  }, [minDate, lastDate, timeZone]);
+
+  const monthLabel = useMemo(() => {
+    const dt = zonedDateTime(selected, 12, 0, timeZone);
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      month: "long",
+      year: "numeric",
+    }).format(dt);
+  }, [selected, timeZone]);
+
+  const calendarMonthLabel = useMemo(() => {
+    const dt = zonedDateTime(viewMonth, 12, 0, timeZone);
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      month: "long",
+      year: "numeric",
+    }).format(dt);
+  }, [viewMonth, timeZone]);
+
+  const gridCells = useMemo(() => monthGrid(viewMonth, timeZone), [viewMonth, timeZone]);
+
+  const minMonth = useMemo(() => firstDayOfMonth(minDate, timeZone), [minDate, timeZone]);
+  const maxMonth = useMemo(() => firstDayOfMonth(lastDate, timeZone), [lastDate, timeZone]);
+  const viewMonthStart = useMemo(() => firstDayOfMonth(viewMonth, timeZone), [viewMonth, timeZone]);
+
+  useEffect(() => {
+    const root = scrollRef.current;
+    if (!root) return;
+    const active = root.querySelector(`[data-date="${selected}"]`);
+    active?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+  }, [selected]);
+
+  useEffect(() => {
+    if (!calendarOpen) return;
+    function onPointerDown(e: MouseEvent | TouchEvent) {
+      if (!panelRef.current?.contains(e.target as Node)) setCalendarOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setCalendarOpen(false);
+    }
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("touchstart", onPointerDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("touchstart", onPointerDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [calendarOpen]);
+
+  function scrollStrip(direction: -1 | 1) {
+    const root = scrollRef.current;
+    if (!root) return;
+    root.scrollBy({ left: direction * root.clientWidth * 0.82, behavior: "smooth" });
+  }
+
+  function openCalendar() {
+    setViewMonth(selected);
+    setCalendarOpen((open) => !open);
+  }
+
+  function pickDate(ymd: string) {
+    onSelect(ymd);
+    setCalendarOpen(false);
+  }
+
+  function shiftCalendarMonth(delta: number) {
+    setViewMonth((prev) => addCalendarMonths(prev, delta, timeZone));
+  }
+
+  const canPrevMonth = viewMonthStart > minMonth;
+  const canNextMonth = viewMonthStart < maxMonth;
+
+  return (
+    <div className="book-date-strip-wrap">
+      <button
+        type="button"
+        className="book-date-strip__nav"
+        onClick={() => scrollStrip(-1)}
+        aria-label="Previous week"
+      >
+        ‹
+      </button>
+      <div className="book-date-strip-panel" ref={panelRef}>
+        <button
+          type="button"
+          className="book-date-strip__month"
+          onClick={openCalendar}
+          aria-expanded={calendarOpen}
+          aria-controls={calendarId}
+        >
+          <span>{monthLabel}</span>
+          <svg className="book-date-strip__month-icon" viewBox="0 0 16 16" aria-hidden>
+            <rect x="2.2" y="3.4" width="11.6" height="10.2" rx="1.4" fill="none" stroke="currentColor" strokeWidth="1.2" />
+            <path d="M2.2 6.2h11.6" stroke="currentColor" strokeWidth="1.2" />
+            <path d="M5.4 2.2v2.4M10.6 2.2v2.4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+          </svg>
+        </button>
+
+        {calendarOpen ? (
+          <div id={calendarId} className="book-luxe-calendar" role="dialog" aria-label="Choose a date">
+            <div className="book-luxe-calendar__head">
+              <button
+                type="button"
+                className="book-date-strip__nav book-luxe-calendar__nav"
+                disabled={!canPrevMonth}
+                onClick={() => shiftCalendarMonth(-1)}
+                aria-label="Previous month"
+              >
+                ‹
+              </button>
+              <p className="book-luxe-calendar__title">{calendarMonthLabel}</p>
+              <button
+                type="button"
+                className="book-date-strip__nav book-luxe-calendar__nav"
+                disabled={!canNextMonth}
+                onClick={() => shiftCalendarMonth(1)}
+                aria-label="Next month"
+              >
+                ›
+              </button>
+            </div>
+            <div className="book-luxe-calendar__dow" aria-hidden>
+              {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
+                <span key={d}>{d}</span>
+              ))}
+            </div>
+            <div className="book-luxe-calendar__grid" role="grid">
+              {gridCells.map((ymd, i) =>
+                ymd ? (
+                  <button
+                    key={ymd}
+                    type="button"
+                    role="gridcell"
+                    data-date={ymd}
+                    disabled={ymd < minDate || ymd > lastDate}
+                    onClick={() => pickDate(ymd)}
+                    className={`book-luxe-calendar__day ${
+                      ymd === selected ? "is-selected" : ""
+                    }`}
+                    aria-pressed={ymd === selected}
+                  >
+                    {Number(ymd.split("-")[2])}
+                  </button>
+                ) : (
+                  <span key={`pad-${i}`} className="book-luxe-calendar__pad" aria-hidden />
+                )
+              )}
+            </div>
+          </div>
+        ) : null}
+
+        <div
+          ref={scrollRef}
+          className="book-date-strip-scroll"
+          role="group"
+          aria-label="Choose a day"
+        >
+          {days.map((ymd) => {
+            const dt = zonedDateTime(ymd, 12, 0, timeZone);
+            const dow = new Intl.DateTimeFormat("en-CA", {
+              timeZone,
+              weekday: "short",
+            }).format(dt);
+            const dayNum = new Intl.DateTimeFormat("en-CA", {
+              timeZone,
+              day: "numeric",
+            }).format(dt);
+            const isSelected = ymd === selected;
+            return (
+              <button
+                key={ymd}
+                type="button"
+                data-date={ymd}
+                onClick={() => onSelect(ymd)}
+                className={`book-date-strip__day ${isSelected ? "is-selected" : ""}`}
+                aria-pressed={isSelected}
+              >
+                <span className="book-date-strip__dow">{dow}</span>
+                <span className="book-date-strip__num">{dayNum}</span>
+              </button>
+            );
+          })}
+        </div>
+        <p className="book-date-strip__hint">Tap month for calendar · swipe for quick picks</p>
+      </div>
+      <button
+        type="button"
+        className="book-date-strip__nav"
+        onClick={() => scrollStrip(1)}
+        aria-label="Next week"
+      >
+        ›
+      </button>
+    </div>
+  );
+}
+
+function ordinalDay(day: number) {
+  const n = day % 100;
+  if (n >= 11 && n <= 13) return `${day}th`;
+  switch (day % 10) {
+    case 1:
+      return `${day}st`;
+    case 2:
+      return `${day}nd`;
+    case 3:
+      return `${day}rd`;
+    default:
+      return `${day}th`;
+  }
+}
+
+export function formatBookingSummaryDate(ymd: string, timeZone: string) {
+  const dt = zonedDateTime(ymd, 12, 0, timeZone);
+  const weekday = new Intl.DateTimeFormat("en-CA", {
+    weekday: "long",
+    timeZone,
+  }).format(dt);
+  const month = new Intl.DateTimeFormat("en-CA", { month: "short", timeZone }).format(dt);
+  const dayNum = Number(
+    new Intl.DateTimeFormat("en-CA", { day: "numeric", timeZone }).format(dt)
+  );
+  return `${weekday}, ${month} ${ordinalDay(dayNum)}`;
+}
+
+export function formatBookingSummaryTime(startsAt: string, timeZone: string) {
+  return new Date(startsAt).toLocaleTimeString("en-CA", {
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone,
+  });
+}
+
+export function BookingSummaryCard({
+  serviceLabel,
+  servicePriceCents,
+  providerName,
+  dateLabel,
+  timeLabel,
+  subtotalCents,
+  discountCents,
+  discountLabel,
+  memberTier,
+  totalCents,
+  notes,
+  onNotesChange,
+  stylePreview,
+}: {
+  serviceLabel: string;
+  servicePriceCents: number;
+  providerName: string;
+  dateLabel: string;
+  timeLabel: string;
+  subtotalCents: number;
+  discountCents: number;
+  discountLabel?: string | null;
+  memberTier?: string | null;
+  totalCents: number;
+  notes: string;
+  onNotesChange: (value: string) => void;
+  stylePreview?: ReactNode;
+}) {
+  const discountPct =
+    discountCents > 0 && subtotalCents > 0
+      ? Math.round((discountCents / subtotalCents) * 100)
+      : 0;
+
+  return (
+    <article className="book-luxe-summary">
+      <div className="book-luxe-summary__glow" aria-hidden />
+      <div className="book-luxe-summary__inner">
+        <h2 className="book-luxe-summary__title font-[family-name:var(--font-display)]">
+          Booking Summary
+        </h2>
+        <dl className="book-luxe-summary__rows">
+          <div className="book-luxe-summary__row">
+            <dt>Service</dt>
+            <dd className="font-[family-name:var(--font-display)]">
+              {serviceLabel} ({formatCad(servicePriceCents)})
+            </dd>
+          </div>
+          <div className="book-luxe-summary__row">
+            <dt>Provider</dt>
+            <dd className="font-[family-name:var(--font-display)]">{providerName}</dd>
+          </div>
+          <div className="book-luxe-summary__row">
+            <dt>Date</dt>
+            <dd className="font-[family-name:var(--font-display)]">{dateLabel}</dd>
+          </div>
+          <div className="book-luxe-summary__row">
+            <dt>Time</dt>
+            <dd className="font-[family-name:var(--font-display)]">{timeLabel}</dd>
+          </div>
+        </dl>
+        {discountCents > 0 ? (
+          <p className="book-luxe-summary__discount">
+            {memberTier
+              ? `${memberTier} Member Discount Applied`
+              : discountLabel || "Discount applied"}
+            {discountPct > 0 ? `: -${discountPct}%` : ""} (-{formatCad(discountCents)})
+          </p>
+        ) : null}
+        <div className="book-luxe-summary__rule" aria-hidden />
+        <div className="book-luxe-summary__total">
+          <span className="font-[family-name:var(--font-display)]">Total</span>
+          <strong className="font-[family-name:var(--font-display)]">
+            {formatCad(totalCents)}
+          </strong>
+        </div>
+        {stylePreview ? (
+          <div className="book-luxe-summary__style">{stylePreview}</div>
+        ) : null}
+        <label className="book-luxe-summary__notes">
+          Special requests
+          <textarea
+            value={notes}
+            onChange={(e) => onNotesChange(e.target.value)}
+            rows={3}
+            placeholder="Enter your stylist and request…"
+            className="book-luxe-summary__notes-input"
+          />
+        </label>
+      </div>
+    </article>
+  );
+}
+
+export function BookingConfirmedOverlay({
+  coverUrl,
+  stylist,
+  startsAt,
+  timeZone,
+  onViewAppointment,
+  onBackHome,
+}: {
+  coverUrl?: string;
+  stylist: string;
+  startsAt: string;
+  timeZone: string;
+  onViewAppointment: () => void;
+  onBackHome: () => void;
+}) {
+  const when = new Date(startsAt).toLocaleString("en-CA", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone,
+  });
+
+  return (
+    <div
+      className="book-luxe-confirm"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Booking confirmed"
+      data-testid="booking-confirmed"
+    >
+      {coverUrl ? (
+        <div
+          className="book-luxe-confirm__bg"
+          style={{ backgroundImage: `url(${coverUrl})` }}
+          aria-hidden
+        />
+      ) : null}
+      <div className="book-luxe-confirm__scrim" aria-hidden />
+      <div className="book-luxe-confirm__content">
+        <div className="book-luxe-confirm__icon" aria-hidden>
+          <svg viewBox="0 0 48 48" fill="none">
+            <circle cx="24" cy="24" r="22" stroke="currentColor" strokeWidth="1.5" />
+            <path
+              d="M14 24.5 20.5 31 34 17.5"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </div>
+        <h2 className="book-luxe-confirm__title">Booking Confirmed!</h2>
+        <p className="book-luxe-confirm__body">
+          Your appointment is set with {stylist} on {when}. We&apos;ll see you then!
+        </p>
+        <div className="book-luxe-confirm__actions">
+          <button type="button" className="book-luxe-confirm__btn" onClick={onViewAppointment}>
+            View appointment
+          </button>
+          <button type="button" className="book-luxe-confirm__btn" onClick={onBackHome}>
+            Back to home
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
