@@ -391,9 +391,7 @@ test.describe("Walk-in appointments", () => {
     await adminLogin(page);
     await clearOpenBookingsForStylist(page, /^farzana$/i);
     await stylistLogin(page);
-    await gotoSettled(page, "/stylist");
-    await page.getByTestId("stylist-book-for-client").click();
-    await expect(page).toHaveURL(/\/stylist\/book/);
+    await gotoSettled(page, "/stylist/book");
     await expect(page.getByTestId("stylist-book-page")).toBeVisible();
 
     const clientName = `StyBook ${Date.now()}`;
@@ -456,6 +454,7 @@ test.describe("Walk-in appointments", () => {
     await expect(page).toHaveURL(/\/stylist(?!\/login)/, { timeout: 20_000 });
 
     await gotoSettled(page, "/stylist");
+    await page.getByTestId("stylist-waitlist-badge").click();
     const waitlist = page.getByTestId("walk-in-waitlist");
     const entry = waitlist.locator("[data-testid=waitlist-entry]").filter({
       hasText: clientName,
@@ -471,11 +470,13 @@ test.describe("Walk-in appointments", () => {
     expect(seat.ok(), `seat waitlist: ${await seat.text()}`).toBeTruthy();
 
     await gotoSettled(page, "/stylist");
+    await page.getByTestId("stylist-waitlist-badge").click();
     await expect(
       page.getByTestId("walk-in-waitlist").locator("[data-testid=waitlist-entry]").filter({
         hasText: clientName,
       })
     ).toHaveCount(0, { timeout: 15_000 });
+    await page.getByTestId("stylist-waitlist-sheet").getByRole("button", { name: /close/i }).first().click();
     await expect(
       page
         .getByTestId("stylist-day-timeline")

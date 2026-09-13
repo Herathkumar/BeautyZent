@@ -530,6 +530,53 @@ export const SALON_THEMES: SalonTheme[] = [
       danger: "#a8443a",
     }),
   },
+  {
+    id: "zent",
+    label: "BeautyZent Gold",
+    blurb: "Quiet luxury gold with soft pastels — Apple Calendar stylist look.",
+    dark: palette({
+      bg1: "#1a1816",
+      bg2: "#121110",
+      bg3: "#0c0b0a",
+      surface1: "#22201e",
+      surface2: "#2c2926",
+      surface3: "#161412",
+      accent: "#c19a6b",
+      accentStrong: "#d4b089",
+      accentDeep: "#a68966",
+      accentLift: "#e0c49a",
+      accentTint: "#2c2926",
+      onAccent: "#121110",
+      text: "#faf7f2",
+      textSoft: "#ebe3d8",
+      muted: "#a89a8c",
+      ok: "#9fe3b8",
+      warn: "#e0b07a",
+      danger: "#f0b0b0",
+      glow2: "#8a6b45",
+    }),
+    light: palette({
+      bg1: "#fafafa",
+      bg2: "#f7f5f2",
+      bg3: "#efece7",
+      surface1: "#ffffff",
+      surface2: "#fffcf9",
+      surface3: "#f3f0eb",
+      accent: "#c19a6b",
+      accentStrong: "#b88e4f",
+      accentDeep: "#a68966",
+      accentLift: "#d4a373",
+      accentTint: "#f5efe6",
+      onAccent: "#ffffff",
+      text: "#2a2521",
+      textSoft: "#3d342e",
+      muted: "#7a6f64",
+      ok: "#4a8f5c",
+      warn: "#c49a5c",
+      danger: "#b85a4a",
+      glow2: "#c19a6b",
+    }),
+  },
 ];
 
 export const SALON_THEME_IDS = SALON_THEMES.map((t) => t.id);
@@ -537,7 +584,8 @@ export const SALON_THEME_IDS = SALON_THEMES.map((t) => t.id);
 /** Client booking app is always the cocoa gold luxury pack. */
 export const DEFAULT_BOOKING_THEME_ID = "cocoa";
 export const DEFAULT_MANAGER_THEME_ID = "cocoa";
-export const DEFAULT_STYLIST_THEME_ID = "seaglass";
+/** Stylist PWA — BeautyZent quiet-luxury gold calendar theme. */
+export const DEFAULT_STYLIST_THEME_ID = "zent";
 
 export function getSalonTheme(id: string | null | undefined, fallback: string) {
   return (

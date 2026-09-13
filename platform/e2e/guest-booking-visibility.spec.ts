@@ -49,7 +49,7 @@ test.describe("Guest booking visibility across apps", () => {
 
     await stylistLogin(page);
     await expect(page).toHaveURL(/\/stylist(?!\/login)/);
-    await expect(page.getByText(/hi,/i).first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("stylist-calendar")).toBeVisible({ timeout: 15_000 });
     await assertNoCrashOverlay(page);
     await expect(page.getByText(clientName).first()).toBeVisible({ timeout: 15_000 });
 
@@ -61,7 +61,7 @@ test.describe("Guest booking visibility across apps", () => {
           .filter({ hasText: clientName })
       ).toBeVisible();
     } else {
-      await expect(page.getByText(/coming up/i).first()).toBeVisible();
+      await expect(page.getByTestId("stylist-calendar")).toBeVisible();
     }
 
     await receptionLogin(page);
