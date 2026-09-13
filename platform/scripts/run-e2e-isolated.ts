@@ -104,6 +104,10 @@ async function main() {
     const seedCode = await run("pnpm", ["db:seed"], env);
     if (seedCode !== 0) throw new Error(`db:seed failed (${seedCode})`);
 
+    // Always print coverage inventory before the suite runs.
+    const coverageCode = await run("pnpm", ["exec", "tsx", "scripts/e2e-coverage.ts"], env);
+    if (coverageCode !== 0) throw new Error(`e2e coverage inventory failed (${coverageCode})`);
+
     console.log("Running Playwright suite …");
     const testCode = await run(
       "pnpm",
