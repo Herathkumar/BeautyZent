@@ -1,5 +1,12 @@
 import { expect, type Page } from "@playwright/test";
-import { clearAuthSession, pickFirstSlot, salonCalendarDate, waitForBookingStep } from "../helpers";
+import {
+  clearAuthSession,
+  continueBookingToProvider,
+  continueBookingToTime,
+  pickFirstSlot,
+  salonCalendarDate,
+  waitForBookingStep,
+} from "../helpers";
 import { PLATFORM, type Tenant } from "./tenants";
 
 export { clearAuthSession, pickFirstSlot, salonCalendarDate, waitForBookingStep };
@@ -86,7 +93,7 @@ export async function bookOnlineForTenant(
     has: page.getByRole("heading", { name: /choose services?/i }),
   });
   await services.getByRole("button").filter({ hasText: tenant.servicePattern }).first().click();
-  await waitForBookingStep(page, /choose your (stylist|provider)/i);
+  await continueBookingToProvider(page);
   await expect(page.getByRole("heading", { name: /choose your (stylist|provider)/i })).toBeVisible();
   const stylists = page.locator("section").filter({
     has: page.getByRole("heading", { name: /choose your (stylist|provider)/i }),
@@ -96,7 +103,7 @@ export async function bookOnlineForTenant(
     .filter({ hasText: new RegExp(tenant.stylistName, "i") })
     .first()
     .click();
-  await waitForBookingStep(page, /pick a time/i);
+  await continueBookingToTime(page);
   await expect(page.getByRole("heading", { name: /pick a time/i })).toBeVisible();
   const date = salonCalendarDate(new Date());
   await pickFirstSlot(page, date);

@@ -177,7 +177,18 @@ export async function joinAsMember(
   opts: { name: string; phone: string; email: string }
 ) {
   await gotoSettled(page, `/book/${DEMO.slug}`);
-  await page.getByRole("button", { name: /^join free$/i }).first().click();
+
+  // Join lives under Profile for guests (no top-level Join free on the wizard).
+  const joinOnPage = page.getByRole("button", { name: /^join free$/i }).first();
+  if (!(await joinOnPage.isVisible({ timeout: 2_000 }).catch(() => false))) {
+    await page.getByRole("button", { name: /^profile$/i }).click();
+    const profile = page.getByTestId("book-profile");
+    await expect(profile).toBeVisible({ timeout: 10_000 });
+    await profile.getByRole("button", { name: /^join free$/i }).click();
+  } else {
+    await joinOnPage.click();
+  }
+
   await page.getByLabel(/^name$/i).fill(opts.name);
   await page.getByLabel(/^phone$/i).fill(opts.phone);
   await page.getByLabel(/^email$/i).fill(opts.email);
@@ -198,11 +209,16 @@ export async function joinAsMember(
   await page.getByRole("button", { name: /^join & continue$/i }).click();
   await expect(page.getByText(/^member$/i).first()).toBeVisible({ timeout: 15_000 });
 
-  // Joining opens the Profile sheet — close it so the wizard is reachable.
+  // Joining may open Profile — dismiss via Home (signed-in sheet has Log out, not Close).
   const profile = page.getByTestId("book-profile");
   if (await profile.isVisible({ timeout: 5_000 }).catch(() => false)) {
-    await profile.getByRole("button", { name: /^close$/i }).click();
-    await expect(profile).toHaveCount(0);
+    const close = profile.getByRole("button", { name: /^close$/i });
+    if (await close.isVisible({ timeout: 1_000 }).catch(() => false)) {
+      await close.click();
+    } else {
+      await page.getByRole("button", { name: /^home$/i }).click();
+    }
+    await expect(profile).toHaveCount(0, { timeout: 10_000 });
   }
 }
 
@@ -422,13 +438,31 @@ export async function pickFirstSlot(page: Page, startDate: string) {
 
 const PROVIDER_HEADING = /choose your (stylist|provider)/i;
 
-/** Wizard auto-advances ~1s after each step is completed. */
+/** Wizard advances via Continue (services step has autoAdvance=false) or ~1s auto-advance. */
 export async function waitForBookingStep(
   page: Page,
   heading: RegExp,
-  timeout = 3_500
+  timeout = 15_000
 ) {
   await expect(page.getByRole("heading", { name: heading })).toBeVisible({ timeout });
+}
+
+/** After selecting service(s), click Continue to Provider when shown. */
+export async function continueBookingToProvider(page: Page) {
+  const continueBtn = page.getByRole("button", { name: /continue to\s*provider/i });
+  if (await continueBtn.isVisible({ timeout: 3_000 }).catch(() => false)) {
+    await continueBtn.click();
+  }
+  await waitForBookingStep(page, PROVIDER_HEADING);
+}
+
+/** After selecting a provider, wait for time step (auto-advances when enabled). */
+export async function continueBookingToTime(page: Page) {
+  const continueBtn = page.getByRole("button", { name: /continue to\s*time/i });
+  if (await continueBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
+    await continueBtn.click();
+  }
+  await waitForBookingStep(page, /pick a time/i);
 }
 
 export async function bookOnline(
@@ -454,7 +488,7 @@ export async function bookOnline(
     has: page.getByRole("heading", { name: /choose services?/i }),
   });
   await services.getByRole("button").filter({ hasText: servicePattern }).first().click();
-  await waitForBookingStep(page, PROVIDER_HEADING);
+  await continueBookingToProvider(page);
   await expect(page.getByRole("heading", { name: PROVIDER_HEADING })).toBeVisible();
   const stylists = page.locator("section").filter({
     has: page.getByRole("heading", { name: PROVIDER_HEADING }),
@@ -465,7 +499,7 @@ export async function bookOnline(
     .filter({ hasNotText: /any available/i })
     .first()
     .click();
-  await waitForBookingStep(page, /pick a time/i);
+  await continueBookingToTime(page);
   await expect(page.getByRole("heading", { name: /pick a time/i })).toBeVisible();
   const bookedDate = await pickFirstSlot(page, date);
   await waitForBookingStep(page, /booking summary/i);

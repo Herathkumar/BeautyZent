@@ -1,21 +1,30 @@
 import { expect, test } from "@playwright/test";
-import { clearAuthSession, gotoSettled } from "./helpers";
+import { clearAuthSession, DEMO, gotoSettled, joinAsMember } from "./helpers";
 
 test.describe("consumer account UI", () => {
   test("signs in with OTP and shows account tabs", async ({ page }) => {
     await clearAuthSession(page);
     const email = `account-ui-${Date.now()}@example.test`;
 
+    // Consumer OTP requires an existing salon membership.
+    await joinAsMember(page, {
+      name: "Account UI Member",
+      phone: "4165550177",
+      email,
+    });
+
+    await clearAuthSession(page);
     await gotoSettled(page, "/account");
-    await expect(page.getByRole("heading", { name: /my account/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /my account/i })).toBeVisible({
+      timeout: 20_000,
+    });
+
     await page.getByLabel(/^email$/i).fill(email);
     await page.getByRole("button", { name: /email me a code/i }).click();
-
     await expect(page.getByText(/local demo code:/i)).toBeVisible({ timeout: 15_000 });
     const codeText = await page.getByText(/local demo code:/i).innerText();
     const code = (codeText.match(/\b(\d{6})\b/) || [])[1];
     expect(code, "Expected demo OTP on account sign-in").toBeTruthy();
-
     await page.getByLabel(/six-digit code/i).fill(code!);
     await page.getByRole("button", { name: /verify & open account/i }).click();
 
@@ -41,5 +50,6 @@ test.describe("consumer account UI", () => {
     await expect(page.getByLabel(/^email$/i)).toBeVisible();
     await expect(page.getByRole("button", { name: /email me a code/i })).toBeVisible();
     await expect(page.getByRole("link", { name: /explore/i })).toBeVisible();
+    void DEMO;
   });
 });

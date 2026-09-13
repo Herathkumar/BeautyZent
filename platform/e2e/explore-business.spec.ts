@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { DEMO, gotoSettled, joinAsMember } from "./helpers";
+import { DEMO, clearAuthSession, gotoSettled, joinAsMember } from "./helpers";
 
 test.describe("explore business detail", () => {
   test("opens seeded salon menu and deep-links into booking", async ({ page }) => {
@@ -40,6 +40,20 @@ test.describe("explore business detail", () => {
       name: "Explore Fav",
       phone: "4165550188",
       email,
+    });
+
+    // Favorites on explore use the unified consumer session — sign into /account.
+    await clearAuthSession(page);
+    await gotoSettled(page, "/account");
+    await page.getByLabel(/^email$/i).fill(email);
+    await page.getByRole("button", { name: /email me a code/i }).click();
+    await expect(page.getByText(/local demo code:/i)).toBeVisible({ timeout: 15_000 });
+    const codeText = await page.getByText(/local demo code:/i).innerText();
+    const code = (codeText.match(/\b(\d{6})\b/) || [])[1]!;
+    await page.getByLabel(/six-digit code/i).fill(code);
+    await page.getByRole("button", { name: /verify & open account/i }).click();
+    await expect(page.getByRole("button", { name: /^bookings/i })).toBeVisible({
+      timeout: 20_000,
     });
 
     await gotoSettled(page, `/explore/${DEMO.slug}`);
