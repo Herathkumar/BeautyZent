@@ -23,8 +23,12 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const days = Math.min(60, Math.max(1, Number(url.searchParams.get("days") || 14)));
+  const lookback = Math.min(31, Math.max(0, Number(url.searchParams.get("lookback") || 0)));
   const todayYmd = calendarDateInTz(timeZone);
-  const from = new Date(zonedStartOfDay(todayYmd, timeZone).getTime());
+  const fromYmd = lookback
+    ? addCalendarDays(todayYmd, -lookback, timeZone)
+    : todayYmd;
+  const from = new Date(zonedStartOfDay(fromYmd, timeZone).getTime());
   const to = new Date(
     zonedStartOfDay(addCalendarDays(todayYmd, days, timeZone), timeZone).getTime()
   );

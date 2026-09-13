@@ -65,15 +65,12 @@ test.describe("Salon day — full path", () => {
             .locator("article")
             .filter({ hasText: clientName })
         ).toHaveCount(0);
-        await expect(
-          page.getByTestId("stylist-done-today").getByText(clientName)
-        ).toBeVisible();
       }
       await adminLogin(page);
       await page.goto(`/display/${DEMO.slug}/reception`);
       await expect(page.getByText(clientName).first()).toBeVisible({ timeout: 15_000 });
     } else {
-      await expect(page.getByText(/coming up|today on the floor/i).first()).toBeVisible();
+      await expect(page.getByTestId("stylist-calendar")).toBeVisible();
     }
   });
 });

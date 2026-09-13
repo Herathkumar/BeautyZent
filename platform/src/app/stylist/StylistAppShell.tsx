@@ -76,9 +76,12 @@ export function StylistAppShell({
     };
   }, [showChrome, initialBrand]);
 
+  const hideChromeHeader =
+    pathname === "/stylist" || pathname.startsWith("/stylist/book");
+
   return (
     <StylistThemeRoot>
-      {showChrome ? (
+      {showChrome && !hideChromeHeader ? (
         <header className="admin-header shrink-0 z-20 px-4 py-3">
           <div className="mx-auto flex max-w-lg items-center justify-between">
             {brandLink}
@@ -88,7 +91,7 @@ export function StylistAppShell({
       ) : null}
       <div
         className={`stylist-app-main mx-auto w-full max-w-lg px-4 ${
-          showChrome ? "pt-4 pb-6" : "py-8"
+          showChrome ? (hideChromeHeader ? "pt-2 pb-6" : "pt-4 pb-6") : "py-8"
         }`}
       >
         {children}
