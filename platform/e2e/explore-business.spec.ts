@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { DEMO, gotoSettled, joinAsMember } from "./helpers";
+import { DEMO, clearAuthSession, gotoSettled, joinAsMember } from "./helpers";
 
 test.describe("explore business detail", () => {
   test("opens seeded salon menu and deep-links into booking", async ({ page }) => {
