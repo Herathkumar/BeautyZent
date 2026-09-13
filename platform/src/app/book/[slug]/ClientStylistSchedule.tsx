@@ -118,7 +118,7 @@ export function ClientStylistSchedule({
   const [data, setData] = useState<StylistSchedulePayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [view, setView] = useState<CalendarView>("day");
+  const [view, setView] = useState<CalendarView>(compact ? "day" : "day");
   const [localDate, setLocalDate] = useState(date || "");
 
   const selectedYmd = date || localDate;
@@ -131,7 +131,7 @@ export function ClientStylistSchedule({
     let cancelled = false;
     const ac = new AbortController();
 
-    async function load() {
+    async function load(isInitial: boolean) {
       setError("");
       try {
         const q = selectedYmd ? `?date=${encodeURIComponent(selectedYmd)}` : "";
@@ -144,7 +144,7 @@ export function ClientStylistSchedule({
         if (!cancelled) {
           const payload = json as StylistSchedulePayload;
           setData(payload);
-          if (!date && !localDate) setLocalDate(payload.date);
+          if (!date && !selectedYmd) setLocalDate(payload.date);
         }
       } catch (e) {
         if (cancelled || (e instanceof DOMException && e.name === "AbortError")) return;
@@ -153,19 +153,20 @@ export function ClientStylistSchedule({
           setData(null);
         }
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled && isInitial) setLoading(false);
       }
     }
 
-    setLoading(true);
-    void load();
-    const timer = window.setInterval(() => void load(), pollMs);
+    if (!data) setLoading(true);
+    void load(true);
+    const timer = window.setInterval(() => void load(false), pollMs);
     return () => {
       cancelled = true;
       ac.abort();
       window.clearInterval(timer);
     };
-  }, [slug, stylistId, selectedYmd, pollMs, date, localDate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only refetch when schedule identity/date changes
+  }, [slug, stylistId, selectedYmd, pollMs]);
 
   function pickDate(ymd: string) {
     setLocalDate(ymd);
@@ -371,9 +372,16 @@ export function ClientStylistSchedule({
           <p className="bz-client-cal__monthlabel">{monthLabel}</p>
 
           {data.isOff ? (
-            <p className="px-4 py-6 text-center text-sm text-[#666]">
-              Not working this day. Try another date.
-            </p>
+            <div className="px-4 py-6 text-center">
+              <p className="text-sm text-[#666]">Not working this day.</p>
+              <button
+                type="button"
+                className="mt-3 text-sm font-semibold text-[#b88e4f]"
+                onClick={() => pickDate(addCalendarDays(selectedYmd || floor, 1, tz))}
+              >
+                See next day →
+              </button>
+            </div>
           ) : (
             <div className="bz-client-cal__scroll">
               <div className="bz-client-cal__quarters" aria-hidden>
