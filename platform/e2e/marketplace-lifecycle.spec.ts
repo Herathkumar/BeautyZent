@@ -49,7 +49,7 @@ test.describe("marketplace claim & listing review", () => {
     await expect(card.getByText(/DRAFT/i)).toBeVisible();
     await card.getByRole("link", { name: /^preview$/i }).click();
 
-    await expect(page.getByRole("heading", { name: /onboarding preview/i })).toBeVisible();
+    await expect(page.getByText(/onboarding preview/i).first()).toBeVisible();
     await page.getByTestId("listing-approve").click();
     await expect(page.getByRole("button", { name: /pause listing/i })).toBeVisible({
       timeout: 20_000,

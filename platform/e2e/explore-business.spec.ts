@@ -42,6 +42,20 @@ test.describe("explore business detail", () => {
       email,
     });
 
+    // Favorites on explore use the unified consumer session — sign into /account.
+    await clearAuthSession(page);
+    await gotoSettled(page, "/account");
+    await page.getByLabel(/^email$/i).fill(email);
+    await page.getByRole("button", { name: /email me a code/i }).click();
+    await expect(page.getByText(/local demo code:/i)).toBeVisible({ timeout: 15_000 });
+    const codeText = await page.getByText(/local demo code:/i).innerText();
+    const code = (codeText.match(/\b(\d{6})\b/) || [])[1]!;
+    await page.getByLabel(/six-digit code/i).fill(code);
+    await page.getByRole("button", { name: /verify & open account/i }).click();
+    await expect(page.getByRole("button", { name: /^bookings/i })).toBeVisible({
+      timeout: 20_000,
+    });
+
     await gotoSettled(page, `/explore/${DEMO.slug}`);
     const save = page.getByRole("button", { name: /save to favorites/i });
     await expect(save).toBeVisible({ timeout: 20_000 });
