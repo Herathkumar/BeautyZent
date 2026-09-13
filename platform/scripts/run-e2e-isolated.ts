@@ -87,14 +87,26 @@ async function main() {
       process.env.PLAYWRIGHT_BASE_URL || "http://localhost:3333",
     NEXT_PUBLIC_DEFAULT_SALON_SLUG: "fhsalon",
     E2E_ADMIN_PASSWORD: "demo1234",
-    PLAYWRIGHT_BROWSERS_PATH: path.join(
-      process.env.USERPROFILE || process.env.HOME || "",
-      "AppData",
-      "Local",
-      "ms-playwright"
-    ),
     CI: process.env.CI || "",
   };
+
+  // Prefer an explicit browsers path when provided. Otherwise use Playwright's
+  // platform default (~/.cache/ms-playwright on Linux/macOS, %LOCALAPPDATA% on Windows).
+  if (process.env.PLAYWRIGHT_BROWSERS_PATH) {
+    env.PLAYWRIGHT_BROWSERS_PATH = process.env.PLAYWRIGHT_BROWSERS_PATH;
+  } else if (process.platform === "win32") {
+    env.PLAYWRIGHT_BROWSERS_PATH = path.join(
+      process.env.LOCALAPPDATA ||
+        path.join(process.env.USERPROFILE || "", "AppData", "Local"),
+      "ms-playwright"
+    );
+  } else {
+    env.PLAYWRIGHT_BROWSERS_PATH = path.join(
+      process.env.HOME || "",
+      ".cache",
+      "ms-playwright"
+    );
+  }
 
   try {
     console.log("Pushing schema + seeding demo data …");
