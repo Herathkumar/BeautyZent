@@ -430,10 +430,21 @@ export async function pickFirstSlot(page: Page, startDate: string) {
       }
       continue;
     }
-    await slotButtons.first().click();
-    return dateStr;
+  await slotButtons.first().click();
+  return dateStr;
   }
   throw new Error(`No open slots found starting from ${startDate}`);
+}
+
+/** After a time slot is selected, advance to booking summary when the new calendar CTA is shown. */
+export async function continueBookingToDetails(page: Page) {
+  const continueBook = page.getByRole("button", {
+    name: /continue to book|continue to\s*details/i,
+  });
+  if (await continueBook.isVisible({ timeout: 3_000 }).catch(() => false)) {
+    await continueBook.click();
+  }
+  await waitForBookingStep(page, /booking summary/i);
 }
 
 const PROVIDER_HEADING = /choose your (stylist|provider)/i;
@@ -502,7 +513,7 @@ export async function bookOnline(
   await continueBookingToTime(page);
   await expect(page.getByRole("heading", { name: /pick a time/i })).toBeVisible();
   const bookedDate = await pickFirstSlot(page, date);
-  await waitForBookingStep(page, /booking summary/i);
+  await continueBookingToDetails(page);
   const form = page.locator("form").filter({
     has: page.getByRole("heading", { name: /booking summary/i }),
   });

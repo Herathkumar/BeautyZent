@@ -448,6 +448,8 @@ function StylistProfileCard({
               slug={slug}
               stylistId={stylist.id}
               stylistName={stylist.name}
+              photoUrl={stylist.photoUrl}
+              bio={bio}
               compact
             />
           </div>
