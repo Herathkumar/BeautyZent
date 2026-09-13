@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { adminLogin, bookOnline, DEMO, gotoSettled, nextOpenDate, waitForBookingStep } from "./helpers";
+import { adminLogin, bookOnline, continueBookingToProvider, DEMO, gotoSettled, nextOpenDate } from "./helpers";
 
 test.describe("Client online booking flow", () => {
   test("service → stylist → time → details → confirmed", async ({ page }) => {
@@ -44,7 +44,7 @@ test.describe("Client online booking flow", () => {
     });
     await expect(serviceBtn).toBeVisible({ timeout: 15_000 });
     await serviceBtn.click();
-    await waitForBookingStep(page, /choose your (stylist|provider)/i);
+    await continueBookingToProvider(page);
     await expect(
       page.getByRole("button").filter({ hasText: /farzana|aisha|omar|aadil/i }).first()
     ).toBeVisible();

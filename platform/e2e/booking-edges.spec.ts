@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { bookOnline, DEMO, nextOpenDate, waitForBookingStep } from "./helpers";
+import { bookOnline, continueBookingToProvider, DEMO, nextOpenDate } from "./helpers";
 
 test.describe("Booking edges", () => {
   test("confirmation overlay appears after booking", async ({ page }) => {
@@ -17,7 +17,7 @@ test.describe("Booking edges", () => {
     await page.goto(`/book/${DEMO.slug}`);
     await expect(page.locator(".book-luxe-stepper__label").filter({ hasText: /service/i })).toBeVisible();
     await page.getByRole("button").filter({ hasText: /men'?s haircut|women'?s trim/i }).first().click();
-    await waitForBookingStep(page, /choose your (stylist|provider)/i);
+    await continueBookingToProvider(page);
     await expect(
       page.locator(".book-luxe-stepper__step.is-active .book-luxe-stepper__label").filter({
         hasText: /provider/i,
@@ -25,4 +25,3 @@ test.describe("Booking edges", () => {
     ).toBeVisible();
   });
 });
-
