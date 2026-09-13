@@ -177,7 +177,18 @@ export async function joinAsMember(
   opts: { name: string; phone: string; email: string }
 ) {
   await gotoSettled(page, `/book/${DEMO.slug}`);
-  await page.getByRole("button", { name: /^join free$/i }).first().click();
+
+  // Join lives under Profile for guests (no top-level Join free on the wizard).
+  const joinOnPage = page.getByRole("button", { name: /^join free$/i }).first();
+  if (!(await joinOnPage.isVisible({ timeout: 2_000 }).catch(() => false))) {
+    await page.getByRole("button", { name: /^profile$/i }).click();
+    const profile = page.getByTestId("book-profile");
+    await expect(profile).toBeVisible({ timeout: 10_000 });
+    await profile.getByRole("button", { name: /^join free$/i }).click();
+  } else {
+    await joinOnPage.click();
+  }
+
   await page.getByLabel(/^name$/i).fill(opts.name);
   await page.getByLabel(/^phone$/i).fill(opts.phone);
   await page.getByLabel(/^email$/i).fill(opts.email);
