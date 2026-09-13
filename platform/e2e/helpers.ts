@@ -209,11 +209,16 @@ export async function joinAsMember(
   await page.getByRole("button", { name: /^join & continue$/i }).click();
   await expect(page.getByText(/^member$/i).first()).toBeVisible({ timeout: 15_000 });
 
-  // Joining opens the Profile sheet — close it so the wizard is reachable.
+  // Joining may open Profile — dismiss via Home (signed-in sheet has Log out, not Close).
   const profile = page.getByTestId("book-profile");
   if (await profile.isVisible({ timeout: 5_000 }).catch(() => false)) {
-    await profile.getByRole("button", { name: /^close$/i }).click();
-    await expect(profile).toHaveCount(0);
+    const close = profile.getByRole("button", { name: /^close$/i });
+    if (await close.isVisible({ timeout: 1_000 }).catch(() => false)) {
+      await close.click();
+    } else {
+      await page.getByRole("button", { name: /^home$/i }).click();
+    }
+    await expect(profile).toHaveCount(0, { timeout: 10_000 });
   }
 }
 
