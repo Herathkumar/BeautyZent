@@ -556,10 +556,6 @@ export function BookingWizard({ slug, coverUrl }: { slug: string; coverUrl?: str
     }
   }
 
-  function pickNextSlot() {
-    if (slots[0]) setStartsAt(slots[0]);
-  }
-
   /** Ask the member bar to pop open its sign-in (or join) form for a guest. */
   function requestMemberForm(mode: "signin" | "join") {
     setShowBookings(false);
@@ -670,15 +666,27 @@ export function BookingWizard({ slug, coverUrl }: { slug: string; coverUrl?: str
         photoUrl={scheduleStylist?.photoUrl}
         bio={scheduleStylist?.bio}
         date={date || undefined}
-        onBook={
-          scheduleStylist
-            ? () => {
-                selectProvider(scheduleStylist.id);
-                setScheduleStylist(null);
-                advanceStep(2);
+        minDate={minDate}
+        salonName={salon?.name}
+        salonAddress={salon?.address}
+        service={
+          selectedServices[0]
+            ? {
+                name: selectedServiceLabel,
+                durationMin: selectedTotalMin,
+                priceCents: selectedTotalCents,
               }
-            : undefined
+            : null
         }
+        serviceIds={serviceIds}
+        onBook={(opts) => {
+          if (!scheduleStylist) return;
+          selectProvider(scheduleStylist.id);
+          if (opts?.date) setDate(opts.date);
+          if (opts?.startsAt) setStartsAt(opts.startsAt);
+          setScheduleStylist(null);
+          advanceStep(opts?.startsAt ? 3 : 2);
+        }}
       />
     </>
   );
@@ -925,69 +933,77 @@ export function BookingWizard({ slug, coverUrl }: { slug: string; coverUrl?: str
                 <p className="book-luxe-kicker mt-3">Any available provider</p>
               ) : null}
             </div>
-            <BookingDateStrip
-              selected={date}
-              timeZone={salonTz}
-              minDate={minDate}
-              onSelect={(next) => {
-                setDate(next);
-                setStartsAt("");
-              }}
-            />
             {selectedStylist ? (
               <StylistLiveSchedule
                 slug={slug}
                 stylistId={selectedStylist.id}
                 stylistName={selectedStylist.name}
+                photoUrl={selectedStylist.photoUrl}
+                bio={selectedStylist.bio}
+                salonName={salon?.name}
+                salonAddress={salon?.address}
                 date={date}
-                compact
+                minDate={minDate}
+                slots={slots}
+                startsAt={startsAt}
+                service={{
+                  name: selectedServiceLabel || "Service",
+                  durationMin: selectedTotalMin || 60,
+                  priceCents: selectedTotalCents,
+                }}
+                onSelectDate={(next) => {
+                  setDate(next);
+                  setStartsAt("");
+                }}
+                onSelectSlot={setStartsAt}
+                onContinue={() => advanceStep(3)}
+                onEditService={() => goToStep(0)}
+                showFooter
               />
-            ) : null}
-            {slots.length > 0 ? (
-              <button
-                type="button"
-                onClick={pickNextSlot}
-                className="w-full rounded-full border border-champagne/35 px-4 py-2 text-xs font-semibold text-champagne"
-              >
-                Next available ·{" "}
-                {new Date(slots[0]).toLocaleTimeString("en-CA", {
-                  hour: "numeric",
-                  minute: "2-digit",
-                  timeZone: salonTz,
-                })}
-              </button>
-            ) : null}
-            {slots.length === 0 ? (
-              <p className="text-center text-sm text-muted">
-                No open slots this day. Try another date.
-              </p>
             ) : (
-              <div className="book-luxe-slots">
-                {slots.map((slot) => (
-                  <button
-                    key={slot}
-                    type="button"
-                    data-slot-day={calendarDateInTz(salonTz, new Date(slot))}
-                    onClick={() => setStartsAt(slot)}
-                    className={`book-slot rounded-xl px-2 py-2.5 text-xs sm:text-sm ${
-                      startsAt === slot ? "is-selected" : ""
-                    }`}
-                  >
-                    {new Date(slot).toLocaleTimeString("en-CA", {
-                      hour: "numeric",
-                      minute: "2-digit",
-                      timeZone: salonTz,
-                    })}
-                  </button>
-                ))}
-              </div>
+              <>
+                <BookingDateStrip
+                  selected={date}
+                  timeZone={salonTz}
+                  minDate={minDate}
+                  onSelect={(next) => {
+                    setDate(next);
+                    setStartsAt("");
+                  }}
+                />
+                {slots.length === 0 ? (
+                  <p className="text-center text-sm text-muted">
+                    No open slots this day. Try another date.
+                  </p>
+                ) : (
+                  <div className="book-luxe-slots">
+                    {slots.map((slot) => (
+                      <button
+                        key={slot}
+                        type="button"
+                        data-slot-day={calendarDateInTz(salonTz, new Date(slot))}
+                        onClick={() => setStartsAt(slot)}
+                        className={`book-slot rounded-xl px-2 py-2.5 text-xs sm:text-sm ${
+                          startsAt === slot ? "is-selected" : ""
+                        }`}
+                      >
+                        {new Date(slot).toLocaleTimeString("en-CA", {
+                          hour: "numeric",
+                          minute: "2-digit",
+                          timeZone: salonTz,
+                        })}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <LuxeStepContinueButton
+                  fromLabel="Time"
+                  toLabel="Details"
+                  ready={Boolean(startsAt)}
+                  onAdvance={() => advanceStep(3)}
+                />
+              </>
             )}
-            <LuxeStepContinueButton
-              fromLabel="Time"
-              toLabel="Details"
-              ready={Boolean(startsAt)}
-              onAdvance={() => advanceStep(3)}
-            />
           </section>
         ) : null}
 

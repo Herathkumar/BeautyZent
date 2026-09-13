@@ -6,6 +6,7 @@ import {
   clearOpenBookingsForStylist,
   continueBookingToProvider,
   continueBookingToTime,
+  continueBookingToDetails,
   DEMO,
   joinAsMember,
   nextOpenDate,
@@ -61,7 +62,7 @@ test.describe("Booking member auth", () => {
     await expect(page.getByRole("heading", { name: /pick a time/i })).toBeVisible();
 
     await pickFirstSlot(page, nextOpenDate());
-    await waitForBookingStep(page, /booking summary/i);
+    await continueBookingToDetails(page);
 
     await expect(page.getByRole("heading", { name: /booking summary/i })).toBeVisible();
     await expect(page.getByText(`Signed in as ${name}`)).toBeVisible();
