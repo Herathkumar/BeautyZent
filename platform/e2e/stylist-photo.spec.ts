@@ -1,6 +1,6 @@
 import path from "path";
 import { test, expect } from "@playwright/test";
-import { DEMO, gotoSettled, stylistLogin, waitForBookingStep } from "./helpers";
+import { DEMO, continueBookingToProvider, gotoSettled, stylistLogin } from "./helpers";
 
 const selfieFixture = path.join(__dirname, "fixtures", "selfie.png");
 const womenService = /women'?s (hair)?cut|women'?s trim|blow-dry|bang|fringe/i;
@@ -20,7 +20,7 @@ async function openStylistStep(page: import("@playwright/test").Page, service: s
   } else {
     await services.getByRole("button").filter({ hasText: service }).first().click();
   }
-  await waitForBookingStep(page, /choose your (stylist|provider)/i);
+  await continueBookingToProvider(page);
   return page.locator("section").filter({
     has: page.getByRole("heading", { name: /choose your (stylist|provider)/i }),
   });

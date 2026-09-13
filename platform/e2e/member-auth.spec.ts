@@ -4,6 +4,8 @@ import {
   bookOnline,
   bookableDateNearToday,
   clearOpenBookingsForStylist,
+  continueBookingToProvider,
+  continueBookingToTime,
   DEMO,
   joinAsMember,
   nextOpenDate,
@@ -46,7 +48,7 @@ test.describe("Booking member auth", () => {
       .filter({ hasText: /men'?s haircut|women'?s trim|beard/i })
       .first()
       .click();
-    await waitForBookingStep(page, /choose your (stylist|provider)/i);
+    await continueBookingToProvider(page);
     const stylists = page.locator("section").filter({
       has: page.getByRole("heading", { name: /choose your (stylist|provider)/i }),
     });
@@ -55,7 +57,7 @@ test.describe("Booking member auth", () => {
       .filter({ hasText: /farzana|aisha|omar|aadil/i })
       .first()
       .click();
-    await waitForBookingStep(page, /pick a time/i);
+    await continueBookingToTime(page);
     await expect(page.getByRole("heading", { name: /pick a time/i })).toBeVisible();
 
     await pickFirstSlot(page, nextOpenDate());
