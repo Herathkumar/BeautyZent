@@ -43,10 +43,14 @@ export function SalonThemeSync({
   const accentColor = brand?.accentColor ?? null;
 
   useLayoutEffect(() => {
+    // Stylist app is always sea-glass — never re-apply a gold/cocoa pack from brand cache/API.
+    const resolvedThemeId =
+      themeField === "stylistThemeId" ? fallbackThemeId : themeId;
+
     if (themeField === "bookingThemeId") {
       applyMarketplaceBookTheme();
     } else {
-      applySalonThemeId(themeId, fallbackThemeId);
+      applySalonThemeId(resolvedThemeId, fallbackThemeId);
     }
     if (brandSlug && name) {
       writeSalonBrand(
@@ -58,7 +62,8 @@ export function SalonThemeSync({
           bookingThemeId:
             themeField === "bookingThemeId" ? MARKETPLACE_BOOK_THEME_ID : bookingThemeId,
           managerThemeId,
-          stylistThemeId,
+          stylistThemeId:
+            themeField === "stylistThemeId" ? fallbackThemeId : stylistThemeId,
         },
         { staff }
       );
@@ -74,14 +79,19 @@ export function SalonThemeSync({
       .then((r) => (r.ok ? r.json() : null))
       .then((data: { salon?: SalonBrand } | null) => {
         if (cancelled || !data?.salon) return;
-        writeSalonBrand(
+        const salonForCache =
           themeField === "bookingThemeId"
             ? { ...data.salon, bookingThemeId: MARKETPLACE_BOOK_THEME_ID }
-            : data.salon,
-          { staff }
-        );
+            : themeField === "stylistThemeId"
+              ? { ...data.salon, stylistThemeId: fallbackThemeId }
+              : data.salon;
+        writeSalonBrand(salonForCache, { staff });
         if (themeField === "bookingThemeId") {
           applyMarketplaceBookTheme();
+          return;
+        }
+        if (themeField === "stylistThemeId") {
+          applySalonThemeId(fallbackThemeId, fallbackThemeId);
           return;
         }
         const nextId = data.salon[themeField] ?? themeId;

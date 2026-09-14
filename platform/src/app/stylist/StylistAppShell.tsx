@@ -7,17 +7,15 @@ import {
   writeSalonBrand,
   type SalonBrand,
 } from "@/lib/salon-branding";
-import { DEFAULT_STYLIST_THEME_ID, applySalonThemeId, normalizeThemeId } from "@/lib/salon-themes";
+import { DEFAULT_STYLIST_THEME_ID, applySalonThemeId } from "@/lib/salon-themes";
 import { readStylistTheme } from "@/lib/stylist-theme";
 import { StylistBottomNav } from "./StylistBottomNav";
 import { StylistThemeRoot } from "./StylistThemeRoot";
 
-function applyStylistPack(salon: Pick<SalonBrand, "stylistThemeId"> | null | undefined) {
-  // Legacy gold "zent" pack briefly became the stylist default; map it back to seaglass.
-  const raw = salon?.stylistThemeId === "zent" ? DEFAULT_STYLIST_THEME_ID : salon?.stylistThemeId;
-  const pack = normalizeThemeId(raw, DEFAULT_STYLIST_THEME_ID);
-  applySalonThemeId(pack, DEFAULT_STYLIST_THEME_ID);
-  return pack;
+function applyStylistPack(_salon?: Pick<SalonBrand, "stylistThemeId"> | null) {
+  // Stylist PWA is locked to sea-glass green (ignore salon pack / legacy zent/cocoa).
+  applySalonThemeId(DEFAULT_STYLIST_THEME_ID, DEFAULT_STYLIST_THEME_ID);
+  return DEFAULT_STYLIST_THEME_ID;
 }
 
 export function StylistAppShell({
