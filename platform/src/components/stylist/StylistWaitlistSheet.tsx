@@ -444,39 +444,39 @@ export function LotusMark({ className = "h-5 w-5" }: { className?: string }) {
     <svg className={className} viewBox="0 0 64 64" fill="none" aria-hidden>
       <path
         d="M32 54c-1.8-8.5-8.2-16.2-14.8-20.4 4.2-1.6 9.4-1.2 14.8 1.4 5.4-2.6 10.6-3 14.8-1.4C40.2 37.8 33.8 45.5 32 54Z"
-        fill="#c19a6b"
+        fill="currentColor"
       />
       <path
         d="M32 50c2.2-9.5 9.8-15.8 16.5-17.2-1.2 7.8-7.2 14.8-16.5 17.2Z"
-        fill="#d4b089"
+        fill="currentColor"
         opacity="0.9"
       />
       <path
         d="M32 50c-2.2-9.5-9.8-15.8-16.5-17.2 1.2 7.8 7.2 14.8 16.5 17.2Z"
-        fill="#d4b089"
+        fill="currentColor"
         opacity="0.9"
       />
       <path
         d="M32 46c0-11 6.5-18.5 14-21.5-2.8 8.5-7.5 15.5-14 21.5Z"
-        fill="#b88e4f"
+        fill="currentColor"
         opacity="0.75"
       />
       <path
         d="M32 46c0-11-6.5-18.5-14-21.5 2.8 8.5 7.5 15.5 14 21.5Z"
-        fill="#b88e4f"
+        fill="currentColor"
         opacity="0.75"
       />
       <path
         d="M32 42c1.5-10 4.8-17 9.5-21.2C37.2 27 34 34.2 32 42Z"
-        fill="#e0c49a"
+        fill="currentColor"
         opacity="0.85"
       />
       <path
         d="M32 42c-1.5-10-4.8-17-9.5-21.2C26.8 27 30 34.2 32 42Z"
-        fill="#e0c49a"
+        fill="currentColor"
         opacity="0.85"
       />
-      <circle cx="32" cy="22" r="3.2" fill="#c19a6b" />
+      <circle cx="32" cy="22" r="3.2" fill="currentColor" />
     </svg>
   );
 }

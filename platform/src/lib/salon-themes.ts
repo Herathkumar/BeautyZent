@@ -584,8 +584,8 @@ export const SALON_THEME_IDS = SALON_THEMES.map((t) => t.id);
 /** Client booking app is always the cocoa gold luxury pack. */
 export const DEFAULT_BOOKING_THEME_ID = "cocoa";
 export const DEFAULT_MANAGER_THEME_ID = "cocoa";
-/** Stylist PWA — BeautyZent quiet-luxury gold calendar theme. */
-export const DEFAULT_STYLIST_THEME_ID = "zent";
+/** Stylist PWA — sea-glass teal (original green-based staff look). */
+export const DEFAULT_STYLIST_THEME_ID = "seaglass";
 
 export function getSalonTheme(id: string | null | undefined, fallback: string) {
   return (

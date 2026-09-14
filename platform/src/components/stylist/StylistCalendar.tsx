@@ -649,7 +649,7 @@ export function StylistChipAvatar({
     >
       {photoUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={photoUrl} alt="" style={{ borderColor: selected ? "#c19a6b" : "transparent" }} />
+        <img src={photoUrl} alt="" style={{ borderColor: selected ? "var(--t-accent, #7ec4b8)" : "transparent" }} />
       ) : (
         <span className="bz-chip-avatar__initials" style={{ background: tone }}>
           {initials(name)}

@@ -38,8 +38,8 @@ export function StylistThemeRoot({ children }: { children: React.ReactNode }) {
   return (
     <div
       ref={rootRef}
-      data-stylist-theme="light"
-      className="stylist-theme stylist-theme--light stylist-app-shell"
+      data-stylist-theme="dark"
+      className="stylist-theme stylist-app-shell"
       suppressHydrationWarning
     >
       {children}

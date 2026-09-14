@@ -231,7 +231,7 @@ async function seedAarabySalon(passwordHash: string) {
       name: "Aaraby's Beauty Parlor",
       bookingThemeId: "cocoa",
       managerThemeId: "cocoa",
-      stylistThemeId: "zent",
+      stylistThemeId: "seaglass",
     },
     create: {
       name: "Aaraby's Beauty Parlor",
@@ -245,7 +245,7 @@ async function seedAarabySalon(passwordHash: string) {
       slotMinutes: 30,
       bookingThemeId: "cocoa",
       managerThemeId: "cocoa",
-      stylistThemeId: "zent",
+      stylistThemeId: "seaglass",
     },
   });
 
@@ -349,7 +349,7 @@ async function main() {
       // The original Farzana palettes, now expressed as theme packs.
       bookingThemeId: "cocoa",
       managerThemeId: "cocoa",
-      stylistThemeId: "zent",
+      stylistThemeId: "seaglass",
     },
     create: {
       name: "Farzana Hair Salon",
@@ -363,7 +363,7 @@ async function main() {
       slotMinutes: 30,
       bookingThemeId: "cocoa",
       managerThemeId: "cocoa",
-      stylistThemeId: "zent",
+      stylistThemeId: "seaglass",
     },
   });
 
