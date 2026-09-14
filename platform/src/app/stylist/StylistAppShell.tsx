@@ -13,7 +13,9 @@ import { StylistBottomNav } from "./StylistBottomNav";
 import { StylistThemeRoot } from "./StylistThemeRoot";
 
 function applyStylistPack(salon: Pick<SalonBrand, "stylistThemeId"> | null | undefined) {
-  const pack = normalizeThemeId(salon?.stylistThemeId, DEFAULT_STYLIST_THEME_ID);
+  // Legacy gold "zent" pack briefly became the stylist default; map it back to seaglass.
+  const raw = salon?.stylistThemeId === "zent" ? DEFAULT_STYLIST_THEME_ID : salon?.stylistThemeId;
+  const pack = normalizeThemeId(raw, DEFAULT_STYLIST_THEME_ID);
   applySalonThemeId(pack, DEFAULT_STYLIST_THEME_ID);
   return pack;
 }

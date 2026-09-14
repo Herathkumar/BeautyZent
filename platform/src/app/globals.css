@@ -7832,6 +7832,16 @@ html[data-salon-theme] .fh-confirm-ok--danger:hover {
   color: var(--bz-panel-ink);
 }
 
+/* Beat `.stylist-theme h2 { color: var(--t-text) !important }` on dark shell */
+.bz-cal h1,
+.bz-cal h2,
+.bz-cal h3,
+.bz-sheet h1,
+.bz-sheet h2,
+.bz-sheet h3 {
+  color: var(--bz-panel-ink, #0e1618) !important;
+}
+
 .bz-cal-toolbar {
   display: grid;
   gap: 0.75rem;
@@ -7848,7 +7858,7 @@ html[data-salon-theme] .fh-confirm-ok--danger:hover {
   text-align: center;
   font-size: 0.95rem;
   font-weight: 650;
-  color: var(--bz-ink);
+  color: var(--bz-panel-ink, #0e1618) !important;
 }
 .bz-cal-nav {
   width: 2rem;
@@ -7856,7 +7866,7 @@ html[data-salon-theme] .fh-confirm-ok--danger:hover {
   border-radius: 999px;
   border: 1px solid var(--bz-line);
   background: #fff;
-  color: var(--bz-ink);
+  color: var(--bz-panel-ink, #0e1618);
   font-size: 1.15rem;
 }
 

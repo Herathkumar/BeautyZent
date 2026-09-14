@@ -75,7 +75,9 @@ export default async function StylistLayout({ children }: { children: React.Reac
       },
     });
     brand = toClientSalonBrand(stylist?.salon);
-    themeId = normalizeThemeId(brand?.stylistThemeId, DEFAULT_STYLIST_THEME_ID);
+    const rawTheme =
+      brand?.stylistThemeId === "zent" ? DEFAULT_STYLIST_THEME_ID : brand?.stylistThemeId;
+    themeId = normalizeThemeId(rawTheme, DEFAULT_STYLIST_THEME_ID);
   }
 
   return (
