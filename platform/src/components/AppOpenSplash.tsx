@@ -58,7 +58,10 @@ export function AppOpenSplash({
         accentColor,
         bookingThemeId: MARKETPLACE_BOOK_THEME_ID,
         managerThemeId: themeIds?.managerThemeId ?? null,
-        stylistThemeId: themeIds?.stylistThemeId ?? null,
+        stylistThemeId:
+          variant === "stylist"
+            ? DEFAULT_STYLIST_THEME_ID
+            : themeIds?.stylistThemeId ?? null,
       });
     }
 
@@ -68,8 +71,8 @@ export function AppOpenSplash({
       applyMarketplaceBookTheme();
     } else if (variant === "manager" && themeIds?.managerThemeId) {
       applySalonThemeId(themeIds.managerThemeId, DEFAULT_MANAGER_THEME_ID);
-    } else if (variant === "stylist" && themeIds?.stylistThemeId) {
-      applySalonThemeId(themeIds.stylistThemeId, DEFAULT_STYLIST_THEME_ID);
+    } else if (variant === "stylist") {
+      applySalonThemeId(DEFAULT_STYLIST_THEME_ID, DEFAULT_STYLIST_THEME_ID);
     }
 
     const key = `fhsalon-open-splash:${variant}:${slug || "default"}`;
