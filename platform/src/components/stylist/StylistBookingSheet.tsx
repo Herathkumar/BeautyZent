@@ -295,7 +295,7 @@ export function StylistBookingSheet({
               // eslint-disable-next-line @next/next/no-img-element
               <img src={photoUrl} alt="" className="h-9 w-9 rounded-full object-cover" />
             ) : (
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f5efe6] text-sm font-bold text-[#a68966]">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#e8f4f1] text-sm font-bold text-[#1f7a6e]">
                 You
               </span>
             )}

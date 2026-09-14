@@ -7719,19 +7719,40 @@ html[data-salon-theme] .fh-confirm-ok--danger:hover {
 /* Stylist calendar — sea-glass green accents; light calendar cards on dark   */
 /* -------------------------------------------------------------------------- */
 
+/*
+ * Hard-lock seaglass tokens on the stylist shell so a leftover gold pack
+ * (zent/cocoa in data-salon-theme or localStorage) cannot paint calendar chrome gold.
+ */
+html.stylist-shell,
+html.stylist-shell .stylist-theme,
 .stylist-theme {
-  --bz-gold: var(--t-accent, #7ec4b8);
-  --bz-gold-deep: var(--t-accent-deep, #4f9e91);
-  --bz-gold-soft: var(--t-accent-strong, #b5ebe0);
+  --t-accent: #7ec4b8;
+  --t-accent-rgb: 126 196 184;
+  --t-accent-strong: #b5ebe0;
+  --t-accent-strong-rgb: 181 235 224;
+  --t-accent-deep: #4f9e91;
+  --t-accent-deep-rgb: 79 158 145;
+  --t-accent-lift: #c8f2ea;
+  --t-accent-tint: #1f3a3a;
+  --t-on-accent: #0e1618;
+  --t-ok: #9fe3b8;
+  --champagne: #7ec4b8;
+  --color-champagne: #7ec4b8;
+  --bz-sea: #2a8f82;
+  --bz-sea-soft: #3aa897;
+  --bz-sea-deep: #1f7a6e;
+  --bz-sea-wash: #e8f4f1;
+  --bz-gold: #2a8f82;
+  --bz-gold-deep: #1f7a6e;
+  --bz-gold-soft: #3aa897;
   --bz-ink: var(--t-text, #f4fbfa);
   --bz-muted: var(--t-muted, #8fa8a4);
   --bz-paper: var(--t-bg-2, #0e1618);
   --bz-card: var(--t-surface-1, #1a282c);
-  --bz-line: rgb(var(--t-accent-rgb, 126 196 184) / 0.22);
-  --bz-mint: color-mix(in srgb, var(--t-ok, #9fe3b8) 22%, transparent);
-  --bz-mint-ink: var(--t-ok, #9fe3b8);
-  --bz-beige: color-mix(in srgb, var(--t-accent, #7ec4b8) 14%, var(--t-surface-1, #1a282c));
-  /* Light panels (calendar board + sheets) — readable on white */
+  --bz-line: rgb(126 196 184 / 0.22);
+  --bz-mint: rgb(159 227 184 / 0.22);
+  --bz-mint-ink: #9fe3b8;
+  --bz-beige: color-mix(in srgb, #7ec4b8 14%, #1a282c);
   --bz-panel-ink: #0e1618;
   --bz-panel-muted: #5a726e;
   --bz-panel-line: rgb(42 143 130 / 0.22);
@@ -7739,6 +7760,24 @@ html[data-salon-theme] .fh-confirm-ok--danger:hover {
   --bz-panel-accent-soft: #3aa897;
   --bz-panel-accent-deep: #1f7a6e;
   --bz-panel-wash: #e8f4f1;
+}
+
+html.stylist-shell.theme-light,
+html.stylist-shell--light,
+html.stylist-shell--light .stylist-theme,
+.stylist-theme.stylist-theme--light {
+  --t-accent: #2a8f82;
+  --t-accent-rgb: 42 143 130;
+  --t-accent-strong: #3aa897;
+  --t-accent-deep: #1f7a6e;
+  --t-accent-lift: #48b5a4;
+  --t-accent-tint: #e0f3ef;
+  --t-on-accent: #f4fbfa;
+  --champagne: #2a8f82;
+  --color-champagne: #2a8f82;
+  --bz-ink: #0e1618;
+  --bz-muted: #5a726e;
+  --bz-paper: #eef7f5;
 }
 
 .bz-home {
@@ -7876,7 +7915,7 @@ html[data-salon-theme] .fh-confirm-ok--danger:hover {
   gap: 0.25rem;
   padding: 0.2rem;
   border-radius: 999px;
-  background: var(--bz-panel-wash);
+  background: #e8f4f1;
 }
 .bz-cal-toggle__btn {
   border: none;
@@ -7888,8 +7927,8 @@ html[data-salon-theme] .fh-confirm-ok--danger:hover {
   background: transparent;
 }
 .bz-cal-toggle__btn.is-active {
-  background: var(--bz-gold);
-  color: #fff;
+  background: #2a8f82 !important;
+  color: #fff !important;
   box-shadow: 0 4px 12px rgb(42 143 130 / 0.28);
 }
 
@@ -7915,11 +7954,11 @@ html[data-salon-theme] .fh-confirm-ok--danger:hover {
 .bz-cal-daychip__wd { font-size: 0.68rem; font-weight: 600; }
 .bz-cal-daychip__num { font-size: 0.95rem; font-weight: 700; color: var(--bz-ink); }
 .bz-cal-daychip.is-active {
-  background: var(--bz-gold);
-  color: #fff;
+  background: #2a8f82 !important;
+  color: #fff !important;
 }
-.bz-cal-daychip.is-active .bz-cal-daychip__num { color: #fff; }
-.bz-cal-daychip.is-today { box-shadow: inset 0 0 0 1.5px var(--bz-gold); }
+.bz-cal-daychip.is-active .bz-cal-daychip__num { color: #fff !important; }
+.bz-cal-daychip.is-today { box-shadow: inset 0 0 0 1.5px #2a8f82; }
 
 .bz-cal-scroll {
   max-height: min(62vh, 34rem);
@@ -8018,13 +8057,13 @@ html[data-salon-theme] .fh-confirm-ok--danger:hover {
   width: 0.55rem;
   height: 0.55rem;
   border-radius: 999px;
-  background: var(--bz-gold);
+  background: #2a8f82 !important;
   margin-left: -0.2rem;
 }
 .bz-cal-now__line {
   flex: 1;
   height: 2px;
-  background: var(--bz-gold);
+  background: #2a8f82 !important;
 }
 
 .bz-cal-week__head {
@@ -8050,10 +8089,10 @@ html[data-salon-theme] .fh-confirm-ok--danger:hover {
   color: var(--bz-ink);
 }
 .bz-cal-week__day.is-active {
-  background: var(--bz-gold);
-  color: #fff;
+  background: #2a8f82 !important;
+  color: #fff !important;
 }
-.bz-cal-week__day.is-active strong { color: #fff; }
+.bz-cal-week__day.is-active strong { color: #fff !important; }
 .bz-cal-week__body { max-height: min(58vh, 32rem); }
 .bz-cal-week__grid {
   display: grid;
@@ -8110,11 +8149,11 @@ html[data-salon-theme] .fh-confirm-ok--danger:hover {
 .bz-cal-month__cell.is-outside .bz-cal-month__num { color: #c4bbb2; }
 .bz-cal-month__cell.is-today .bz-cal-month__num,
 .bz-cal-month__cell.is-active .bz-cal-month__num {
-  box-shadow: inset 0 0 0 1.5px var(--bz-gold);
+  box-shadow: inset 0 0 0 1.5px #2a8f82;
 }
 .bz-cal-month__cell.is-active .bz-cal-month__num {
-  background: var(--bz-gold);
-  color: #fff;
+  background: #2a8f82 !important;
+  color: #fff !important;
   box-shadow: none;
 }
 .bz-cal-month__marks {
@@ -8171,7 +8210,7 @@ html[data-salon-theme] .fh-confirm-ok--danger:hover {
   border-radius: 999px;
   border: none;
   background: #0e1618;
-  color: var(--t-accent-strong, #b5ebe0);
+  color: #b5ebe0 !important;
   font-size: 1.75rem;
   line-height: 1;
   box-shadow: 0 12px 28px rgb(0 0 0 / 0.28);
@@ -8347,8 +8386,8 @@ html[data-salon-theme] .fh-confirm-ok--danger:hover {
   justify-content: center;
   border: none;
   border-radius: 999px;
-  background: var(--bz-gold);
-  color: #fff;
+  background: #2a8f82 !important;
+  color: #fff !important;
   font-weight: 700;
   padding: 0.75rem 1rem;
 }
