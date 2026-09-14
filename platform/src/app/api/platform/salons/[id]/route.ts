@@ -18,7 +18,6 @@ import {
   DEFAULT_MANAGER_THEME_ID,
   DEFAULT_STYLIST_THEME_ID,
   getSalonTheme,
-  normalizeThemeId,
 } from "@/lib/salon-themes";
 
 const DAYS = new Set([0, 1, 2, 3, 4, 5, 6]);
@@ -156,8 +155,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   }
 
   const bookingThemeId = MARKETPLACE_BOOK_THEME_ID;
-  const managerThemeId = normalizeThemeId(body.managerThemeId, DEFAULT_MANAGER_THEME_ID);
-  const stylistThemeId = normalizeThemeId(body.stylistThemeId, DEFAULT_STYLIST_THEME_ID);
+  const managerThemeId = DEFAULT_MANAGER_THEME_ID;
+  const stylistThemeId = DEFAULT_STYLIST_THEME_ID;
   const bookingTheme = getSalonTheme(bookingThemeId, MARKETPLACE_BOOK_THEME_ID);
 
   const listingStatus =

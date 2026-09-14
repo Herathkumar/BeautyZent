@@ -11,7 +11,6 @@ import {
 import {
   DEFAULT_MANAGER_THEME_ID,
   DEFAULT_STYLIST_THEME_ID,
-  normalizeThemeId,
 } from "@/lib/salon-themes";
 import { MARKETPLACE_BOOK_THEME_ID } from "@/lib/marketplace-book-theme";
 
@@ -100,8 +99,8 @@ export async function POST(req: Request) {
     email: body.email ? String(body.email).trim() : null,
     address: body.address ? String(body.address).trim() : null,
     bookingThemeId: MARKETPLACE_BOOK_THEME_ID,
-    managerThemeId: normalizeThemeId(body.managerThemeId, DEFAULT_MANAGER_THEME_ID),
-    stylistThemeId: normalizeThemeId(body.stylistThemeId, DEFAULT_STYLIST_THEME_ID),
+    managerThemeId: DEFAULT_MANAGER_THEME_ID,
+    stylistThemeId: DEFAULT_STYLIST_THEME_ID,
     managerName: String(body.managerName || "Salon Manager").trim(),
     managerEmail,
     managerPassword,

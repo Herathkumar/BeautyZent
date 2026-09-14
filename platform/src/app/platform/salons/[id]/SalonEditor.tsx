@@ -12,12 +12,10 @@ import { MARKETPLACE_BOOK_THEME_ID } from "@/lib/marketplace-book-theme";
 import {
   DEFAULT_MANAGER_THEME_ID,
   DEFAULT_STYLIST_THEME_ID,
-  normalizeThemeId,
 } from "@/lib/salon-themes";
 import { fileToBoundedJpegDataUrl } from "@/lib/photo-resize";
 import { SettingToggle } from "@/components/admin/SettingToggle";
 import { DAY_LABELS, TIMEZONES, fieldClass, labelClass } from "../salon-form";
-import { THEME_PICKER_HINT, ThemePicker } from "../ThemePicker";
 
 const MAX_COVER_BYTES = 900_000;
 
@@ -65,8 +63,8 @@ export function SalonEditor({ salon }: { salon: EditableSalon }) {
     closeHour: salon.closeHour,
     closedDays: salon.closedDays?.length ? salon.closedDays : [0],
     slotMinutes: salon.slotMinutes,
-    managerThemeId: normalizeThemeId(salon.managerThemeId, DEFAULT_MANAGER_THEME_ID),
-    stylistThemeId: normalizeThemeId(salon.stylistThemeId, DEFAULT_STYLIST_THEME_ID),
+    managerThemeId: DEFAULT_MANAGER_THEME_ID,
+    stylistThemeId: DEFAULT_STYLIST_THEME_ID,
     displayViewMode: normalizeCustomerDisplayView(salon.displayViewMode),
     displayViewControl: normalizeCustomerDisplayViewControl(salon.displayViewControl),
     displayViewRotateSec: normalizeCustomerDisplayViewRotateSec(salon.displayViewRotateSec),
@@ -132,8 +130,8 @@ export function SalonEditor({ salon }: { salon: EditableSalon }) {
         name: form.name,
         address: form.address || null,
         bookingThemeId: MARKETPLACE_BOOK_THEME_ID,
-        managerThemeId: form.managerThemeId,
-        stylistThemeId: form.stylistThemeId,
+        managerThemeId: DEFAULT_MANAGER_THEME_ID,
+        stylistThemeId: DEFAULT_STYLIST_THEME_ID,
       });
     } catch {
       /* ignore */
@@ -500,27 +498,6 @@ export function SalonEditor({ salon }: { salon: EditableSalon }) {
             set("schedulerDisplayEnabled", schedulerDisplayEnabled)
           }
           testId="salon-scheduler-display-enabled"
-        />
-      </section>
-
-      <section className="grid gap-5 rounded-3xl border border-ink/12 bg-white/80 p-5">
-        <div>
-          <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-cocoa">Themes</h2>
-          <p className="mt-1 text-xs text-muted">{THEME_PICKER_HINT}</p>
-        </div>
-        <ThemePicker
-          name="manager"
-          legend="Manager app"
-          hint="Dashboard, bookings, earnings, and team."
-          value={form.managerThemeId}
-          onChange={(id) => set("managerThemeId", id)}
-        />
-        <ThemePicker
-          name="stylist"
-          legend="Stylist app"
-          hint="Phone portal for the floor team."
-          value={form.stylistThemeId}
-          onChange={(id) => set("stylistThemeId", id)}
         />
       </section>
 
