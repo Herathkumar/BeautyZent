@@ -3,13 +3,20 @@ import {
   clearAuthSession,
   continueBookingToProvider,
   continueBookingToTime,
+  continueBookingToDetails,
   pickFirstSlot,
   salonCalendarDate,
   waitForBookingStep,
 } from "../helpers";
 import { PLATFORM, type Tenant } from "./tenants";
 
-export { clearAuthSession, pickFirstSlot, salonCalendarDate, waitForBookingStep };
+export {
+  clearAuthSession,
+  pickFirstSlot,
+  continueBookingToDetails,
+  salonCalendarDate,
+  waitForBookingStep,
+};
 
 /** Login uses window.location.assign — wait it out or the next goto is aborted. */
 async function waitForLoginSettle(page: Page) {
@@ -107,7 +114,7 @@ export async function bookOnlineForTenant(
   await expect(page.getByRole("heading", { name: /pick a time/i })).toBeVisible();
   const date = salonCalendarDate(new Date());
   await pickFirstSlot(page, date);
-  await waitForBookingStep(page, /booking summary/i);
+  await continueBookingToDetails(page);
   const form = page.locator("form").filter({
     has: page.getByRole("heading", { name: /booking summary/i }),
   });

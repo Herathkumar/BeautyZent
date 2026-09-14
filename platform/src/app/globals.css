@@ -7716,21 +7716,29 @@ html[data-salon-theme] .fh-confirm-ok--danger:hover {
 }
 
 /* -------------------------------------------------------------------------- */
-/* BeautyZent stylist calendar — Apple Calendar quiet-luxury mockup theme     */
+/* Stylist calendar — sea-glass green accents; light calendar cards on dark   */
 /* -------------------------------------------------------------------------- */
 
 .stylist-theme {
-  --bz-gold: #c19a6b;
-  --bz-gold-deep: #a68966;
-  --bz-gold-soft: #d4a373;
-  --bz-ink: #2a2521;
-  --bz-muted: #7a6f64;
-  --bz-paper: #fafafa;
-  --bz-card: #ffffff;
-  --bz-line: #ece7e0;
-  --bz-mint: #e7f3e8;
-  --bz-mint-ink: #3d6b4a;
-  --bz-beige: #fdf5e6;
+  --bz-gold: var(--t-accent, #7ec4b8);
+  --bz-gold-deep: var(--t-accent-deep, #4f9e91);
+  --bz-gold-soft: var(--t-accent-strong, #b5ebe0);
+  --bz-ink: var(--t-text, #f4fbfa);
+  --bz-muted: var(--t-muted, #8fa8a4);
+  --bz-paper: var(--t-bg-2, #0e1618);
+  --bz-card: var(--t-surface-1, #1a282c);
+  --bz-line: rgb(var(--t-accent-rgb, 126 196 184) / 0.22);
+  --bz-mint: color-mix(in srgb, var(--t-ok, #9fe3b8) 22%, transparent);
+  --bz-mint-ink: var(--t-ok, #9fe3b8);
+  --bz-beige: color-mix(in srgb, var(--t-accent, #7ec4b8) 14%, var(--t-surface-1, #1a282c));
+  /* Light panels (calendar board + sheets) — readable on white */
+  --bz-panel-ink: #0e1618;
+  --bz-panel-muted: #5a726e;
+  --bz-panel-line: rgb(42 143 130 / 0.22);
+  --bz-panel-accent: #2a8f82;
+  --bz-panel-accent-soft: #3aa897;
+  --bz-panel-accent-deep: #1f7a6e;
+  --bz-panel-wash: #e8f4f1;
 }
 
 .bz-home {
@@ -7795,7 +7803,7 @@ html[data-salon-theme] .fh-confirm-ok--danger:hover {
 .bz-chip-avatar.is-selected img,
 .bz-chip-avatar.is-selected .bz-chip-avatar__initials {
   border-color: var(--bz-gold);
-  box-shadow: 0 0 0 3px rgb(193 154 107 / 0.2);
+  box-shadow: 0 0 0 3px rgb(42 143 130 / 0.22);
 }
 .bz-chip-avatar__initials {
   display: grid;
@@ -7810,11 +7818,18 @@ html[data-salon-theme] .fh-confirm-ok--danger:hover {
 }
 
 .bz-cal {
+  --bz-ink: var(--bz-panel-ink);
+  --bz-muted: var(--bz-panel-muted);
+  --bz-line: var(--bz-panel-line);
+  --bz-gold: var(--bz-panel-accent);
+  --bz-gold-soft: var(--bz-panel-accent-soft);
+  --bz-gold-deep: var(--bz-panel-accent-deep);
   border-radius: 1.35rem;
-  background: var(--bz-card);
-  border: 1px solid var(--bz-line);
-  box-shadow: 0 8px 28px rgb(42 37 33 / 0.05);
+  background: #ffffff;
+  border: 1px solid var(--bz-panel-line);
+  box-shadow: 0 8px 28px rgb(14 22 24 / 0.28);
   overflow: hidden;
+  color: var(--bz-panel-ink);
 }
 
 .bz-cal-toolbar {
@@ -7851,7 +7866,7 @@ html[data-salon-theme] .fh-confirm-ok--danger:hover {
   gap: 0.25rem;
   padding: 0.2rem;
   border-radius: 999px;
-  background: #f3f0eb;
+  background: var(--bz-panel-wash);
 }
 .bz-cal-toggle__btn {
   border: none;
@@ -7863,9 +7878,9 @@ html[data-salon-theme] .fh-confirm-ok--danger:hover {
   background: transparent;
 }
 .bz-cal-toggle__btn.is-active {
-  background: var(--bz-gold-soft);
+  background: var(--bz-gold);
   color: #fff;
-  box-shadow: 0 4px 12px rgb(193 154 107 / 0.28);
+  box-shadow: 0 4px 12px rgb(42 143 130 / 0.28);
 }
 
 .bz-cal-daystrip {
@@ -7890,7 +7905,7 @@ html[data-salon-theme] .fh-confirm-ok--danger:hover {
 .bz-cal-daychip__wd { font-size: 0.68rem; font-weight: 600; }
 .bz-cal-daychip__num { font-size: 0.95rem; font-weight: 700; color: var(--bz-ink); }
 .bz-cal-daychip.is-active {
-  background: var(--bz-gold-soft);
+  background: var(--bz-gold);
   color: #fff;
 }
 .bz-cal-daychip.is-active .bz-cal-daychip__num { color: #fff; }
@@ -7912,7 +7927,7 @@ html[data-salon-theme] .fh-confirm-ok--danger:hover {
   right: 0.35rem;
   margin: 0;
   font-size: 0.65rem;
-  color: #a39a90;
+  color: var(--bz-muted);
   font-variant-numeric: tabular-nums;
 }
 .bz-cal-lane {
@@ -7923,7 +7938,7 @@ html[data-salon-theme] .fh-confirm-ok--danger:hover {
 .bz-cal-hline {
   position: absolute;
   inset-inline: 0;
-  border-top: 1px solid rgb(42 37 33 / 0.08);
+  border-top: 1px solid rgb(14 22 24 / 0.08);
   pointer-events: none;
 }
 .bz-cal-hline--quarter {
@@ -8025,7 +8040,7 @@ html[data-salon-theme] .fh-confirm-ok--danger:hover {
   color: var(--bz-ink);
 }
 .bz-cal-week__day.is-active {
-  background: var(--bz-gold-soft);
+  background: var(--bz-gold);
   color: #fff;
 }
 .bz-cal-week__day.is-active strong { color: #fff; }
@@ -8088,7 +8103,7 @@ html[data-salon-theme] .fh-confirm-ok--danger:hover {
   box-shadow: inset 0 0 0 1.5px var(--bz-gold);
 }
 .bz-cal-month__cell.is-active .bz-cal-month__num {
-  background: var(--bz-gold-soft);
+  background: var(--bz-gold);
   color: #fff;
   box-shadow: none;
 }
@@ -8142,8 +8157,8 @@ html[data-salon-theme] .fh-confirm-ok--danger:hover {
   height: 3.5rem;
   border-radius: 999px;
   border: none;
-  background: #161412;
-  color: var(--bz-gold);
+  background: #0e1618;
+  color: var(--t-accent-strong, #b5ebe0);
   font-size: 1.75rem;
   line-height: 1;
   box-shadow: 0 12px 28px rgb(0 0 0 / 0.28);
@@ -8167,7 +8182,13 @@ html[data-salon-theme] .fh-confirm-ok--danger:hover {
   width: min(100%, 32rem);
   border-radius: 1.6rem 1.6rem 0 0;
   background: #fff;
-  color: var(--bz-ink);
+  color: var(--bz-panel-ink);
+  --bz-ink: var(--bz-panel-ink);
+  --bz-muted: var(--bz-panel-muted);
+  --bz-line: var(--bz-panel-line);
+  --bz-gold: var(--bz-panel-accent);
+  --bz-gold-soft: var(--bz-panel-accent-soft);
+  --bz-gold-deep: var(--bz-panel-accent-deep);
   padding: 0.55rem 1.1rem calc(1.25rem + env(safe-area-inset-bottom, 0px));
   box-shadow: 0 -18px 48px rgb(0 0 0 / 0.28);
 }
@@ -8176,7 +8197,7 @@ html[data-salon-theme] .fh-confirm-ok--danger:hover {
   width: 2.5rem;
   height: 0.28rem;
   border-radius: 999px;
-  background: #d9d2c8;
+  background: #b5cbc6;
   margin: 0.15rem auto 0.65rem;
 }
 .bz-sheet__head {
@@ -8225,14 +8246,14 @@ html[data-salon-theme] .fh-confirm-ok--danger:hover {
 .bz-input {
   width: 100%;
   border: 1px solid var(--bz-line);
-  background: #f7f5f2;
+  background: var(--bz-panel-wash, #e8f4f1);
   border-radius: 0.95rem;
   padding: 0.8rem 0.9rem;
   color: var(--bz-ink);
   font-size: 0.95rem;
 }
 .bz-input:focus {
-  outline: 2px solid rgb(193 154 107 / 0.45);
+  outline: 2px solid rgb(42 143 130 / 0.45);
   outline-offset: 1px;
 }
 
@@ -8253,7 +8274,7 @@ html[data-salon-theme] .fh-confirm-ok--danger:hover {
   border-radius: 0.75rem;
   display: grid;
   place-items: center;
-  background: #f5efe6;
+  background: var(--bz-panel-wash, #e8f4f1);
   color: var(--bz-gold);
 }
 
@@ -8261,7 +8282,7 @@ html[data-salon-theme] .fh-confirm-ok--danger:hover {
   border: none;
   border-radius: 999px;
   padding: 0.45rem 0.85rem;
-  background: #f0ebe4;
+  background: var(--bz-panel-wash, #e8f4f1);
   color: var(--bz-ink);
   font-size: 0.82rem;
   font-weight: 600;
@@ -8276,7 +8297,7 @@ html[data-salon-theme] .fh-confirm-ok--danger:hover {
   height: 1.75rem;
   border-radius: 999px;
   border: none;
-  background: #d9d2c8;
+  background: #c5d8d4;
   padding: 0.15rem;
   transition: background 0.15s ease;
 }
@@ -8296,7 +8317,7 @@ html[data-salon-theme] .fh-confirm-ok--danger:hover {
   width: 1.15rem;
   height: 1.15rem;
   border-radius: 0.3rem;
-  border: 1.5px solid #cfc7bc;
+  border: 1.5px solid #b5cbc6;
   display: inline-grid;
   place-items: center;
   font-size: 0.7rem;
@@ -8334,7 +8355,7 @@ html[data-salon-theme] .fh-confirm-ok--danger:hover {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid #d6cfc5;
+  border: 1px solid var(--bz-panel-line, #b5cbc6);
   border-radius: 999px;
   background: #fff;
   color: var(--bz-ink);
@@ -8346,7 +8367,7 @@ html[data-salon-theme] .fh-confirm-ok--danger:hover {
   height: 1.85rem;
   border-radius: 999px;
   border: 1px solid var(--bz-line);
-  background: #f7f5f2;
+  background: var(--bz-panel-wash, #e8f4f1);
   font-size: 1rem;
   line-height: 1;
 }
@@ -8356,13 +8377,13 @@ html[data-salon-theme] .fh-confirm-ok--danger:hover {
   border-radius: 1.15rem;
   background: #fff;
   padding: 0.9rem;
-  box-shadow: 0 6px 18px rgb(42 37 33 / 0.04);
+  box-shadow: 0 6px 18px rgb(14 22 24 / 0.06);
 }
 .bz-wait-card__avatar {
   width: 2.6rem;
   height: 2.6rem;
   border-radius: 999px;
-  background: #f5efe6;
+  background: var(--bz-panel-wash, #e8f4f1);
   color: var(--bz-gold-deep);
   display: grid;
   place-items: center;
@@ -8371,7 +8392,7 @@ html[data-salon-theme] .fh-confirm-ok--danger:hover {
 }
 .bz-tag {
   border-radius: 999px;
-  border: 1px solid #d6cfc5;
+  border: 1px solid var(--bz-panel-line, #b5cbc6);
   padding: 0.18rem 0.5rem;
   font-size: 0.65rem;
   font-weight: 700;
@@ -8381,14 +8402,502 @@ html[data-salon-theme] .fh-confirm-ok--danger:hover {
 .bz-tag.is-priority {
   border-color: var(--bz-gold);
   color: var(--bz-gold-deep);
-  background: #faf4eb;
+  background: color-mix(in srgb, var(--bz-panel-accent, #2a8f82) 12%, #fff);
 }
 
 html.stylist-shell--light .stylist-theme,
 .stylist-theme.stylist-theme--light {
-  --bz-paper: #fafafa;
+  --bz-paper: #eef7f5;
+  --bz-ink: #0e1618;
+  --bz-muted: #5a726e;
 }
 
 @media (min-width: 480px) {
   .bz-fab { right: max(1.25rem, calc(50% - 14.5rem)); }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Client book — light Apple Calendar stylist schedule (on dark cocoa shell)  */
+/* -------------------------------------------------------------------------- */
+
+.bz-client-cal {
+  --bz-cal-gold: #b88e4f;
+  --bz-cal-gold-soft: #e8d3a3;
+  --bz-cal-ink: #1a1a1a;
+  --bz-cal-muted: #666666;
+  --bz-cal-line: #e8e4de;
+  --bz-cal-paper: #ffffff;
+  --bz-cal-wash: #f5f3ef;
+  background: var(--bz-cal-paper);
+  color: var(--bz-cal-ink);
+  border-radius: 1.25rem;
+  border: 1px solid rgb(255 255 255 / 0.08);
+  box-shadow: 0 16px 40px rgb(0 0 0 / 0.28);
+  overflow: hidden;
+  padding: 0.85rem 0.75rem 1rem;
+}
+
+.bz-client-cal.is-compact .bz-client-cal__scroll {
+  max-height: min(28vh, 14rem);
+}
+.bz-client-cal.is-compact .bz-client-cal__slots {
+  display: none;
+}
+.bz-client-cal.is-compact .bz-client-cal__privacy {
+  display: none;
+}
+
+.bz-client-cal__profile {
+  display: flex;
+  gap: 0.85rem;
+  align-items: center;
+  padding: 0.25rem 0.35rem 0.85rem;
+}
+
+.bz-client-cal__avatar {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 2px solid var(--bz-cal-gold-soft);
+}
+
+.bz-client-cal__name {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 750;
+  color: var(--bz-cal-ink);
+}
+
+.bz-client-cal__meta {
+  margin: 0.15rem 0 0;
+  font-size: 0.82rem;
+  color: var(--bz-cal-muted);
+}
+
+.bz-client-cal__avail {
+  margin-top: 0.4rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  background: #ececec;
+  color: var(--bz-cal-muted);
+  padding: 0.2rem 0.55rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.bz-client-cal__avail.is-open {
+  background: #e7f3e8;
+  color: #3d6b4a;
+}
+
+.bz-client-cal__avail i {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: currentColor;
+  display: inline-block;
+}
+
+.bz-client-cal__service {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0 0.2rem 0.85rem;
+  padding: 0.85rem 0.95rem;
+  border-radius: 0.95rem;
+  border: 1px solid var(--bz-cal-line);
+  background: #fff;
+}
+
+.bz-client-cal__edit {
+  border: none;
+  background: transparent;
+  color: var(--bz-cal-gold);
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0.2rem;
+}
+
+.bz-client-cal__tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.15rem;
+  margin: 0 0.2rem 0.65rem;
+  border-bottom: 1px solid var(--bz-cal-line);
+}
+
+.bz-client-cal__tabs button {
+  border: none;
+  background: transparent;
+  color: var(--bz-cal-muted);
+  font-size: 0.88rem;
+  font-weight: 650;
+  padding: 0.55rem 0.35rem 0.65rem;
+  position: relative;
+}
+
+.bz-client-cal__tabs button.is-active {
+  color: var(--bz-cal-gold);
+}
+
+.bz-client-cal__tabs button.is-active::after {
+  content: "";
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--bz-cal-gold);
+}
+
+.bz-client-cal__strip-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.bz-client-cal__strip-nav {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--bz-cal-line);
+  background: #fff;
+  color: var(--bz-cal-ink);
+  flex-shrink: 0;
+  font-size: 1rem;
+  line-height: 1;
+}
+.bz-client-cal__strip {
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+  padding: 0.15rem 0.2rem 0.35rem;
+  scrollbar-width: none;
+  flex: 1;
+}
+.bz-client-cal__strip::-webkit-scrollbar { display: none; }
+
+.bz-client-cal__daychip {
+  min-width: 3.1rem;
+  border: none;
+  border-radius: 0.85rem;
+  background: transparent;
+  color: var(--bz-cal-muted);
+  padding: 0.45rem 0.3rem;
+  display: grid;
+  gap: 0.15rem;
+  justify-items: center;
+}
+.bz-client-cal__daychip span { font-size: 0.68rem; font-weight: 600; }
+.bz-client-cal__daychip strong { font-size: 0.95rem; color: var(--bz-cal-ink); }
+.bz-client-cal__daychip.is-active {
+  background: var(--bz-cal-gold-soft);
+  color: #5a4528;
+}
+.bz-client-cal__daychip.is-active strong { color: #5a4528; }
+
+.bz-client-cal__monthlabel {
+  margin: 0.15rem 0 0.55rem;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--bz-cal-muted);
+  font-weight: 600;
+}
+
+.bz-client-cal__scroll {
+  max-height: min(42vh, 22rem);
+  overflow: auto;
+  margin: 0 0.1rem;
+  border: 1px solid var(--bz-cal-line);
+  border-radius: 0.85rem;
+  background: #fafafa;
+}
+
+.bz-client-cal__quarters {
+  display: grid;
+  grid-template-columns: 3rem repeat(3, 1fr);
+  padding: 0.25rem 0.4rem 0;
+  font-size: 0.58rem;
+  color: #a3a3a3;
+  text-align: center;
+}
+
+.bz-client-cal__grid {
+  display: grid;
+  position: relative;
+  min-width: 100%;
+}
+
+.bz-client-cal__hour {
+  position: absolute;
+  right: 0.3rem;
+  margin: 0;
+  font-size: 0.62rem;
+  color: #9a9a9a;
+  font-variant-numeric: tabular-nums;
+}
+
+.bz-client-cal__lane {
+  position: relative;
+  border-left: 1px solid var(--bz-cal-line);
+  margin-right: 0.35rem;
+  background:
+    linear-gradient(to right, transparent 24.8%, #efefef 25%, #efefef 25.4%, transparent 25.6%) ,
+    linear-gradient(to right, transparent 49.8%, #efefef 50%, #efefef 50.4%, transparent 50.6%),
+    linear-gradient(to right, transparent 74.8%, #efefef 75%, #efefef 75.4%, transparent 75.6%);
+}
+
+.bz-client-cal__hline {
+  position: absolute;
+  inset-inline: 0;
+  border-top: 1px solid #ececec;
+  pointer-events: none;
+}
+.bz-client-cal__hline.is-quarter {
+  border-top-style: dotted;
+  opacity: 0.7;
+}
+
+.bz-client-cal__block {
+  position: absolute;
+  left: 0.25rem;
+  right: 0.25rem;
+  z-index: 2;
+  border-radius: 0.45rem;
+  background: #e8e8e8;
+  color: #666;
+  font-size: 0.68rem;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  letter-spacing: 0.01em;
+}
+.bz-client-cal__block.is-blocked {
+  background: repeating-linear-gradient(
+    -45deg,
+    #ececec,
+    #ececec 5px,
+    #f7f7f7 5px,
+    #f7f7f7 10px
+  );
+  color: #7a7a7a;
+}
+
+.bz-client-cal__slots {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 0.85rem 0.2rem 0.35rem;
+}
+
+.bz-client-cal__slot {
+  position: relative;
+  border: 1.5px solid var(--bz-cal-gold);
+  border-radius: 0.85rem;
+  background: #fff;
+  padding: 0.7rem 0.45rem 0.65rem;
+  text-align: left;
+  color: var(--bz-cal-ink);
+  min-height: 4.1rem;
+}
+.bz-client-cal__slot.is-selected {
+  background: var(--bz-cal-gold-soft);
+  border-color: var(--bz-cal-gold);
+}
+.bz-client-cal__check {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 999px;
+  background: var(--bz-cal-gold);
+  color: #fff;
+  font-size: 0.65rem;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+}
+.bz-client-cal__slot-time {
+  display: block;
+  font-size: 0.92rem;
+  font-weight: 750;
+}
+.bz-client-cal__slot-meta {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.68rem;
+  color: var(--bz-cal-muted);
+}
+
+.bz-client-cal__privacy {
+  margin: 0.55rem 0.35rem 0;
+  text-align: center;
+  font-size: 0.68rem;
+  color: var(--bz-cal-muted);
+}
+
+.bz-client-cal__footer {
+  margin-top: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.35rem 0.2rem 0;
+  border-top: 1px solid var(--bz-cal-line);
+  padding-top: 0.85rem;
+}
+
+.bz-client-cal__footer-summary {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 650;
+  color: var(--bz-cal-ink);
+}
+
+.bz-client-cal__cta {
+  border: none;
+  border-radius: 0.85rem;
+  background: linear-gradient(135deg, #c9a66b, #b88e4f 55%, #a68966);
+  color: #fff;
+  font-weight: 750;
+  padding: 0.8rem 1.1rem;
+  white-space: nowrap;
+}
+.bz-client-cal__cta:disabled {
+  opacity: 0.45;
+}
+
+.bz-client-cal__weekpick,
+.bz-client-cal__monthpick {
+  padding: 0.35rem 0.25rem 0.5rem;
+}
+
+.bz-client-cal__weekpick-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.65rem;
+  font-size: 0.85rem;
+  font-weight: 650;
+  color: var(--bz-cal-ink);
+}
+.bz-client-cal__weekpick-nav button {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  border: 1px solid var(--bz-cal-line);
+  background: #fff;
+  color: var(--bz-cal-ink);
+}
+
+.bz-client-cal__weekpick-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.3rem;
+}
+.bz-client-cal__weekpick-grid button {
+  border: none;
+  border-radius: 0.75rem;
+  background: var(--bz-cal-wash);
+  padding: 0.55rem 0.15rem;
+  display: grid;
+  gap: 0.15rem;
+  justify-items: center;
+  color: var(--bz-cal-muted);
+  font-size: 0.65rem;
+}
+.bz-client-cal__weekpick-grid button strong {
+  font-size: 0.9rem;
+  color: var(--bz-cal-ink);
+}
+.bz-client-cal__weekpick-grid button.is-active {
+  background: var(--bz-cal-gold-soft);
+}
+.bz-client-cal__weekpick-grid button:disabled {
+  opacity: 0.35;
+}
+
+.bz-client-cal__month-wd {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--bz-cal-muted);
+  margin-bottom: 0.35rem;
+}
+
+.bz-client-cal__month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.2rem;
+}
+.bz-client-cal__month-grid button {
+  min-height: 2.35rem;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--bz-cal-ink);
+  font-weight: 650;
+  font-size: 0.85rem;
+}
+.bz-client-cal__month-grid button.is-outside { color: #c4c4c4; }
+.bz-client-cal__month-grid button.is-active {
+  background: var(--bz-cal-gold-soft);
+  color: #5a4528;
+}
+.bz-client-cal__month-grid button:disabled { opacity: 0.3; }
+
+.bz-client-cal__hint {
+  margin: 0.75rem 0 0;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--bz-cal-muted);
+}
+
+.bz-client-cal-sheet {
+  background: #fafafa;
+  border-radius: 1.35rem 1.35rem 0 0;
+}
+@media (min-width: 640px) {
+  .bz-client-cal-sheet { border-radius: 1.35rem; }
+}
+
+.bz-client-cal-sheet__chrome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.85rem 1rem 0.35rem;
+  color: var(--bz-cal-gold, #b88e4f);
+}
+
+.bz-client-cal-sheet__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-display), ui-serif, Georgia, serif;
+  font-size: 1.05rem;
+  letter-spacing: 0.01em;
+}
+
+.bz-client-cal-sheet__lotus {
+  font-size: 0.95rem;
+}
+
+.bz-client-cal-sheet__icon {
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  background: transparent;
+  color: #333;
+  font-size: 1.1rem;
+  display: inline-grid;
+  place-items: center;
 }

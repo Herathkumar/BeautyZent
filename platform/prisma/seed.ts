@@ -231,7 +231,7 @@ async function seedAarabySalon(passwordHash: string) {
       name: "Aaraby's Beauty Parlor",
       bookingThemeId: "cocoa",
       managerThemeId: "cocoa",
-      stylistThemeId: "zent",
+      stylistThemeId: "seaglass",
     },
     create: {
       name: "Aaraby's Beauty Parlor",
@@ -245,7 +245,7 @@ async function seedAarabySalon(passwordHash: string) {
       slotMinutes: 30,
       bookingThemeId: "cocoa",
       managerThemeId: "cocoa",
-      stylistThemeId: "zent",
+      stylistThemeId: "seaglass",
     },
   });
 
@@ -349,7 +349,7 @@ async function main() {
       // The original Farzana palettes, now expressed as theme packs.
       bookingThemeId: "cocoa",
       managerThemeId: "cocoa",
-      stylistThemeId: "zent",
+      stylistThemeId: "seaglass",
     },
     create: {
       name: "Farzana Hair Salon",
@@ -363,7 +363,7 @@ async function main() {
       slotMinutes: 30,
       bookingThemeId: "cocoa",
       managerThemeId: "cocoa",
-      stylistThemeId: "zent",
+      stylistThemeId: "seaglass",
     },
   });
 
@@ -559,6 +559,15 @@ async function main() {
   if (SEED_EXTRA_SALONS) {
     await seedDemoSalon(passwordHash);
     await seedAarabySalon(passwordHash);
+  }
+
+  // Gold quiet-luxury pack was briefly the stylist default; restore green sea-glass.
+  const flipped = await prisma.salon.updateMany({
+    where: { stylistThemeId: "zent" },
+    data: { stylistThemeId: "seaglass" },
+  });
+  if (flipped.count > 0) {
+    console.log(`Restored stylistThemeId seaglass on ${flipped.count} salon(s) (was zent)`);
   }
 
   console.log("Seeded Farzana Hair Salon (slug: fhsalon)");
