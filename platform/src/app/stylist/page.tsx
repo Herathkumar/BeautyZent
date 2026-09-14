@@ -243,9 +243,9 @@ export default function StylistHomePage() {
             ☰
           </button>
           <div className="text-center">
-            <LotusMark className="mx-auto h-7 w-7" />
-            <p className="font-[family-name:var(--font-display)] text-xl tracking-tight text-[color:var(--bz-gold)]">
-              BeautyZent
+            <LotusMark className="mx-auto h-7 w-7 text-champagne" />
+            <p className="font-[family-name:var(--font-display)] text-xl tracking-tight text-champagne">
+              {salonName || "Stylist"}
             </p>
           </div>
           <Link href="/stylist/account" className="bz-icon-btn" aria-label="Location / profile">
@@ -361,7 +361,7 @@ export default function StylistHomePage() {
             <article className="bz-wait-card">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="font-[family-name:var(--font-display)] text-2xl text-[color:var(--bz-gold)]">
+                  <p className="font-[family-name:var(--font-display)] text-2xl text-champagne">
                     {formatTime(selectedAppt.startsAt, salonTz)}
                     <span className="ml-2 text-sm font-normal text-[color:var(--bz-muted)]">
                       – {formatTime(selectedAppt.endsAt, salonTz)}
@@ -392,7 +392,7 @@ export default function StylistHomePage() {
                     className="h-16 w-16 rounded-lg object-cover"
                   />
                   <span className="text-sm">
-                    <span className="font-semibold text-[color:var(--bz-gold)]">
+                    <span className="font-semibold text-champagne">
                       Client preferred look
                     </span>
                     <span className="mt-1 block text-xs text-[color:var(--bz-muted)]">
@@ -515,7 +515,7 @@ export default function StylistHomePage() {
             <button
               type="button"
               onClick={() => setStyleViewer(null)}
-              className="shrink-0 rounded-full bg-[#c19a6b] px-4 py-2 text-sm font-semibold text-white"
+              className="shrink-0 rounded-full bg-[color:var(--t-accent-strong)] px-4 py-2 text-sm font-semibold text-[color:var(--t-on-accent)]"
             >
               Close
             </button>

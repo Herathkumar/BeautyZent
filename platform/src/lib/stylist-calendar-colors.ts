@@ -78,11 +78,11 @@ export const CALENDAR_TONES: Record<string, CalendarTone> = {
   paid: {
     id: "paid",
     label: "Paid",
-    bg: "#efe4cf",
-    text: "#5a4528",
-    badge: "#e0d0ae",
-    badgeText: "#634c2c",
-    dot: "#c19a6b",
+    bg: "#d8ebe0",
+    text: "#2f4a3a",
+    badge: "#c2ddd0",
+    badgeText: "#355545",
+    dot: "#4f9e91",
   },
   blocked: {
     id: "blocked",
