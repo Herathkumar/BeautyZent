@@ -3890,14 +3890,14 @@ html.customer-shell--dark body {
   color: var(--t-accent-strong) !important;
 }
 
-/* Stylist dark: BeautyZent footer uses manager-like gold (not sea-glass teal) */
+/* Stylist dark footer stays on sea-glass accents (not manager gold). */
 html:not(.theme-light) .stylist-theme .stylist-powered-by .text-champagne,
 html:not(.theme-light) .stylist-theme .stylist-powered-by .beautyzent-name,
 html:not(.theme-light) .stylist-theme .stylist-powered-by .beautyzent-footer-web,
 .stylist-theme:not(.stylist-theme--light) .stylist-powered-by .text-champagne,
 .stylist-theme:not(.stylist-theme--light) .stylist-powered-by .beautyzent-name,
 .stylist-theme:not(.stylist-theme--light) .stylist-powered-by .beautyzent-footer-web {
-  color: #e8c9a0 !important;
+  color: var(--t-accent-strong, #b5ebe0) !important;
 }
 
 html:not(.theme-light) .stylist-theme .stylist-powered-by .beautyzent-marketplace,

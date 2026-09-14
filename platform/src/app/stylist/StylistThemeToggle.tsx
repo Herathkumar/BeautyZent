@@ -5,7 +5,6 @@ import { AppearanceToggle } from "@/components/AppearanceToggle";
 import {
   DEFAULT_STYLIST_THEME_ID,
   applySalonThemeId,
-  normalizeThemeId,
 } from "@/lib/salon-themes";
 import {
   STYLIST_THEME_EVENT,
@@ -50,12 +49,8 @@ export function StylistThemeToggle() {
           stylist?: { salon?: { stylistThemeId?: string | null } };
         } | null) => {
           if (cancelled) return;
-          const id = normalizeThemeId(
-            data?.stylist?.salon?.stylistThemeId,
-            DEFAULT_STYLIST_THEME_ID
-          );
-          setPackId(id);
-          applySalonThemeId(id, DEFAULT_STYLIST_THEME_ID);
+          setPackId(DEFAULT_STYLIST_THEME_ID);
+          applySalonThemeId(DEFAULT_STYLIST_THEME_ID, DEFAULT_STYLIST_THEME_ID);
         }
       )
       .catch(() => {});

@@ -52,8 +52,11 @@ export function StylistLoginForm({
       return;
     }
     if (data.salon?.slug && data.salon?.name) {
-      writeSalonBrand(data.salon, { staff: true });
-      applySalonThemeId(data.salon.stylistThemeId, DEFAULT_STYLIST_THEME_ID);
+      writeSalonBrand(
+        { ...data.salon, stylistThemeId: DEFAULT_STYLIST_THEME_ID },
+        { staff: true }
+      );
+      applySalonThemeId(DEFAULT_STYLIST_THEME_ID, DEFAULT_STYLIST_THEME_ID);
     }
     const next =
       data.user?.role && data.user.role !== "STYLIST" && !data.user.stylistId

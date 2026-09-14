@@ -4,7 +4,7 @@ import { SalonThemeSync } from "@/components/SalonThemeSync";
 import { getStylistSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { toClientSalonBrand } from "@/lib/salon-branding";
-import { DEFAULT_STYLIST_THEME_ID, normalizeThemeId } from "@/lib/salon-themes";
+import { DEFAULT_STYLIST_THEME_ID } from "@/lib/salon-themes";
 
 export const dynamic = "force-dynamic";
 
@@ -75,9 +75,9 @@ export default async function StylistLayout({ children }: { children: React.Reac
       },
     });
     brand = toClientSalonBrand(stylist?.salon);
-    const rawTheme =
-      brand?.stylistThemeId === "zent" ? DEFAULT_STYLIST_THEME_ID : brand?.stylistThemeId;
-    themeId = normalizeThemeId(rawTheme, DEFAULT_STYLIST_THEME_ID);
+    // Always sea-glass for the stylist app chrome (do not follow salon.stylistThemeId).
+    themeId = DEFAULT_STYLIST_THEME_ID;
+    if (brand) brand = { ...brand, stylistThemeId: DEFAULT_STYLIST_THEME_ID };
   }
 
   return (

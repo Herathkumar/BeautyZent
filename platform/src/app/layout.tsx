@@ -91,8 +91,7 @@ const BOOT_SCRIPT = `
     }
     else if(stylist){
       root.classList.add("stylist-shell");
-      themeId=(cached&&cached.stylistThemeId)||"seaglass";
-      if(themeId==="zent") themeId="seaglass";
+      themeId="seaglass";
       try{ light=localStorage.getItem("fhsalon-stylist-theme")==="light"; }catch(e){}
       if(light) root.classList.add("stylist-shell--light");
     }
