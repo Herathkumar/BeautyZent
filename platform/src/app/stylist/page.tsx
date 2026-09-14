@@ -325,6 +325,7 @@ export default function StylistHomePage() {
         className="bz-fab"
         aria-label="New booking"
         data-testid="stylist-book-for-client"
+        style={{ color: "#b5ebe0" }}
         onClick={() => {
           setBookingPreset(null);
           setBookingOpen(true);
