@@ -285,7 +285,7 @@ export default function StylistHomePage() {
             name={name || "You"}
             photoUrl={photoUrl}
             selected
-            tone="#f5efe6"
+            tone="#b8f5c8"
             label="You"
           />
           {team.map((s, i) => (
