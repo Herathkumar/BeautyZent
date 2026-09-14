@@ -25,6 +25,14 @@ import {
   statusPillLabel,
 } from "@/lib/stylist-calendar-colors";
 
+/** Sea-glass teal — inline so theme CSS cannot paint calendar chrome gold. */
+const SEA = {
+  accent: "#2a8f82",
+  accentSoft: "#3aa897",
+  mint: "#b5ebe0",
+  wash: "#e8f4f1",
+  ink: "#0e1618",
+} as const;
 export type CalendarAppt = {
   id: string;
   startsAt: string;
@@ -93,6 +101,13 @@ function DayStrip({
             role="option"
             aria-selected={active}
             className={`bz-cal-daychip${active ? " is-active" : ""}${isToday && !active ? " is-today" : ""}`}
+            style={
+              active
+                ? { background: SEA.accent, color: "#fff" }
+                : isToday
+                  ? { boxShadow: `inset 0 0 0 1.5px ${SEA.accent}` }
+                  : undefined
+            }
             onClick={() => onSelectDate(ymd)}
           >
             <span className="bz-cal-daychip__wd">{weekday}</span>
@@ -112,7 +127,7 @@ function ViewToggle({
   onChangeView: (v: CalendarView) => void;
 }) {
   return (
-    <div className="bz-cal-toggle" role="tablist" aria-label="Calendar view">
+    <div className="bz-cal-toggle" role="tablist" aria-label="Calendar view" style={{ background: SEA.wash }}>
       {(["day", "week", "month"] as const).map((v) => (
         <button
           key={v}
@@ -120,6 +135,7 @@ function ViewToggle({
           role="tab"
           aria-selected={view === v}
           className={`bz-cal-toggle__btn${view === v ? " is-active" : ""}`}
+          style={view === v ? { background: SEA.accent, color: "#fff" } : undefined}
           onClick={() => onChangeView(v)}
           data-testid={`stylist-cal-view-${v}`}
         >
@@ -298,9 +314,9 @@ function DayTimeline({
             );
           })}
           {showNow ? (
-            <div className="bz-cal-now" style={{ top: nowTop }}>
-              <span className="bz-cal-now__dot" />
-              <span className="bz-cal-now__line" />
+            <div className="bz-cal-now" style={{ top: nowTop }} data-chrome="seaglass">
+              <span className="bz-cal-now__dot" style={{ background: SEA.accent }} />
+              <span className="bz-cal-now__line" style={{ background: SEA.accent }} />
             </div>
           ) : null}
         </div>
@@ -343,6 +359,7 @@ function WeekView({
               key={ymd}
               type="button"
               className={`bz-cal-week__day${active ? " is-active" : ""}`}
+              style={active ? { background: SEA.accent, color: "#fff" } : undefined}
               onClick={() => onSelectDate(ymd)}
             >
               <span>{wd}</span>
@@ -472,7 +489,18 @@ function MonthView({
               className={`bz-cal-month__cell${!inMonth ? " is-outside" : ""}${active ? " is-active" : ""}${isToday ? " is-today" : ""}`}
               onClick={() => onSelectDate(ymd)}
             >
-              <span className="bz-cal-month__num">{Number(ymd.slice(8, 10))}</span>
+              <span
+                className="bz-cal-month__num"
+                style={
+                  active
+                    ? { background: SEA.accent, color: "#fff", boxShadow: "none" }
+                    : isToday
+                      ? { boxShadow: `inset 0 0 0 1.5px ${SEA.accent}` }
+                      : undefined
+                }
+              >
+                {Number(ymd.slice(8, 10))}
+              </span>
               <span className="bz-cal-month__marks">
                 {tones.map((t, i) => (
                   <i key={`${ymd}-${i}`} style={{ background: t.dot }} />
@@ -563,7 +591,7 @@ export function StylistCalendar(props: Props) {
   }
 
   return (
-    <section className="bz-cal" data-testid="stylist-calendar">
+    <section className="bz-cal" data-testid="stylist-calendar" data-chrome="seaglass-v3">
       <div className="bz-cal-toolbar">
         <div className="bz-cal-toolbar__date">
           <button type="button" className="bz-cal-nav" aria-label="Previous" onClick={() => shift(-1)}>
