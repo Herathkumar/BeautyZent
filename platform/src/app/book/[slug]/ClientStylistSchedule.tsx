@@ -433,11 +433,30 @@ export function ClientStylistSchedule({
                       tz
                     );
                     const blocked = seg.kind === "block";
+                    const flash = [
+                      { bg: "#ffb4d6", ink: "#6b1240", edge: "#ff2d8a" },
+                      { bg: "#ffc9a8", ink: "#7a2e0c", edge: "#ff6b2c" },
+                      { bg: "#ffe566", ink: "#6b5200", edge: "#f5c400" },
+                      { bg: "#b8f5c8", ink: "#0f5a2a", edge: "#2dd66b" },
+                      { bg: "#7eecff", ink: "#045a6b", edge: "#00c2e0" },
+                      { bg: "#d4b5ff", ink: "#3d1a7a", edge: "#8b4dff" },
+                      { bg: "#a8c8ff", ink: "#0f2f7a", edge: "#2f6bff" },
+                    ][i % 7]!;
                     return (
                       <div
                         key={`${seg.startsAt}-${i}`}
                         className={`bz-client-cal__block${blocked ? " is-blocked" : ""}`}
-                        style={{ top: box.top, height: box.height }}
+                        style={
+                          blocked
+                            ? { top: box.top, height: box.height }
+                            : {
+                                top: box.top,
+                                height: box.height,
+                                background: flash.bg,
+                                color: flash.ink,
+                                borderLeft: `3px solid ${flash.edge}`,
+                              }
+                        }
                       >
                         {blocked ? "Unavailable" : "Booked"}
                       </div>
