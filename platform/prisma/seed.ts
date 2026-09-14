@@ -561,6 +561,15 @@ async function main() {
     await seedAarabySalon(passwordHash);
   }
 
+  // Gold quiet-luxury pack was briefly the stylist default; restore green sea-glass.
+  const flipped = await prisma.salon.updateMany({
+    where: { stylistThemeId: "zent" },
+    data: { stylistThemeId: "seaglass" },
+  });
+  if (flipped.count > 0) {
+    console.log(`Restored stylistThemeId seaglass on ${flipped.count} salon(s) (was zent)`);
+  }
+
   console.log("Seeded Farzana Hair Salon (slug: fhsalon)");
   console.log("Manager: manager@fhsalon.ca / demo1234");
   console.log("Stylist portal: farzana@fhsalon.ca / demo1234 (also aisha@, omar@)");
