@@ -131,8 +131,8 @@ export async function createSalonWithManager(input: CreateSalonInput) {
       email: input.email || null,
       address: input.address || null,
       bookingThemeId: MARKETPLACE_BOOK_THEME_ID,
-      managerThemeId: normalizeThemeId(input.managerThemeId, DEFAULT_MANAGER_THEME_ID),
-      stylistThemeId: normalizeThemeId(input.stylistThemeId, DEFAULT_STYLIST_THEME_ID),
+      managerThemeId: DEFAULT_MANAGER_THEME_ID,
+      stylistThemeId: DEFAULT_STYLIST_THEME_ID,
       // Legacy splash/API fields — keep in sync with booking pack accent.
       brandColor: bookingTheme.dark.accent,
       accentColor: bookingTheme.dark.accentStrong,

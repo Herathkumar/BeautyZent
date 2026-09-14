@@ -3,11 +3,6 @@ import { redirect } from "next/navigation";
 import { getPlatformSession } from "@/lib/platform-auth";
 import { prisma } from "@/lib/prisma";
 import { businessTypeLabel } from "@/lib/marketplace";
-import {
-  DEFAULT_MANAGER_THEME_ID,
-  DEFAULT_STYLIST_THEME_ID,
-  getSalonTheme,
-} from "@/lib/salon-themes";
 
 export const dynamic = "force-dynamic";
 
@@ -31,8 +26,6 @@ export default async function PlatformHomePage() {
       timezone: true,
       openHour: true,
       closeHour: true,
-      managerThemeId: true,
-      stylistThemeId: true,
       _count: { select: { stylists: true, services: true, appointments: true } },
     },
   });
@@ -118,32 +111,6 @@ export default async function PlatformHomePage() {
             <p className="text-xs text-muted">
               {salon.timezone} · {salon.openHour}:00–{salon.closeHour}:00
             </p>
-
-            <ul className="flex flex-wrap gap-1.5">
-              {(
-                [
-                  ["Manager", salon.managerThemeId, DEFAULT_MANAGER_THEME_ID],
-                  ["Staff", salon.stylistThemeId, DEFAULT_STYLIST_THEME_ID],
-                ] as const
-              ).map(([app, id, fallback]) => {
-                const theme = getSalonTheme(id, fallback);
-                return (
-                  <li
-                    key={app}
-                    className="flex items-center gap-1.5 rounded-full border border-ink/12 px-2.5 py-1 text-[0.68rem] text-muted"
-                    title={`${app}: ${theme.label}`}
-                  >
-                    <span
-                      className="block h-3 w-3 rounded-full"
-                      style={{
-                        background: `linear-gradient(135deg, ${theme.dark.accent} 0%, ${theme.dark.bg2} 100%)`,
-                      }}
-                    />
-                    {app} · {theme.label}
-                  </li>
-                );
-              })}
-            </ul>
 
             <div className="flex flex-wrap gap-2 text-sm">
               <Link

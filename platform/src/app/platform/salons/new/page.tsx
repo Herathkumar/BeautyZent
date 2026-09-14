@@ -4,12 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MARKETPLACE_BOOK_THEME_ID } from "@/lib/marketplace-book-theme";
-import {
-  DEFAULT_MANAGER_THEME_ID,
-  DEFAULT_STYLIST_THEME_ID,
-} from "@/lib/salon-themes";
 import { TIMEZONES, fieldClass, labelClass } from "../salon-form";
-import { THEME_PICKER_HINT, ThemePicker } from "../ThemePicker";
 import { SettingToggle } from "@/components/admin/SettingToggle";
 
 function slugify(value: string) {
@@ -33,8 +28,6 @@ export default function NewSalonPage() {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [address, setAddress] = useState("");
-  const [managerThemeId, setManagerThemeId] = useState(DEFAULT_MANAGER_THEME_ID);
-  const [stylistThemeId, setStylistThemeId] = useState(DEFAULT_STYLIST_THEME_ID);
   const [managerName, setManagerName] = useState("Salon Manager");
   const [managerEmail, setManagerEmail] = useState("");
   const [managerPassword, setManagerPassword] = useState("");
@@ -62,8 +55,6 @@ export default function NewSalonPage() {
         email,
         address,
         bookingThemeId: MARKETPLACE_BOOK_THEME_ID,
-        managerThemeId,
-        stylistThemeId,
         managerName,
         managerEmail,
         managerPassword,
@@ -186,27 +177,6 @@ export default function NewSalonPage() {
             Address
             <input value={address} onChange={(e) => setAddress(e.target.value)} className={fieldClass} />
           </label>
-        </section>
-
-        <section className="grid gap-5 rounded-3xl border border-ink/12 bg-white/80 p-5">
-          <div>
-            <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-cocoa">Themes</h2>
-            <p className="mt-1 text-xs text-muted">{THEME_PICKER_HINT}</p>
-          </div>
-          <ThemePicker
-            name="manager"
-            legend="Manager app"
-            hint="Dashboard, bookings, earnings, and team."
-            value={managerThemeId}
-            onChange={setManagerThemeId}
-          />
-          <ThemePicker
-            name="stylist"
-            legend="Stylist app"
-            hint="Phone portal for the floor team."
-            value={stylistThemeId}
-            onChange={setStylistThemeId}
-          />
         </section>
 
         <section className="grid gap-4 rounded-3xl border border-ink/12 bg-white/80 p-5">
