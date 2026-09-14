@@ -7955,7 +7955,7 @@ html[data-salon-theme] .fh-confirm-ok--danger:hover {
   border-radius: 0.7rem;
   padding: 0;
   text-align: left;
-  box-shadow: 0 4px 12px rgb(42 37 33 / 0.06);
+  box-shadow: 0 4px 12px rgb(14 22 24 / 0.08);
   overflow: hidden;
 }
 .bz-cal-block__hit {
@@ -8135,6 +8135,7 @@ html[data-salon-theme] .fh-confirm-ok--danger:hover {
   height: 0.55rem;
   border-radius: 999px;
   display: inline-block;
+  box-shadow: 0 0 0 2px rgb(255 255 255 / 0.95);
 }
 .bz-cal-month__summary {
   margin: 0.9rem auto 0;

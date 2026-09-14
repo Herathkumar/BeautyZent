@@ -1,6 +1,6 @@
 import { serviceKind } from "@/lib/display-schedule";
 
-/** Apple Calendar–style pastel tones from the BeautyZent stylist mockups. */
+/** Apple Calendar–style flashy pastels — saturated fills, readable ink. */
 export type CalendarTone = {
   id: string;
   label: string;
@@ -8,6 +8,7 @@ export type CalendarTone = {
   text: string;
   badge: string;
   badgeText: string;
+  /** Strong accent used for left stripe + month dots. */
   dot: string;
 };
 
@@ -15,103 +16,105 @@ export const CALENDAR_TONES: Record<string, CalendarTone> = {
   color: {
     id: "color",
     label: "Cut / Color",
-    bg: "#fadadd",
-    text: "#5c3a42",
-    badge: "#f0c4cb",
-    badgeText: "#6b3f48",
-    dot: "#e8a0aa",
+    bg: "#ffb4d6",
+    text: "#6b1240",
+    badge: "#ff7eb3",
+    badgeText: "#5a0f36",
+    dot: "#ff2d8a",
   },
   cut: {
     id: "cut",
     label: "Cut",
-    bg: "#f5d0c5",
-    text: "#5c3d32",
-    badge: "#ebc0b2",
-    badgeText: "#6a4538",
-    dot: "#e0a894",
+    bg: "#ffc9a8",
+    text: "#7a2e0c",
+    badge: "#ff9f6b",
+    badgeText: "#6a2608",
+    dot: "#ff6b2c",
   },
   fade: {
     id: "fade",
     label: "Barber",
-    bg: "#e8dfc4",
-    text: "#4a4530",
-    badge: "#d9cfa8",
-    badgeText: "#524c34",
-    dot: "#c9b87a",
+    bg: "#ffe566",
+    text: "#6b5200",
+    badge: "#ffd11a",
+    badgeText: "#5a4500",
+    dot: "#f5c400",
   },
   makeup: {
     id: "makeup",
     label: "Makeup",
-    bg: "#d8ebe0",
-    text: "#2f4a3a",
-    badge: "#c2ddd0",
-    badgeText: "#355545",
-    dot: "#8fbfa4",
+    bg: "#d4b5ff",
+    text: "#3d1a7a",
+    badge: "#b88cff",
+    badgeText: "#321566",
+    dot: "#8b4dff",
   },
   style: {
     id: "style",
     label: "Style",
-    bg: "#e0f2f1",
-    text: "#2f4a48",
-    badge: "#c8e4e2",
-    badgeText: "#355553",
-    dot: "#7ebdb8",
+    bg: "#7eecff",
+    text: "#045a6b",
+    badge: "#3ddfff",
+    badgeText: "#034a58",
+    dot: "#00c2e0",
   },
   nail: {
     id: "nail",
     label: "Nails",
-    bg: "#e8e4f8",
-    text: "#3d3560",
-    badge: "#d4cef0",
-    badgeText: "#453d6e",
-    dot: "#a89ad4",
+    bg: "#ff9eef",
+    text: "#7a0a66",
+    badge: "#ff6ae3",
+    badgeText: "#680857",
+    dot: "#ff2ec8",
   },
   facial: {
     id: "facial",
     label: "Skin",
-    bg: "#f5ebe0",
-    text: "#5a4535",
-    badge: "#ead9c8",
-    badgeText: "#634c3a",
-    dot: "#d4b896",
+    bg: "#b8f5c8",
+    text: "#0f5a2a",
+    badge: "#7aeb9a",
+    badgeText: "#0c4a22",
+    dot: "#2dd66b",
   },
   paid: {
     id: "paid",
     label: "Paid",
-    bg: "#d8ebe0",
-    text: "#2f4a3a",
-    badge: "#c2ddd0",
-    badgeText: "#355545",
-    dot: "#4f9e91",
+    bg: "#9af0d8",
+    text: "#0a5a48",
+    badge: "#4de0bc",
+    badgeText: "#084a3c",
+    dot: "#00c9a0",
   },
   blocked: {
     id: "blocked",
     label: "Blocked",
-    bg: "#ececeb",
-    text: "#5a5a58",
-    badge: "#dcdcdb",
-    badgeText: "#555553",
-    dot: "#b0b0ae",
+    bg: "#d8d8dc",
+    text: "#4a4a50",
+    badge: "#c4c4c8",
+    badgeText: "#3f3f44",
+    dot: "#8e8e96",
   },
   other: {
     id: "other",
     label: "Other",
-    bg: "#e7f0f5",
-    text: "#334850",
-    badge: "#d2e2ea",
-    badgeText: "#3a525c",
-    dot: "#8aa8b8",
+    bg: "#a8c8ff",
+    text: "#0f2f7a",
+    badge: "#6ea0ff",
+    badgeText: "#0c2666",
+    dot: "#2f6bff",
   },
 };
 
 export const MONTH_LEGEND: { tone: CalendarTone; label: string }[] = [
   { tone: CALENDAR_TONES.color!, label: "Cut / Color" },
-  { tone: CALENDAR_TONES.paid!, label: "Paid services" },
+  { tone: CALENDAR_TONES.cut!, label: "Cut" },
   { tone: CALENDAR_TONES.makeup!, label: "Makeup" },
+  { tone: CALENDAR_TONES.style!, label: "Style" },
+  { tone: CALENDAR_TONES.paid!, label: "Paid" },
   { tone: CALENDAR_TONES.blocked!, label: "Blocked" },
 ];
 
-const AVATAR_PASTELS = ["#d8ebe0", "#f5ebe0", "#e8e4f8", "#fadadd", "#e0f2f1", "#efe4cf"];
+const AVATAR_PASTELS = ["#b8f5c8", "#ffc9a8", "#d4b5ff", "#ffb4d6", "#7eecff", "#ffe566"];
 
 export function stylistAvatarTone(index: number) {
   return AVATAR_PASTELS[Math.abs(index) % AVATAR_PASTELS.length]!;

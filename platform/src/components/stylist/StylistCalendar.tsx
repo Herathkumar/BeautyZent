@@ -162,9 +162,11 @@ function ApptBlock({
         top,
         height,
         background: blocked
-          ? `repeating-linear-gradient(-45deg, ${tone.bg}, ${tone.bg} 6px, #f7f7f6 6px, #f7f7f6 12px)`
+          ? `repeating-linear-gradient(-45deg, ${tone.bg}, ${tone.bg} 6px, #f4f4f6 6px, #f4f4f6 12px)`
           : tone.bg,
         color: tone.text,
+        borderLeft: `4px solid ${tone.dot}`,
+        boxShadow: `0 4px 14px color-mix(in srgb, ${tone.dot} 28%, transparent)`,
       }}
       data-testid="stylist-cal-block"
       data-appt-id={appt.id}
