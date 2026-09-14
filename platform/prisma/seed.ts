@@ -2,89 +2,17 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import fs from "fs";
 import path from "path";
+import { seedDefaultsForBusinessType } from "../src/lib/hair-salon-defaults";
 
 const prisma = new PrismaClient();
 
 /** Extra tenants for local multi-salon + isolated e2e (Farzana fixtures stay the default). */
 const SEED_EXTRA_SALONS = process.env.SEED_DEMO_SALON !== "false";
 
-/** Retail shelf shown on reception Products and checkout. */
-const SAMPLE_PRODUCTS = [
-  {
-    name: "Shampoo 250ml",
-    description: "Daily cleanse for colour-treated hair",
-    priceCents: 1800,
-    stockQty: 12,
-    sku: "SH-250",
-  },
-  {
-    name: "Conditioner 250ml",
-    description: "Smoothing conditioner for mid-lengths and ends",
-    priceCents: 1800,
-    stockQty: 10,
-    sku: "CD-250",
-  },
-  {
-    name: "Hair oil",
-    description: "Nourishing finishing oil",
-    priceCents: 2200,
-    stockQty: 8,
-    sku: "OIL-01",
-  },
-  {
-    name: "Leave-in conditioner",
-    description: "Lightweight detangler for blow-dries",
-    priceCents: 2400,
-    stockQty: 9,
-    sku: "LI-150",
-  },
-  {
-    name: "Heat protectant spray",
-    description: "Shields hair up to 230°C",
-    priceCents: 2600,
-    stockQty: 11,
-    sku: "HP-200",
-  },
-  {
-    name: "Repair hair mask",
-    description: "Weekly treatment for dry or damaged ends",
-    priceCents: 3200,
-    stockQty: 7,
-    sku: "MASK-01",
-  },
-  {
-    name: "Dry shampoo",
-    description: "Volume and refresh between washes",
-    priceCents: 2000,
-    stockQty: 14,
-    sku: "DRY-01",
-  },
-  {
-    name: "Flexible hold hairspray",
-    description: "Soft hold that still brushes out",
-    priceCents: 2200,
-    stockQty: 10,
-    sku: "SPRAY-01",
-  },
-  {
-    name: "Shine serum",
-    description: "Frizz control with a glass finish",
-    priceCents: 2800,
-    stockQty: 6,
-    sku: "SERUM-01",
-  },
-];
-
-async function seedSalonProducts(salonId: string) {
-  for (const p of SAMPLE_PRODUCTS) {
-    const existing = await prisma.product.findFirst({
-      where: { salonId, name: p.name },
-    });
-    if (existing) {
-      await prisma.product.update({ where: { id: existing.id }, data: p });
-    } else {
-      await prisma.product.create({ data: { salonId, ...p } });
-    }
+async function seedSalonCatalog(salonId: string, businessType = "SALON") {
+  const result = await seedDefaultsForBusinessType(prisma, salonId, businessType);
+  if (!result.applied) {
+    console.log(`Skip vertical defaults for businessType=${businessType} (not yet defined)`);
   }
 }
 
@@ -114,6 +42,7 @@ async function seedDemoSalon(passwordHash: string) {
     where: { slug: "demosalon" },
     update: {
       name: "Demo Hair Studio",
+      businessType: "SALON",
       // Deliberately unlike FHSalon so per-tenant theming is obvious side by side.
       bookingThemeId: "cocoa",
       managerThemeId: "laurel",
@@ -122,6 +51,7 @@ async function seedDemoSalon(passwordHash: string) {
     create: {
       name: "Demo Hair Studio",
       slug: "demosalon",
+      businessType: "SALON",
       phone: "416-555-0199",
       email: "hello@demosalon.test",
       address: "120 Queen St W, Toronto, ON",
@@ -218,7 +148,7 @@ async function seedDemoSalon(passwordHash: string) {
     }
   }
 
-  await seedSalonProducts(salon.id);
+  await seedSalonCatalog(salon.id);
 
   return salon;
 }
@@ -229,6 +159,7 @@ async function seedAarabySalon(passwordHash: string) {
     where: { slug: "aaraby-beauty" },
     update: {
       name: "Aaraby's Beauty Parlor",
+      businessType: "SALON",
       bookingThemeId: "cocoa",
       managerThemeId: "cocoa",
       stylistThemeId: "seaglass",
@@ -236,6 +167,7 @@ async function seedAarabySalon(passwordHash: string) {
     create: {
       name: "Aaraby's Beauty Parlor",
       slug: "aaraby-beauty",
+      businessType: "SALON",
       phone: "416-555-0148",
       email: "hello@aaraby-beauty.test",
       address: "Toronto, ON",
@@ -333,7 +265,7 @@ async function seedAarabySalon(passwordHash: string) {
     }
   }
 
-  await seedSalonProducts(salon.id);
+  await seedSalonCatalog(salon.id);
   return salon;
 }
 
@@ -344,6 +276,7 @@ async function main() {
     where: { slug: "fhsalon" },
     update: {
       name: "Farzana Hair Salon",
+      businessType: "SALON",
       phone: "905-920-2277",
       address: "8 Taywood Crt, Dundas, ON L9H 7A2",
       // The original Farzana palettes, now expressed as theme packs.
@@ -354,6 +287,7 @@ async function main() {
     create: {
       name: "Farzana Hair Salon",
       slug: "fhsalon",
+      businessType: "SALON",
       phone: "905-920-2277",
       email: "hello@fhsalon.ca",
       address: "8 Taywood Crt, Dundas, ON L9H 7A2",
@@ -541,18 +475,18 @@ async function main() {
     }
   }
 
-  await seedSalonProducts(salon.id);
+  await seedSalonCatalog(salon.id);
 
   const others = await prisma.salon.findMany({
     where: {
       active: true,
       slug: { notIn: ["fhsalon", "demosalon"] },
     },
-    select: { id: true, name: true, slug: true },
+    select: { id: true, name: true, slug: true, businessType: true },
   });
   for (const extra of others) {
-    await seedSalonProducts(extra.id);
-    console.log(`Seeded sample products for ${extra.name} (${extra.slug})`);
+    await seedSalonCatalog(extra.id, extra.businessType);
+    console.log(`Seeded vertical defaults for ${extra.name} (${extra.slug})`);
   }
 
   const platformEmail = await seedPlatformAdmin(passwordHash);

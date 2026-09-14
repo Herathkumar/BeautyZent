@@ -1,5 +1,6 @@
 import { DisplayBoard } from "../DisplayBoard";
 import { DisplayUnavailable } from "../DisplayUnavailable";
+import { loadLoungeCatalog } from "@/lib/lounge-catalog";
 import { prisma } from "@/lib/prisma";
 
 export default async function LoungeDisplayPage({
@@ -20,5 +21,16 @@ export default async function LoungeDisplayPage({
       />
     );
   }
-  return <DisplayBoard slug={slug} variant="customer" fixedView="lounge" />;
+
+  const catalog = await loadLoungeCatalog(slug);
+
+  return (
+    <DisplayBoard
+      slug={slug}
+      variant="customer"
+      fixedView="lounge"
+      initialProducts={catalog.products}
+      initialLooks={catalog.looks}
+    />
+  );
 }

@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 
-const PRISMA_POOL_GEN = 1;
+const PRISMA_POOL_GEN = 3;
 
 function prismaUrl() {
   const raw = process.env.DATABASE_URL || "";

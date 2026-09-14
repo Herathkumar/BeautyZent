@@ -106,6 +106,16 @@ type MenuProduct = {
   imageUrl?: string | null;
 };
 
+type LoungeLookItem = {
+  id: string;
+  styleNumber: number;
+  title: string;
+  category: string;
+  description?: string | null;
+  beforeUrl?: string | null;
+  afterUrl?: string | null;
+};
+
 /** Calendar YYYY-MM-DD in the salon timezone (falls back to local). */
 function dayKey(iso: string, timeZone?: string | null) {
   if (timeZone) {
@@ -546,6 +556,8 @@ export function DisplayBoard({
   staffName,
   staffRole,
   staffPhotoUrl,
+  initialProducts,
+  initialLooks,
 }: {
   slug: string;
   embedded?: boolean;
@@ -555,12 +567,16 @@ export function DisplayBoard({
   staffRole?: string;
   /** Uploaded selfie for the signed-in reception user; initials used when null. */
   staffPhotoUrl?: string | null;
+  /** Prefetch for lounge TV so Retail / Looks are not empty before client fetch. */
+  initialProducts?: MenuProduct[];
+  initialLooks?: LoungeLookItem[];
 }) {
   const [appointments, setAppointments] = useState<Appt[]>([]);
   const [stylists, setStylists] = useState<DisplayStylist[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [services, setServices] = useState<MenuService[]>([]);
-  const [products, setProducts] = useState<MenuProduct[]>([]);
+  const [products, setProducts] = useState<MenuProduct[]>(() => initialProducts || []);
+  const [loungeLooks, setLoungeLooks] = useState<LoungeLookItem[]>(() => initialLooks || []);
   const [salon, setSalon] = useState<SalonInfo | null>(null);
   const [days, setDays] = useState(14);
   const [tab, setTab] = useState<Tab>("today");
@@ -790,6 +806,23 @@ export function DisplayBoard({
     }
   }, [slug, unlockHeaders, lockToPin]);
 
+  const loadLooks = useCallback(async () => {
+    try {
+      const r = await fetch(`/api/display/${slug}/looks`, {
+        credentials: "same-origin",
+        headers: unlockHeaders,
+      });
+      const data = await r.json().catch(() => ({}));
+      if (r.status === 401 && data.needsPin) {
+        lockToPin();
+        return;
+      }
+      setLoungeLooks((prev) => keepIfSame(prev, data.looks || []));
+    } catch {
+      /* ignore */
+    }
+  }, [slug, unlockHeaders, lockToPin]);
+
   const loadCheckout = useCallback(async () => {
     if (checkoutInFlight.current) return;
     checkoutInFlight.current = true;
@@ -873,10 +906,12 @@ export function DisplayBoard({
   const loadRef = useRef(load);
   const loadServicesRef = useRef(loadServices);
   const loadProductsRef = useRef(loadProducts);
+  const loadLooksRef = useRef(loadLooks);
   const loadCheckoutRef = useRef(loadCheckout);
   loadRef.current = load;
   loadServicesRef.current = loadServices;
   loadProductsRef.current = loadProducts;
+  loadLooksRef.current = loadLooks;
   loadCheckoutRef.current = loadCheckout;
 
   const pollEnabledRef = useRef(false);
@@ -921,6 +956,9 @@ export function DisplayBoard({
               const section = receptionSectionRef.current;
               if (section === "services") await loadServicesRef.current();
               else if (section === "products") await loadProductsRef.current();
+            } else if (variantRef.current === "customer") {
+              await loadProductsRef.current();
+              await loadLooksRef.current();
             }
           }
         }
@@ -986,13 +1024,26 @@ export function DisplayBoard({
 
   useEffect(() => {
     if (!unlockChecked || needsPin) return;
-    if (variant === "reception" || tab === "services" || receptionSection === "services") {
+    if (
+      variant === "customer" ||
+      variant === "reception" ||
+      tab === "services" ||
+      receptionSection === "services"
+    ) {
       void loadServices();
     }
-    if (variant === "reception" || tab === "products" || receptionSection === "products") {
+    if (
+      variant === "customer" ||
+      variant === "reception" ||
+      tab === "products" ||
+      receptionSection === "products"
+    ) {
       void loadProducts();
     }
-  }, [tab, receptionSection, unlockChecked, needsPin, variant, loadServices, loadProducts]);
+    if (variant === "customer") {
+      void loadLooks();
+    }
+  }, [tab, receptionSection, unlockChecked, needsPin, variant, loadServices, loadProducts, loadLooks]);
 
   const tKey = todayKey(salon?.timezone, salon?.today);
   const scheduleMaxDay = useMemo(
@@ -1820,7 +1871,11 @@ export function DisplayBoard({
       >
       <CustomerAmbientBackdrop />
       <div className="relative z-[1] flex min-h-0 min-w-0 flex-1 flex-col">
-      <header className={`customer-lounge-header shrink-0 ${embedded ? "px-4 py-4 sm:px-5" : "px-8 py-6"}`}>
+      <header
+        className={`customer-lounge-header customer-lounge-header--luxe shrink-0 ${
+          embedded ? "px-4 py-4 sm:px-5" : "px-8 py-5"
+        }`}
+      >
           <div className="grid gap-4 lg:grid-cols-[1fr_auto_1fr] lg:items-center">
             <div className="flex items-center gap-4">
               <span className="customer-lounge-mark" aria-hidden>
@@ -1834,34 +1889,47 @@ export function DisplayBoard({
               </div>
             </div>
             <div className="text-center">
-              <h2 className="font-[family-name:var(--font-display)] text-2xl text-[color:var(--cd-heading)] sm:text-[1.85rem]">
-                Today’s Appointments — {apptDay}
-              </h2>
-              <CustomerLoungeHeadlineStatus
-                appointments={todayAppts}
-                stylists={floorStylists}
-                openHour={openHour}
-                closeHour={closeHour}
-                timeZone={salon?.timezone}
-                now={now}
-                storeClosed={storeClosed}
-              />
+              <div className="customer-lounge-live" aria-live="polite">
+                <span>Live Lounge</span>
+                <span className="customer-lounge-live__sep" aria-hidden>
+                  ·
+                </span>
+                <span>{dateLine}</span>
+                <span className="customer-lounge-live__sep" aria-hidden>
+                  ·
+                </span>
+                <span>{timeLine}</span>
+                <span className="customer-lounge-live__sep" aria-hidden>
+                  ·
+                </span>
+                <CustomerWeatherChip address={salon?.address} timezone={salon?.timezone} />
+              </div>
+              {customerView === "timeline" ? (
+                <CustomerLoungeHeadlineStatus
+                  appointments={todayAppts}
+                  stylists={floorStylists}
+                  openHour={openHour}
+                  closeHour={closeHour}
+                  timeZone={salon?.timezone}
+                  now={now}
+                  storeClosed={storeClosed}
+                />
+              ) : null}
             </div>
             <div className="flex flex-col items-end gap-2">
               <div className="flex flex-wrap items-center justify-end gap-2">
+                <div className="customer-lounge-lang" role="group" aria-label="Language">
+                  <button type="button" className="is-on" aria-pressed="true">
+                    EN
+                  </button>
+                  <button type="button" aria-pressed="false">
+                    FR
+                  </button>
+                </div>
                 {showViewToggle ? (
                   <CustomerViewToggle slug={slug} view={customerView} />
                 ) : null}
                 <CustomerThemeToggle />
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2.5">
-                  <CustomerWeatherChip address={salon?.address} timezone={salon?.timezone} />
-                  <div className="text-right">
-                    <p className="customer-lounge-clock">{timeLine}</p>
-                    <p className="text-sm text-[color:var(--cd-muted)]">{dateLine}</p>
-                  </div>
-                </div>
                 {pinSet || embedded ? (
                   <PadlockButton
                     locked={false}
@@ -1912,7 +1980,13 @@ export function DisplayBoard({
           </div>
         ) : (
           <CustomerScheduleGrid
-            appointments={todayAppts}
+            appointments={appointments.filter(
+              (a) =>
+                (a.status === "BOOKED" || a.status === "CHECKED_IN") &&
+                (dayKey(a.startsAt, salon?.timezone) === tKey ||
+                  dayKey(a.startsAt, salon?.timezone) ===
+                    addCalendarDays(tKey, 1, salon?.timezone || "America/Toronto"))
+            )}
             stylists={floorStylists}
             openHour={openHour}
             closeHour={closeHour}
@@ -1920,6 +1994,19 @@ export function DisplayBoard({
             now={now}
             storeClosed={storeClosed}
             compactPad={embedded}
+            slug={slug}
+            salonName={salon?.name}
+            products={(products.filter((p) => p.hasImage || p.imageUrl).length
+              ? products.filter((p) => p.hasImage || p.imageUrl)
+              : products
+            ).slice(0, 18)}
+            services={services.slice(0, 6)}
+            looks={loungeLooks}
+            offerLine={
+              promoBoard?.enabled && promoBoard.slides[0]
+                ? `${promoBoard.slides[0].template.eyebrow}: ${promoBoard.slides[0].template.offer}`
+                : null
+            }
             onCheckIn={({ appointmentId, targetStylistId }) =>
               void checkInFromDrag(appointmentId, targetStylistId)
             }

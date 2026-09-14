@@ -13,6 +13,7 @@ import {
   type BusinessTypeId,
   type ListingStatus,
 } from "./marketplace";
+import { seedDefaultsForBusinessType } from "./hair-salon-defaults";
 
 export const RESERVED_SLUGS = new Set([
   "admin",
@@ -189,6 +190,17 @@ export async function createSalonWithManager(input: CreateSalonInput) {
         data: { stylistId: stylist.id, serviceId: row.id },
       });
     }
+  }
+
+  // Hair salon: lounge Looks of the week + retail favorites with photos.
+  // Other verticals intentionally skip until their default packs exist.
+  try {
+    await seedDefaultsForBusinessType(prisma, salon.id, businessType);
+  } catch (err) {
+    console.warn(
+      `[createSalon] default catalog seed skipped for ${salon.slug}:`,
+      err instanceof Error ? err.message : err
+    );
   }
 
   return salon;
