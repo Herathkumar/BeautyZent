@@ -108,13 +108,14 @@ export const CALENDAR_TONES: Record<string, CalendarTone> = {
 export const MONTH_LEGEND: { tone: CalendarTone; label: string }[] = [
   { tone: CALENDAR_TONES.color!, label: "Cut / Color" },
   { tone: CALENDAR_TONES.cut!, label: "Cut" },
+  { tone: CALENDAR_TONES.fade!, label: "Barber" },
   { tone: CALENDAR_TONES.makeup!, label: "Makeup" },
   { tone: CALENDAR_TONES.style!, label: "Style" },
   { tone: CALENDAR_TONES.paid!, label: "Paid" },
   { tone: CALENDAR_TONES.blocked!, label: "Blocked" },
 ];
 
-const AVATAR_PASTELS = ["#b8f5c8", "#ffc9a8", "#d4b5ff", "#ffb4d6", "#7eecff", "#ffe566"];
+const AVATAR_PASTELS = ["#b8f5c8", "#ffc9a8", "#7eecff", "#ffb4d6", "#ffe566", "#a8c8ff"];
 
 export function stylistAvatarTone(index: number) {
   return AVATAR_PASTELS[Math.abs(index) % AVATAR_PASTELS.length]!;
@@ -126,14 +127,32 @@ export function appointmentCalendarTone(input: {
   source?: string;
 }): CalendarTone {
   const name = (input.serviceName || "").toLowerCase();
-  if (/\b(lunch|block|unavailable|break|time off)\b/.test(name) || input.source === "BLOCK") {
+  if (/\b(lunch|block|unavailable|break|time[\s-]?off)\b/.test(name) || input.source === "BLOCK") {
     return CALENDAR_TONES.blocked!;
   }
   if (input.status === "COMPLETED") {
     return CALENDAR_TONES.paid!;
   }
-  if (/\b(makeup|bridal|lash|brow)\b/.test(name)) return CALENDAR_TONES.makeup!;
-  if (/\b(fade|beard|barber|shave)\b/.test(name)) return CALENDAR_TONES.fade!;
+  // Makeup only for explicit makeup / lash / brow — not "bridal hair" or haircuts.
+  if (
+    /\b(makeup|make-up|glam)\b/.test(name) ||
+    (/\b(lash|brow)\b/.test(name) && !/haircut|\bcut\b|\btrim\b|\bfade\b|\bhair\b/.test(name))
+  ) {
+    return CALENDAR_TONES.makeup!;
+  }
+  if (/\b(fade|beard|barber|shave|taper|clipper|buzz)\b/.test(name)) {
+    return CALENDAR_TONES.fade!;
+  }
+  // Men's / gents hair services → Cut (or Barber if fade-like already handled).
+  if (
+    /haircut/.test(name) ||
+    /\b(cut|trim)\b/.test(name) ||
+    (/\b(men'?s?|mens|gents?|gentleman)\b/.test(name) && /\b(hair|cut|trim)\b/.test(name))
+  ) {
+    const kind = serviceKind(input.serviceName);
+    if (kind === "color") return CALENDAR_TONES.color!;
+    return CALENDAR_TONES.cut!;
+  }
   const kind = serviceKind(input.serviceName);
   if (kind === "color") return CALENDAR_TONES.color!;
   if (kind === "cut") return CALENDAR_TONES.cut!;

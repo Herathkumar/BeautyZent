@@ -91,13 +91,35 @@ export function formatClock(iso: string, timeZone?: string | null) {
 
 export function serviceKind(name: string): "cut" | "color" | "style" | "nail" | "facial" | "other" {
   const n = (name || "").toLowerCase();
-  if (/\b(mani|pedi|nail|polish|acrylic|gel)\b/.test(n)) return "nail";
-  if (/\b(facial|skin|peel|mask|wax|brow|lash)\b/.test(n)) return "facial";
+  if (/\b(mani|pedi|nail|polish|acrylic)\b/.test(n) || /\bgel\s*(mani|pedi|nail)\b/.test(n)) {
+    return "nail";
+  }
+  // Skin / wax — but not when the service is clearly a haircut.
+  if (
+    /\b(facial|peel|mask|derm|hydrafacial)\b/.test(n) ||
+    (/\b(wax|threading)\b/.test(n) && !/haircut|\bcut\b|\btrim\b|\bfade\b/.test(n))
+  ) {
+    return "facial";
+  }
   if (/\b(color|colour|balayage|bleach|highlight|gloss|dye|tint|root)\b/.test(n)) {
     return "color";
   }
-  if (/\b(blowout|style|updo|comb|set|finish)\b/.test(n)) return "style";
-  if (/\b(cut|trim|barber|fade|bangs)\b/.test(n)) return "cut";
+  // Cut before style so "haircut & style" / "cut and blow-dry" stay cuts.
+  // Note: "haircut" does not match \bcut\b — match it explicitly.
+  if (
+    /haircut/.test(n) ||
+    /\b(cut|trim|barber|fade|taper|bangs|clipper|buzz)\b/.test(n) ||
+    (/\b(men'?s?|mens|gents?|gentleman)\b/.test(n) && /\b(hair|cut|trim)\b/.test(n))
+  ) {
+    return "cut";
+  }
+  // Bridal hair (without makeup) is a style service.
+  if (/\bbridal\b/.test(n) && /\b(hair|updo|style)\b/.test(n)) {
+    return "style";
+  }
+  if (/\b(blowout|blow-dry|blow dry|style|updo|comb|set|finish|silk press)\b/.test(n)) {
+    return "style";
+  }
   return "other";
 }
 
