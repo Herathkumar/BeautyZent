@@ -8,13 +8,14 @@ import {
   type SalonBrand,
 } from "@/lib/salon-branding";
 import { DEFAULT_STYLIST_THEME_ID, applySalonThemeId } from "@/lib/salon-themes";
-import { readStylistTheme } from "@/lib/stylist-theme";
+import { applyStylistTheme } from "@/lib/stylist-theme";
 import { StylistBottomNav } from "./StylistBottomNav";
 import { StylistThemeRoot } from "./StylistThemeRoot";
 
 function applyStylistPack(_salon?: Pick<SalonBrand, "stylistThemeId"> | null) {
-  // Stylist PWA is locked to sea-glass green (ignore salon pack / legacy zent/cocoa).
+  // Stylist PWA is locked to cream / house gold (ignore salon pack / legacy teal).
   applySalonThemeId(DEFAULT_STYLIST_THEME_ID, DEFAULT_STYLIST_THEME_ID);
+  applyStylistTheme("light");
   return DEFAULT_STYLIST_THEME_ID;
 }
 
@@ -38,9 +39,11 @@ export function StylistAppShell({
       /* ignore */
     }
 
-    const mode = readStylistTheme();
+    const mode = "light" as const;
+    document.documentElement.classList.add("stylist-shell");
     document.documentElement.classList.toggle("theme-light", mode === "light");
     document.documentElement.classList.toggle("stylist-shell--light", mode === "light");
+    applyStylistTheme(mode);
 
     if (initialBrand?.name) {
       writeSalonBrand(initialBrand, { staff: true });

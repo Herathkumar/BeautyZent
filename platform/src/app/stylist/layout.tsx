@@ -34,7 +34,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0e1618",
+  themeColor: "#f6f2eb",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -84,7 +84,7 @@ export default async function StylistLayout({ children }: { children: React.Reac
     <>
       <script
         dangerouslySetInnerHTML={{
-          __html: `document.documentElement.setAttribute("data-salon-theme","${themeId}")`,
+          __html: `document.documentElement.setAttribute("data-salon-theme","${themeId}");document.documentElement.classList.add("stylist-shell","stylist-shell--light","theme-light");`,
         }}
       />
       <SalonThemeSync

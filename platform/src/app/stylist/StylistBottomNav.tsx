@@ -36,7 +36,7 @@ export function StylistBottomNav() {
       );
     }
     const theme = document.querySelector('meta[name="theme-color"]');
-    theme?.setAttribute("content", "#0e1618");
+    theme?.setAttribute("content", "#f6f2eb");
     const status = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
     status?.setAttribute("content", "default");
   }, [mounted]);

@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { calendarDateInTz } from "@/lib/salon-time";
-import { LotusMark } from "./StylistWaitlistSheet";
 
 type Service = {
   id: string;
@@ -12,6 +11,30 @@ type Service = {
   stylistIds?: string[];
 };
 type StylistOpt = { id: string; name: string; serviceIds: string[]; photoUrl?: string };
+
+function formatSlotTime(iso: string) {
+  return new Date(iso).toLocaleTimeString("en-CA", {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function formatShortDate(ymd: string) {
+  return new Date(`${ymd}T12:00:00`).toLocaleDateString("en-CA", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function formatDuration(minutes: number) {
+  if (minutes <= 0) return "—";
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h > 0 && m > 0) return `${h}h ${m}m`;
+  if (h > 0) return `${h}h`;
+  return `${m} min`;
+}
 
 export function StylistBookingSheet({
   open,
@@ -30,6 +53,7 @@ export function StylistBookingSheet({
   } | null;
 }) {
   const [myStylistId, setMyStylistId] = useState("");
+  const [myStylistName, setMyStylistName] = useState("You");
   const [slug, setSlug] = useState("fhsalon");
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [services, setServices] = useState<Service[]>([]);
@@ -45,11 +69,16 @@ export function StylistBookingSheet({
   const [notes, setNotes] = useState("");
   const [deposit, setDeposit] = useState(true);
   const [durationBoost, setDurationBoost] = useState(0);
+  const [showAdjustTime, setShowAdjustTime] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [slotsLoading, setSlotsLoading] = useState(false);
 
   useEffect(() => {
     if (!open) return;
+    setShowAdjustTime(false);
+    setDurationBoost(0);
+    setError("");
     (async () => {
       const me = await fetch("/api/stylist/me");
       if (me.status === 401) {
@@ -62,15 +91,40 @@ export function StylistBookingSheet({
       }
       const meData = await me.json();
       const id = meData.stylist?.id || "";
+      const myName = meData.stylist?.name || meData.user?.name || "You";
       const salonSlug = meData.stylist?.salon?.slug || "fhsalon";
       setMyStylistId(id);
+      setMyStylistName(myName);
       setStylistId(id);
       setSlug(salonSlug);
       setPhotoUrl(meData.stylist?.photoUrl || null);
 
       const cat = await fetch(`/api/public/${salonSlug}/catalog`).then((r) => r.json());
-      setServices(cat.services || []);
-      setStylists(cat.stylists || []);
+      const catalogServices = (cat.services || []) as Service[];
+      const catalogStylists = (cat.stylists || []) as StylistOpt[];
+      setServices(catalogServices);
+
+      const allServiceIds = catalogServices.map((s) => s.id);
+      const selfOpt: StylistOpt = {
+        id,
+        name: myName,
+        serviceIds: allServiceIds,
+        photoUrl: meData.stylist?.photoUrl || undefined,
+      };
+      const others = catalogStylists.filter((s) => s.id !== id);
+      const selfFromCatalog = catalogStylists.find((s) => s.id === id);
+      setStylists([
+        selfFromCatalog
+          ? {
+              ...selfFromCatalog,
+              serviceIds: Array.from(
+                new Set([...(selfFromCatalog.serviceIds || []), ...allServiceIds])
+              ),
+            }
+          : selfOpt,
+        ...others,
+      ]);
+
       const today =
         cat.salon?.today ||
         calendarDateInTz(cat.salon?.timezone || "America/Toronto");
@@ -78,7 +132,7 @@ export function StylistBookingSheet({
       setDate((prev) => (prev < today ? today : prev));
 
       if (preset?.serviceId) setServiceId(preset.serviceId);
-      else if (cat.services?.[0]?.id) setServiceId(cat.services[0].id);
+      else if (catalogServices[0]?.id) setServiceId(catalogServices[0].id);
       if (preset?.clientName) setClientName(preset.clientName);
       if (preset?.clientPhone) setClientPhone(preset.clientPhone);
       if (preset?.note) setNotes(preset.note);
@@ -87,8 +141,26 @@ export function StylistBookingSheet({
 
   const filteredStylists = useMemo(() => {
     if (!serviceId) return stylists;
-    return stylists.filter((s) => s.serviceIds.includes(serviceId));
-  }, [stylists, serviceId]);
+    const matched = stylists.filter(
+      (s) => s.id === myStylistId || s.serviceIds.includes(serviceId)
+    );
+    if (myStylistId && !matched.some((s) => s.id === myStylistId)) {
+      return [
+        {
+          id: myStylistId,
+          name: myStylistName,
+          serviceIds: [serviceId],
+          photoUrl: photoUrl || undefined,
+        },
+        ...matched,
+      ];
+    }
+    return matched.sort((a, b) => {
+      if (a.id === myStylistId) return -1;
+      if (b.id === myStylistId) return 1;
+      return 0;
+    });
+  }, [stylists, serviceId, myStylistId, myStylistName, photoUrl]);
 
   useEffect(() => {
     if (!serviceId || !filteredStylists.length) return;
@@ -102,24 +174,36 @@ export function StylistBookingSheet({
   useEffect(() => {
     if (!serviceId || !stylistId || !date || !slug) {
       setSlots([]);
+      setSlotsLoading(false);
       return;
     }
     const ac = new AbortController();
     setSlots([]);
+    setStartsAt("");
+    setSlotsLoading(true);
     const q = new URLSearchParams({ serviceId, stylistId, date });
     fetch(`/api/public/${slug}/slots?${q}`, { signal: ac.signal, cache: "no-store" })
       .then((r) => r.json())
       .then((data) => {
-        if (!ac.signal.aborted) setSlots(data.slots || []);
+        if (!ac.signal.aborted) {
+          setSlots(data.slots || []);
+          setSlotsLoading(false);
+        }
       })
       .catch(() => {
-        if (!ac.signal.aborted) setSlots([]);
+        if (!ac.signal.aborted) {
+          setSlots([]);
+          setSlotsLoading(false);
+        }
       });
     return () => ac.abort();
   }, [slug, serviceId, stylistId, date]);
 
   const selectedService = services.find((s) => s.id === serviceId) || null;
-  const selectedStylist = stylists.find((s) => s.id === stylistId) || null;
+  const selectedStylist =
+    filteredStylists.find((s) => s.id === stylistId) ||
+    stylists.find((s) => s.id === stylistId) ||
+    null;
   const durationMin = (selectedService?.durationMin || 0) + durationBoost * 15;
 
   async function submit() {
@@ -163,71 +247,58 @@ export function StylistBookingSheet({
 
   if (!open) return null;
 
-  const timeLabel = startsAt
-    ? new Date(startsAt).toLocaleTimeString("en-CA", {
-        hour: "numeric",
-        minute: "2-digit",
-      })
-    : "Pick time";
-
-  const dateLabel = new Date(`${date}T12:00:00`).toLocaleDateString("en-CA", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  const staffLabel =
+    stylistId === myStylistId
+      ? `You (${selectedStylist?.name || myStylistName})`
+      : selectedStylist?.name || "Staff";
 
   return (
     <>
       <button type="button" className="bz-sheet-backdrop" aria-label="Close booking" onClick={onClose} />
       <div
-        className="bz-sheet bz-sheet--tall"
+        className="bz-sheet bz-sheet--tall bz-book"
         role="dialog"
         aria-modal="true"
         aria-label="New booking"
         data-testid="stylist-booking-sheet"
       >
-        <div className="bz-sheet__handle" />
-        <div className="bz-sheet__head">
-          <h2 className="text-xl font-bold">New Booking</h2>
-          <button type="button" className="bz-icon-btn" onClick={onClose} aria-label="Close">
+        <div className="bz-book__handle" />
+        <div className="bz-book__head">
+          <h2 className="bz-book__title">New booking</h2>
+          <button type="button" className="bz-book__close" onClick={onClose} aria-label="Close">
             ×
           </button>
         </div>
 
-        <div className="bz-sheet__body space-y-4">
-          <label className="bz-field">
-            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[color:var(--bz-muted)]">
-              Client
-            </span>
+        <div className="bz-book__body">
+          <section className="bz-book__section">
+            <p className="bz-book__eyebrow">Client</p>
             <input
-              className="bz-input"
-              placeholder="Search client or add new"
+              className="bz-book__input"
+              placeholder="Search client…"
               value={clientName}
               onChange={(e) => setClientName(e.target.value)}
               data-testid="stylist-book-client-name"
             />
-          </label>
-          <input
-            className="bz-input"
-            placeholder="Phone (optional)"
-            value={clientPhone}
-            onChange={(e) => setClientPhone(e.target.value)}
-          />
+            <input
+              className="bz-book__input"
+              placeholder="Phone (optional)"
+              value={clientPhone}
+              onChange={(e) => setClientPhone(e.target.value)}
+            />
+          </section>
 
-          <div>
-            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-[color:var(--bz-muted)]">
-              Service
-            </p>
-            <div className="bz-service-card">
-              <LotusMark className="h-5 w-5 shrink-0" />
+          <section className="bz-book__section">
+            <p className="bz-book__eyebrow">Service</p>
+            <div className="bz-book__row-card">
               <div className="min-w-0 flex-1">
                 <select
-                  className="w-full bg-transparent font-semibold outline-none"
+                  className="bz-book__select"
                   value={serviceId}
                   onChange={(e) => {
                     setServiceId(e.target.value);
                     setStartsAt("");
+                    setDurationBoost(0);
                   }}
                   data-testid="stylist-book-service"
                 >
@@ -238,25 +309,57 @@ export function StylistBookingSheet({
                   ))}
                 </select>
                 {selectedService ? (
-                  <p className="text-sm text-[color:var(--bz-muted)]">
-                    {selectedService.durationMin} min
+                  <p className="bz-book__meta">
+                    {formatDuration(durationMin)} · $
+                    {(selectedService.priceCents / 100).toFixed(0)}
                   </p>
                 ) : null}
               </div>
-              <span className="font-semibold text-[color:var(--bz-ink)]">
-                {selectedService ? `$${(selectedService.priceCents / 100).toFixed(0)}` : ""}
+              <span className="bz-book__chevron" aria-hidden>
+                ›
               </span>
             </div>
-          </div>
+            {!showAdjustTime ? (
+              <button
+                type="button"
+                className="bz-book__text-btn"
+                onClick={() => setShowAdjustTime(true)}
+              >
+                Adjust time
+              </button>
+            ) : (
+              <div className="bz-book__adjust">
+                <span className="bz-book__meta">Duration</span>
+                <div className="bz-book__stepper-row">
+                  <button
+                    type="button"
+                    className="bz-book__stepper"
+                    onClick={() => setDurationBoost((n) => Math.max(-2, n - 1))}
+                    aria-label="Shorter"
+                  >
+                    −
+                  </button>
+                  <span className="bz-book__stepper-val">{formatDuration(durationMin)}</span>
+                  <button
+                    type="button"
+                    className="bz-book__stepper"
+                    onClick={() => setDurationBoost((n) => Math.min(4, n + 1))}
+                    aria-label="Longer"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            )}
+          </section>
 
-          <div className="grid grid-cols-2 gap-2">
-            <label className="bz-field">
-              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[color:var(--bz-muted)]">
-                Date
-              </span>
+          <section className="bz-book__section">
+            <p className="bz-book__eyebrow">When</p>
+            <label className="bz-book__date">
+              <span className="bz-book__date-label">{formatShortDate(date)}</span>
               <input
                 type="date"
-                className="bz-input"
+                className="bz-book__date-native"
                 min={minDate}
                 value={date}
                 onChange={(e) => {
@@ -264,132 +367,118 @@ export function StylistBookingSheet({
                   setStartsAt("");
                 }}
               />
-              <span className="mt-1 block text-xs text-[color:var(--bz-muted)]">{dateLabel}</span>
-            </label>
-            <label className="bz-field">
-              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[color:var(--bz-muted)]">
-                Time
+              <span className="bz-book__chevron" aria-hidden>
+                ›
               </span>
-              <select
-                className="bz-input"
-                value={startsAt}
-                onChange={(e) => setStartsAt(e.target.value)}
-                data-testid="stylist-book-slot"
-              >
-                <option value="">{slots.length ? "Available slots" : "No slots"}</option>
-                {slots.map((s) => (
-                  <option key={s} value={s}>
-                    {new Date(s).toLocaleTimeString("en-CA", {
-                      hour: "numeric",
-                      minute: "2-digit",
-                    })}
-                  </option>
-                ))}
-              </select>
-              <span className="mt-1 block text-xs text-[color:var(--bz-muted)]">{timeLabel}</span>
             </label>
-          </div>
 
-          <div className="bz-service-card">
-            {photoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={photoUrl} alt="" className="h-9 w-9 rounded-full object-cover" />
+            {slotsLoading ? (
+              <p className="bz-book__empty">Loading times…</p>
+            ) : slots.length === 0 ? (
+              <p className="bz-book__empty">No times this day</p>
             ) : (
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#e8f4f1] text-sm font-bold text-[#1f7a6e]">
-                You
-              </span>
+              <div className="bz-book__slots" role="listbox" aria-label="Available times">
+                {slots.map((slot) => {
+                  const active = startsAt === slot;
+                  return (
+                    <button
+                      key={slot}
+                      type="button"
+                      role="option"
+                      aria-selected={active}
+                      className={`bz-book__slot${active ? " is-on" : ""}`}
+                      data-testid="stylist-book-slot"
+                      onClick={() => setStartsAt(slot)}
+                    >
+                      {formatSlotTime(slot)}
+                    </button>
+                  );
+                })}
+              </div>
             )}
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--bz-muted)]">
-                Staff
-              </p>
-              <select
-                className="w-full bg-transparent font-semibold outline-none"
-                value={stylistId}
-                onChange={(e) => {
-                  setStylistId(e.target.value);
-                  setStartsAt("");
-                }}
-              >
-                {filteredStylists.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.id === myStylistId ? "You" : s.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <span aria-hidden>›</span>
-          </div>
+          </section>
 
-          <div className="flex items-center justify-between rounded-2xl border border-[#ece7e0] px-3 py-2">
-            <p className="text-sm font-medium">Duration</p>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                className="bz-stepper"
-                onClick={() => setDurationBoost((n) => Math.max(-2, n - 1))}
-                aria-label="Shorter"
-              >
-                −
-              </button>
-              <span className="min-w-[4rem] text-center text-sm font-semibold">
-                {Math.floor(durationMin / 60) > 0
-                  ? `${Math.floor(durationMin / 60)}h ${durationMin % 60 ? `${durationMin % 60}m` : ""}`.trim()
-                  : `${durationMin}m`}
+          <section className="bz-book__section">
+            <p className="bz-book__eyebrow">Staff</p>
+            <div className="bz-book__row-card">
+              {photoUrl && stylistId === myStylistId ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={photoUrl} alt="" className="bz-book__avatar" />
+              ) : (
+                <span className="bz-book__avatar bz-book__avatar--fallback">
+                  {(selectedStylist?.name || "Y").slice(0, 1)}
+                </span>
+              )}
+              <div className="min-w-0 flex-1">
+                <select
+                  className="bz-book__select"
+                  value={stylistId}
+                  onChange={(e) => {
+                    setStylistId(e.target.value);
+                    setStartsAt("");
+                  }}
+                >
+                  {filteredStylists.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.id === myStylistId ? `You (${s.name})` : s.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="bz-book__meta">
+                  {stylistId === myStylistId ? "Stylist" : staffLabel}
+                </p>
+              </div>
+              <span className="bz-book__chevron" aria-hidden>
+                ›
               </span>
-              <button
-                type="button"
-                className="bz-stepper"
-                onClick={() => setDurationBoost((n) => Math.min(4, n + 1))}
-                aria-label="Longer"
-              >
-                +
-              </button>
             </div>
-          </div>
+          </section>
 
-          <textarea
-            className="bz-input min-h-[4.5rem] resize-none"
-            placeholder="Add any notes..."
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-          />
+          <section className="bz-book__section">
+            <p className="bz-book__eyebrow">Notes</p>
+            <input
+              className="bz-book__input"
+              placeholder="Add notes (optional)"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
+          </section>
 
-          <div className="flex items-center justify-between gap-3">
+          <section className="bz-book__deposit">
             <div>
-              <p className="text-sm font-medium">Deposit required</p>
-              <p className="text-xs text-[color:var(--bz-muted)]">Secure the appointment.</p>
+              <p className="bz-book__deposit-title">Require deposit</p>
+              <p className="bz-book__meta">Client will be asked for a deposit</p>
             </div>
             <button
               type="button"
               role="switch"
               aria-checked={deposit}
-              className={`bz-toggle${deposit ? " is-on" : ""}`}
+              className={`bz-book__toggle${deposit ? " is-on" : ""}`}
               onClick={() => setDeposit((v) => !v)}
             >
               <span />
             </button>
-          </div>
+          </section>
 
-          {error ? <p className="bz-sheet__error">{error}</p> : null}
+          {error ? <p className="bz-book__error">{error}</p> : null}
           {selectedStylist && !filteredStylists.length ? (
-            <p className="text-sm text-[color:var(--bz-muted)]">No stylist offers this service.</p>
+            <p className="bz-book__empty">No stylist offers this service.</p>
           ) : null}
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          <a href="/stylist/schedule" className="bz-btn-ghost text-center">
-            Block time
-          </a>
+        <div className="bz-book__actions">
           <button
             type="button"
-            className="bz-btn-gold"
+            className="bz-book__save"
             disabled={busy}
             onClick={() => void submit()}
             data-testid="stylist-book-submit"
           >
             {busy ? "Saving…" : "Save booking"}
           </button>
+          <a href="/stylist/schedule" className="bz-book__block">
+            Block time
+          </a>
         </div>
       </div>
     </>

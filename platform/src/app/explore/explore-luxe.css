@@ -1616,15 +1616,9 @@ html.explore-menu-sticky-active .explore-menu__shell {
     margin-left: 0;
   }
 
-  /* Match mobile home landing dusty-rose CTAs */
-  .explore-luxe {
-    --explore-gold: #c9897e;
-    --explore-gold-soft: #b8746a;
-  }
-
   .explore-luxe__search-btn,
   .explore-luxe__btn-book {
-    box-shadow: 0 8px 22px rgb(201 137 126 / 0.28);
+    box-shadow: 0 8px 22px rgb(192 158 107 / 0.28);
   }
 
   .explore-menu__item {

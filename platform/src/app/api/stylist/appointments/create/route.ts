@@ -45,11 +45,12 @@ export async function POST(req: Request) {
   if (!stylist || !service) {
     return NextResponse.json({ error: "Invalid stylist or service" }, { status: 400 });
   }
+  // Staff booking may assign any salon service to a chair — link on the fly if needed.
   if (!stylist.services.some((s) => s.serviceId === service.id)) {
-    return NextResponse.json(
-      { error: "That stylist is not linked to this service" },
-      { status: 400 }
-    );
+    await prisma.stylistService.createMany({
+      data: [{ stylistId: stylist.id, serviceId: service.id }],
+      skipDuplicates: true,
+    });
   }
 
   const endsAt = addMinutes(startsAt, service.durationMin);

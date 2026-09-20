@@ -78,9 +78,9 @@ function statusLabel(status?: string) {
 function statusClass(status?: string) {
   switch (String(status || "").toUpperCase()) {
     case "PENDING":
-      return "text-[#b5ebe0]";
+      return "text-[#c4a574]";
     case "APPROVED":
-      return "text-[#9fe3b8]";
+      return "text-[#3f6b43]";
     case "REJECTED":
       return "text-[#f5a8a8]";
     default:
@@ -549,13 +549,13 @@ export default function StylistOwnSchedulePage() {
           time away.
         </p>
         {selfManage ? (
-          <p className="mt-1 text-xs text-[#7ec4b8]">Self-managed — leave auto-approves.</p>
+          <p className="mt-1 text-xs text-[#c4a574]">Self-managed — leave auto-approves.</p>
         ) : (
           <p className="mt-1 text-xs text-[#a8c4bf]">Leave may need manager approval.</p>
         )}
       </div>
 
-      {message ? <p className="text-sm text-[#b5ebe0]">{message}</p> : null}
+      {message ? <p className="text-sm text-[#c4a574]">{message}</p> : null}
 
       {/* My Week ring */}
       <form
@@ -675,7 +675,7 @@ export default function StylistOwnSchedulePage() {
       <section className="stylist-panel stylist-panel--away rounded-3xl border p-4">
         <div className="mb-3 flex items-center justify-between gap-2">
           <div>
-            <p className="text-xs font-semibold tracking-[0.18em] text-[#7ec4b8] uppercase">
+            <p className="text-xs font-semibold tracking-[0.18em] text-[#c4a574] uppercase">
               Away
             </p>
             <h2 className="font-[family-name:var(--font-display)] text-xl text-[#f4fbfa]">
@@ -684,7 +684,7 @@ export default function StylistOwnSchedulePage() {
           </div>
           <button
             type="button"
-            className="rounded-full border border-[#7ec4b8]/40 px-3 py-1.5 text-xs font-semibold text-[#b5ebe0]"
+            className="rounded-full border border-[#c4a574]/40 px-3 py-1.5 text-xs font-semibold text-[#c4a574]"
             onClick={() => {
               setShowAwayForm(true);
               setMessage("Set from / to, then mark yourself away.");
@@ -709,7 +709,7 @@ export default function StylistOwnSchedulePage() {
             className="stylist-panel-inset mt-4 grid gap-3 rounded-2xl border p-4"
           >
             {editingId ? (
-              <p className="text-sm text-[#b5ebe0]">Editing — fix times and save.</p>
+              <p className="text-sm text-[#c4a574]">Editing — fix times and save.</p>
             ) : null}
             <label className="grid gap-1 text-sm">
               From

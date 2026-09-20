@@ -4,53 +4,48 @@ export type StylistTheme = "light" | "dark";
 
 export const STYLIST_THEME_KEY = "fhsalon-stylist-theme";
 export const STYLIST_THEME_EVENT = "fhsalon-stylist-theme-change";
-export const STYLIST_THEME_LIGHT = "#eef7f5";
-export const STYLIST_THEME_DARK = "#0e1618";
+/** Cream marketplace shell — single locked look (no light/dark toggle). */
+export const STYLIST_THEME_CREAM = "#f6f2eb";
+export const STYLIST_THEME_LIGHT = STYLIST_THEME_CREAM;
+export const STYLIST_THEME_DARK = STYLIST_THEME_CREAM;
 
 export function isStylistTheme(value: unknown): value is StylistTheme {
   return value === "light" || value === "dark";
 }
 
-/** Stylist app defaults to sea-glass dark (green teal). */
+/** Stylist app is locked to cream / house gold (booking-sheet look). */
 export function readStylistTheme(): StylistTheme {
-  if (typeof window === "undefined") return "dark";
-  try {
-    const raw = window.localStorage.getItem(STYLIST_THEME_KEY);
-    return isStylistTheme(raw) ? raw : "dark";
-  } catch {
-    return "dark";
-  }
+  return "light";
 }
 
-export function writeStylistTheme(theme: StylistTheme) {
+export function writeStylistTheme(_theme: StylistTheme) {
   try {
-    window.localStorage.setItem(STYLIST_THEME_KEY, theme);
+    window.localStorage.setItem(STYLIST_THEME_KEY, "light");
   } catch {
     /* private mode / blocked storage */
   }
 }
 
-export function applyStylistTheme(theme: StylistTheme) {
+export function applyStylistTheme(_theme: StylistTheme = "light") {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
-  root.classList.toggle("stylist-shell--light", theme === "light");
-  // Drives which half of the salon's theme pack is active (see salon-themes.css).
-  root.classList.toggle("theme-light", theme === "light");
+  root.classList.add("stylist-shell");
+  root.classList.add("stylist-shell--light");
+  root.classList.add("theme-light");
+  root.classList.remove("theme-dark");
 
   const shells = document.querySelectorAll(".stylist-theme");
   shells.forEach((el) => {
-    el.classList.toggle("stylist-theme--light", theme === "light");
+    el.classList.add("stylist-theme--light");
   });
 
-  // Keep whatever pack the shell already set (stylistThemeId) — only flip light/dark.
   const packId = root.getAttribute("data-salon-theme") || DEFAULT_STYLIST_THEME_ID;
   refreshSalonThemePaint(packId);
-  // Always dock-dark — a mint theme-color paints a white strip under the iPhone dock.
-  setThemeColorMeta("--t-dock-bg", STYLIST_THEME_DARK);
+  setThemeColorMeta("--t-dock-bg", STYLIST_THEME_CREAM);
 }
 
-export function setStylistTheme(theme: StylistTheme) {
-  writeStylistTheme(theme);
-  applyStylistTheme(theme);
-  window.dispatchEvent(new CustomEvent(STYLIST_THEME_EVENT, { detail: theme }));
+export function setStylistTheme(_theme: StylistTheme) {
+  writeStylistTheme("light");
+  applyStylistTheme("light");
+  window.dispatchEvent(new CustomEvent(STYLIST_THEME_EVENT, { detail: "light" }));
 }

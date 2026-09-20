@@ -75,7 +75,7 @@ function GoalRing({ progress, earned, goal }: { progress: number; earned: number
           cy={size / 2}
           r={r}
           fill="none"
-          stroke="rgba(126,196,184,0.22)"
+          stroke="rgba(196,165,116,0.28)"
           strokeWidth={stroke}
         />
         <circle
@@ -84,7 +84,7 @@ function GoalRing({ progress, earned, goal }: { progress: number; earned: number
           cy={size / 2}
           r={r}
           fill="none"
-          stroke="#b5ebe0"
+          stroke="#c4a574"
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={c}
@@ -93,8 +93,8 @@ function GoalRing({ progress, earned, goal }: { progress: number; earned: number
         />
       </svg>
       <div className="earnings-goal-center">
-        <p className="text-[10px] font-semibold tracking-wide text-[#7ec4b8] uppercase">Goal</p>
-        <p className="font-[family-name:var(--font-display)] text-xl text-[#b5ebe0]">
+        <p className="text-[10px] font-semibold tracking-wide text-[#c4a574] uppercase">Goal</p>
+        <p className="font-[family-name:var(--font-display)] text-xl text-[#c4a574]">
           ${centsToDollars(earned)}
         </p>
         <p className="text-[11px] text-muted">of ${centsToDollars(goal)}</p>
@@ -220,7 +220,7 @@ export default function StylistEarningsPage() {
       ) : null}
 
       {error ? <p className="text-sm text-[#f5a8a8]">{error}</p> : null}
-      {goalMsg ? <p className="text-sm text-[#9fe3b8]">{goalMsg}</p> : null}
+      {goalMsg ? <p className="text-sm text-[#3f6b43]">{goalMsg}</p> : null}
       {loading && !data ? (
         <p className="py-10 text-center text-muted">Loading your week…</p>
       ) : null}
@@ -238,7 +238,7 @@ export default function StylistEarningsPage() {
                 ‹
               </button>
               <div className="text-center">
-                <p className="text-xs font-semibold tracking-wide text-[#7ec4b8] uppercase">
+                <p className="text-xs font-semibold tracking-wide text-[#c4a574] uppercase">
                   {data.week.isCurrentWeek ? "This week" : "Week of"}
                 </p>
                 <p className="mt-1 text-sm font-semibold text-[#fffaf6]">{data.week.label}</p>
@@ -262,10 +262,10 @@ export default function StylistEarningsPage() {
               />
             </div>
 
-            <p className="mt-4 text-center text-xs tracking-[0.18em] text-[#7ec4b8] uppercase">
+            <p className="mt-4 text-center text-xs tracking-[0.18em] text-[#c4a574] uppercase">
               Week total
             </p>
-            <p className="mt-1 text-center font-[family-name:var(--font-display)] text-5xl text-[#b5ebe0]">
+            <p className="mt-1 text-center font-[family-name:var(--font-display)] text-5xl text-[#c4a574]">
               ${centsToDollars(data.summary.weekEarningsCents)}
             </p>
             <p className="mt-2 text-center text-sm text-muted">
@@ -277,17 +277,17 @@ export default function StylistEarningsPage() {
                 : ""}
             </p>
             {data.goal.remainingCents > 0 ? (
-              <p className="mt-2 text-center text-sm text-[#7ec4b8]">
+              <p className="mt-2 text-center text-sm text-[#c4a574]">
                 ${centsToDollars(data.goal.remainingCents)} to hit your goal
               </p>
             ) : (
-              <p className="mt-2 text-center text-sm text-[#9fe3b8]">Weekly goal reached</p>
+              <p className="mt-2 text-center text-sm text-[#3f6b43]">Weekly goal reached</p>
             )}
             <div className="mt-3 text-center">
               <button
                 type="button"
                 onClick={() => void editGoal()}
-                className="text-xs font-semibold tracking-wide text-[#7ec4b8] underline-offset-2 hover:underline"
+                className="text-xs font-semibold tracking-wide text-[#c4a574] underline-offset-2 hover:underline"
               >
                 Edit weekly goal
               </button>
@@ -296,7 +296,7 @@ export default function StylistEarningsPage() {
 
           <section className="grid grid-cols-3 gap-2">
             <div className="earnings-stat rounded-2xl p-3 text-center">
-              <p className="text-[10px] font-semibold tracking-wide text-[#7ec4b8] uppercase">
+              <p className="text-[10px] font-semibold tracking-wide text-[#c4a574] uppercase">
                 YTD earned
               </p>
               <p className="mt-1 text-lg font-bold text-[#fffaf6]">
@@ -304,18 +304,18 @@ export default function StylistEarningsPage() {
               </p>
             </div>
             <div className="earnings-stat rounded-2xl p-3 text-center">
-              <p className="text-[10px] font-semibold tracking-wide text-[#9fe3b8] uppercase">
+              <p className="text-[10px] font-semibold tracking-wide text-[#3f6b43] uppercase">
                 Paid
               </p>
-              <p className="mt-1 text-lg font-bold text-[#9fe3b8]">
+              <p className="mt-1 text-lg font-bold text-[#3f6b43]">
                 ${centsToDollars(data.summary.paidCents)}
               </p>
             </div>
             <div className="earnings-stat rounded-2xl p-3 text-center">
-              <p className="text-[10px] font-semibold tracking-wide text-[#b5ebe0] uppercase">
+              <p className="text-[10px] font-semibold tracking-wide text-[#c4a574] uppercase">
                 Pending
               </p>
-              <p className="mt-1 text-lg font-bold text-[#b5ebe0]">
+              <p className="mt-1 text-lg font-bold text-[#c4a574]">
                 ${centsToDollars(data.summary.pendingCents)}
               </p>
             </div>
@@ -331,7 +331,7 @@ export default function StylistEarningsPage() {
                 const h = Math.max(6, Math.round((d.earningsCents / maxBar) * 110));
                 return (
                   <div key={d.date} className="flex flex-1 flex-col items-center gap-1.5">
-                    <p className="text-[10px] font-semibold text-[#b5ebe0]">
+                    <p className="text-[10px] font-semibold text-[#c4a574]">
                       {d.earningsCents > 0 ? `$${centsToDollars(d.earningsCents)}` : ""}
                     </p>
                     <div
@@ -401,11 +401,11 @@ export default function StylistEarningsPage() {
                     </p>
                   </div>
                   <div className="shrink-0 text-right">
-                    <p className="font-bold text-[#b5ebe0]">
+                    <p className="font-bold text-[#c4a574]">
                       ${centsToDollars(j.chargedCents)}
                     </p>
                     {j.tipCents > 0 ? (
-                      <p className="text-xs text-[#9fe3b8]">+${centsToDollars(j.tipCents)} tip</p>
+                      <p className="text-xs text-[#3f6b43]">+${centsToDollars(j.tipCents)} tip</p>
                     ) : null}
                   </div>
                 </div>

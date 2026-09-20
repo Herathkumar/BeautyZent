@@ -9,12 +9,6 @@ import {
   type CalendarView,
 } from "@/components/stylist/StylistCalendar";
 import { StylistBookingSheet } from "@/components/stylist/StylistBookingSheet";
-import {
-  LotusMark,
-  StylistAddWaitlistSheet,
-  StylistWaitlistSheet,
-} from "@/components/stylist/StylistWaitlistSheet";
-import { stylistAvatarTone } from "@/lib/stylist-calendar-colors";
 import { calendarDateInTz } from "@/lib/salon-time";
 import { centsToDollars, promptCompleteAmounts } from "@/lib/pay";
 import { clampDisplayHours } from "@/lib/display-schedule";
@@ -37,8 +31,6 @@ type Appt = {
     url: string;
   } | null;
 };
-
-type TeamStylist = { id: string; name: string; photoUrl?: string | null };
 
 function statusLabel(status: string) {
   switch (status) {
@@ -71,7 +63,6 @@ function phoneHref(phone: string) {
 
 export default function StylistHomePage() {
   const [name, setName] = useState("");
-  const [stylistId, setStylistId] = useState("");
   const [salonName, setSalonName] = useState("BeautyZent Studio");
   const [salonSlug, setSalonSlug] = useState("");
   const [salonTz, setSalonTz] = useState("America/Toronto");
@@ -79,7 +70,6 @@ export default function StylistHomePage() {
   const [closeHour, setCloseHour] = useState(18);
   const [photoUrl, setPhotoUrl] = useState("/avatars/stylist-neutral.svg");
   const [hasPhoto, setHasPhoto] = useState(false);
-  const [team, setTeam] = useState<TeamStylist[]>([]);
   const [appointments, setAppointments] = useState<Appt[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -91,9 +81,6 @@ export default function StylistHomePage() {
   const [selectedYmd, setSelectedYmd] = useState(() =>
     calendarDateInTz("America/Toronto")
   );
-  const [waitlistCount, setWaitlistCount] = useState(0);
-  const [waitlistOpen, setWaitlistOpen] = useState(false);
-  const [addWaitlistOpen, setAddWaitlistOpen] = useState(false);
   const [bookingOpen, setBookingOpen] = useState(false);
   const [bookingPreset, setBookingPreset] = useState<{
     clientName?: string;
@@ -107,22 +94,16 @@ export default function StylistHomePage() {
   } | null>(null);
 
   const load = useCallback(async () => {
-    const [me, res, wait] = await Promise.all([
+    const [me, res] = await Promise.all([
       fetch("/api/stylist/me"),
       fetch("/api/stylist/appointments?days=45&lookback=14"),
-      fetch("/api/stylist/waitlist"),
     ]);
     if (me.status === 401 || res.status === 401) {
       window.location.href = "/stylist/login";
       return;
     }
-    const [meData, data, waitData] = await Promise.all([
-      me.json(),
-      res.json(),
-      wait.ok ? wait.json() : Promise.resolve({ waitlist: [] }),
-    ]);
+    const [meData, data] = await Promise.all([me.json(), res.json()]);
     setName(meData.stylist?.name || meData.user?.name || "");
-    setStylistId(meData.stylist?.id || "");
     setSalonName(meData.stylist?.salon?.name || "BeautyZent Studio");
     setSalonSlug(meData.stylist?.salon?.slug || "");
     const tz = meData.stylist?.salon?.timezone || "America/Toronto";
@@ -137,21 +118,6 @@ export default function StylistHomePage() {
     if (meData.stylist?.photoUrl) setPhotoUrl(meData.stylist.photoUrl);
     setHasPhoto(Boolean(meData.stylist?.hasPhoto));
     setAppointments(data.appointments || []);
-    setWaitlistCount((waitData.waitlist || []).length);
-
-    const slug = meData.stylist?.salon?.slug;
-    if (slug) {
-      try {
-        const cat = await fetch(`/api/public/${slug}/catalog`).then((r) => r.json());
-        const others = ((cat.stylists || []) as { id: string; name: string }[])
-          .filter((s) => s.id !== meData.stylist?.id)
-          .slice(0, 5)
-          .map((s) => ({ id: s.id, name: s.name }));
-        setTeam(others);
-      } catch {
-        setTeam([]);
-      }
-    }
     setLoading(false);
   }, []);
 
@@ -238,22 +204,13 @@ export default function StylistHomePage() {
   return (
     <main className="bz-home space-y-4 pb-24">
       <header className="bz-home__header">
-        <div className="flex items-center justify-between gap-3">
-          <button type="button" className="bz-icon-btn" aria-label="Menu" onClick={() => {}}>
-            ☰
-          </button>
-          <div className="text-center">
-            <LotusMark className="mx-auto h-7 w-7 text-champagne" />
-            <p className="font-[family-name:var(--font-display)] text-xl tracking-tight text-champagne">
-              {salonName || "Stylist"}
-            </p>
-          </div>
-          <Link href="/stylist/account" className="bz-icon-btn" aria-label="Location / profile">
-            ⌖
-          </Link>
+        <div className="text-center">
+          <p className="font-[family-name:var(--font-display)] text-xl tracking-tight text-champagne">
+            {salonName || "Stylist"}
+          </p>
         </div>
 
-        <div className="mt-3 flex items-center justify-between gap-3">
+        <div className="mt-3">
           <button
             type="button"
             className="text-left"
@@ -270,14 +227,6 @@ export default function StylistHomePage() {
             </p>
             <p className="text-xs text-[color:var(--bz-muted)]">{salonName}</p>
           </button>
-          <button
-            type="button"
-            className="bz-waitlist-badge"
-            data-testid="stylist-waitlist-badge"
-            onClick={() => setWaitlistOpen(true)}
-          >
-            Waitlist {waitlistCount}
-          </button>
         </div>
 
         <div className="bz-stylist-row mt-4" data-testid="stylist-team-row">
@@ -285,17 +234,9 @@ export default function StylistHomePage() {
             name={name || "You"}
             photoUrl={photoUrl}
             selected
-            tone="#b8f5c8"
+            tone="#e8dcc8"
             label="You"
           />
-          {team.map((s, i) => (
-            <StylistChipAvatar
-              key={s.id}
-              name={s.name}
-              tone={stylistAvatarTone(i)}
-              label={s.name.split(" ")[0]}
-            />
-          ))}
         </div>
       </header>
 
@@ -325,7 +266,6 @@ export default function StylistHomePage() {
         className="bz-fab"
         aria-label="New booking"
         data-testid="stylist-book-for-client"
-        style={{ color: "#b5ebe0" }}
         onClick={() => {
           setBookingPreset(null);
           setBookingOpen(true);
@@ -467,33 +407,6 @@ export default function StylistHomePage() {
           </div>
         </>
       ) : null}
-
-      <StylistWaitlistSheet
-        open={waitlistOpen}
-        onClose={() => setWaitlistOpen(false)}
-        onAdd={() => {
-          setWaitlistOpen(false);
-          setAddWaitlistOpen(true);
-        }}
-        onBook={(entry) => {
-          setWaitlistOpen(false);
-          setBookingPreset({
-            clientName: entry.clientName,
-            clientPhone: entry.clientPhone,
-            serviceId: entry.service?.id,
-            note: entry.note,
-          });
-          setBookingOpen(true);
-        }}
-        onChanged={() => void load()}
-      />
-
-      <StylistAddWaitlistSheet
-        open={addWaitlistOpen}
-        onClose={() => setAddWaitlistOpen(false)}
-        onCreated={() => void load()}
-        defaultStylistId={stylistId}
-      />
 
       <StylistBookingSheet
         open={bookingOpen}

@@ -8,8 +8,8 @@
   "display": "standalone",
   "display_override": ["standalone", "browser"],
   "orientation": "portrait",
-  "background_color": "#0e1618",
-  "theme_color": "#0e1618",
+  "background_color": "#f6f2eb",
+  "theme_color": "#f6f2eb",
   "prefer_related_applications": false,
   "icons": [
     {

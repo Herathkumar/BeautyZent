@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { SelfieCamera } from "@/components/SelfieCamera";
 import { FacebookIcon, InstagramIcon } from "@/components/SocialBrandIcons";
 import { facebookUrl, instagramUrl } from "@/lib/social-links";
-import { StylistThemeToggle } from "../StylistThemeToggle";
 import { BeautyZentPoweredBy } from "@/components/ZentraLabFooter";
 
 type Gender = "FEMALE" | "MALE" | "UNSPECIFIED";
@@ -256,7 +255,7 @@ export default function StylistAccountPage() {
         </div>
         <button
           type="button"
-          className="shrink-0 rounded-full border border-[#7ec4b8]/45 px-4 py-2 text-sm font-semibold text-[#b5ebe0] hover:bg-[#7ec4b8]/10"
+          className="shrink-0 rounded-full border border-[#c4a574]/45 px-4 py-2 text-sm font-semibold text-[#c4a574] hover:bg-[#c4a574]/10"
           data-testid="stylist-logout"
           onClick={async () => {
             await fetch("/api/auth/logout", { method: "POST" });
@@ -269,7 +268,7 @@ export default function StylistAccountPage() {
       </div>
 
       <section
-        className="stylist-profile-card overflow-hidden rounded-3xl border border-[#7ec4b8]/30"
+        className="stylist-profile-card overflow-hidden rounded-3xl border border-[#c4a574]/30"
         data-testid="stylist-profile-card"
       >
         <div className="px-5 pb-5 pt-7 sm:px-6">
@@ -278,7 +277,7 @@ export default function StylistAccountPage() {
               type="button"
               disabled={photoBusy}
               onClick={() => setCameraOpen(true)}
-              className="relative rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#b5ebe0]"
+              className="relative rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c4a574]"
               aria-label={hasPhoto ? "Update selfie" : "Take selfie"}
               data-testid="stylist-photo-button"
             >
@@ -289,13 +288,13 @@ export default function StylistAccountPage() {
                 width={112}
                 height={112}
                 data-testid="stylist-photo-preview"
-                className="h-28 w-28 rounded-full object-cover shadow-[0_12px_40px_rgba(0,0,0,0.35)] ring-[5px] ring-[#7ec4b8]/55"
+                className="h-28 w-28 rounded-full object-cover shadow-[0_12px_40px_rgba(0,0,0,0.35)] ring-[5px] ring-[#c4a574]/55"
               />
-              <span className="absolute bottom-1 right-1 rounded-full bg-[#0e1618] px-2 py-0.5 text-[10px] font-semibold tracking-wide text-[#b5ebe0] ring-1 ring-[#7ec4b8]/40">
+              <span className="absolute bottom-1 right-1 rounded-full bg-[#2c2420] px-2 py-0.5 text-[10px] font-semibold tracking-wide text-[#c4a574] ring-1 ring-[#c4a574]/40">
                 {photoBusy ? "…" : hasPhoto ? "Update" : "Selfie"}
               </span>
             </button>
-            <p className="mt-2 text-xs text-[#a8c4bf]">
+            <p className="mt-2 text-xs text-[#6b5e57]">
               Tap photo to take a selfie, or choose one from your library
             </p>
             {!editingProfile ? (
@@ -304,12 +303,12 @@ export default function StylistAccountPage() {
                   type="button"
                   disabled={photoBusy}
                   onClick={() => setCameraOpen(true)}
-                  className="stylist-tap inline-flex h-10 items-center justify-center rounded-full border border-[#7ec4b8]/50 bg-[#7ec4b8]/12 px-5 text-sm font-semibold leading-none text-[#b5ebe0] hover:bg-[#7ec4b8]/20 disabled:opacity-50"
+                  className="stylist-tap inline-flex h-10 items-center justify-center rounded-full border border-[#c4a574]/50 bg-[#c4a574]/12 px-5 text-sm font-semibold leading-none text-[#c4a574] hover:bg-[#c4a574]/20 disabled:opacity-50"
                 >
                   {photoBusy ? "Saving…" : hasPhoto ? "Update selfie" : "Take selfie"}
                 </button>
                 <label
-                  className={`stylist-tap relative inline-flex h-10 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-[#7ec4b8]/35 px-5 text-sm font-semibold leading-none text-[#a8c4bf] hover:bg-[#7ec4b8]/10 ${
+                  className={`stylist-tap relative inline-flex h-10 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-[#c4a574]/35 px-5 text-sm font-semibold leading-none text-[#6b5e57] hover:bg-[#c4a574]/10 ${
                     photoBusy ? "pointer-events-none opacity-50" : ""
                   }`}
                 >
@@ -332,9 +331,9 @@ export default function StylistAccountPage() {
             <h2 className="mt-4 font-[family-name:var(--font-display)] text-3xl leading-tight text-[#f4fbfa]">
               {displayName}
             </h2>
-            <p className="mt-1 break-all text-sm text-[#a8c4bf]">{email || "—"}</p>
+            <p className="mt-1 break-all text-sm text-[#6b5e57]">{email || "—"}</p>
             {phone.trim() ? (
-              <p className="mt-0.5 text-sm text-[#b5ebe0]/90">{phone.trim()}</p>
+              <p className="mt-0.5 text-sm text-[#c4a574]/90">{phone.trim()}</p>
             ) : null}
 
             {bio.trim() && !editingProfile ? (
@@ -350,7 +349,7 @@ export default function StylistAccountPage() {
                     href={instagramUrl(instagram) || "#"}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-full border border-[#7ec4b8]/40 bg-[#7ec4b8]/10 px-3 py-1.5 text-xs font-semibold text-[#b5ebe0]"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-[#c4a574]/40 bg-[#c4a574]/10 px-3 py-1.5 text-xs font-semibold text-[#c4a574]"
                   >
                     <InstagramIcon className="h-3.5 w-3.5 shrink-0" />
                     {instagram.trim()}
@@ -361,7 +360,7 @@ export default function StylistAccountPage() {
                     href={facebookUrl(facebook) || "#"}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-full border border-[#7ec4b8]/40 bg-[#7ec4b8]/10 px-3 py-1.5 text-xs font-semibold text-[#b5ebe0]"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-[#c4a574]/40 bg-[#c4a574]/10 px-3 py-1.5 text-xs font-semibold text-[#c4a574]"
                   >
                     <FacebookIcon className="h-3.5 w-3.5 shrink-0" />
                     {facebook.trim()}
@@ -396,8 +395,8 @@ export default function StylistAccountPage() {
 
           {(photoError || photoMessage || hasPhoto) && !editingProfile ? (
             <div className="mt-4 space-y-3 text-center text-sm">
-              {photoMessage ? <p className="text-[#b5ebe0]">{photoMessage}</p> : null}
-              {photoError ? <p className="text-[#f5a8a8]">{photoError}</p> : null}
+              {photoMessage ? <p className="text-[#c4a574]">{photoMessage}</p> : null}
+              {photoError ? <p className="text-[#8a4a3a]">{photoError}</p> : null}
               {hasPhoto ? (
                 <div className="mx-auto max-w-xs space-y-1.5">
                   <button
@@ -423,7 +422,7 @@ export default function StylistAccountPage() {
             className="grid gap-3 border-t border-[color:var(--line)] bg-[color:var(--color-cream)]/80 px-5 py-5 sm:px-6"
             data-testid="stylist-profile-editor"
           >
-            <p className="text-xs font-semibold tracking-[0.16em] text-[#7ec4b8] uppercase">
+            <p className="text-xs font-semibold tracking-[0.16em] text-[#c4a574] uppercase">
               Edit details
             </p>
 
@@ -456,8 +455,8 @@ export default function StylistAccountPage() {
                 </div>
               ) : null}
             </div>
-            {photoError ? <p className="text-sm text-[#f5a8a8]">{photoError}</p> : null}
-            {photoMessage ? <p className="text-sm text-[#b5ebe0]">{photoMessage}</p> : null}
+            {photoError ? <p className="text-sm text-[#8a4a3a]">{photoError}</p> : null}
+            {photoMessage ? <p className="text-sm text-[#c4a574]">{photoMessage}</p> : null}
 
             <label className="grid gap-1.5 text-sm">
               Display name
@@ -503,7 +502,7 @@ export default function StylistAccountPage() {
             </label>
             <label className="grid gap-1.5 text-sm">
               <span className="inline-flex items-center gap-1.5">
-                <InstagramIcon className="h-4 w-4 text-[#b5ebe0]" />
+                <InstagramIcon className="h-4 w-4 text-[#c4a574]" />
                 Instagram
               </span>
               <input
@@ -516,7 +515,7 @@ export default function StylistAccountPage() {
             </label>
             <label className="grid gap-1.5 text-sm">
               <span className="inline-flex items-center gap-1.5">
-                <FacebookIcon className="h-4 w-4 text-[#b5ebe0]" />
+                <FacebookIcon className="h-4 w-4 text-[#c4a574]" />
                 Facebook
               </span>
               <input
@@ -530,8 +529,8 @@ export default function StylistAccountPage() {
             <p className="text-xs text-muted">
               Clients can open these from your profile on their bookings.
             </p>
-            {profileError ? <p className="text-sm text-[#f5a8a8]">{profileError}</p> : null}
-            {profileMsg ? <p className="text-sm text-[#b5ebe0]">{profileMsg}</p> : null}
+            {profileError ? <p className="text-sm text-[#8a4a3a]">{profileError}</p> : null}
+            {profileMsg ? <p className="text-sm text-[#c4a574]">{profileMsg}</p> : null}
             <div className="flex flex-wrap gap-2 pt-1">
               <button
                 type="submit"
@@ -594,15 +593,14 @@ export default function StylistAccountPage() {
           />
         </label>
 
-        {error ? <p className="text-sm text-[#f5a8a8]">{error}</p> : null}
-        {message ? <p className="text-sm text-[#b5ebe0]">{message}</p> : null}
+        {error ? <p className="text-sm text-[#8a4a3a]">{error}</p> : null}
+        {message ? <p className="text-sm text-[#3f6b43]">{message}</p> : null}
 
         <button type="submit" disabled={saving} className="stylist-tap btn-solid rounded-full">
           {saving ? "Saving…" : "Save login"}
         </button>
       </form>
 
-      <StylistThemeToggle />
       <BeautyZentPoweredBy className="mt-6 stylist-powered-by" />
     </main>
   );

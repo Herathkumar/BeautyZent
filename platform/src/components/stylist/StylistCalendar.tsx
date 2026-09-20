@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   clockParts,
   formatClock,
@@ -25,13 +25,13 @@ import {
   statusPillLabel,
 } from "@/lib/stylist-calendar-colors";
 
-/** Sea-glass teal — inline so theme CSS cannot paint calendar chrome gold. */
+/** House gold — matches marketplace booking sheet / Explore gold. */
 const SEA = {
-  accent: "#2a8f82",
-  accentSoft: "#3aa897",
-  mint: "#b5ebe0",
-  wash: "#e8f4f1",
-  ink: "#0e1618",
+  accent: "#c4a574",
+  accentSoft: "#b89562",
+  mint: "#f0ebe3",
+  wash: "#f6f2eb",
+  ink: "#2c2420",
 } as const;
 export type CalendarAppt = {
   id: string;
@@ -80,8 +80,20 @@ function DayStrip({
   onSelectDate: (ymd: string) => void;
 }) {
   const today = calendarDateInTz(timeZone);
-  const start = addCalendarDays(selectedYmd, -3, timeZone);
-  const days = upcomingCalendarDays(7, timeZone, start);
+  // Keep a stable 7-day window so clicking a day only changes selection —
+  // do not re-center the strip around the clicked date.
+  const [windowStart, setWindowStart] = useState(() =>
+    addCalendarDays(today, -3, timeZone)
+  );
+
+  useEffect(() => {
+    const end = addCalendarDays(windowStart, 6, timeZone);
+    if (selectedYmd < windowStart || selectedYmd > end) {
+      setWindowStart(addCalendarDays(selectedYmd, -3, timeZone));
+    }
+  }, [selectedYmd, timeZone, windowStart]);
+
+  const days = upcomingCalendarDays(7, timeZone, windowStart);
 
   return (
     <div className="bz-cal-daystrip" role="listbox" aria-label="Pick a day">
@@ -679,7 +691,7 @@ export function StylistChipAvatar({
     >
       {photoUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={photoUrl} alt="" style={{ borderColor: selected ? "var(--t-accent, #7ec4b8)" : "transparent" }} />
+        <img src={photoUrl} alt="" style={{ borderColor: selected ? "var(--t-accent, #c4a574)" : "transparent" }} />
       ) : (
         <span className="bz-chip-avatar__initials" style={{ background: tone }}>
           {initials(name)}

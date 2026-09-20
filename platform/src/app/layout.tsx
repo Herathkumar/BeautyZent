@@ -32,12 +32,19 @@ html.paper-shell,html.paper-shell body{
 }
 /* Salon apps read the tenant's theme pack from --t-* (see salon-themes.css). */
 html.manager-shell,html.manager-shell body,
-html.stylist-shell,html.stylist-shell body,
 html.book-shell,html.book-shell body{
   background:radial-gradient(950px 470px at 88% -8%,rgb(var(--t-glow-1-rgb)/var(--t-glow-1-a)),transparent 55%),
     radial-gradient(720px 390px at 0% 100%,rgb(var(--t-glow-2-rgb)/var(--t-glow-2-a)),transparent 52%),
     linear-gradient(180deg,var(--t-bg-1) 0%,var(--t-bg-2) 48%,var(--t-bg-3) 100%);
   color:var(--t-text)
+}
+/* Stylist PWA — cream + house gold (never seaglass teal flash). */
+html.stylist-shell,html.stylist-shell body{
+  background:
+    radial-gradient(900px 460px at 85% -8%,rgba(196,165,116,.14),transparent 55%),
+    linear-gradient(180deg,#f6f2eb 0%,#f6f2eb 50%,#efe8dd 100%);
+  color:#2c2420;
+  color-scheme:light
 }
 html.display-shell,html.display-shell body{
   background:linear-gradient(180deg,#241c18 0%,#1c1714 50%,#15110f 100%);
@@ -90,10 +97,9 @@ const BOOT_SCRIPT = `
       if(!light) root.classList.add("manager-shell--dark");
     }
     else if(stylist){
-      root.classList.add("stylist-shell");
+      root.classList.add("stylist-shell","stylist-shell--light","theme-light");
       themeId="seaglass";
-      try{ light=localStorage.getItem("fhsalon-stylist-theme")==="light"; }catch(e){}
-      if(light) root.classList.add("stylist-shell--light");
+      try{ localStorage.setItem("fhsalon-stylist-theme","light"); }catch(e){}
     }
     else if(book){
       root.classList.add("book-shell","book-shell--marketplace");
@@ -139,6 +145,18 @@ const BOOT_SCRIPT = `
         ?"linear-gradient(180deg,var(--t-bg-1) 0%,var(--t-bg-2) 50%,var(--t-bg-3) 100%)"
         :"linear-gradient(180deg,#241c18 0%,#1c1714 50%,#15110f 100%)";
       var fg=themeId?"var(--t-text)":"#fffaf6";
+      var brandColor="";
+      var labelColor="";
+      var spinBorder="";
+      var spinTop="";
+      if(stylist){
+        bg="radial-gradient(900px 460px at 85% -8%,rgba(196,165,116,.14),transparent 55%),linear-gradient(180deg,#f6f2eb 0%,#f6f2eb 50%,#efe8dd 100%)";
+        fg="#2c2420";
+        brandColor="#a67f4e";
+        labelColor="rgba(166,127,78,.72)";
+        spinBorder="rgba(196,165,116,.22)";
+        spinTop="#c4a574";
+      }
       if(display && !/\\/reception(\\/|$)/.test(p)){
         var custDark=false;
         try{ custDark=localStorage.getItem("fhsalon-customer-theme")==="dark"; }catch(e){}
@@ -162,7 +180,12 @@ const BOOT_SCRIPT = `
         document.documentElement.appendChild(el);
       }else{
         el.style.cssText="position:fixed;inset:0;z-index:9999;display:grid;place-items:center;padding:2rem;pointer-events:none;background:"+bg+";color:"+fg+";font-family:Georgia,serif";
-        el.innerHTML='<div style="text-align:center"><p style="margin:0;font-size:1.75rem;letter-spacing:.02em">'+brand.replace(/[<>&]/g,"")+'</p><p style="margin:.5rem 0 1rem;font:600 .75rem Outfit,system-ui,sans-serif;letter-spacing:.18em;text-transform:uppercase;opacity:.72">'+label+'</p><div style="width:1.5rem;height:1.5rem;margin:0 auto;border:2px solid rgba(127,127,127,.25);border-top-color:currentColor;border-radius:50%;animation:fhsalon-boot-spin .75s linear infinite"></div></div>';
+        var brandStyle=brandColor?"color:"+brandColor:"";
+        var labelStyle=labelColor?"color:"+labelColor+";opacity:1":"opacity:.72";
+        var spinStyle=spinBorder
+          ?"border:2px solid "+spinBorder+";border-top-color:"+spinTop
+          :"border:2px solid rgba(127,127,127,.25);border-top-color:currentColor";
+        el.innerHTML='<div style="text-align:center"><p style="margin:0;font-size:1.75rem;letter-spacing:.02em;'+brandStyle+'">'+brand.replace(/[<>&]/g,"")+'</p><p style="margin:.5rem 0 1rem;font:600 .75rem Outfit,system-ui,sans-serif;letter-spacing:.18em;text-transform:uppercase;'+labelStyle+'">'+label+'</p><div style="width:1.5rem;height:1.5rem;margin:0 auto;'+spinStyle+';border-radius:50%;animation:fhsalon-boot-spin .75s linear infinite"></div></div>';
         var css=document.createElement("style");
         css.textContent="@keyframes fhsalon-boot-spin{to{transform:rotate(360deg)}}";
         document.documentElement.appendChild(css);
