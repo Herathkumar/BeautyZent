@@ -95,7 +95,7 @@ export function PlatformShell({
   }
 
   return (
-    <div className="explore-luxe platform-luxe">
+    <div className={`explore-luxe platform-luxe${onLogin ? " platform-luxe--login" : ""}`}>
       {!onLogin ? (
         <header className="explore-luxe__topbar">
           <div className="explore-luxe__topbar-inner">
@@ -119,6 +119,7 @@ export function PlatformShell({
             {admin ? (
               <div className="platform-luxe__top-actions">
                 <Link href="/explore">Explore</Link>
+                <span className="platform-luxe__operator-label">Operator</span>
                 <OperatorAvatarMenu email={admin.email} onSignOut={() => void signOut()} />
               </div>
             ) : null}

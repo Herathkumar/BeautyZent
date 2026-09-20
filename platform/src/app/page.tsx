@@ -134,44 +134,40 @@ export default function HomePage() {
 
       <footer className="home-luxe__footer">
         <div className="home-luxe__footer-inner">
-          <div className="home-luxe__footer-grid">
-            <div className="home-luxe__footer-brand-block">
-              <Link href="/" className="home-luxe__footer-brand" aria-label="BeautyZent Marketplace">
-                <BeautyZentLogo
-                  variant="rose"
-                  size="sm"
-                  href={null}
-                  className="explore-luxe__brand-mark"
-                />
-                <span className="home-luxe__footer-brand-text">
-                  <span className="home-luxe__footer-name">BeautyZent</span>
-                  <span className="home-luxe__footer-sub">Marketplace</span>
-                </span>
-              </Link>
-              <p className="home-luxe__footer-tagline">Hair, skin, nails, spa and wellness.</p>
-            </div>
+          <Link href="/" className="home-luxe__footer-brand" aria-label="BeautyZent Marketplace">
+            <BeautyZentLogo
+              variant="rose"
+              size="sm"
+              href={null}
+              className="explore-luxe__brand-mark"
+            />
+            <span className="home-luxe__footer-brand-text">
+              <span className="home-luxe__footer-name">BeautyZent</span>
+              <span className="home-luxe__footer-sub">Marketplace</span>
+            </span>
+          </Link>
 
-            <nav className="home-luxe__footer-col" aria-label="Clients">
-              <p className="home-luxe__footer-label">Clients</p>
-              <Link href="/explore">Explore</Link>
-              <Link href="/account">My account</Link>
-            </nav>
+          <nav className="home-luxe__footer-links" aria-label="Footer">
+            <Link href="/explore">Explore</Link>
+            <span className="home-luxe__footer-dot" aria-hidden>
+              ·
+            </span>
+            <Link href="/claim">List your house</Link>
+            <span className="home-luxe__footer-dot" aria-hidden>
+              ·
+            </span>
+            <Link href="/account">My account</Link>
+            <span className="home-luxe__footer-dot" aria-hidden>
+              ·
+            </span>
+            <Link href="#">Privacy</Link>
+            <span className="home-luxe__footer-dot" aria-hidden>
+              ·
+            </span>
+            <Link href="#">Terms</Link>
+          </nav>
 
-            <nav className="home-luxe__footer-col" aria-label="Houses">
-              <p className="home-luxe__footer-label">Houses</p>
-              <Link href="/claim">List your house</Link>
-            </nav>
-
-            <nav className="home-luxe__footer-col" aria-label="Legal">
-              <p className="home-luxe__footer-label">Legal</p>
-              <Link href="#">Privacy</Link>
-              <Link href="#">Terms</Link>
-            </nav>
-          </div>
-
-          <div className="home-luxe__footer-bar">
-            <p className="home-luxe__footer-copy">© 2026 BeautyZent</p>
-          </div>
+          <p className="home-luxe__footer-copy">© 2026 BeautyZent</p>
         </div>
       </footer>
     </main>

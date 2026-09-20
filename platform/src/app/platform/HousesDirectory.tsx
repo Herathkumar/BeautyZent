@@ -144,7 +144,7 @@ export function HousesDirectory({ houses }: { houses: PlatformHouse[] }) {
               const status = houseStatus(house);
               return (
                 <article key={house.id} className="platform-luxe__card">
-                  <div className="platform-luxe__card-body">
+                  <div className="platform-luxe__card-media">
                     {/* Explore uses the same placeholder when a house has no uploaded cover. */}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
@@ -152,24 +152,6 @@ export function HousesDirectory({ houses }: { houses: PlatformHouse[] }) {
                       alt=""
                       className="platform-luxe__cover"
                     />
-                    <div className="platform-luxe__card-copy">
-                      <p className="platform-luxe__category">
-                        {categoryBadge(house.businessType)}
-                      </p>
-                      <h2 className="platform-luxe__name">{house.name}</h2>
-                      <p className="platform-luxe__slug">/{house.slug}</p>
-                      <p className="platform-luxe__meta">
-                        {house.providers} provider{house.providers === 1 ? "" : "s"} ·{" "}
-                        {house.services} service{house.services === 1 ? "" : "s"} ·{" "}
-                        {house.bookings} booking{house.bookings === 1 ? "" : "s"}
-                      </p>
-                      <p className="platform-luxe__hours">
-                        <IconClock />
-                        {formatHour(house.openHour)} – {formatHour(house.closeHour)}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="platform-luxe__card-foot">
                     <span
                       className={`platform-luxe__status platform-luxe__status--${
                         status === "review" ? "review" : status
@@ -177,6 +159,19 @@ export function HousesDirectory({ houses }: { houses: PlatformHouse[] }) {
                     >
                       {statusLabel(status)}
                     </span>
+                  </div>
+                  <div className="platform-luxe__card-copy">
+                    <p className="platform-luxe__category">
+                      {categoryBadge(house.businessType)}
+                    </p>
+                    <h2 className="platform-luxe__name">{house.name}</h2>
+                    <p className="platform-luxe__slug">/{house.slug}</p>
+                    <p className="platform-luxe__hours">
+                      <IconClock />
+                      {formatHour(house.openHour)} – {formatHour(house.closeHour)}
+                    </p>
+                  </div>
+                  <div className="platform-luxe__card-foot">
                     <div className="platform-luxe__card-actions">
                       <Link
                         href={`/platform/salons/${house.id}`}
