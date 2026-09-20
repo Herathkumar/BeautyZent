@@ -1,3 +1,5 @@
+import { addCalendarDays, calendarDateInTz, dayOfWeekInTz } from "@/lib/salon-time";
+
 export type DisplayStylist = {
   id: string;
   name: string;
@@ -568,4 +570,71 @@ export function stylistChairCaption(wait: StylistWaitInfo, guestFullName?: strin
   }
   if (wait.kind === "done") return "Off";
   return wait.label;
+}
+
+/** Lounge TV team pills — only On floor / With a guest / Back at {time}. */
+export function loungeTeamStatus(
+  wait: StylistWaitInfo,
+  guestFullName?: string | null
+): string {
+  if (wait.kind === "available") return "On floor";
+  if (wait.kind === "waiting") return "With a guest";
+  if (wait.freeMin != null) return `Back at ${formatMinutesClock(wait.freeMin)}`;
+  if (wait.kind === "opens" && wait.label) {
+    return wait.label.replace(/^Opens\s+/i, "Back at ");
+  }
+  return "On floor";
+}
+
+export function isLoungeStaffOffDuty(kind: StylistWaitKind) {
+  return kind === "closed" || kind === "done";
+}
+
+/** Public marketplace origin for lounge QR — never localhost. */
+export function loungePublicOrigin() {
+  const raw =
+    (typeof process !== "undefined" &&
+      (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL)) ||
+    "";
+  const trimmed = String(raw).trim().replace(/\/$/, "");
+  if (trimmed && !/localhost|127\.0\.0\.1/i.test(trimmed)) return trimmed;
+  return "https://beautyzent.ca";
+}
+
+export function loungeReserveUrl(slug: string) {
+  return `${loungePublicOrigin()}/explore/${slug}`;
+}
+
+/** Next open day label for closed lounge center panel / ticker. */
+export function loungeNextOpenLabel(
+  now: Date,
+  openHour: number,
+  closedDays: number[] | null | undefined,
+  timeZone?: string | null
+) {
+  const tz = timeZone || "America/Toronto";
+  const parts = clockParts(now.toISOString(), tz);
+  const openMin = openHour * 60;
+  const closed = new Set(closedDays || []);
+  const timeLabel = formatMinutesClock(openMin);
+  const todayYmd = calendarDateInTz(tz, now);
+  const todayDow = dayOfWeekInTz(todayYmd, tz);
+
+  if (!closed.has(todayDow) && parts.minutes < openMin) {
+    return { day: "today", time: timeLabel, line: `Opens today ${timeLabel}` };
+  }
+
+  for (let i = 1; i <= 7; i++) {
+    const ymd = addCalendarDays(todayYmd, i, tz);
+    const weekday = dayOfWeekInTz(ymd, tz);
+    if (closed.has(weekday)) continue;
+    const noon = new Date(`${ymd}T17:00:00Z`);
+    const day = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz,
+      weekday: "long",
+    }).format(noon);
+    return { day, time: timeLabel, line: `Opens ${day} ${timeLabel}` };
+  }
+
+  return { day: "soon", time: timeLabel, line: `Opens ${timeLabel}` };
 }

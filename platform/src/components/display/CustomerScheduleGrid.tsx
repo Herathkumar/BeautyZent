@@ -10,14 +10,17 @@ import {
   formatClock,
   formatMinutesClock,
   formatWaitMinutes,
+  isLoungeStaffOffDuty,
   loungeFloorStats,
+  loungeNextOpenLabel,
+  loungeReserveUrl,
+  loungeTeamStatus,
   seatedServiceProgress,
   serviceKind,
   stylistChairVisual,
   stylistCurrentGuest,
   stylistFloorTone,
   stylistSpecialtyBadges,
-  stylistStatusRingClass,
   stylistWaitInfo,
   type DisplayAppt,
   type DisplayStylist,
@@ -30,6 +33,9 @@ const TEAM_ROTATE_MS = 10_000;
 const LOOKS_ROTATE_MS = 8_000;
 const RETAIL_PAGE_SIZE = 3;
 const RETAIL_ROTATE_MS = 8_000;
+const MENU_FEATURE_ROTATE_MS = 8_000;
+const LOUNGE_MENU_MAX = 4;
+const LOUNGE_MENU_MIN_PAD = 3;
 
 type LoungeLook = {
   id: string;
@@ -88,6 +94,8 @@ type LoungeService = {
   id: string;
   name: string;
   priceCents: number;
+  durationMin?: number;
+  featured?: boolean;
   imageUrl?: string | null;
 };
 
@@ -105,8 +113,64 @@ const LOUNGE_DEFAULT_RETAIL = [
   { id: "p9", name: "Hand cream", priceCents: 1600, imageUrl: "/lounge/product-hand-cream.jpg" },
 ] as const;
 
+const LOUNGE_DEFAULT_MENU: LoungeService[] = [
+  { id: "s1", name: "Women's haircut & style", durationMin: 60, priceCents: 7000 },
+  { id: "s2", name: "Trim & tidy", durationMin: 20, priceCents: 2500 },
+  { id: "s3", name: "Bang / fringe trim", durationMin: 15, priceCents: 1800 },
+  { id: "s4", name: "Men's haircut", durationMin: 30, priceCents: 3500 },
+];
+
 function money(cents: number) {
   return `$${Math.round(cents / 100)}`;
+}
+
+/** Featured first (or sort order), max 4; pad from remaining active when featured < 3. */
+function pickLoungeMenu(services: LoungeService[]): LoungeService[] {
+  const source = services.length ? services : LOUNGE_DEFAULT_MENU;
+  const featured = source.filter((s) => s.featured);
+  const rest = source.filter((s) => !s.featured);
+  const ordered = featured.length ? [...featured, ...rest] : source;
+  const seen = new Set<string>();
+  const unique = ordered.filter((s) => {
+    if (seen.has(s.id)) return false;
+    seen.add(s.id);
+    return true;
+  });
+  let count = Math.min(LOUNGE_MENU_MAX, unique.length);
+  if (featured.length > 0 && featured.length < LOUNGE_MENU_MIN_PAD) {
+    count = Math.min(LOUNGE_MENU_MAX, Math.max(LOUNGE_MENU_MIN_PAD, featured.length), unique.length);
+  }
+  return unique.slice(0, count);
+}
+
+/** Services with photos for the optional featured strip above the list. */
+function loungeMenuFeaturePhotos(services: LoungeService[]): LoungeService[] {
+  const source = services.length ? services : LOUNGE_DEFAULT_MENU;
+  const seen = new Set<string>();
+  return source.filter((s) => {
+    if (!s.imageUrl || seen.has(s.id)) return false;
+    seen.add(s.id);
+    return true;
+  });
+}
+
+function isPlaceholderStylistPhoto(url?: string | null) {
+  if (!url) return true;
+  return /\/avatars\/stylist-(neutral|male|female)\.svg(?:\?|$)/i.test(url);
+}
+
+function stylistInitials(name: string) {
+  const parts = (name || "").trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0] || ""}${parts[parts.length - 1][0] || ""}`.toUpperCase();
+}
+
+function loungeStatusRingClass(kind: Parameters<typeof stylistFloorTone>[0]) {
+  const tone = stylistFloorTone(kind);
+  if (tone === "available") return "ring-[3px] ring-[color:var(--cd-accent)]";
+  if (tone === "busy") return "ring-[3px] ring-[#f0ebe3]";
+  return "ring-[3px] ring-[color:var(--cd-accent)]";
 }
 
 function shortService(name: string) {
@@ -114,11 +178,6 @@ function shortService(name: string) {
   const words = clean.split(/\s+/).filter(Boolean);
   if (words.length <= 2) return clean;
   return words.slice(0, 2).join(" ");
-}
-
-function bookUrl(slug: string) {
-  if (typeof window === "undefined") return `/book/${slug}`;
-  return `${window.location.origin}/book/${slug}`;
 }
 
 function qrSrc(data: string, size = 160) {
@@ -132,21 +191,6 @@ function dayKey(iso: string, timeZone?: string | null) {
     month: "2-digit",
     day: "2-digit",
   }).format(new Date(iso));
-}
-
-function addDayKey(key: string, days: number) {
-  const [y, m, d] = key.split("-").map(Number);
-  const dt = new Date(Date.UTC(y, m - 1, d + days));
-  return dt.toISOString().slice(0, 10);
-}
-
-function weekdayShort(key: string, timeZone?: string | null) {
-  const [y, m, d] = key.split("-").map(Number);
-  const noon = new Date(Date.UTC(y, m - 1, d, 17));
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: timeZone || undefined,
-    weekday: "short",
-  }).format(noon);
 }
 
 function LoungeBookingChip({
@@ -249,25 +293,16 @@ function statusPillText(
   wait: { kind: string; waitMs: number; freeMin: number | null; label: string },
   currentAppt: DisplayAppt | null
 ) {
-  if (visual.kind === "waiting" && visual.guestName) {
-    const svc = currentAppt ? shortService(currentAppt.service.name) : "service";
-    return `In chair · ${svc.toLowerCase()}`;
-  }
-  if (wait.kind === "waiting" && wait.waitMs > 0) {
-    const mins = Math.max(1, Math.ceil(wait.waitMs / 60_000));
-    return `Processing · ${mins} min`;
-  }
-  if (wait.freeMin != null && visual.kind !== "available" && visual.kind !== "waiting") {
-    return `Next guest ${formatMinutesClock(wait.freeMin)}`;
-  }
-  if (wait.kind === "waiting" && wait.freeMin != null) {
-    return `Next guest ${formatMinutesClock(wait.freeMin)}`;
-  }
-  if (wait.kind === "opens") return wait.label;
-  if (wait.kind === "available") return "Ready for walk-ins";
-  if (wait.kind === "done") return "Done for today";
-  if (wait.kind === "closed") return "Closed";
-  return wait.label;
+  return loungeTeamStatus(
+    {
+      kind: visual.kind as "available" | "waiting" | "opens" | "closed" | "done",
+      waitMs: wait.waitMs,
+      freeMin: wait.freeMin,
+      label: wait.label,
+      sublabel: null,
+    },
+    visual.guestName || currentAppt?.client.name
+  );
 }
 
 export function CustomerScheduleGrid({
@@ -284,9 +319,11 @@ export function CustomerScheduleGrid({
   salonName,
   products = [],
   services = [],
-  offerLine,
   wifiName,
   looks = [],
+  closedDays,
+  coverUrl,
+  walkInsWelcome = true,
 }: {
   appointments: DisplayAppt[];
   stylists: DisplayStylist[];
@@ -304,7 +341,19 @@ export function CustomerScheduleGrid({
   offerLine?: string | null;
   wifiName?: string | null;
   looks?: LoungeLook[];
+  closedDays?: number[] | null;
+  coverUrl?: string | null;
+  walkInsWelcome?: boolean;
 }) {
+  const [demoMode, setDemoMode] = useState("");
+  useEffect(() => {
+    try {
+      const q = new URLSearchParams(window.location.search).get("demo") || "";
+      setDemoMode(q.toLowerCase());
+    } catch {
+      setDemoMode("");
+    }
+  }, []);
   const columns = stylists.length
     ? stylists
     : [{ id: "none", name: "Chair", bio: null, color: "#c19a6b", photoUrl: "" }];
@@ -317,15 +366,10 @@ export function CustomerScheduleGrid({
   } | null>(null);
   const dragRef = useRef<ChairDrag | null>(null);
   const [drag, setDrag] = useState<ChairDrag | null>(null);
-  const [origin, setOrigin] = useState("");
   const [teamPage, setTeamPage] = useState(0);
   const [lookPage, setLookPage] = useState(0);
   const [retailPage, setRetailPage] = useState(0);
-
-  useEffect(() => {
-    setOrigin(window.location.origin);
-  }, []);
-
+  const [menuFeaturePage, setMenuFeaturePage] = useState(0);
   function publishDrag(next: ChairDrag | null) {
     dragRef.current = next;
     setDrag(next);
@@ -376,7 +420,6 @@ export function CustomerScheduleGrid({
   }
 
   const todayKeyStr = dayKey(now.toISOString(), timeZone);
-  const tomorrowKey = addDayKey(todayKeyStr, 1);
 
   const todayFloorAppts = appointments.filter(
     (a) => dayKey(a.startsAt, timeZone) === todayKeyStr
@@ -392,11 +435,14 @@ export function CustomerScheduleGrid({
     return { stylist, items, wait, visual, seated };
   });
 
-  const teamPageCount = Math.max(1, Math.ceil(Math.max(floor.length, 1) / TEAM_PAGE_SIZE));
+  const onDuty = floor.filter(({ visual }) => !isLoungeStaffOffDuty(visual.kind));
+  const offToday = floor.filter(({ visual }) => isLoungeStaffOffDuty(visual.kind));
+  const teamRoster = storeClosed ? [] : onDuty;
+  const teamPageCount = Math.max(1, Math.ceil(Math.max(teamRoster.length, 1) / TEAM_PAGE_SIZE));
 
   useEffect(() => {
     setTeamPage((p) => (teamPageCount ? p % teamPageCount : 0));
-  }, [teamPageCount, floor.length]);
+  }, [teamPageCount, teamRoster.length]);
 
   useEffect(() => {
     if (teamPageCount < 2 || drag) return;
@@ -406,13 +452,13 @@ export function CustomerScheduleGrid({
     return () => window.clearInterval(timer);
   }, [teamPageCount, drag]);
 
-  const teamVisible = floor.slice(
+  const teamVisible = teamRoster.slice(
     teamPage * TEAM_PAGE_SIZE,
     teamPage * TEAM_PAGE_SIZE + TEAM_PAGE_SIZE
   );
 
   const stats = loungeFloorStats(
-    floor.map(({ wait, visual }) => ({
+    onDuty.map(({ wait, visual }) => ({
       kind: visual.kind,
       waitMs: visual.kind === "available" ? 0 : wait.waitMs,
     }))
@@ -434,15 +480,39 @@ export function CustomerScheduleGrid({
     )
     .sort((a, b) => a.startsAt.localeCompare(b.startsAt))[0];
 
-  const primeTomorrow = appointments
-    .filter((a) => dayKey(a.startsAt, timeZone) === tomorrowKey && a.status === "BOOKED")
-    .sort((a, b) => a.startsAt.localeCompare(b.startsAt))[0];
+  const nextOpen = loungeNextOpenLabel(now, openHour, closedDays, timeZone);
+  const closeTimeLabel = formatMinutesClock(closeHour * 60);
+  const waitZero = stats.avgWaitMs <= 0;
+  const centerTitle =
+    waitZero && walkInsWelcome ? "Walk-ins welcome" : `Avg wait ${formatWaitMinutes(stats.avgWaitMs)}`;
+  const nowHead = seatedNow
+    ? `${firstName(seatedNow.stylist.name)} · ${shortService(seatedNow.service.name)}`
+    : stats.availableCount > 0
+      ? "Chair open"
+      : "All chairs busy";
+  const upNextHead = upNext
+    ? `${formatClock(upNext.startsAt, timeZone)} ${shortService(upNext.service.name)}`
+    : waitZero
+      ? "Next walk-in slot open"
+      : `Next walk-in ~${formatWaitMinutes(stats.nextWaitMs)}`;
 
-  const ctaServices = useMemo(() => {
-    const picks = services.slice(0, 3);
-    if (picks.length) return picks.map((s) => s.name.toUpperCase());
-    return ["WALK-IN WELCOME", "GLOSS & TRIM", "KERATIN CARE"];
-  }, [services]);
+  const menuServices = useMemo(() => pickLoungeMenu(services), [services]);
+  const menuFeatures = useMemo(() => loungeMenuFeaturePhotos(services), [services]);
+
+  useEffect(() => {
+    setMenuFeaturePage((p) => (menuFeatures.length ? p % menuFeatures.length : 0));
+  }, [menuFeatures.length]);
+
+  useEffect(() => {
+    if (menuFeatures.length < 2) return;
+    const timer = window.setInterval(() => {
+      setMenuFeaturePage((p) => (p + 1) % menuFeatures.length);
+    }, MENU_FEATURE_ROTATE_MS);
+    return () => window.clearInterval(timer);
+  }, [menuFeatures.length]);
+
+  const activeMenuFeature =
+    menuFeatures[Math.min(menuFeaturePage, menuFeatures.length - 1)] || menuFeatures[0] || null;
 
   const catalogRetail: LoungeProduct[] = useMemo(() => {
     const withPhotos = products.filter((p) => Boolean(p.imageUrl));
@@ -539,21 +609,138 @@ export function CustomerScheduleGrid({
   const activeLook = catalogLooks[Math.min(lookPage, catalogLooks.length - 1)] || catalogLooks[0];
   const beforeSrc = activeLook?.beforeUrl || LOUNGE_DEFAULT_LOOK_BEFORE;
   const afterSrc = activeLook?.afterUrl || LOUNGE_DEFAULT_LOOK_AFTER;
-  const bookingHref = slug ? (origin ? `${origin}/book/${slug}` : bookUrl(slug)) : "";
-  const bookingLabel = slug
-    ? `${(origin || "book.beautyzent.com").replace(/^https?:\/\//, "")}/book/${slug}`
-    : "Scan at reception";
-  const wifi = wifiName || (salonName ? `${firstName(salonName)}Guest` : "GuestWiFi");
-  const offer =
-    offerLine ||
-    (stats.avgWaitMs > 0
-      ? `Avg wait ${formatWaitMinutes(stats.avgWaitMs)}`
-      : "Walk-ins welcome today");
+  const bookingHref = slug ? loungeReserveUrl(slug) : "";
+  const bookingLabel = bookingHref.replace(/^https?:\/\//, "");
+  const wifi = (wifiName || "").trim();
+  const forceClosed = demoMode === "closed";
+  const forceOpen = demoMode === "open";
+  const showClosedLayout =
+    forceClosed || (!forceOpen && (Boolean(storeClosed) || onDuty.length === 0));
+  const openDayLabel = nextOpen.day === "today" ? "today" : nextOpen.day;
+  const opensHeadline = `Opens ${openDayLabel} ${nextOpen.time}`;
+  const tickerWait = showClosedLayout
+    ? null
+    : waitZero && walkInsWelcome
+      ? "Walk-ins welcome"
+      : `Avg wait ${formatWaitMinutes(stats.avgWaitMs)}`;
+  const coverSrc = coverUrl || "/display-promo.jpg";
 
   const padClass = compactPad ? "lounge-v2--compact" : "";
 
+  const qrBlock = (
+    <div className="lounge-v2-book">
+      {bookingHref ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          className="lounge-v2-book__qr"
+          src={qrSrc(bookingHref, 148)}
+          alt="QR code to reserve on your phone"
+          width={148}
+          height={148}
+        />
+      ) : (
+        <div className="lounge-v2-book__qr lounge-v2-book__qr--empty" aria-hidden />
+      )}
+      <div>
+        <p className="lounge-v2-book__title">Reserve on your phone</p>
+        <p className="lounge-v2-book__url">{bookingLabel || "beautyzent.ca"}</p>
+      </div>
+    </div>
+  );
+
+  const looksRetail = (
+    <section className="lounge-v2__col lounge-v2__col--side" aria-label="Looks and retail">
+      <div className="lounge-v2-card lounge-v2-card--looks">
+        <div className="lounge-v2-looks-head">
+          <h3 className="lounge-v2__eyebrow">Looks of the week</h3>
+          {catalogLooks.length > 1 ? (
+            <div className="lounge-v2__team-dots" aria-hidden>
+              {catalogLooks.map((look, i) => (
+                <span key={look.id} className={i === lookPage ? "is-on" : undefined} />
+              ))}
+            </div>
+          ) : null}
+        </div>
+        <div className="lounge-v2-looks" key={activeLook?.id || "look"}>
+          <figure>
+            <div className="lounge-v2-looks__media">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={beforeSrc} alt="Before look" />
+            </div>
+            <figcaption>Before</figcaption>
+          </figure>
+          <span className="lounge-v2-looks__arrow" aria-hidden>
+            →
+          </span>
+          <figure>
+            <div className="lounge-v2-looks__media">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={afterSrc} alt="After look" />
+            </div>
+            <figcaption>After</figcaption>
+          </figure>
+        </div>
+        {activeLook ? (
+          <div className="lounge-v2-looks-meta">
+            <span className="lounge-v2-looks-meta__num">Style #{activeLook.styleNumber}</span>
+            <div>
+              <p className="lounge-v2-looks-meta__title">{activeLook.title}</p>
+              <p className="lounge-v2-looks-meta__hint">
+                {activeLook.description ||
+                  `Tell reception you want style #${activeLook.styleNumber}`}
+              </p>
+            </div>
+          </div>
+        ) : null}
+      </div>
+
+      <div className="lounge-v2-card lounge-v2-card--retail">
+        <div className="lounge-v2-looks-head">
+          <h3 className="lounge-v2__eyebrow">Retail favorites</h3>
+          {retailPageCount > 1 ? (
+            <div className="lounge-v2__team-dots" aria-hidden>
+              {Array.from({ length: retailPageCount }, (_, i) => (
+                <span key={i} className={i === retailPage ? "is-on" : undefined} />
+              ))}
+            </div>
+          ) : null}
+        </div>
+        <div className="lounge-v2-retail" key={`retail-${retailPage}`}>
+          {retail.map((p) => (
+            <article key={p.id} className="lounge-v2-retail__item">
+              <div className="lounge-v2-retail__shot">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={p.imageUrl || LOUNGE_DEFAULT_RETAIL[0].imageUrl} alt="" />
+              </div>
+              <p>{p.name}</p>
+              <strong>{money(p.priceCents)}</strong>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+
   return (
-    <div className={`lounge-v2 ${padClass}`} data-testid="customer-lounge-board">
+    <div
+      className={`lounge-v2 ${padClass}${showClosedLayout ? " lounge-v2--closed" : ""}`}
+      data-testid="customer-lounge-board"
+      data-lounge-state={showClosedLayout ? "closed" : "open"}
+    >
+      {showClosedLayout ? (
+        <div className="lounge-v2__grid lounge-v2__grid--closed">
+          <section className="lounge-v2-closed-hero" aria-label="Closed">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={coverSrc} alt="" className="lounge-v2-closed-hero__img" />
+            <div className="lounge-v2-closed-hero__shade" aria-hidden />
+            <div className="lounge-v2-closed-hero__content">
+              <h1 className="lounge-v2__title lounge-v2-closed-hero__title">{opensHeadline}</h1>
+              {qrBlock}
+            </div>
+          </section>
+          {looksRetail}
+        </div>
+      ) : (
       <div className="lounge-v2__grid">
         <section className="lounge-v2__col lounge-v2__col--team" aria-label="Today's team">
           <div className="lounge-v2__team-head">
@@ -569,9 +756,12 @@ export function CustomerScheduleGrid({
           <div
             className="lounge-v2__team"
             data-team-page={teamPage}
-            data-team-count={floor.length}
+            data-team-count={teamRoster.length}
           >
-            {teamVisible.map(({ stylist, items, wait, visual, seated }) => {
+            {teamVisible.length === 0 ? (
+              <p className="lounge-v2__team-off">No stylists on the floor right now</p>
+            ) : (
+              teamVisible.map(({ stylist, items, wait, visual, seated }) => {
               const chairWait = { ...wait, kind: visual.kind };
               const dropTarget = Boolean(
                 drag && chairAcceptsDrop(visual.kind, stylist.id === drag.stylistId)
@@ -582,6 +772,7 @@ export function CustomerScheduleGrid({
                 .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
               const specialty = stylistSpecialtyBadges(stylist.bio, stylist.name)[0] || "Stylist";
               const pillHint = statusPillText(visual, wait, seated);
+              const showInitials = isPlaceholderStylistPhoto(stylist.photoUrl);
 
               return (
                 <article
@@ -590,19 +781,25 @@ export function CustomerScheduleGrid({
                   className="lounge-v2-stylist"
                 >
                   <div
-                    className={`customer-stylist-photo-ring lounge-v2-stylist__photo overflow-hidden rounded-full ring-offset-2 ring-offset-[var(--cd-panel)] ${stylistStatusRingClass(
+                    className={`customer-stylist-photo-ring lounge-v2-stylist__photo overflow-hidden rounded-full ring-offset-2 ring-offset-[var(--cd-panel)] ${loungeStatusRingClass(
                       visual.kind
                     )}`}
                     data-testid="stylist-status-ring"
                     data-status-tone={stylistFloorTone(visual.kind)}
                     title={wait.label}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={stylist.photoUrl || "/avatars/stylist-neutral.svg"}
-                      alt=""
-                      className="h-full w-full object-cover"
-                    />
+                    {showInitials ? (
+                      <span className="lounge-v2-stylist__initials" aria-hidden>
+                        {stylistInitials(stylist.name)}
+                      </span>
+                    ) : (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={stylist.photoUrl}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                    )}
                   </div>
                   <div className="lounge-v2-stylist__body">
                     <div className="lounge-v2-stylist__who">
@@ -644,218 +841,88 @@ export function CustomerScheduleGrid({
                   </div>
                 </article>
               );
-            })}
+            })
+            )}
+            {offToday.length ? (
+              <p className="lounge-v2__team-off">
+                Off today · {offToday.map((row) => firstName(row.stylist.name)).join(", ")}
+              </p>
+            ) : null}
           </div>
         </section>
 
-        <section className="lounge-v2__col lounge-v2__col--center" aria-label="Next 90 minutes">
-          <h2 className="lounge-v2__title">Your next 90 minutes</h2>
+        <section className="lounge-v2__col lounge-v2__col--center" aria-label="Lounge status">
+          <h2 className="lounge-v2__title">{centerTitle}</h2>
           <ol className="lounge-v2-timeline">
             <li className="lounge-v2-timeline__item is-now">
               <span className="lounge-v2-timeline__dot" aria-hidden />
               <div>
                 <p className="lounge-v2-timeline__label">Now</p>
-                <p className="lounge-v2-timeline__head">
-                  {seatedNow
-                    ? `${firstName(seatedNow.stylist.name)} finishing`
-                    : storeClosed
-                      ? "Salon closed"
-                      : "Floor is open"}
-                </p>
-                <p className="lounge-v2-timeline__sub">
-                  {seatedNow
-                    ? `Finishing ${seatedNow.service.name.toLowerCase()}. Almost done.`
-                    : stats.availableCount > 0
-                      ? "Walk-ins welcome — a chair is ready."
-                      : "Guests are in chair. Next opening soon."}
-                </p>
+                <p className="lounge-v2-timeline__head">{nowHead}</p>
               </div>
             </li>
             <li className="lounge-v2-timeline__item">
               <span className="lounge-v2-timeline__dot" aria-hidden />
               <div>
                 <p className="lounge-v2-timeline__label">Up next</p>
-                <p className="lounge-v2-timeline__head">
-                  {upNext ? upNext.service.name : "Open for walk-ins"}
-                  {upNext ? (
-                    <span className="lounge-v2-timeline__aside">
-                      {formatClock(upNext.startsAt, timeZone)}
-                      {typeof upNext.service.priceCents === "number"
-                        ? ` · ${money(upNext.service.priceCents)}`
-                        : ""}
-                    </span>
-                  ) : null}
-                </p>
-              </div>
-            </li>
-            <li className="lounge-v2-timeline__item">
-              <span className="lounge-v2-timeline__dot" aria-hidden />
-              <div>
-                <p className="lounge-v2-timeline__label">Prime tomorrow</p>
-                <p className="lounge-v2-timeline__head">
-                  {primeTomorrow
-                    ? `${weekdayShort(tomorrowKey, timeZone)} ${formatClock(
-                        primeTomorrow.startsAt,
-                        timeZone
-                      )} · ${primeTomorrow.service.name}`
-                    : "Book tomorrow’s prime slots"}
-                </p>
+                <p className="lounge-v2-timeline__head">{upNextHead}</p>
               </div>
             </li>
           </ol>
 
-          <div className="lounge-v2-ctas">
-            {ctaServices.map((label) => (
-              <span key={label} className="lounge-v2-cta">
-                {label}
-              </span>
-            ))}
-          </div>
-
-          <div className="lounge-v2-book">
-            {bookingHref ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                className="lounge-v2-book__qr"
-                src={qrSrc(bookingHref, 148)}
-                alt="QR code to book online"
-                width={148}
-                height={148}
-              />
-            ) : (
-              <div className="lounge-v2-book__qr lounge-v2-book__qr--empty" aria-hidden />
-            )}
-            <div>
-              <p className="lounge-v2-book__title">Scan to book</p>
-              <p className="lounge-v2-book__url">{bookingLabel}</p>
-            </div>
-          </div>
-
-          <div className="lounge-v2-meta">
-            <span>
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-                <circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.6" />
-                <path d="M12 7.5v5l3.2 1.8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-              </svg>
-              Avg wait {formatWaitMinutes(stats.avgWaitMs)}
-            </span>
-            <span>
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-                <path
-                  d="M7 8.5h10l1.2 11H5.8L7 8.5Z"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M9 8.5c0-2.4 1.3-4 3-4s3 1.6 3 4"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                />
-              </svg>
-              Offer: {offer}
-            </span>
-          </div>
-        </section>
-
-        <section className="lounge-v2__col lounge-v2__col--side" aria-label="Looks and retail">
-          <div className="lounge-v2-card lounge-v2-card--looks">
-            <div className="lounge-v2-looks-head">
-              <h3 className="lounge-v2__eyebrow">Looks of the week</h3>
-              {catalogLooks.length > 1 ? (
+          <nav className="lounge-v2-menu" aria-label="Menu">
+            <div className="lounge-v2-menu__head">
+              <h3 className="lounge-v2-menu__label">
+                <span aria-hidden>◆</span>
+                Menu
+                <span aria-hidden>◆</span>
+              </h3>
+              {menuFeatures.length > 1 ? (
                 <div className="lounge-v2__team-dots" aria-hidden>
-                  {catalogLooks.map((look, i) => (
-                    <span key={look.id} className={i === lookPage ? "is-on" : undefined} />
+                  {menuFeatures.map((s, i) => (
+                    <span key={s.id} className={i === menuFeaturePage ? "is-on" : undefined} />
                   ))}
                 </div>
               ) : null}
             </div>
-            <div className="lounge-v2-looks" key={activeLook?.id || "look"}>
-              <figure>
-                <div className="lounge-v2-looks__media">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={beforeSrc} alt="Before look" />
-                </div>
-                <figcaption>Before</figcaption>
-              </figure>
-              <span className="lounge-v2-looks__arrow" aria-hidden>
-                →
-              </span>
-              <figure>
-                <div className="lounge-v2-looks__media">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={afterSrc} alt="After look" />
-                </div>
-                <figcaption>After</figcaption>
-              </figure>
-            </div>
-            {activeLook ? (
-              <div className="lounge-v2-looks-meta">
-                <span className="lounge-v2-looks-meta__num">Style #{activeLook.styleNumber}</span>
-                <div>
-                  <p className="lounge-v2-looks-meta__title">{activeLook.title}</p>
-                  <p className="lounge-v2-looks-meta__hint">
-                    {activeLook.description ||
-                      `Tell reception you want style #${activeLook.styleNumber}`}
-                  </p>
-                </div>
+            {activeMenuFeature?.imageUrl ? (
+              <div className="lounge-v2-menu__feature" key={activeMenuFeature.id}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={activeMenuFeature.imageUrl} alt="" />
               </div>
             ) : null}
-          </div>
-
-          <div className="lounge-v2-card lounge-v2-card--retail">
-            <div className="lounge-v2-looks-head">
-              <h3 className="lounge-v2__eyebrow">Retail favorites</h3>
-              {retailPageCount > 1 ? (
-                <div className="lounge-v2__team-dots" aria-hidden>
-                  {Array.from({ length: retailPageCount }, (_, i) => (
-                    <span key={i} className={i === retailPage ? "is-on" : undefined} />
-                  ))}
-                </div>
-              ) : null}
-            </div>
-            <div className="lounge-v2-retail" key={`retail-${retailPage}`}>
-              {retail.map((p) => (
-                <article key={p.id} className="lounge-v2-retail__item">
-                  <div className="lounge-v2-retail__shot">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={p.imageUrl || LOUNGE_DEFAULT_RETAIL[0].imageUrl} alt="" />
-                  </div>
-                  <p>{p.name}</p>
-                  <strong>{money(p.priceCents)}</strong>
-                </article>
+            <ul className="lounge-v2-menu__list">
+              {menuServices.map((s) => (
+                <li key={s.id} className="lounge-v2-menu__row">
+                  <span className="lounge-v2-menu__name">{s.name}</span>
+                  <span className="lounge-v2-menu__dur">{s.durationMin ?? 45} min</span>
+                  <span className="lounge-v2-menu__price">{money(s.priceCents)}</span>
+                </li>
               ))}
-            </div>
-          </div>
+            </ul>
+          </nav>
+
+          {qrBlock}
         </section>
+
+        {looksRetail}
       </div>
+      )}
 
       <footer className="lounge-v2-foot">
-        <p>
-          <span>Now playing</span> Chill Lounge
-        </p>
-        <p>
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-            <path
-              d="M5 12.5c2.8-3.2 6-4.8 7-4.8s4.2 1.6 7 4.8"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-            />
-            <path
-              d="M7.5 15c1.8-2 3.7-3 4.5-3s2.7 1 4.5 3"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-            />
-            <circle cx="12" cy="18" r="1.2" fill="currentColor" />
-          </svg>
-          Wi-Fi: {wifi}
-        </p>
-        <p className="lounge-v2-foot__perk">
-          <span aria-hidden>♛</span> Members earn 2× Monday color
-        </p>
+        {showClosedLayout ? (
+          <p className="lounge-v2-foot__powered">Powered by BeautyZent</p>
+        ) : (
+          <p className="lounge-v2-foot__ticker">
+            {[
+              wifi ? `Wi-Fi ${wifi}` : null,
+              tickerWait,
+              `Open until ${closeTimeLabel}`,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
+        )}
       </footer>
 
       {drag ? (

@@ -3,6 +3,7 @@
 import { useId } from "react";
 import {
   stylistChairCaption,
+  loungeTeamStatus,
   type StylistWaitInfo,
   type StylistWaitKind,
 } from "@/lib/display-schedule";
@@ -214,10 +215,12 @@ export function StylistChairStatus({
   dropTarget?: boolean;
   variant?: "portrait" | "lounge";
 }) {
-  const caption = stylistChairCaption(wait, guestName);
+  const lounge = variant === "lounge";
+  const caption = lounge
+    ? loungeTeamStatus(wait, guestName)
+    : stylistChairCaption(wait, guestName);
   const seated = wait.kind === "waiting" && Boolean(guestName);
   const aria = seated ? `${caption} in chair` : caption;
-  const lounge = variant === "lounge";
 
   return (
     <div

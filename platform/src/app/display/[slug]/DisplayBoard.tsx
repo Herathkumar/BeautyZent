@@ -76,6 +76,7 @@ type SalonInfo = {
   closeHour?: number;
   closedDays?: number[];
   todayClosed?: boolean;
+  coverUrl?: string | null;
   displayViewMode?: string | null;
   displayViewControl?: string | null;
   displayViewRotateSec?: number | null;
@@ -590,6 +591,7 @@ export function DisplayBoard({
   /** null until this tablet picks a layout; then it wins over the salon default. */
   const [viewOverride, setViewOverride] = useState<CustomerDisplayView | null>(null);
   const [rotateView, setRotateView] = useState<CustomerDisplayView>("lounge");
+  const [demoMode, setDemoMode] = useState("");
   const [needsPin, setNeedsPin] = useState(false);
   const [pinSet, setPinSet] = useState(false);
   const [unlockChecked, setUnlockChecked] = useState(false);
@@ -628,6 +630,15 @@ export function DisplayBoard({
       window.removeEventListener("storage", onStorage);
     };
   }, [slug]);
+
+  useEffect(() => {
+    try {
+      const q = new URLSearchParams(window.location.search).get("demo") || "";
+      setDemoMode(q.toLowerCase());
+    } catch {
+      setDemoMode("");
+    }
+  }, []);
 
   useEffect(() => {
     if (variant !== "reception") return;
@@ -1373,6 +1384,8 @@ export function DisplayBoard({
   const isReception = variant === "reception";
   const { openHour, closeHour } = clampDisplayHours(salon?.openHour, salon?.closeHour);
   const storeClosed = Boolean(salon?.todayClosed);
+  const loungeHeaderClosed =
+    demoMode === "closed" || (demoMode !== "open" && storeClosed);
   const selectedAppt = appointments.find((a) => a.id === selectedId) ?? null;
   const deskAppt =
     selectedAppt &&
@@ -1890,7 +1903,7 @@ export function DisplayBoard({
             </div>
             <div className="text-center">
               <div className="customer-lounge-live" aria-live="polite">
-                <span>Live Lounge</span>
+                <span>{loungeHeaderClosed ? "Lounge" : "Live Lounge"}</span>
                 <span className="customer-lounge-live__sep" aria-hidden>
                   ·
                 </span>
@@ -2000,13 +2013,24 @@ export function DisplayBoard({
               ? products.filter((p) => p.hasImage || p.imageUrl)
               : products
             ).slice(0, 18)}
-            services={services.slice(0, 6)}
+            services={services.map((s) => ({
+              id: s.id,
+              name: s.name,
+              priceCents: s.priceCents,
+              durationMin: s.durationMin,
+              imageUrl: s.imageUrl,
+            }))}
             looks={loungeLooks}
+            coverUrl={salon?.coverUrl || null}
             offerLine={
               promoBoard?.enabled && promoBoard.slides[0]
-                ? `${promoBoard.slides[0].template.eyebrow}: ${promoBoard.slides[0].template.offer}`
+                ? `${promoBoard.slides[0].template.eyebrow}: ${promoBoard.slides[0].template.offer}`.slice(
+                    0,
+                    40
+                  )
                 : null
             }
+            closedDays={salon?.closedDays || []}
             onCheckIn={({ appointmentId, targetStylistId }) =>
               void checkInFromDrag(appointmentId, targetStylistId)
             }

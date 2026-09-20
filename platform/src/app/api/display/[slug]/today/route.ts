@@ -28,6 +28,8 @@ const salonCoreSelect = {
   openHour: true,
   closeHour: true,
   closedDays: true,
+  coverMime: true,
+  coverUpdatedAt: true,
   displayPinHash: true,
   displayPinSetAt: true,
   displayViewMode: true,
@@ -218,6 +220,10 @@ export async function GET(
       closeHour: salon.closeHour,
       closedDays: salon.closedDays || [],
       todayClosed: (salon.closedDays || []).includes(dayOfWeekInTz(todayYmd, timeZone)),
+      coverUrl:
+        salon.coverUpdatedAt || salon.coverMime
+          ? `/api/public/cover/${salon.id}?v=${salon.coverUpdatedAt?.getTime() ?? 0}`
+          : null,
       displayViewMode: normalizeCustomerDisplayView(salon.displayViewMode),
       displayViewControl: normalizeCustomerDisplayViewControl(
         "displayViewControl" in salon ? salon.displayViewControl : "manual"
