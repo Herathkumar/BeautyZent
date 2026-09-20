@@ -45,13 +45,13 @@ html.display-shell,html.display-shell body{
   color-scheme:dark
 }
 html.display-shell.customer-shell--light,html.display-shell.customer-shell--light body{
-  background:#f4ead9;
-  color:#3d2b22;
+  background:#fafafa;
+  color:#2a2521;
   color-scheme:light
 }
 html.display-shell.customer-shell--dark,html.display-shell.customer-shell--dark body{
-  background:#14110f;
-  color:#f6efe4;
+  background:#121110;
+  color:#faf7f2;
   color-scheme:dark
 }
 `
@@ -142,8 +142,8 @@ const BOOT_SCRIPT = `
       if(display && !/\\/reception(\\/|$)/.test(p)){
         var custDark=false;
         try{ custDark=localStorage.getItem("fhsalon-customer-theme")==="dark"; }catch(e){}
-        bg=custDark?"#14110f":"#f4ead9";
-        fg=custDark?"#f6efe4":"#3d2b22";
+        bg=custDark?"#121110":"#fafafa";
+        fg=custDark?"#faf7f2":"#2a2521";
       }
       var label=manager?"Manager":stylist?"Stylist App":book?"Online Booking":"Salon Display";
       /* Active salon name: staff session (manager/stylist) or URL slug cache → last visit. */

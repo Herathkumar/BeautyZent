@@ -3,9 +3,18 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { BUSINESS_TYPES } from "@/lib/marketplace";
 import { MARKETPLACE_BOOK_THEME_ID } from "@/lib/marketplace-book-theme";
-import { TIMEZONES, fieldClass, labelClass } from "../salon-form";
+import {
+  DEFAULT_MANAGER_THEME_ID,
+  DEFAULT_STYLIST_THEME_ID,
+} from "@/lib/salon-themes";
+import { TIMEZONES } from "../salon-form";
 import { SettingToggle } from "@/components/admin/SettingToggle";
+
+const HOUSE_CATEGORIES = BUSINESS_TYPES.filter((t) =>
+  ["SALON", "SKIN", "NAILS", "SPA", "MEDSPA", "MAKEUP", "WELLNESS"].includes(t.id)
+);
 
 function slugify(value: string) {
   return value
@@ -16,11 +25,20 @@ function slugify(value: string) {
     .replace(/^-|-$/g, "");
 }
 
+function hourToTimeValue(hour: number) {
+  const h = Math.min(23, Math.max(0, Math.round(hour)));
+  return `${String(h).padStart(2, "0")}:00`;
+}
+
+function timeValueToHour(value: string, fallback: number) {
+  const h = Number(String(value).split(":")[0]);
+  return Number.isFinite(h) ? Math.min(23, Math.max(0, h)) : fallback;
+}
+
 export default function NewSalonPage() {
   const router = useRouter();
   const [name, setName] = useState("");
-  const [slug, setSlug] = useState("");
-  const [slugTouched, setSlugTouched] = useState(false);
+  const [businessType, setBusinessType] = useState("SALON");
   const [timezone, setTimezone] = useState("America/Toronto");
   const [openHour, setOpenHour] = useState(9);
   const [closeHour, setCloseHour] = useState(18);
@@ -28,14 +46,14 @@ export default function NewSalonPage() {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [address, setAddress] = useState("");
-  const [managerName, setManagerName] = useState("Salon Manager");
+  const [managerName, setManagerName] = useState("");
   const [managerEmail, setManagerEmail] = useState("");
   const [managerPassword, setManagerPassword] = useState("");
   const [starterMenu, setStarterMenu] = useState(true);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const effectiveSlug = slugTouched ? slug : slugify(name);
+  const effectiveSlug = slugify(name);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -47,6 +65,7 @@ export default function NewSalonPage() {
       body: JSON.stringify({
         name,
         slug: effectiveSlug,
+        businessType,
         timezone,
         openHour,
         closeHour,
@@ -55,7 +74,9 @@ export default function NewSalonPage() {
         email,
         address,
         bookingThemeId: MARKETPLACE_BOOK_THEME_ID,
-        managerName,
+        managerThemeId: DEFAULT_MANAGER_THEME_ID,
+        stylistThemeId: DEFAULT_STYLIST_THEME_ID,
+        managerName: managerName.trim() || "House manager",
         managerEmail,
         managerPassword,
         starterMenu,
@@ -64,7 +85,7 @@ export default function NewSalonPage() {
     const data = await res.json().catch(() => ({}));
     setSaving(false);
     if (!res.ok) {
-      setError(data.error || "Could not create salon");
+      setError(data.error || "Could not create house");
       return;
     }
     router.push(`/platform/salons/${data.salon.id}?created=1`);
@@ -72,52 +93,56 @@ export default function NewSalonPage() {
   }
 
   return (
-    <div className="max-w-2xl space-y-6">
-      <div>
-        <Link href="/platform" className="text-sm text-cocoa">
-          ← All salons
-        </Link>
-        <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl text-ink">New salon</h1>
-        <p className="mt-1 text-sm text-muted">
-          Creates the tenant, a manager login, and (optionally) a starter menu so the booking page
-          works right away.
-        </p>
-      </div>
+    <div className="platform-luxe__form-page">
+      <Link href="/platform" className="platform-luxe__back">
+        ← Houses
+      </Link>
+      <h1 className="platform-luxe__form-title">New house</h1>
+      <p className="platform-luxe__form-lead">
+        Add a house to Explore. Services and cover can be finished after.
+      </p>
 
-      <form onSubmit={onSubmit} className="grid gap-5">
-        <section className="grid gap-4 rounded-3xl border border-ink/12 bg-white/80 p-5">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-cocoa">Salon</h2>
-          <label className={labelClass}>
-            Name
+      <form onSubmit={onSubmit} className="platform-luxe__form-card platform-luxe__form">
+        <section className="platform-luxe__section">
+          <h2 className="platform-luxe__section-label">— House</h2>
+          <label className="platform-luxe__label">
+            House name
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Demo Hair Studio"
-              className={fieldClass}
+              placeholder="e.g. Demo Hair Studio"
+              required
+              className="platform-luxe__input"
             />
           </label>
-          <label className={labelClass}>
-            Slug (used in URLs)
-            <input
-              value={effectiveSlug}
-              onChange={(e) => {
-                setSlugTouched(true);
-                setSlug(e.target.value);
-              }}
-              placeholder="demosalon"
-              className={fieldClass}
-            />
-            <span className="text-xs text-muted">
-              /book/{effectiveSlug || "slug"} · /display/{effectiveSlug || "slug"}/lounge · /display/{effectiveSlug || "slug"}/scheduler
+          <div className="platform-luxe__label">
+            Public URL
+            <div className="platform-luxe__slug-preview">
+              /explore/{effectiveSlug || "slug"}
+            </div>
+            <span className="platform-luxe__hint">
+              Public page: /explore/{effectiveSlug || "slug"} — slug auto from name
             </span>
+          </div>
+          <label className="platform-luxe__label">
+            Category
+            <select
+              value={businessType}
+              onChange={(e) => setBusinessType(e.target.value)}
+            >
+              {HOUSE_CATEGORIES.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.label}
+                </option>
+              ))}
+            </select>
           </label>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className={labelClass}>
+          <div className="platform-luxe__row platform-luxe__row--2">
+            <label className="platform-luxe__label">
               Timezone
               <select
                 value={timezone}
                 onChange={(e) => setTimezone(e.target.value)}
-                className={fieldClass}
               >
                 {TIMEZONES.map((tz) => (
                   <option key={tz} value={tz}>
@@ -126,114 +151,122 @@ export default function NewSalonPage() {
                 ))}
               </select>
             </label>
-            <label className={labelClass}>
+            <label className="platform-luxe__label">
               Slot length
               <select
                 value={slotMinutes}
                 onChange={(e) => setSlotMinutes(Number(e.target.value))}
-                className={fieldClass}
               >
                 {[15, 20, 30, 45, 60].map((m) => (
                   <option key={m} value={m}>
-                    {m} min
+                    {m} minutes
                   </option>
                 ))}
               </select>
             </label>
-            <label className={labelClass}>
+            <label className="platform-luxe__label">
               Opens at
               <input
-                type="number"
-                min={0}
-                max={23}
-                value={openHour}
-                onChange={(e) => setOpenHour(Number(e.target.value))}
-                className={fieldClass}
+                type="time"
+                value={hourToTimeValue(openHour)}
+                onChange={(e) => setOpenHour(timeValueToHour(e.target.value, 9))}
               />
             </label>
-            <label className={labelClass}>
+            <label className="platform-luxe__label">
               Closes at
               <input
-                type="number"
-                min={1}
-                max={24}
-                value={closeHour}
-                onChange={(e) => setCloseHour(Number(e.target.value))}
-                className={fieldClass}
+                type="time"
+                value={hourToTimeValue(closeHour)}
+                onChange={(e) => setCloseHour(timeValueToHour(e.target.value, 18))}
               />
             </label>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className={labelClass}>
+          <div className="platform-luxe__row platform-luxe__row--2">
+            <label className="platform-luxe__label">
               Phone
-              <input value={phone} onChange={(e) => setPhone(e.target.value)} className={fieldClass} />
+              <input
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="(555) 123-4567"
+                className="platform-luxe__input"
+              />
             </label>
-            <label className={labelClass}>
+            <label className="platform-luxe__label">
               Public email
-              <input value={email} onChange={(e) => setEmail(e.target.value)} className={fieldClass} />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="hello@demohairstudio.com"
+                className="platform-luxe__input"
+              />
             </label>
           </div>
-          <label className={labelClass}>
+          <label className="platform-luxe__label">
             Address
-            <input value={address} onChange={(e) => setAddress(e.target.value)} className={fieldClass} />
+            <input
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="123 Beauty Lane, San Francisco, CA 94107"
+              className="platform-luxe__input"
+            />
           </label>
         </section>
 
-        <section className="grid gap-4 rounded-3xl border border-ink/12 bg-white/80 p-5">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-cocoa">
-            Manager login
-          </h2>
-          <p className="text-xs text-muted">
-            Staff sign in with email only, so this address must be unique across all salons.
+        <section className="platform-luxe__section">
+          <h2 className="platform-luxe__section-label">— Manager</h2>
+          <p className="platform-luxe__section-note">
+            Must be unique on the platform.
           </p>
-          <label className={labelClass}>
+          <label className="platform-luxe__label">
             Manager name
             <input
               value={managerName}
               onChange={(e) => setManagerName(e.target.value)}
-              className={fieldClass}
+              placeholder="House manager"
+              className="platform-luxe__input"
             />
           </label>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className={labelClass}>
+          <div className="platform-luxe__row platform-luxe__row--2">
+            <label className="platform-luxe__label">
               Email
               <input
                 type="email"
                 value={managerEmail}
                 onChange={(e) => setManagerEmail(e.target.value)}
-                placeholder="manager@demosalon.ca"
-                className={fieldClass}
+                placeholder="alex@demohairstudio.com"
+                required
+                className="platform-luxe__input"
               />
             </label>
-            <label className={labelClass}>
+            <label className="platform-luxe__label">
               Password (min 8)
               <input
-                type="text"
+                type="password"
                 value={managerPassword}
                 onChange={(e) => setManagerPassword(e.target.value)}
-                className={fieldClass}
+                required
+                minLength={8}
+                className="platform-luxe__input"
               />
             </label>
           </div>
           <SettingToggle
-            label="Add a starter stylist + 4 services so booking works immediately"
+            label="Add starter services so Reserve works immediately"
             checked={starterMenu}
             onChange={setStarterMenu}
           />
         </section>
 
-        {error ? <p className="text-sm text-[#a4432f]">{error}</p> : null}
+        {error ? <p className="platform-luxe__form-error">{error}</p> : null}
 
-        <div className="flex gap-3">
-          <button type="submit" disabled={saving} className="btn-solid rounded-2xl px-5 py-3 font-medium">
-            {saving ? "Creating…" : "Create salon"}
-          </button>
-          <Link
-            href="/platform"
-            className="rounded-2xl border border-ink/20 px-5 py-3 font-medium text-ink-soft hover:border-ink"
-          >
+        <div className="platform-luxe__form-foot">
+          <Link href="/platform" className="platform-luxe__cancel">
             Cancel
           </Link>
+          <button type="submit" disabled={saving} className="platform-luxe__create">
+            {saving ? "Creating…" : "Create house"}
+          </button>
         </div>
       </form>
     </div>

@@ -1,239 +1,173 @@
+"use client";
+
 import Link from "next/link";
-import { BeautyZentLogo, BEAUTYZENT } from "@/components/BeautyZentBrand";
+import { useEffect, useState } from "react";
+import { ExploreMarketplaceNav } from "@/app/explore/ExploreMarketplaceNav";
+import { BeautyZentLogo } from "@/components/BeautyZentBrand";
+import { invalidateFavoriteAccountSession } from "@/components/FavoriteBusinessButton";
+import "@/app/explore/explore-luxe.css";
 import "./home-landing.css";
 
+const WHY_CARDS = [
+  {
+    title: "For clients",
+    body: "Discover and reserve beauty houses near you.",
+    photo: "/why-clients.jpg",
+  },
+  {
+    title: "For houses",
+    body: "List your house, appear in Explore, and take reserves.",
+    photo: "/why-houses.jpg",
+  },
+  {
+    title: "Curated",
+    body: "Every house is reviewed before it goes live.",
+    photo: "/why-curated.jpg",
+  },
+] as const;
+
+const STEPS = [
+  { n: "01", title: "Explore", body: "Browse houses near you." },
+  { n: "02", title: "Reserve", body: "Pick a service and hold the time." },
+  { n: "03", title: "Return", body: "Keep favorites and reserve the next visit." },
+] as const;
+
 export default function HomePage() {
+  const [signedIn, setSignedIn] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/public/account", { cache: "no-store" })
+      .then((res) => {
+        if (!cancelled) setSignedIn(res.ok);
+      })
+      .catch(() => {
+        if (!cancelled) setSignedIn(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function signOut() {
+    await fetch("/api/public/account/logout", { method: "POST" });
+    invalidateFavoriteAccountSession();
+    setSignedIn(false);
+  }
+
   return (
-    <main className="home-luxe">
-      <section className="home-luxe__hero">
-        <div className="home-luxe__hero-bg" aria-hidden />
-        <div className="home-luxe__hero-veil" aria-hidden />
+    <main className="explore-luxe home-luxe">
+      <ExploreMarketplaceNav
+        current="home"
+        showOperatorConsole={false}
+        onSignOut={signedIn ? () => void signOut() : undefined}
+      />
 
-        <header className="home-luxe__top">
-          <Link href="/account" className="home-luxe__nav-account">
-            My account
-          </Link>
-        </header>
-
-        <div className="home-luxe__hero-copy">
-          <BeautyZentLogo
-            variant="rose"
-            size="hero"
-            href={null}
-            priority
-            className="home-luxe__mark"
-          />
-          <h1 className="home-luxe__title">Your next glow is one booking away</h1>
-          <p className="home-luxe__lede home-luxe__lede--desk">
-            Find trusted salons and stylists near you — book in seconds, or grow your chair
-            with clients who are ready.
-          </p>
-          <p className="home-luxe__lede home-luxe__lede--mobile">
-            Discover top-rated salons and beauty professionals near you, or grow your beauty
-            business with our trusted marketplace.
-          </p>
-          <div className="home-luxe__hero-cta">
-            <Link href="/explore" className="home-luxe__btn-primary">
-              Find a beauty business
-              <span className="home-luxe__btn-chevron" aria-hidden>
-                ›
-              </span>
-            </Link>
-            <Link href="/claim" className="home-luxe__btn-ghost">
-              List your business
-              <span className="home-luxe__btn-chevron" aria-hidden>
-                ›
-              </span>
-            </Link>
+      <section className="home-luxe__hero" aria-label="Welcome">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/hero-home.jpg" alt="" className="home-luxe__hero-img" />
+        <div className="home-luxe__hero-gradient" aria-hidden />
+        <div className="home-luxe__hero-inner">
+          <div className="home-luxe__hero-copy">
+            <h1 className="home-luxe__title">Discover exceptional beauty houses</h1>
+            <p className="home-luxe__lede">
+              Hair, skin, nails, spa, wellness and lifestyle — curated near you.
+            </p>
+            <div className="home-luxe__hero-cta">
+              <Link href="/explore" className="home-luxe__btn-gold">
+                Explore houses
+              </Link>
+              <Link href="/claim" className="home-luxe__btn-ghost-hero">
+                List your house
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="home-luxe__paths" aria-label="Choose your path">
-        <article className="home-luxe__path">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            className="home-luxe__path-photo"
-            src="/brand/beautyzent-spa-cover.jpg"
-            alt=""
-          />
-          <div className="home-luxe__path-body">
-            <p className="home-luxe__path-kicker">For clients</p>
-            <h2>Feel the glow</h2>
-            <p>Browse trusted salons &amp; stylists near you. Book instantly and keep your look book.</p>
-            <ul>
-              <li>Instant online booking</li>
-              <li>Personalized style previews</li>
-              <li>Rewards &amp; member perks</li>
-            </ul>
-            <Link href="/explore" className="home-luxe__btn-primary">
-              Explore businesses
-            </Link>
-          </div>
-        </article>
-
-        <article className="home-luxe__path">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            className="home-luxe__path-photo"
-            src="/brand/beautyzent-aaraby-cover.jpg"
-            alt=""
-          />
-          <div className="home-luxe__path-body">
-            <p className="home-luxe__path-kicker">For businesses</p>
-            <h2>Grow with ease</h2>
-            <p>
-              Claim your listing, get discovered, and fill your chair with ready-to-book
-              clients.
-            </p>
-            <ul>
-              <li>Client &amp; appointment tools</li>
-              <li>Loyalty and offers</li>
-              <li>Public explore listing</li>
-            </ul>
-            <Link href="/claim" className="home-luxe__btn-primary">
-              Claim or create business
-            </Link>
-          </div>
-        </article>
-      </section>
-
-      <section className="home-luxe__pillars">
+      <section className="home-luxe__why" aria-labelledby="home-why-heading">
         <header className="home-luxe__section-head">
-          <p className="home-luxe__path-kicker">Why BeautyZent</p>
-          <h2>Built for discovery and growth</h2>
+          <p className="home-luxe__eyebrow">Why BeautyZent</p>
+          <h2 id="home-why-heading">A marketplace for beauty houses</h2>
         </header>
-
-        <div className="home-luxe__sphere-grid">
-          <Link href="/explore" className="home-luxe__sphere">
-            <div className="home-luxe__sphere-orb">
+        <div className="home-luxe__why-grid">
+          {WHY_CARDS.map((card) => (
+            <article key={card.title} className="home-luxe__why-card">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/brand/beautyzent-spa-cover.jpg" alt="" />
-            </div>
-            <div className="home-luxe__sphere-base" aria-hidden />
-            <div className="home-luxe__sphere-float home-luxe__sphere-float--a">
-              Instant booking
-            </div>
-            <div className="home-luxe__sphere-float home-luxe__sphere-float--b">
-              Virtual consultations
-            </div>
-            <div className="home-luxe__sphere-float home-luxe__sphere-float--c">
-              Personalized picks
-            </div>
-            <h3>Feel the glow</h3>
-            <p>Book trusted beauty visits with clear menus, hours, and pricing.</p>
-          </Link>
-
-          <Link href="/claim" className="home-luxe__sphere">
-            <div className="home-luxe__sphere-orb">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/brand/beautyzent-aaraby-cover.jpg" alt="" />
-            </div>
-            <div className="home-luxe__sphere-base" aria-hidden />
-            <div className="home-luxe__sphere-float home-luxe__sphere-float--a">
-              Client management
-            </div>
-            <div className="home-luxe__sphere-float home-luxe__sphere-float--b">
-              Growth analytics
-            </div>
-            <div className="home-luxe__sphere-float home-luxe__sphere-float--c">
-              Marketing tools
-            </div>
-            <h3>Grow with ease</h3>
-            <p>Claim your listing and welcome marketplace clients into your chair.</p>
-          </Link>
-
-          <Link href="/explore" className="home-luxe__sphere">
-            <div className="home-luxe__sphere-orb">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/display-promo.jpg" alt="" />
-            </div>
-            <div className="home-luxe__sphere-base" aria-hidden />
-            <div className="home-luxe__sphere-float home-luxe__sphere-float--a">
-              Curated listings
-            </div>
-            <div className="home-luxe__sphere-float home-luxe__sphere-float--b">
-              Service menus
-            </div>
-            <div className="home-luxe__sphere-float home-luxe__sphere-float--c">
-              Save favorites
-            </div>
-            <h3>Discover top talent</h3>
-            <p>Find salons and stylists by service, location, and availability.</p>
-          </Link>
+              <img src={card.photo} alt="" className="home-luxe__why-photo" />
+              <div className="home-luxe__why-body">
+                <h3>{card.title}</h3>
+                <p>{card.body}</p>
+              </div>
+            </article>
+          ))}
         </div>
       </section>
 
       <section className="home-luxe__flow" aria-labelledby="home-flow-heading">
         <header className="home-luxe__section-head">
-          <p className="home-luxe__path-kicker">How it works</p>
-          <h2 id="home-flow-heading">From browse to booked</h2>
+          <p className="home-luxe__eyebrow">How it works</p>
+          <h2 id="home-flow-heading">From browse to reserved</h2>
         </header>
         <ol className="home-luxe__steps">
-          <li>
-            <span>01</span>
-            <h3>Explore</h3>
-            <p>Browse real menus, hours, and availability from businesses near you.</p>
-          </li>
-          <li>
-            <span>02</span>
-            <h3>Book</h3>
-            <p>Pick a time that fits and hold your chair — no phone tag, no guesswork.</p>
-          </li>
-          <li>
-            <span>03</span>
-            <h3>Return</h3>
-            <p>Keep your look book, earn rewards, and book the next visit in a tap.</p>
-          </li>
+          {STEPS.map((step) => (
+            <li key={step.n}>
+              <span>{step.n}</span>
+              <h3>{step.title}</h3>
+              <p>{step.body}</p>
+            </li>
+          ))}
         </ol>
       </section>
 
-      <section className="home-luxe__finale">
-        <div className="home-luxe__finale-frame">
-          <p className="home-luxe__path-kicker">Start today</p>
-          <h2>Find your people. Book your glow.</h2>
-          <p>
-            Whether you&apos;re looking for your next appointment or ready to grow your shop,
-            BeautyZent connects both sides of the chair.
-          </p>
-          <div className="home-luxe__hero-cta">
-            <Link href="/explore" className="home-luxe__btn-primary">
-              Explore marketplace
-            </Link>
-            <Link href="/claim" className="home-luxe__btn-ghost">
-              Partner with us
-            </Link>
-          </div>
+      <section className="home-luxe__cta-band" aria-labelledby="home-cta-heading">
+        <h2 id="home-cta-heading">Find a house near you</h2>
+        <div className="home-luxe__cta-actions">
+          <Link href="/explore" className="home-luxe__btn-gold">
+            Explore houses
+          </Link>
+          <Link href="/claim" className="home-luxe__btn-ghost-light">
+            List your house
+          </Link>
         </div>
       </section>
 
       <footer className="home-luxe__footer">
         <div className="home-luxe__footer-inner">
-          <div className="home-luxe__footer-brand">
-            <BeautyZentLogo variant="gold" size="md" href={null} />
-            <div>
-              <p>{BEAUTYZENT.name}</p>
-              <p>{BEAUTYZENT.tagline}</p>
-            </div>
+          <div className="home-luxe__footer-brand-block">
+            <Link href="/" className="home-luxe__footer-brand" aria-label="BeautyZent Marketplace">
+              <BeautyZentLogo
+                variant="rose"
+                size="sm"
+                href={null}
+                className="explore-luxe__brand-mark"
+              />
+              <span className="home-luxe__footer-brand-text">
+                <span className="home-luxe__footer-name">BeautyZent</span>
+                <span className="home-luxe__footer-sub">Marketplace</span>
+              </span>
+            </Link>
+            <p className="home-luxe__footer-tagline">Hair, skin, nails, spa and wellness.</p>
           </div>
 
-          <div className="home-luxe__footer-cols">
+          <nav className="home-luxe__footer-cols" aria-label="Footer">
             <div>
               <p className="home-luxe__footer-label">Clients</p>
-              <Link href="/explore">Explore businesses</Link>
+              <Link href="/explore">Explore</Link>
               <Link href="/account">My account</Link>
             </div>
             <div>
-              <p className="home-luxe__footer-label">Businesses</p>
-              <Link href="/claim">Claim or create</Link>
-              <Link href="/platform/login">Platform</Link>
-              <Link href="/manager">Manager portal</Link>
+              <p className="home-luxe__footer-label">Houses</p>
+              <Link href="/claim">List your house</Link>
             </div>
-            <div>
-              <p className="home-luxe__footer-label">Company</p>
-              <Link href="/explore">Marketplace</Link>
-              <Link href="/claim">Partner with us</Link>
-            </div>
+          </nav>
+        </div>
+
+        <div className="home-luxe__footer-bar">
+          <p className="home-luxe__footer-copy">© 2026 BeautyZent</p>
+          <div className="home-luxe__footer-legal">
+            <Link href="#">Privacy</Link>
+            <Link href="#">Terms</Link>
           </div>
         </div>
       </footer>

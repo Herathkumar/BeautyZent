@@ -126,9 +126,12 @@ export function serviceKind(name: string): "cut" | "color" | "style" | "nail" | 
 /** Same cut / color / style chips on reception and the customer TV. */
 export function serviceCardTone(name: string) {
   const kind = serviceKind(name);
-  if (kind === "color") return "bg-[#5b3d7a] text-[#f3e8ff]";
-  if (kind === "style") return "bg-[#2f6b55] text-[#e8fff4]";
-  return "bg-[#c45b7a] text-white";
+  if (kind === "color") return "bg-[#fadadd] text-[#5c3a42]";
+  if (kind === "style") return "bg-[#e0f2f1] text-[#2f4a48]";
+  if (kind === "nail") return "bg-[#e8e4f8] text-[#3d3560]";
+  if (kind === "facial") return "bg-[#f5ebe0] text-[#5a4535]";
+  if (kind === "cut") return "bg-[#f5d0c5] text-[#5c3d32]";
+  return "bg-[#e7f0f5] text-[#334850]";
 }
 
 export function specialtyFromBio(bio: string | null | undefined, name: string) {
@@ -200,16 +203,16 @@ export function stylistFloorTone(kind: StylistWaitKind): StylistFloorTone {
 
 export function stylistStatusRingClass(kind: StylistWaitKind) {
   const tone = stylistFloorTone(kind);
-  if (tone === "available") return "ring-[3px] ring-[#22c55e]";
-  if (tone === "busy") return "ring-[3px] ring-[#ef4444]";
-  return "ring-[3px] ring-[#f59e0b]";
+  if (tone === "available") return "ring-[3px] ring-[#8fbfa4]";
+  if (tone === "busy") return "ring-[3px] ring-[#e8a0aa]";
+  return "ring-[3px] ring-[#c19a6b]";
 }
 
 export function stylistStatusDotClass(kind: StylistWaitKind) {
   const tone = stylistFloorTone(kind);
-  if (tone === "available") return "bg-[#22c55e]";
-  if (tone === "busy") return "bg-[#ef4444]";
-  return "bg-[#f59e0b]";
+  if (tone === "available") return "bg-[#8fbfa4]";
+  if (tone === "busy") return "bg-[#e8a0aa]";
+  return "bg-[#c19a6b]";
 }
 
 export function formatMinutesClock(totalMin: number) {

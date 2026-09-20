@@ -75,7 +75,7 @@ export function ReceptionQuickServices({
         <button
           type="button"
           onClick={() => setEditing((v) => !v)}
-          className="text-[11px] font-semibold text-[#c45b7a] hover:text-[#e07a96]"
+          className="text-[11px] font-semibold text-[color:var(--rx-accent)] hover:text-[color:var(--rx-accent-soft)]"
           data-testid="reception-quick-services-edit"
         >
           {editing ? "Done" : "Edit boxes"}

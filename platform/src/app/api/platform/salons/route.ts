@@ -8,6 +8,7 @@ import {
   validateHours,
   validateSlug,
 } from "@/lib/platform-salons";
+import { normalizeBusinessType } from "@/lib/marketplace";
 import {
   DEFAULT_MANAGER_THEME_ID,
   DEFAULT_STYLIST_THEME_ID,
@@ -52,7 +53,7 @@ export async function POST(req: Request) {
 
   const name = String(body.name ?? "").trim();
   if (name.length < 2) {
-    return NextResponse.json({ error: "Salon name is required." }, { status: 400 });
+    return NextResponse.json({ error: "House name is required." }, { status: 400 });
   }
 
   const slug = normalizeSlug(body.slug || name);
@@ -83,10 +84,12 @@ export async function POST(req: Request) {
   }
   if (await emailTakenByOtherSalon(managerEmail)) {
     return NextResponse.json(
-      { error: "That manager email already belongs to another salon login." },
+      { error: "That manager email already belongs to another house login." },
       { status: 409 }
     );
   }
+
+  const businessType = normalizeBusinessType(body.businessType ?? "SALON");
 
   const salon = await createSalonWithManager({
     name,
@@ -101,10 +104,11 @@ export async function POST(req: Request) {
     bookingThemeId: MARKETPLACE_BOOK_THEME_ID,
     managerThemeId: DEFAULT_MANAGER_THEME_ID,
     stylistThemeId: DEFAULT_STYLIST_THEME_ID,
-    managerName: String(body.managerName || "Salon Manager").trim(),
+    managerName: String(body.managerName || "House manager").trim(),
     managerEmail,
     managerPassword,
     starterMenu: body.starterMenu !== false,
+    businessType,
   });
 
   return NextResponse.json({ salon: { id: salon.id, slug: salon.slug, name: salon.name } }, { status: 201 });

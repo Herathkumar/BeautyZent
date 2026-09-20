@@ -2,8 +2,8 @@ export type CustomerDisplayTheme = "light" | "dark";
 
 export const CUSTOMER_THEME_KEY = "fhsalon-customer-theme";
 export const CUSTOMER_THEME_EVENT = "fhsalon-customer-theme-change";
-export const CUSTOMER_THEME_LIGHT = "#f4ead9";
-export const CUSTOMER_THEME_DARK = "#14110f";
+export const CUSTOMER_THEME_LIGHT = "#fafafa";
+export const CUSTOMER_THEME_DARK = "#121110";
 
 export function isCustomerDisplayTheme(value: unknown): value is CustomerDisplayTheme {
   return value === "light" || value === "dark";

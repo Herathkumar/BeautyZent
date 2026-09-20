@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { getPlatformSession } from "@/lib/platform-auth";
 import { PlatformShell } from "./PlatformShell";
+import "../explore/explore-luxe.css";
+import "./platform-luxe.css";
 
 export const metadata: Metadata = {
   title: "BeautyZent — Platform operator",
@@ -8,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f3eee8",
+  themeColor: "#f6f2eb",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",

@@ -14,7 +14,7 @@ export default async function SalonDetailPage({
   searchParams: Promise<{ created?: string }>;
 }) {
   const session = await getPlatformSession();
-  if (!session) redirect("/platform/login");
+  if (!session) redirect("/explore");
 
   const { id } = await params;
   const { created } = await searchParams;

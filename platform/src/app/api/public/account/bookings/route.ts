@@ -38,12 +38,15 @@ export async function GET() {
       serviceId: true,
       salon: {
         select: {
+          id: true,
           name: true,
           slug: true,
           timezone: true,
           phone: true,
           city: true,
           region: true,
+          coverMime: true,
+          coverUpdatedAt: true,
         },
       },
       service: {
@@ -86,7 +89,20 @@ export async function GET() {
         notes: head.notes,
         canCancel: changeAllowed,
         canReschedule: changeAllowed,
-        salon: head.salon,
+        salon: {
+          name: head.salon.name,
+          slug: head.salon.slug,
+          timezone: head.salon.timezone,
+          phone: head.salon.phone,
+          city: head.salon.city,
+          region: head.salon.region,
+          coverUrl:
+            head.salon.coverUpdatedAt || head.salon.coverMime
+              ? `/api/public/cover/${head.salon.id}?v=${
+                  head.salon.coverUpdatedAt?.getTime() ?? 0
+                }`
+              : null,
+        },
         stylist: head.stylist,
         serviceIds: group.map((item) => item.serviceId),
         services: group.map((item) => item.service),

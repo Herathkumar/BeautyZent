@@ -22,6 +22,7 @@ import {
   type DisplayAppt,
   type DisplayStylist,
 } from "@/lib/display-schedule";
+import { appointmentCalendarTone } from "@/lib/stylist-calendar-colors";
 
 const BOOKING_SCAN_MS = 6_000;
 const TEAM_PAGE_SIZE = 3;
@@ -194,6 +195,11 @@ function LoungeBookingChip({
   if (!list.length) return null;
   const a = list[Math.min(index, list.length - 1)];
   const kind = serviceKind(a.service.name);
+  const tone = appointmentCalendarTone({
+    serviceName: a.service.name,
+    status: a.status,
+    source: a.source,
+  });
   const checkIn = Boolean(onCheckIn && canChairCheckIn(a.status));
   const onChair = a.status === "CHECKED_IN";
   const remaining = onChair ? seatedServiceProgress(a, now) : null;
@@ -210,7 +216,12 @@ function LoungeBookingChip({
         className={`lounge-v2-chip__card${checkIn ? " customer-appt-card--draggable" : ""}${
           draggingId === a.id ? " customer-appt-card--dragging" : ""
         }`}
-        style={{ touchAction: checkIn ? "none" : undefined }}
+        style={{
+          touchAction: checkIn ? "none" : undefined,
+          background: tone.bg,
+          color: tone.text,
+          borderColor: tone.badge,
+        }}
         title={`${formatClock(a.startsAt, timeZone)} · ${a.service.name}${
           checkIn ? " · Drag onto chair to check in" : ""
         }${remaining ? ` · ${remaining.remainingLabel}` : ""}`}
@@ -219,8 +230,10 @@ function LoungeBookingChip({
         onPointerUp={checkIn ? onCardPointerUp : undefined}
         onPointerCancel={checkIn ? onCardPointerUp : undefined}
       >
-        <span className="lounge-v2-chip__name">{firstName(a.client.name)}</span>
-        <span className="lounge-v2-chip__meta">
+        <span className="lounge-v2-chip__name" style={{ color: tone.text }}>
+          {firstName(a.client.name)}
+        </span>
+        <span className="lounge-v2-chip__meta" style={{ color: tone.text, opacity: 0.78 }}>
           {formatClock(a.startsAt, timeZone)} · {shortService(a.service.name)}
         </span>
         {remaining ? (
@@ -294,7 +307,7 @@ export function CustomerScheduleGrid({
 }) {
   const columns = stylists.length
     ? stylists
-    : [{ id: "none", name: "Chair", bio: null, color: "#c9a87c", photoUrl: "" }];
+    : [{ id: "none", name: "Chair", bio: null, color: "#c19a6b", photoUrl: "" }];
   const pending = useRef<{
     pointerId: number;
     appt: DisplayAppt;

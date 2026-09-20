@@ -41,7 +41,7 @@ export function CheckoutTipPicker({
         ? "bg-[var(--cd-accent)] text-[color:var(--cd-on-accent)] ring-2 ring-[color:var(--cd-accent)]"
         : "bg-[var(--cd-panel)] text-[color:var(--cd-heading)] ring-1 ring-[color:var(--cd-line-soft)] active:ring-[color:var(--cd-accent)]"
       : active
-        ? "bg-[#c45b7a] text-white ring-2 ring-[#c45b7a]"
+        ? "bg-[var(--rx-accent)] text-[#121110] ring-2 ring-[color:var(--rx-accent)]"
         : "bg-white/5 text-white/80 ring-1 ring-white/12 hover:ring-white/30";
 
   return (

@@ -44,6 +44,18 @@ function coldBootShell(pathname: string): string | null {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Operator console — require platform session cookie; login stays public.
+  if (
+    pathname.startsWith("/platform") &&
+    pathname !== "/platform/login" &&
+    !pathname.startsWith("/platform/login/")
+  ) {
+    const token = request.cookies.get("fh_platform_session")?.value;
+    if (!token) {
+      return NextResponse.redirect(new URL("/explore", request.url));
+    }
+  }
+
   if (pathname === "/admin" || pathname.startsWith("/admin/")) {
     const url = request.nextUrl.clone();
     url.pathname = pathname.replace(/^\/admin/, "/manager");
@@ -84,5 +96,7 @@ export const config = {
     "/stylist",
     "/stylist/:path*",
     "/display/:path*",
+    "/platform",
+    "/platform/:path*",
   ],
 };

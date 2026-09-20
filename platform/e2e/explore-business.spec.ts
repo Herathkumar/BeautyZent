@@ -12,10 +12,10 @@ test.describe("explore business detail", () => {
 
     await expect(page).toHaveURL(new RegExp(`/explore/${DEMO.slug}`));
     await expect(page.getByRole("heading", { name: /farzana hair salon/i })).toBeVisible();
-    await expect(page.getByRole("link", { name: /book a visit/i }).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: /^reserve$/i }).first()).toBeVisible();
     await expect(page.getByRole("button", { name: /save to favorites/i })).toBeVisible();
 
-    await page.getByRole("link", { name: /book a visit/i }).first().click();
+    await page.getByRole("link", { name: /^reserve$/i }).first().click();
     await expect(page).toHaveURL(new RegExp(`/book/${DEMO.slug}.*from=explore`));
     await expect(page.getByRole("heading", { name: /choose services?/i })).toBeVisible({
       timeout: 20_000,

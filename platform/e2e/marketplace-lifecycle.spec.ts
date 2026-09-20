@@ -2,6 +2,14 @@ import { expect, test } from "@playwright/test";
 import { gotoSettled } from "./helpers";
 import { platformLogin } from "./multi-salon/helpers";
 
+function slugifyPreview(name: string) {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 40);
+}
+
 /**
  * Claim → platform review → Explore publish/pause.
  * Covers the marketplace onboarding path that was previously untested.
@@ -16,13 +24,23 @@ test.describe("marketplace claim & listing review", () => {
     const managerEmail = `manager-${stamp}@claim.test`;
 
     await gotoSettled(page, "/claim");
-    await expect(page.getByRole("heading", { name: /grow with ease/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /list your house/i })).toBeVisible();
 
-    await page.getByLabel(/^business name$/i).fill(businessName);
-    await page.getByLabel(/booking url slug/i).fill(slug);
+    await page.getByLabel(/^house name$/i).fill(businessName);
+    await expect(
+      page.getByText(new RegExp(`Will appear as /explore/${slugifyPreview(businessName)}`))
+    ).toBeVisible();
+    await page.getByRole("button", { name: /^edit$/i }).click();
+    await page.getByLabel(/explore url slug/i).fill(slug);
+    await page.getByLabel(/^category$/i).selectOption("SALON");
     await page.getByLabel(/^city$/i).fill("Dundas");
     await page.getByLabel(/^region$/i).fill("ON");
     await page.getByLabel(/short description/i).fill("E2E claim listing for BeautyZent QA.");
+    await page.getByRole("button", { name: /^continue$/i }).click();
+
+    // Cover step (optional)
+    await page.getByRole("button", { name: /^continue$/i }).click();
+
     await page.getByLabel(/^your name$/i).fill("Claim Manager");
     await page.getByLabel(/work email/i).fill(managerEmail);
     await page.getByLabel(/password \(min 8\)/i).fill("demo1234");

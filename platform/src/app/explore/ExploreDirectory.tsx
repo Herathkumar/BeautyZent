@@ -2,10 +2,49 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { BeautyZentLogo } from "@/components/BeautyZentBrand";
 import { FavoriteBusinessButton } from "@/components/FavoriteBusinessButton";
 import { BUSINESS_TYPES } from "@/lib/marketplace";
-import { formatCad } from "@/lib/money";
+
+/** Short filter labels (title case). */
+const EXPLORE_CATEGORY: Record<string, string> = {
+  SALON: "Hair",
+  BARBER: "Barbershop",
+  SPA: "Spa & wellness",
+  NAILS: "Nails",
+  OTHER: "Beauty & lifestyle",
+};
+
+/** Card badge from businessType — uppercase, tracking-wide. */
+const EXPLORE_CATEGORY_BADGE: Record<string, string> = {
+  SALON: "HAIR",
+  BARBER: "BARBER",
+  SPA: "SPA",
+  NAILS: "NAILS",
+  OTHER: "BEAUTY",
+  MEDSPA: "MEDSPA",
+};
+
+function exploreCategoryLabel(businessType: string, fallbackLabel: string) {
+  return EXPLORE_CATEGORY[businessType] || fallbackLabel.replace(/\bsalon\b/gi, "house");
+}
+
+function exploreCategoryBadge(businessType: string, fallbackLabel: string) {
+  const key = String(businessType || "").toUpperCase();
+  if (EXPLORE_CATEGORY_BADGE[key]) return EXPLORE_CATEGORY_BADGE[key];
+  const fromLabel = fallbackLabel
+    .replace(/\bsalon\b/gi, "")
+    .replace(/[^a-zA-Z0-9]+/g, " ")
+    .trim()
+    .split(/\s+/)[0];
+  return (fromLabel || key || "BUSINESS").toUpperCase();
+}
+
+/** "from $25" — omit .00 unless there are cents. */
+function formatExploreFromPrice(cents: number) {
+  const hasCents = cents % 100 !== 0;
+  const amount = hasCents ? (cents / 100).toFixed(2) : String(Math.round(cents / 100));
+  return `from $${amount}`;
+}
 
 type BusinessCard = {
   id: string;
@@ -82,14 +121,17 @@ function slotLabel(iso: string, timeZone: string) {
 }
 
 function formatHour(hour: number) {
-  return `${String(hour).padStart(2, "0")}:00`;
+  const period = hour >= 12 ? "PM" : "AM";
+  const h12 = hour % 12 === 0 ? 12 : hour % 12;
+  return `${h12}:00 ${period}`;
 }
 
-function IconSearch({ className }: { className?: string }) {
+function IconScissors({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden className={className}>
-      <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="1.5" />
-      <path d="m16 16 4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <circle cx="6" cy="6" r="2.25" stroke="currentColor" strokeWidth="1.5" />
+      <circle cx="6" cy="18" r="2.25" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M8 7.5 20 18M8 16.5 20 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   );
 }
@@ -125,6 +167,17 @@ function IconCalendar({ className }: { className?: string }) {
   );
 }
 
+function IconGrid({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden className={className}>
+      <rect x="4" y="4" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.5" />
+      <rect x="14" y="4" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.5" />
+      <rect x="4" y="14" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.5" />
+      <rect x="14" y="14" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
 export function ExploreDirectory() {
   const [q, setQ] = useState("");
   const [city, setCity] = useState("");
@@ -137,7 +190,7 @@ export function ExploreDirectory() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [businesses, setBusinesses] = useState<BusinessCard[]>([]);
-  const [hasSearched, setHasSearched] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   const load = useCallback(async () => {
     setBusy(true);
@@ -170,7 +223,6 @@ export function ExploreDirectory() {
   }, [load]);
 
   function applySearch() {
-    setHasSearched(true);
     setApplied({
       q: q.trim(),
       city: city.trim(),
@@ -183,288 +235,317 @@ export function ExploreDirectory() {
     });
   }
 
+  function applySort(next: string) {
+    setSort(next);
+    setApplied((prev) => ({
+      ...prev,
+      sort: next,
+      requestId: Date.now(),
+    }));
+  }
+
+  function clearFilters() {
+    setQ("");
+    setCity("");
+    setType("");
+    setDate("");
+    setMaxPrice("");
+    setRewardsOnly(false);
+    setSort("name");
+    setApplied({ ...EMPTY_FILTERS, requestId: Date.now() });
+  }
+
+  const hasFilters = Boolean(q || city || type || date || maxPrice || rewardsOnly);
+  const areaLabel = applied.city.trim() || "you";
+  const houseWord = businesses.length === 1 ? "beauty house" : "beauty houses";
+  const resultsLabel = `Near ${areaLabel} · ${businesses.length} ${houseWord}`;
+
   return (
-    <div className="explore-luxe__shell">
-      <header className="explore-luxe__hero">
-        <BeautyZentLogo
-          variant="rose"
-          size="lg"
-          href={null}
-          priority
-          className="explore-luxe__hero-mark"
-        />
-        <div className="explore-luxe__hero-copy">
-          <p className="explore-luxe__kicker">BeautyZent marketplace</p>
-          <h1 className="explore-luxe__title">
-            Explore businesses
-          </h1>
-          <p className="explore-luxe__lede">
-            Discover trusted beauty, wellness and lifestyle businesses near you.
-          </p>
-        </div>
-      </header>
-
-      <form
-        className="explore-luxe__search"
-        onSubmit={(e) => {
-          e.preventDefault();
-          applySearch();
-        }}
-      >
-        <label className="explore-luxe__field">
-          <span>Business or service</span>
-          <span className="explore-luxe__field-control">
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Haircut, massage, nails…"
-            />
-            <IconSearch className="explore-luxe__field-icon" />
-          </span>
-        </label>
-
-        <label className="explore-luxe__field">
-          <span>Location</span>
-          <span className="explore-luxe__field-control">
-            <input
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              placeholder="Toronto"
-            />
-            <IconPin className="explore-luxe__field-icon" />
-          </span>
-        </label>
-
-        <label className="explore-luxe__field">
-          <span>Business type</span>
-          <span className="explore-luxe__field-control">
-            <select value={type} onChange={(e) => setType(e.target.value)}>
-              <option value="">All types</option>
-              {BUSINESS_TYPES.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
-          </span>
-        </label>
-
-        <label className="explore-luxe__field">
-          <span>Available on</span>
-          <span className="explore-luxe__field-control">
-            <input
-              type="date"
-              min={localToday()}
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-            />
-            <IconCalendar className="explore-luxe__field-icon" />
-          </span>
-        </label>
-
-        <label className="explore-luxe__field">
-          <span>Max price</span>
-          <span className="explore-luxe__field-control">
-            <select value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)}>
-              <option value="">Any price</option>
-              <option value="25">Up to $25</option>
-              <option value="50">Up to $50</option>
-              <option value="75">Up to $75</option>
-              <option value="100">Up to $100</option>
-              <option value="150">Up to $150</option>
-            </select>
-          </span>
-        </label>
-
-        <label className="explore-luxe__field">
-          <span>Sort</span>
-          <span className="explore-luxe__field-control">
-            <select value={sort} onChange={(e) => setSort(e.target.value)}>
-              <option value="name">Business name</option>
-              <option value="price">Lowest price</option>
-              <option value="availability" disabled={!date}>
-                Earliest availability
-              </option>
-            </select>
-          </span>
-        </label>
-
-        <div className="explore-luxe__search-extras">
-          <label className="explore-luxe__check">
-            <input
-              type="checkbox"
-              checked={rewardsOnly}
-              onChange={(e) => setRewardsOnly(e.target.checked)}
-            />
-            Rewards and offers only
-          </label>
-          {q || city || type || date || maxPrice || rewardsOnly || sort !== "name" ? (
-            <button
-              type="button"
-              onClick={() => {
-                setQ("");
-                setCity("");
-                setType("");
-                setDate("");
-                setMaxPrice("");
-                setRewardsOnly(false);
-                setSort("name");
-                setHasSearched(false);
-                setApplied({ ...EMPTY_FILTERS, requestId: Date.now() });
-              }}
-              className="explore-luxe__clear"
-            >
-              Clear filters
-            </button>
-          ) : null}
-        </div>
-
-        <button type="submit" disabled={busy} className="explore-luxe__search-btn">
-          {busy ? "Searching…" : "Search"}
-        </button>
-      </form>
-
-      {error ? <p className="explore-luxe__error">{error}</p> : null}
-
-      <section className="explore-luxe__results" aria-live="polite">
-        {!busy && !error ? (
-          <div className="explore-luxe__results-head">
-            <div className="explore-luxe__results-brand">
-              <span className="explore-luxe__crown" aria-hidden>
-                ♛
-              </span>
-              <p className="explore-luxe__results-wordmark">
-                BeautyZent
+    <div className="explore-luxe__shell explore-luxe__shell--directory">
+      <div className="explore-luxe__stage">
+        <header className="explore-luxe__hero explore-luxe__hero--photo">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            className="explore-luxe__hero-img"
+            src="/hero-explore.jpg"
+            alt=""
+            fetchPriority="high"
+          />
+          <div className="explore-luxe__hero-veil" aria-hidden />
+          <div className="explore-luxe__hero-inner">
+            <div className="explore-luxe__hero-copy">
+              <h1 className="explore-luxe__title">Discover exceptional beauty houses</h1>
+              <p className="explore-luxe__lede">
+                Hair, skin, nails, spa, wellness and lifestyle — curated near you.
               </p>
-              <p className="explore-luxe__results-sub">Marketplace</p>
-            </div>
-            <p className="explore-luxe__results-meta">
-              {hasSearched ? "Search results" : "Nearby businesses"}
-              {" · "}
-              {businesses.length} {businesses.length === 1 ? "business" : "businesses"} found
-              {applied.date ? ` · ${applied.date}` : ""}
-            </p>
-            <div className="explore-luxe__ornament" aria-hidden>
-              <span />
-              <i />
-              <span />
             </div>
           </div>
-        ) : null}
+        </header>
 
-        {!busy && businesses.length === 0 ? (
-          <p className="explore-luxe__empty">
-            No published businesses match yet.{" "}
-            <Link href="/claim">List your business</Link>
-          </p>
-        ) : null}
+        <form
+          className="explore-luxe__search"
+          onSubmit={(e) => {
+            e.preventDefault();
+            applySearch();
+          }}
+        >
+          <div className="explore-luxe__search-pill">
+            <label className="explore-luxe__field">
+              <span>Service</span>
+              <span className="explore-luxe__field-control">
+                <IconScissors className="explore-luxe__field-icon explore-luxe__field-icon--lead" />
+                <input
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="Haircut, facial, nails…"
+                />
+              </span>
+            </label>
 
-        <div className="explore-luxe__cards">
-          {businesses.map((b) => {
-            const bookHref = `/book/${encodeURIComponent(b.slug)}?from=explore`;
-            const menuHref = `/explore/${encodeURIComponent(b.slug)}`;
-            const place =
-              [b.city, b.region].filter(Boolean).join(", ") ||
-              b.address ||
-              "Location coming soon";
+            <label className="explore-luxe__field">
+              <span>Location</span>
+              <span className="explore-luxe__field-control">
+                <IconPin className="explore-luxe__field-icon explore-luxe__field-icon--lead" />
+                <input
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  placeholder="Toronto"
+                />
+              </span>
+            </label>
 
-            return (
-              <article key={b.id} className="explore-luxe__card">
-                <div className="explore-luxe__card-media">
-                  <Link href={menuHref} aria-label={`View ${b.name} menu`}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={b.coverUrl || "/display-promo.jpg"} alt="" />
-                  </Link>
-                  <div className="explore-luxe__fav">
-                    <FavoriteBusinessButton salonId={b.id} compact />
-                  </div>
+            <label className="explore-luxe__field">
+              <span>Date</span>
+              <span
+                className={`explore-luxe__field-control explore-luxe__field-control--date${
+                  date ? "" : " is-empty"
+                }`}
+              >
+                <IconCalendar className="explore-luxe__field-icon explore-luxe__field-icon--lead" />
+                {!date ? (
+                  <span className="explore-luxe__date-placeholder" aria-hidden>
+                    Any date
+                  </span>
+                ) : null}
+                <input
+                  type="date"
+                  min={localToday()}
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  aria-label={date ? "Date" : "Any date"}
+                />
+              </span>
+            </label>
+
+            <label className="explore-luxe__field">
+              <span>Category</span>
+              <span className="explore-luxe__field-control">
+                <IconGrid className="explore-luxe__field-icon explore-luxe__field-icon--lead" />
+                <select value={type} onChange={(e) => setType(e.target.value)}>
+                  <option value="">All categories</option>
+                  {BUSINESS_TYPES.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {exploreCategoryLabel(t.id, t.label)}
+                    </option>
+                  ))}
+                </select>
+              </span>
+            </label>
+
+            <button type="submit" disabled={busy} className="explore-luxe__search-btn">
+              {busy ? "Searching…" : "Search"}
+            </button>
+          </div>
+
+          <div className="explore-luxe__more">
+            <button
+              type="button"
+              className="explore-luxe__more-toggle"
+              aria-expanded={moreOpen}
+              onClick={() => setMoreOpen((v) => !v)}
+            >
+              {moreOpen ? "Hide filters" : "More filters"}
+            </button>
+
+            {moreOpen ? (
+              <div className="explore-luxe__more-panel">
+                <label className="explore-luxe__field">
+                  <span>Max price</span>
+                  <span className="explore-luxe__field-control">
+                    <select value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)}>
+                      <option value="">Any price</option>
+                      <option value="25">Up to $25</option>
+                      <option value="50">Up to $50</option>
+                      <option value="75">Up to $75</option>
+                      <option value="100">Up to $100</option>
+                      <option value="150">Up to $150</option>
+                    </select>
+                  </span>
+                </label>
+
+                <div className="explore-luxe__search-extras">
+                  <label className="explore-luxe__check">
+                    <input
+                      type="checkbox"
+                      checked={rewardsOnly}
+                      onChange={(e) => setRewardsOnly(e.target.checked)}
+                    />
+                    Rewards and offers only
+                  </label>
+                  {hasFilters ? (
+                    <button type="button" onClick={clearFilters} className="explore-luxe__clear">
+                      Clear filters
+                    </button>
+                  ) : null}
                 </div>
+              </div>
+            ) : null}
+          </div>
+        </form>
+      </div>
 
-                <div className="explore-luxe__card-body">
-                  <p className="explore-luxe__card-type">{b.businessTypeLabel}</p>
-                  <h2 className="explore-luxe__card-name">
-                    <Link href={menuHref}>{b.name}</Link>
-                  </h2>
+      <div className="explore-luxe__directory-body">
+        {error ? <p className="explore-luxe__error">{error}</p> : null}
 
-                  <p className="explore-luxe__card-place">
-                    <IconPin className="h-3.5 w-3.5 shrink-0" />
-                    <span>{place}</span>
-                  </p>
+        <section className="explore-luxe__results" aria-live="polite">
+          {!busy && !error ? (
+            <div className="explore-luxe__results-head">
+              <p className="explore-luxe__results-meta">{resultsLabel}</p>
+              <div className="explore-luxe__ornament" aria-hidden>
+                <span />
+                <i />
+              </div>
+              <label className="explore-luxe__results-sort">
+                <span>Sort</span>
+                <select
+                  value={sort}
+                  onChange={(e) => applySort(e.target.value)}
+                  aria-label="Sort results"
+                >
+                  <option value="name">Business name</option>
+                  <option value="price">Lowest price</option>
+                  <option value="availability" disabled={!date && !applied.date}>
+                    Earliest availability
+                  </option>
+                </select>
+              </label>
+            </div>
+          ) : null}
 
-                  <div className="explore-luxe__card-rule" aria-hidden />
+          {!busy && businesses.length === 0 ? (
+            <p className="explore-luxe__empty">
+              No published businesses match yet.{" "}
+              <Link href="/claim">List your business</Link>
+            </p>
+          ) : null}
 
-                  <p className="explore-luxe__card-hours">
-                    <IconClock className="h-3.5 w-3.5 shrink-0" />
-                    <span className="explore-luxe__hours-label">Hours</span>
-                    <span className="explore-luxe__hours-value">
-                      {formatHour(b.openHour)}–{formatHour(b.closeHour)}
-                    </span>
-                  </p>
+          <div className="explore-luxe__cards">
+            {businesses.map((b) => {
+              const bookHref = `/book/${encodeURIComponent(b.slug)}?from=explore`;
+              const menuHref = `/explore/${encodeURIComponent(b.slug)}`;
+              const place =
+                [b.city, b.region].filter(Boolean).join(" · ") ||
+                b.address ||
+                "Location coming soon";
+              const category = exploreCategoryBadge(b.businessType, b.businessTypeLabel);
 
-                  {b.matchedServices[0] ? (
-                    <p className="explore-luxe__card-service">
-                      {b.matchedServices[0].name} • from{" "}
-                      {formatCad(b.minPriceCents ?? b.matchedServices[0].priceCents)}
-                    </p>
-                  ) : null}
-
-                  {b.availability ? (
-                    <p className="explore-luxe__card-avail">
-                      Available {slotLabel(b.availability.earliestAt, b.timezone)} ·{" "}
-                      {b.availability.serviceName}
-                    </p>
-                  ) : null}
-
-                  {b.rewards?.hasRewards ? (
-                    <div
-                      className="explore-luxe__card-rewards"
-                      data-testid={`explore-rewards-${b.slug}`}
-                    >
-                      <span>Rewards available</span>
-                      <span>
-                        {b.rewards.loyaltyEnabled ? "Loyalty" : ""}
-                        {b.rewards.loyaltyEnabled &&
-                        b.rewards.promotions.length + b.rewards.morePromotions > 0
-                          ? " · "
-                          : ""}
-                        {b.rewards.promotions.length + b.rewards.morePromotions > 0
-                          ? `${b.rewards.promotions.length + b.rewards.morePromotions} offer${
-                              b.rewards.promotions.length + b.rewards.morePromotions === 1
-                                ? ""
-                                : "s"
-                            }`
-                          : ""}
-                      </span>
+              return (
+                <article key={b.id} className="explore-luxe__card">
+                  <div className="explore-luxe__card-media">
+                    <Link href={menuHref} aria-label={`View ${b.name} services`}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={b.coverUrl || "/display-promo.jpg"} alt="" />
+                    </Link>
+                    <div className="explore-luxe__fav">
+                      <FavoriteBusinessButton salonId={b.id} compact />
                     </div>
-                  ) : null}
-
-                  <div className="explore-luxe__card-actions">
-                    <Link
-                      href={menuHref}
-                      className="explore-luxe__btn-menu"
-                      data-testid={`explore-menu-${b.slug}`}
-                    >
-                      Menu
-                    </Link>
-                    <Link
-                      href={bookHref}
-                      className="explore-luxe__btn-book"
-                      data-testid={`explore-book-${b.slug}`}
-                    >
-                      Book
-                    </Link>
                   </div>
-                </div>
-              </article>
-            );
-          })}
-        </div>
-      </section>
 
-      <p className="explore-luxe__footer">
-        Own a shop?{" "}
-        <Link href="/claim">Claim or create your business ›</Link>
-      </p>
+                  <div className="explore-luxe__card-body">
+                    <p className="explore-luxe__card-type">{category}</p>
+                    <h2 className="explore-luxe__card-name">
+                      <Link href={menuHref}>{b.name}</Link>
+                    </h2>
+
+                    <p className="explore-luxe__card-place">
+                      <IconPin className="h-3.5 w-3.5 shrink-0" />
+                      <span>{place}</span>
+                    </p>
+
+                    <p className="explore-luxe__card-hours">
+                      <IconClock className="h-3.5 w-3.5 shrink-0" />
+                      <span>
+                        Open today · {formatHour(b.openHour)} - {formatHour(b.closeHour)}
+                      </span>
+                    </p>
+
+                    {b.matchedServices[0] ? (
+                      <p className="explore-luxe__card-service">
+                        {b.matchedServices[0].name}{" "}
+                        {formatExploreFromPrice(
+                          b.minPriceCents ?? b.matchedServices[0].priceCents,
+                        )}
+                      </p>
+                    ) : null}
+
+                    {b.availability ? (
+                      <p className="explore-luxe__card-avail">
+                        Available {slotLabel(b.availability.earliestAt, b.timezone)} ·{" "}
+                        {b.availability.serviceName}
+                      </p>
+                    ) : null}
+
+                    {b.rewards?.hasRewards ? (
+                      <div
+                        className="explore-luxe__card-rewards"
+                        data-testid={`explore-rewards-${b.slug}`}
+                      >
+                        <span>Rewards available</span>
+                        <span>
+                          {b.rewards.loyaltyEnabled ? "Loyalty" : ""}
+                          {b.rewards.loyaltyEnabled &&
+                          b.rewards.promotions.length + b.rewards.morePromotions > 0
+                            ? " · "
+                            : ""}
+                          {b.rewards.promotions.length + b.rewards.morePromotions > 0
+                            ? `${b.rewards.promotions.length + b.rewards.morePromotions} offer${
+                                b.rewards.promotions.length + b.rewards.morePromotions === 1
+                                  ? ""
+                                  : "s"
+                              }`
+                            : ""}
+                        </span>
+                      </div>
+                    ) : null}
+
+                    <div className="explore-luxe__card-actions">
+                      <Link
+                        href={menuHref}
+                        className="explore-luxe__btn-menu"
+                        data-testid={`explore-menu-${b.slug}`}
+                      >
+                        Services
+                      </Link>
+                      <Link
+                        href={bookHref}
+                        className="explore-luxe__btn-book"
+                        data-testid={`explore-book-${b.slug}`}
+                      >
+                        Reserve
+                      </Link>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+
+        <p className="explore-luxe__footer">
+          Own a shop?{" "}
+          <Link href="/claim">Claim or create your business ›</Link>
+        </p>
+      </div>
     </div>
   );
 }

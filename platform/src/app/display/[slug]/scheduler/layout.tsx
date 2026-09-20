@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     appleWebApp: {
       capable: true,
       title: `${name} Scheduler`,
-      statusBarStyle: "black-translucent",
+      statusBarStyle: "default",
     },
     icons: {
       icon: [{ url: "/scheduler-icon.svg", type: "image/svg+xml" }],
@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export const viewport: Viewport = {
-  themeColor: "#10141a",
+  themeColor: "#fafafa",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",

@@ -39,15 +39,15 @@ export function PreviewReviewActions({
   const pending = listingStatus === "DRAFT" || listingStatus === "REJECTED";
 
   return (
-    <div className="grid gap-3 rounded-3xl border border-ink/12 bg-white/80 p-5">
-      <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-cocoa">Review</h2>
+    <section className="platform-luxe__preview-card">
+      <h2 className="platform-luxe__section-label">— Review</h2>
       {pending ? (
         <>
-          <p className="text-sm text-muted">
-            Approve to publish on Explore, or reject with a reason so the business can fix
-            details and request approval again.
+          <p className="platform-luxe__review-copy">
+            Approve to publish on Explore, or reject with a reason so the house can fix details
+            and request approval again.
           </p>
-          <label className="grid gap-1.5 text-sm text-ink-soft">
+          <label className="platform-luxe__label">
             Reject reason
             <textarea
               value={reason}
@@ -55,17 +55,19 @@ export function PreviewReviewActions({
               rows={3}
               maxLength={800}
               placeholder="What’s missing or needs to change?"
-              className="rounded-2xl border border-ink/15 bg-white px-4 py-3 text-ink"
+              className="platform-luxe__textarea"
               data-testid="listing-reject-reason"
             />
-            <span className="text-right text-xs text-muted">{reason.length}/800</span>
+            <span className="platform-luxe__hint" style={{ textAlign: "right" }}>
+              {reason.length}/800
+            </span>
           </label>
-          <div className="flex flex-wrap gap-2">
+          <div className="platform-luxe__review-actions">
             <button
               type="button"
               disabled={busy}
               onClick={() => void run("PUBLISHED")}
-              className="rounded-full bg-[#e7f0e6] px-5 py-2.5 text-sm font-semibold text-[#3f6b43] disabled:opacity-50"
+              className="platform-luxe__btn-approve"
               data-testid="listing-approve"
             >
               {busy ? "Saving…" : "Approve & publish"}
@@ -74,7 +76,7 @@ export function PreviewReviewActions({
               type="button"
               disabled={busy || reason.trim().length < 8}
               onClick={() => void run("REJECTED")}
-              className="rounded-full bg-[#f2e6e2] px-5 py-2.5 text-sm font-semibold text-[#8a4a37] disabled:opacity-50"
+              className="platform-luxe__btn-reject"
               data-testid="listing-reject"
             >
               Reject with reason
@@ -82,18 +84,18 @@ export function PreviewReviewActions({
           </div>
         </>
       ) : (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="platform-luxe__review-actions">
           <button
             type="button"
             disabled={busy}
             onClick={() => void run(active ? "pause" : "resume")}
-            className="rounded-full border border-ink/20 px-5 py-2.5 text-sm font-semibold text-ink-soft disabled:opacity-50"
+            className="platform-luxe__cancel"
           >
             {active ? "Pause listing" : "Resume listing"}
           </button>
         </div>
       )}
-      {msg ? <p className="text-sm text-[#a4432f]">{msg}</p> : null}
-    </div>
+      {msg ? <p className="platform-luxe__form-error">{msg}</p> : null}
+    </section>
   );
 }

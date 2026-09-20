@@ -1,11 +1,14 @@
 /** Marketplace verticals and listing helpers (BeautyZent / SalonBook). */
 
 export const BUSINESS_TYPES = [
-  { id: "SALON", label: "Hair salon" },
-  { id: "BARBER", label: "Barbershop" },
-  { id: "SPA", label: "Spa & wellness" },
+  { id: "SALON", label: "Hair" },
+  { id: "SKIN", label: "Skin" },
   { id: "NAILS", label: "Nails" },
-  { id: "OTHER", label: "Other beauty & personal care" },
+  { id: "SPA", label: "Spa" },
+  { id: "MEDSPA", label: "Medspa" },
+  { id: "MAKEUP", label: "Makeup" },
+  { id: "WELLNESS", label: "Wellness" },
+  { id: "OTHER", label: "Other" },
 ] as const;
 
 export type BusinessTypeId = (typeof BUSINESS_TYPES)[number]["id"];
@@ -15,11 +18,13 @@ export type ListingStatus = (typeof LISTING_STATUSES)[number];
 
 export function normalizeBusinessType(raw: unknown): BusinessTypeId {
   const v = String(raw ?? "SALON").toUpperCase();
+  if (v === "BARBER") return "SALON";
   if (BUSINESS_TYPES.some((t) => t.id === v)) return v as BusinessTypeId;
-  return "SALON";
+  return "OTHER";
 }
 
 export function businessTypeLabel(id: string | null | undefined) {
+  if (String(id || "").toUpperCase() === "BARBER") return "Barber";
   const found = BUSINESS_TYPES.find((t) => t.id === id);
   return found?.label ?? "Business";
 }
@@ -40,13 +45,17 @@ export function isPublicListing(salon: {
 
 /** Provider-facing label by vertical (soften “stylist” for non-salons). */
 export function providerLabel(businessType?: string | null) {
+  const key = String(businessType || "SALON").toUpperCase();
+  if (key === "BARBER") return "barber";
   switch (normalizeBusinessType(businessType || "SALON")) {
-    case "BARBER":
-      return "barber";
     case "SPA":
+    case "WELLNESS":
+    case "SKIN":
+    case "MEDSPA":
       return "therapist";
     case "NAILS":
       return "technician";
+    case "MAKEUP":
     case "OTHER":
       return "provider";
     default:

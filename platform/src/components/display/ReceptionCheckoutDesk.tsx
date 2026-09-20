@@ -43,7 +43,7 @@ export function ReceptionCheckoutDesk({
     >
       <div className="flex max-h-[min(92vh,52rem)] w-full max-w-lg flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#16181f] shadow-[0_30px_80px_rgba(0,0,0,0.45)]">
         <div className="shrink-0 border-b border-white/8 px-6 py-5">
-          <p className="text-[10px] font-semibold tracking-[0.22em] text-[#c45b7a] uppercase">
+          <p className="text-[10px] font-semibold tracking-[0.22em] text-[color:var(--rx-accent)] uppercase">
             Customer display
           </p>
           <h2 id="reception-checkout-title" className="mt-1 text-lg font-semibold text-white">

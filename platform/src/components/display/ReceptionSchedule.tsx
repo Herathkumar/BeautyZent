@@ -793,12 +793,12 @@ export function ReceptionClientPanel({
           </button>
         )}
         {checkInError ? (
-          <p className="text-center text-xs text-[#c45b7a]" data-testid="reception-checkin-error">
+          <p className="text-center text-xs text-[color:var(--rx-accent)]" data-testid="reception-checkin-error">
             {checkInError}
           </p>
         ) : null}
         {checkoutError ? (
-          <p className="text-center text-xs text-[#c45b7a]" data-testid="reception-checkout-error">
+          <p className="text-center text-xs text-[color:var(--rx-accent)]" data-testid="reception-checkout-error">
             {checkoutError}
           </p>
         ) : null}

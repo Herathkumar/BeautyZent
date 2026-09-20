@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     appleWebApp: {
       capable: true,
       title: `${name} Lounge`,
-      statusBarStyle: "black-translucent",
+      statusBarStyle: "default",
     },
     icons: {
       icon: [{ url: "/lounge-icon.svg", type: "image/svg+xml" }],
@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export const viewport: Viewport = {
-  themeColor: "#15110e",
+  themeColor: "#fafafa",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",

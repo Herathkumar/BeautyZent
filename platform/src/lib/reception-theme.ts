@@ -2,8 +2,8 @@ export type ReceptionTheme = "light" | "dark";
 
 export const RECEPTION_THEME_KEY = "fhsalon-reception-theme";
 export const RECEPTION_THEME_EVENT = "fhsalon-reception-theme-change";
-export const RECEPTION_THEME_LIGHT = "#f3ebe3";
-export const RECEPTION_THEME_DARK = "#0e1016";
+export const RECEPTION_THEME_LIGHT = "#fafafa";
+export const RECEPTION_THEME_DARK = "#121110";
 
 export function isReceptionTheme(value: unknown): value is ReceptionTheme {
   return value === "light" || value === "dark";

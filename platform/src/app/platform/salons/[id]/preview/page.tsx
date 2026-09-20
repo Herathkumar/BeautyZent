@@ -3,7 +3,6 @@ import { notFound, redirect } from "next/navigation";
 import { getPlatformSession } from "@/lib/platform-auth";
 import { prisma } from "@/lib/prisma";
 import { businessTypeLabel } from "@/lib/marketplace";
-import { formatCad } from "@/lib/money";
 import { DAY_LABELS } from "../../salon-form";
 import { PreviewReviewActions } from "./PreviewReviewActions";
 
@@ -15,6 +14,20 @@ function fmtWhen(value: Date | null | undefined) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(value);
+}
+
+function formatHour(hour: number) {
+  const d = new Date();
+  d.setHours(hour, 0, 0, 0);
+  return new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(d);
+}
+
+function formatPrice(cents: number) {
+  if (cents % 100 === 0) return `$${cents / 100}`;
+  return `$${(cents / 100).toFixed(2)}`;
 }
 
 function missingOnboarding(salon: {
@@ -33,13 +46,32 @@ function missingOnboarding(salon: {
   return missing;
 }
 
+function houseStatus(salon: { listingStatus: string; active: boolean }) {
+  if (salon.listingStatus === "DRAFT") return { id: "review", label: "In review" } as const;
+  if (!salon.active) return { id: "paused", label: "Paused" } as const;
+  if (salon.listingStatus === "PUBLISHED") return { id: "live", label: "Live" } as const;
+  return { id: "draft", label: "Draft" } as const;
+}
+
+const CATEGORY_BADGE: Record<string, string> = {
+  SALON: "HAIR",
+  BARBER: "BARBER",
+  SPA: "SPA",
+  NAILS: "NAILS",
+  OTHER: "BEAUTY",
+  MEDSPA: "MEDSPA",
+  SKIN: "SKIN",
+  MAKEUP: "MAKEUP",
+  WELLNESS: "WELLNESS",
+};
+
 export default async function SalonPreviewPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const session = await getPlatformSession();
-  if (!session) redirect("/platform/login");
+  if (!session) redirect("/explore");
 
   const { id } = await params;
   const salon = await prisma.salon.findUnique({
@@ -66,6 +98,7 @@ export default async function SalonPreviewPage({
       closedDays: true,
       slotMinutes: true,
       coverUpdatedAt: true,
+      coverMime: true,
       claimedAt: true,
       approvedAt: true,
       createdAt: true,
@@ -89,157 +122,146 @@ export default async function SalonPreviewPage({
     salon.closedDays?.length
       ? salon.closedDays.map((d) => DAY_LABELS[d] ?? String(d)).join(", ")
       : "None";
-  const coverUrl = salon.coverUpdatedAt
-    ? `/api/public/cover/${salon.id}?t=${salon.coverUpdatedAt.getTime()}`
-    : "";
+  const coverUrl =
+    salon.coverUpdatedAt || salon.coverMime
+      ? `/api/public/cover/${salon.id}?t=${salon.coverUpdatedAt?.getTime() ?? 0}`
+      : "/display-promo.jpg";
   const place = [salon.city, salon.region, salon.country].filter(Boolean).join(", ");
+  const status = houseStatus(salon);
+  const category =
+    CATEGORY_BADGE[String(salon.businessType || "").toUpperCase()] ||
+    businessTypeLabel(salon.businessType).toUpperCase();
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="platform-luxe__preview">
       <div>
-        <Link href="/platform" className="text-sm text-cocoa">
-          ← All businesses
+        <Link href="/platform" className="platform-luxe__back">
+          ← Houses
         </Link>
-        <p className="mt-3 text-xs font-semibold uppercase tracking-[0.16em] text-cocoa">
-          Onboarding preview
-        </p>
-        <h1 className="mt-1 font-[family-name:var(--font-display)] text-3xl text-ink">
-          {salon.name}
-        </h1>
-        <code className="text-xs text-muted">/{salon.slug}</code>
+        <div className="platform-luxe__preview-top">
+          <div>
+            <p className="platform-luxe__section-label" style={{ marginTop: "0.85rem" }}>
+              Preview
+            </p>
+            <h1 className="platform-luxe__form-title">{salon.name}</h1>
+            <p className="platform-luxe__slug" style={{ marginTop: "0.35rem" }}>
+              /explore/{salon.slug}
+            </p>
+            <div className="platform-luxe__preview-meta">
+              <span className="platform-luxe__category">{category}</span>
+              <span
+                className={`platform-luxe__status platform-luxe__status--${
+                  status.id === "review" ? "review" : status.id
+                }`}
+              >
+                {status.label}
+              </span>
+              {place ? <p className="platform-luxe__preview-place">{place}</p> : null}
+            </div>
+          </div>
+          <Link href={`/platform/salons/${salon.id}`} className="platform-luxe__btn-ghost">
+            Configure
+          </Link>
+        </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <span
-          className={`rounded-full px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.12em] ${
-            salon.listingStatus === "PUBLISHED"
-              ? "bg-[#e7f0e6] text-[#3f6b43]"
-              : salon.listingStatus === "DRAFT"
-                ? "bg-[#f5efd8] text-[#7a6230]"
-                : "bg-[#f2e6e2] text-[#8a4a37]"
-          }`}
-        >
-          {salon.listingStatus}
-        </span>
-        <span className="text-xs text-muted">
-          {businessTypeLabel(salon.businessType)}
-          {place ? ` · ${place}` : ""}
-        </span>
-        <Link
-          href={`/platform/salons/${salon.id}`}
-          className="ml-auto rounded-full border border-ink/20 px-4 py-1.5 text-sm font-medium text-ink-soft hover:border-ink"
-        >
-          Configure
-        </Link>
-      </div>
-
-      <div className="overflow-hidden rounded-3xl border border-ink/12 bg-white/80">
+      <div className="platform-luxe__preview-cover">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={coverUrl || "/display-promo.jpg"}
-          alt={`${salon.name} cover`}
-          className="aspect-[16/9] w-full object-cover"
-        />
+        <img src={coverUrl} alt={`${salon.name} cover`} />
       </div>
 
       {missing.length ? (
-        <p className="rounded-2xl border border-[#7a6230]/25 bg-[#f5efd8] px-4 py-3 text-sm text-[#7a6230]">
-          Incomplete: {missing.join(", ")}.
-        </p>
+        <p className="platform-luxe__preview-warn">Incomplete: {missing.join(", ")}.</p>
       ) : null}
 
       {salon.listingReviewNote ? (
-        <section className="rounded-3xl border border-[#8a4a37]/25 bg-[#f2e6e2] p-5 text-sm">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-[#8a4a37]">
-            Last review note
-          </h2>
-          <p className="mt-2 whitespace-pre-wrap text-ink">{salon.listingReviewNote}</p>
-          <p className="mt-2 text-xs text-muted">{fmtWhen(salon.listingReviewedAt)}</p>
+        <section className="platform-luxe__preview-note">
+          <h2 className="platform-luxe__preview-note-title">Last review note</h2>
+          <p className="platform-luxe__preview-note-body">{salon.listingReviewNote}</p>
+          <p className="platform-luxe__preview-note-when">{fmtWhen(salon.listingReviewedAt)}</p>
         </section>
       ) : null}
 
-      <section className="grid gap-3 rounded-3xl border border-ink/12 bg-white/80 p-5 text-sm">
-        <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-cocoa">
-          Business details
-        </h2>
-        <dl className="grid gap-2 text-ink-soft">
-          <div className="flex justify-between gap-3">
-            <dt className="text-muted">Phone</dt>
+      <section className="platform-luxe__preview-card">
+        <h2 className="platform-luxe__section-label">— House details</h2>
+        <dl className="platform-luxe__preview-dl">
+          <div>
+            <dt>Phone</dt>
             <dd>{salon.phone || "—"}</dd>
           </div>
-          <div className="flex justify-between gap-3">
-            <dt className="text-muted">Email</dt>
-            <dd className="break-all">{salon.email || "—"}</dd>
+          <div>
+            <dt>Email</dt>
+            <dd>{salon.email || "—"}</dd>
           </div>
-          <div className="flex justify-between gap-3">
-            <dt className="text-muted">Address</dt>
-            <dd className="text-right">{salon.address || "—"}</dd>
+          <div>
+            <dt>Address</dt>
+            <dd>{salon.address || "—"}</dd>
           </div>
-          <div className="flex justify-between gap-3">
-            <dt className="text-muted">Hours</dt>
+          <div>
+            <dt>Hours</dt>
             <dd>
-              {salon.openHour}:00–{salon.closeHour}:00 · {salon.slotMinutes} min slots
+              {formatHour(salon.openHour)} – {formatHour(salon.closeHour)} · {salon.slotMinutes}{" "}
+              min slots
             </dd>
           </div>
-          <div className="flex justify-between gap-3">
-            <dt className="text-muted">Closed</dt>
+          <div>
+            <dt>Closed</dt>
             <dd>{closed}</dd>
           </div>
-          <div className="flex justify-between gap-3">
-            <dt className="text-muted">Timezone</dt>
+          <div>
+            <dt>Timezone</dt>
             <dd>{salon.timezone}</dd>
           </div>
-          <div className="flex justify-between gap-3">
-            <dt className="text-muted">Claimed</dt>
+          <div>
+            <dt>Claimed</dt>
             <dd>{fmtWhen(salon.claimedAt)}</dd>
           </div>
-          <div className="flex justify-between gap-3">
-            <dt className="text-muted">Approved</dt>
+          <div>
+            <dt>Approved</dt>
             <dd>{fmtWhen(salon.approvedAt)}</dd>
           </div>
         </dl>
         {salon.description ? (
-          <p className="mt-1 whitespace-pre-wrap text-ink">{salon.description}</p>
+          <p className="platform-luxe__preview-desc">{salon.description}</p>
         ) : (
-          <p className="text-muted">No description submitted.</p>
+          <p className="platform-luxe__preview-muted">No description submitted.</p>
         )}
       </section>
 
-      <section className="grid gap-2 rounded-3xl border border-ink/12 bg-white/80 p-5 text-sm">
-        <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-cocoa">Owner login</h2>
+      <section className="platform-luxe__preview-card">
+        <h2 className="platform-luxe__section-label">— Owner login</h2>
         {salon.users.length === 0 ? (
-          <p className="text-muted">No staff accounts yet.</p>
+          <p className="platform-luxe__preview-muted">No staff accounts yet.</p>
         ) : (
-          <ul className="grid gap-1 text-ink-soft">
+          <ul className="platform-luxe__preview-list">
             {salon.users.map((user) => (
-              <li key={user.id} className="flex flex-wrap justify-between gap-2">
+              <li key={user.id}>
                 <span>
                   {user.name} · {user.email}
                 </span>
-                <span className="text-xs uppercase tracking-[0.12em] text-muted">{user.role}</span>
+                <span className="platform-luxe__preview-role">{user.role}</span>
               </li>
             ))}
           </ul>
         )}
       </section>
 
-      <section className="grid gap-2 rounded-3xl border border-ink/12 bg-white/80 p-5 text-sm">
-        <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-cocoa">
-          Starter menu
-        </h2>
-        <p className="text-xs text-muted">
-          {salon._count.stylists} providers · {salon._count.services} services ·{" "}
-          {salon._count.appointments} bookings
+      <section className="platform-luxe__preview-card">
+        <h2 className="platform-luxe__section-label">— Services</h2>
+        <p className="platform-luxe__preview-muted">
+          {salon._count.stylists} provider{salon._count.stylists === 1 ? "" : "s"} ·{" "}
+          {salon._count.services} service{salon._count.services === 1 ? "" : "s"} ·{" "}
+          {salon._count.appointments} booking{salon._count.appointments === 1 ? "" : "s"}
         </p>
         {salon.services.length === 0 ? (
-          <p className="text-muted">No services yet.</p>
+          <p className="platform-luxe__preview-muted">No services yet.</p>
         ) : (
-          <ul className="grid gap-1 text-ink-soft">
+          <ul className="platform-luxe__preview-list">
             {salon.services.map((svc) => (
-              <li key={svc.id} className="flex justify-between gap-3">
+              <li key={svc.id}>
                 <span>{svc.name}</span>
-                <span className="text-muted">
-                  {svc.durationMin} min · {formatCad(svc.priceCents)}
+                <span className="meta">
+                  {svc.durationMin} min · {formatPrice(svc.priceCents)}
                 </span>
               </li>
             ))}
